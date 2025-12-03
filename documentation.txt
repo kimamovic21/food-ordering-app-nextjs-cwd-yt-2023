@@ -51,3 +51,31 @@ Authentication - first part
 -in folder api create folder register and route.ts file
 -in route.ts file create and export function POST()
 -open route: http://localhost:3000/register and click button Register
+
+
+Authentication - second part
+
+-create .env file and variables NODE_ENV, MONGODB_URL, NEXTAUTH_URL and NEXTAUTH_SECRET
+-type command: npm i mongoose
+-type command: npm i bcrypt
+-type command: npm i --save-dev @types/bcrypt
+-create folder models and User.ts file
+-in User.ts file create and export variable const User
+-update function in register/route.ts file
+-update component register/page.tsx with state for creating user
+-open route: http://localhost:3000/register and click button Register
+-open MongoDB to see saved user
+-create folder login and component page.tsx
+-in component page.tsx add logic for login
+-in folder [...nextauth], in route.ts file update function authorize
+-create folder contexts and component AppContext.tsx
+-in component layout.tsx import component AppContext
+-update component Header.tsx to display auth state
+-open link: https://console.cloud.google.com and create new project
+-in .env file create variables GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
+-update route.ts file to use Google provider service
+-open link: https://authjs.dev/getting-started/adapters/mongodb
+-type command: npm i @auth/mongodb-adapter mongodb --legacy-peer-deps
+-create folder libs and mongoConnect.ts file
+-in mongoConnect.ts file add code from documentation
+-in route.ts file update MongoDB adapter logic

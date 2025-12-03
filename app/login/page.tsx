@@ -6,31 +6,25 @@ import GoogleIcon from '@/public/google.png';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const RegisterPage = () => {
+const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [creatingUser, setCreatingUser] = useState(false);
-  const [userCreated, setUserCreated] = useState(false);
   const [error, setError] = useState(false);
+  const [loginInProgress, setLoginInProgress] = useState(false);
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    setCreatingUser(true);
-    setError(false);
-    setUserCreated(false);
-
     try {
-      await fetch('/api/register', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      setLoginInProgress(true);
+
+      await signIn('credentials', {
+        email,
+        password,
+        callbackUrl: '/'
       });
 
-      setCreatingUser(false);
-      setUserCreated(true);
+      setLoginInProgress(false);
     } catch (err) {
       console.error(err);
       setError(true);
@@ -40,19 +34,8 @@ const RegisterPage = () => {
   return (
     <section className='mt-8 w-lg'>
       <h2 className='text-center text-primary text-4xl mb-4'>
-        Register
+        Login
       </h2>
-
-      {userCreated && (
-        <div className='my-4 text-center text-green-700'>
-          <span className='mr-1'>
-            User created. Now you can
-          </span>
-          <Link href={'/login'} className='underline'>
-            Login.
-          </Link>
-        </div>
-      )}
 
       {error && (
         <div className='my-4 text-center text-red-700'>
@@ -70,7 +53,7 @@ const RegisterPage = () => {
           placeholder='email'
           value={email}
           onChange={e => setEmail(e.target.value)}
-          disabled={creatingUser}
+          disabled={loginInProgress}
           required
         />
 
@@ -80,18 +63,18 @@ const RegisterPage = () => {
           placeholder='password'
           value={password}
           onChange={e => setPassword(e.target.value)}
-          disabled={creatingUser}
+          disabled={loginInProgress}
           required
         />
 
         <button
           type='submit'
-          disabled={creatingUser}
+          disabled={loginInProgress}
         >
-          Register
+          Login
         </button>
         <p className='my-4 text-center text-gray-500'>
-          or register with provider
+          or login with provider
         </p>
         <button
           type='button'
@@ -106,15 +89,15 @@ const RegisterPage = () => {
             width={24}
             height={24}
           />
-          Register with Google
+          Login with Google
         </button>
 
         <div className='text-center my-4 border-t border-gray-500 pt-4'>
           <span className='mr-1 text-gray-500'>
-            Existing account?
+            Don&apos;t have an account?
           </span>
-          <Link href={'/login'} className='underline text-blue-600'>
-            Login here
+          <Link href={'/register'} className='underline text-blue-600'>
+            Register here
           </Link>
         </div>
       </form>
@@ -122,4 +105,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage;
+export default LoginPage;
