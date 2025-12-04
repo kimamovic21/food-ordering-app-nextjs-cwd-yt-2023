@@ -47,4 +47,23 @@ export const authOptions = {
       },
     }),
   ],
+  callbacks: {
+    async session({ session }: { session: any }) {
+      if (!session?.user?.email) return session;
+
+      await mongoose.connect(process.env.MONGODB_URL as string);
+      const userInDb = await User.findOne({ email: session.user.email });
+
+      if (userInDb) {
+        session.user.name = userInDb.name;
+        session.user.image = userInDb.image;
+      }
+
+      return session;
+    },
+  
+    async jwt({ token }: { token: any }) {
+      return token;
+    },
+  },
 };

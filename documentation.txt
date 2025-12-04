@@ -97,3 +97,17 @@ Profile editing page - first part
 -in profile/route.ts file import object authOptions
 -open route: http://localhost:3000/profile and update user name
 -open MongoDB to see updated user info
+
+
+Profile editing page - second part
+
+-open link: https://cloudinary.com
+-in .env.local file create variables CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET
+-type command: npm i cloudinary --legacy-peer-deps
+-in folder libs create cloudinary.ts file
+-in cloudinary.ts file create and export variable cloudinary
+-in user.ts file updated model User
+-create folder upload and route.ts file
+-in route.ts file add logic for uploading user image to Cloudinary service
+-in component app/profile.tsx add logic for image upload
+-open route: http://localhost:3000/profile and upload a new image
