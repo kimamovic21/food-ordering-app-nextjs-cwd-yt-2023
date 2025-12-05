@@ -22,7 +22,17 @@ export async function POST(req: Request) {
   const salt = bcrypt.genSaltSync(10);
   body.password = bcrypt.hashSync(notHashedPassword, salt);
 
-  const createdUser = await User.create(body);
+  const createdUser = await User.create({
+    name: body.name,
+    email: body.email,
+    password: body.password,
+    provider: 'credentials',
+    phone: '',
+    streetAddress: '',
+    postalCode: '',
+    city: '',
+    country: '',
+  });
 
   return Response.json(createdUser);
 };

@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import GoogleIcon from '@/public/google.png';
 import Image from 'next/image';
 import Link from 'next/link';
+import GoogleIcon from '@/public/google.png';
 
 const RegisterPage = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [creatingUser, setCreatingUser] = useState(false);
@@ -23,7 +24,7 @@ const RegisterPage = () => {
     try {
       await fetch('/api/register', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -64,6 +65,16 @@ const RegisterPage = () => {
         className='w-full'
         onSubmit={handleFormSubmit}
       >
+        <input
+          name='name'
+          type='text'
+          placeholder='name'
+          value={name}
+          onChange={e => setName(e.target.value)}
+          disabled={creatingUser}
+          required
+        />
+
         <input
           name='email'
           type='text'
