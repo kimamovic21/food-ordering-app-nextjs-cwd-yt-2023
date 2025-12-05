@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { Roboto, Roboto_Mono } from 'next/font/google';
+import { Toaster } from 'react-hot-toast';
 import './globals.css';
-import Header from './(home)/Header';
-import Footer from './(home)/Footer';
+import Header from '../components/shared/Header';
+import Footer from '../components/shared/Footer';
 import AppContext from '@/contexts/AppContext';
 
 const roboto = Roboto({
@@ -38,6 +39,7 @@ const RootLayout = ({
         <AppContext>
           <Header />
           <main className='flex-1 max-w-4xl mx-auto p-4'>
+            <Toaster position='top-center' />
             {children}
           </main>
           <Footer />

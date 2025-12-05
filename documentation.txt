@@ -111,3 +111,22 @@ Profile editing page - second part
 -in route.ts file add logic for uploading user image to Cloudinary service
 -in component app/profile.tsx add logic for image upload
 -open route: http://localhost:3000/profile and upload a new image
+-open Cloudinary to see saved user image
+
+
+Profile editing page - third part
+
+-open link: https://react-hot-toast.com
+-open link: https://www.npmjs.com/package/react-hot-toast
+-type command: npm i react-hot-toast --legacy-peer-deps
+-create folders components and shared
+-move components Header.tsx and Footer.tsx in folder shared
+-update component profile/page.tsx to use toast messages
+-open route: http://localhost:3000/profile, upload a new image and change user name to see toast messages
+-open Cloudinary to see saved user image
+-in component profile/page.tsx create new input elements
+-in model/user.ts file update model User 
+-in profile/route.ts file create and export async function GET()
+-update authOptions.ts file for new fields
+-open route: http://localhost:3000/profile and update user info
+-open MongoDB to see saved info

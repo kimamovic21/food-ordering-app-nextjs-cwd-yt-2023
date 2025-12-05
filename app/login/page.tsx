@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import GoogleIcon from '@/public/google.png';
 import Image from 'next/image';
 import Link from 'next/link';
+import GoogleIcon from '@/public/google.png';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
