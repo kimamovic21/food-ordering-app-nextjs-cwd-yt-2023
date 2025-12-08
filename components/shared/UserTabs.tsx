@@ -1,3 +1,6 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 interface UserTabsProps {
@@ -5,21 +8,35 @@ interface UserTabsProps {
 };
 
 const UserTabs = ({ isAdmin = false }: UserTabsProps) => {
+  const path = usePathname();
+
   return (
     <div className='flex justify-center gap-2 tabs'>
-      <Link className={'active'} href={'/profile'}>
+      <Link
+        className={path === '/profile' ? 'active' : ''}
+        href={'/profile'}
+      >
         Profile
       </Link>
-      
+
       {isAdmin && (
         <>
-          <Link href={'/categories'}>
+          <Link
+            className={path === '/categories' ? 'active' : ''}
+            href={'/categories'}
+          >
             Categories
           </Link>
-          <Link href={'/menu-items'}>
+          <Link
+            className={path === '/menu-items' ? 'active' : ''}
+            href={'/menu-items'}
+          >
             Menu Items
           </Link>
-          <Link href={'/users'}>
+          <Link
+            className={path === '/users' ? 'active' : ''}
+            href={'/users'}
+          >
             Users
           </Link>
         </>

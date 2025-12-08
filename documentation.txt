@@ -143,3 +143,23 @@ Admin panel & categories - first part
 -in folder shared create component UserTabs.tsx
 -in component profile/page.tsx import component UserTabs
 -in tsx add component UserTabs with prop isAdmin
+
+
+Admin panel & categories - second part
+
+-create folder categories and component page.tsx
+-in component categories/page.tsx import component UserTabs
+-open link: http://localhost:3000/categories
+-open link: https://nextjs.org/docs/app/api-reference/functions/use-pathname
+-in component UserTabs.tsx import and invoke function usePathname()
+-update api/profile/route.ts file
+-in folder contexts create component useProfile.tsx
+-in component categories/page.tsx import and invoke function useProfile()
+-in tsx create HTML elements with Tailwind CSS classes
+-in folder api create folder categories and route.ts file
+-in categories/route.ts file create and export async functions POST(), PUT() and GET()
+-in folder models create category.ts file and model Category
+-in categories/route.ts file import model Category
+-open route: http://localhost:3000/categories and create new category
+-add logic for displaying and editing existing categories
+-open MongoDB to saved categories

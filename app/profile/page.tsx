@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
 import toast from 'react-hot-toast';
 import UserTabs from '@/components/shared/UserTabs';
 
@@ -34,19 +33,20 @@ const ProfilePage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (status === 'authenticated') {
-      setUserName(session.data?.user?.name || '');
+    if (status === 'authenticated' && session.data?.user) {
+      const user = session.data.user as ExtendedUser;
 
-      const user = session.data?.user as ExtendedUser | undefined;
-
-      setPhone(user?.phone || '');
-      setStreetAddress(user?.streetAddress || '');
-      setPostalCode(user?.postalCode || '');
-      setCity(user?.city || '');
-      setCountry(user?.country || '');
-      setIsAdmin(user?.admin || false);
+      Promise.resolve().then(() => {
+        setUserName(user.name || '');
+        setPhone(user.phone || '');
+        setStreetAddress(user.streetAddress || '');
+        setPostalCode(user.postalCode || '');
+        setCity(user.city || '');
+        setCountry(user.country || '');
+        setIsAdmin(user.admin || false);
+      });
     }
-  }, [status, session]);
+  }, [status, session.data?.user]);
 
   if (status === 'loading') return 'Loading...';
   if (status === 'unauthenticated') return redirect('/login');
