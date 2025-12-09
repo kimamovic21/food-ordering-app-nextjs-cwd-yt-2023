@@ -1,4 +1,5 @@
 import { getServerSession } from 'next-auth';
+import { type UploadApiResponse } from 'cloudinary';
 import { authOptions } from '@/libs/authOptions';
 import { User } from '@/models/user';
 import cloudinary from '@/libs/cloudinary';
@@ -13,27 +14,26 @@ export async function POST(req: Request) {
 
     if (!email) {
       return new Response('Unauthorized', { status: 401 });
-    }
+    };
 
     const form = await req.formData();
     const file = form.get('file') as File | null;
 
     if (!file) {
       return new Response('No file provided', { status: 400 });
-    }
+    };
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadedImage: any = await new Promise((resolve, reject) => {
+    const uploadedImage: UploadApiResponse = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         { folder: 'users' },
         (error, result) => {
           if (error) return reject(error);
-          resolve(result);
+          resolve(result as UploadApiResponse);
         }
       );
-
       uploadStream.end(buffer);
     });
 
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
     if (!user) {
       return new Response('User not found', { status: 404 });
-    }
+    };
 
     if (user.image) {
       const matches = user.image.match(/users\/([^\.]+)/);
@@ -49,8 +49,8 @@ export async function POST(req: Request) {
 
       if (oldPublicId) {
         await cloudinary.uploader.destroy(oldPublicId);
-      }
-    }
+      };
+    };
 
     const updatedUser = await User.findOneAndUpdate(
       { email },
@@ -67,5 +67,5 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error('UPLOAD ERROR:', err);
     return new Response('Upload error', { status: 500 });
-  }
-}
+  };
+};

@@ -3,6 +3,15 @@ import { authOptions } from '@/libs/authOptions';
 import { User } from '@/models/user';
 import mongoose from 'mongoose';
 
+type ProfileUpdateData = {
+  name?: string;
+  phone?: string;
+  streetAddress?: string;
+  postalCode?: string;
+  city?: string;
+  country?: string;
+};
+
 export async function PUT(req: Request) {
   await mongoose.connect(process.env.MONGODB_URL as string);
 
@@ -10,12 +19,14 @@ export async function PUT(req: Request) {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email;
 
-  if (!email) return Response.json(
-    { error: 'Unauthorized' },
-    { status: 401 }
-  );
+  if (!email) {
+    return Response.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  };
 
-  const allowedFields = [
+  const allowedFields: (keyof ProfileUpdateData)[] = [
     'name',
     'phone',
     'streetAddress',
@@ -24,10 +35,12 @@ export async function PUT(req: Request) {
     'country',
   ];
 
-  const updateData: any = {};
+  const updateData: ProfileUpdateData = {};
 
   for (const key of allowedFields) {
-    if (key in data) updateData[key] = data[key];
+    if (key in data) {
+      updateData[key] = data[key];
+    };
   };
 
   await User.updateOne({ email }, { $set: updateData });
@@ -43,10 +56,12 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email;
 
-  if (!email) return Response.json(
-    { error: 'Unauthorized' },
-    { status: 401 }
-  );
+  if (!email) {
+    return Response.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  };
 
   const user = await User.findOne({ email });
 

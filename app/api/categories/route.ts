@@ -1,6 +1,9 @@
 import { Category } from '@/models/category';
+import mongoose from 'mongoose';
 
 export async function POST(request: Request) {
+  mongoose.connect(process.env.MONGODB_URL as string);
+
   const { name } = await request.json();
 
   const categoryDocument = await Category.create({ name });
@@ -9,6 +12,8 @@ export async function POST(request: Request) {
 };
 
 export async function PUT(request: Request) {
+  mongoose.connect(process.env.MONGODB_URL as string);
+
   const { _id, name } = await request.json();
 
   const categoryDocument = await Category.findByIdAndUpdate(
@@ -21,6 +26,8 @@ export async function PUT(request: Request) {
 };
 
 export async function GET() {
+  mongoose.connect(process.env.MONGODB_URL as string);
+
   const categories = await Category
     .find()
     .sort({ name: 1 });

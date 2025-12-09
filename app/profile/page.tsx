@@ -53,7 +53,9 @@ const ProfilePage = () => {
 
   const userImage = session.data?.user?.image;
 
-  const handleProfileInfoUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleProfileInfoUpdate = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
     setIsSaving(true);
 
@@ -92,7 +94,9 @@ const ProfilePage = () => {
     setIsSaving(false);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileImageUpdate = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = e.target.files;
     if (!files || files.length !== 1) return;
 
@@ -147,7 +151,7 @@ const ProfilePage = () => {
                   id='imageFile'
                   type='file'
                   className='hidden'
-                  onChange={handleFileChange}
+                  onChange={handleProfileImageUpdate}
                 />
                 Edit
               </label>

@@ -163,3 +163,15 @@ Admin panel & categories - second part
 -open route: http://localhost:3000/categories and create new category
 -add logic for displaying and editing existing categories
 -open MongoDB to saved categories
+
+
+Admin menu items - first part
+
+-update api/upload/route.ts file
+-create folder menu-items and component page.tsx
+-in component menu-items/page.tsx import component UserTabs
+-import and invoke function useProfile()
+-in tsx create HTML elements with Tailwind CSS classes
+-in folder models create menuItems.ts file
+-in folder api create menu-items and route.ts file
+-open route: http://localhost:3000/menu-items
