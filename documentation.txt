@@ -186,3 +186,10 @@ Admin menu items - second part
 -update register/route.ts file
 -update package.json file
 -type command: npm i mongodb@^6
+
+
+Admin menu items - third part
+
+-in folder menu-items create components MenuItemForm.tsx, MenuItemImage.tsx and MenuItems.tsx
+-in component page.tsx import created components
+-in tsx add components with props
