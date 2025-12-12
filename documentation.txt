@@ -186,6 +186,7 @@ Admin menu items - second part
 -update register/route.ts file
 -update package.json file
 -type command: npm i mongodb@^6
+-open route: http://localhost:3000/menu-items
 
 
 Admin menu items - third part
@@ -193,6 +194,7 @@ Admin menu items - third part
 -in folder menu-items create components MenuItemForm.tsx, MenuItemImage.tsx and MenuItems.tsx
 -in component page.tsx import created components
 -in tsx add components with props
+-open route: http://localhost:3000/menu-items
 
 
 Admin menu items - fourth part
@@ -200,7 +202,8 @@ Admin menu items - fourth part
 -update logic for small, medium and large menu item price
 -update menuItem.ts file and model MenuItem
 -update price info in route.ts file
--in folder menu-items update tsx components 
+-in folder menu-items update tsx components
+-open route: http://localhost:3000/menu-items 
 
 
 Admin menu items - fifth part
@@ -209,3 +212,13 @@ Admin menu items - fifth part
 -in menuItem.ts file update model MenuItem
 -in folder menu-items update tsx components for displaying ui logic for categories
 -in menu-items/route.ts file update logic for categories
+-open route: http://localhost:3000/menu-items
+
+
+Admin menu users - first part
+
+-update authOptions.ts file
+-in folder app create folder users and component page.tsx
+-in folder api create folder users and route.ts file
+-add logic for displaying all users
+-open route: http://localhost:3000/users
