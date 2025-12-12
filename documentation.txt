@@ -237,3 +237,8 @@ Admin menu users - second part
 Admin menu users - third part
 
 -add pagination logic in component users/page.tsx and users/route.ts
+
+
+Rule for type any fix
+
+-update files eslint.config.mjs and authOptions.ts

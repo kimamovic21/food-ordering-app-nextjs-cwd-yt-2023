@@ -10,7 +10,7 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   adapter: MongoDBAdapter(client),
   allowDangerousEmailAccountLinking: true,
-  session: { strategy: 'jwt' },
+  session: { strategy: 'jwt' as const },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
