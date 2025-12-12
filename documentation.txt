@@ -227,3 +227,8 @@ Admin menu users - first part
 Auth with credentials fixed 
 
 -update authOptions.ts file
+
+
+Admin menu users - second part
+
+-update ui for displaying users in component users/page.tsx 
