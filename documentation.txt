@@ -254,3 +254,9 @@ Deployment fix for users page
 -in component users/page.tsx import component Suspense
 -open route: http://localhost:3000/users
 -type command: npm run build
+
+
+Home menu items update
+
+-update components HomeMenu.tsx and MenuItem.tsx to display all menu items from pizza category
+-open route: http://localhost:3000
