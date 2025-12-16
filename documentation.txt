@@ -260,3 +260,12 @@ Home menu items update
 
 -update components HomeMenu.tsx and MenuItem.tsx to display all menu items from pizza category
 -open route: http://localhost:3000
+
+
+Menu page - first part
+
+-create folder menu and component page.tsx
+-in folder menu create component MenuItem.tsx
+-in component page.tsx import component MenuItem
+-add logic for displaying menu items to user
+-open route: http://localhost:3000/menu
