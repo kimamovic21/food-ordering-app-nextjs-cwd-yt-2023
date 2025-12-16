@@ -269,3 +269,9 @@ Menu page - first part
 -in component page.tsx import component MenuItem
 -add logic for displaying menu items to user
 -open route: http://localhost:3000/menu
+
+
+Admin menu items displaying UI fix
+
+-in component menu-items update component MenuItems.tsx do display categories
+-open route: http://localhost:3000/menu-items
