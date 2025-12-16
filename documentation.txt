@@ -275,3 +275,12 @@ Admin menu items displaying UI fix
 
 -in component menu-items update component MenuItems.tsx do display categories
 -open route: http://localhost:3000/menu-items
+
+
+About and Contact components
+
+-in folder app create folders about and contact
+-create components page.tsx
+-open: https://sora.chatgpt.com to generate restaurant interior
+-open route: http://localhost:3000/about
+-open route: http://localhost:3000/contact
