@@ -289,3 +289,11 @@ About and Contact components
 Header component - Hamburger button 
 
 -in component Header.tsx add hamburger button logic
+
+
+Cart global state - first part
+
+-create component CartContext.tsx
+-create component cart and page.tsx
+-update component MenuItem.tsx to use cart context
+-update component Header.tsx to display total number of menu items in the cart

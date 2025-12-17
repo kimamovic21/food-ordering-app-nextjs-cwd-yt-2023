@@ -3,10 +3,13 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
+import { IoCartOutline } from 'react-icons/io5';
+import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
 
 const Header = () => {
   const session = useSession();
+  const { getTotalItems } = useCart();
 
   const status = session.status;
   const userData = session?.data?.user;
@@ -17,6 +20,7 @@ const Header = () => {
   };
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const totalItems = getTotalItems();
 
   return (
     <header className='flex items-center justify-between m-4 relative'>
@@ -35,6 +39,15 @@ const Header = () => {
       </nav>
 
       <nav className='hidden md:flex items-center gap-2 text-gray-500 font-semibold'>
+        <Link href='/cart' className='relative mr-2'>
+          <IoCartOutline size={32} className='text-gray-700 hover:text-primary transition' />
+          {totalItems > 0 && (
+            <span className='absolute -top-2 -right-2 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold'>
+              {totalItems}
+            </span>
+          )}
+        </Link>
+
         {status === 'authenticated' && (
           <>
             <Link
@@ -88,6 +101,10 @@ const Header = () => {
       {mobileOpen && (
         <div className='md:hidden absolute left-0 right-0 top-full mt-2 mx-4 rounded-xl border border-gray-200 bg-white shadow-lg z-50'>
           <div className='flex flex-col p-4 text-gray-700 font-semibold gap-3'>
+            <Link href='/cart' onClick={() => setMobileOpen(false)} className='hover:text-primary flex items-center gap-2'>
+              <IoCartOutline size={24} />
+              Cart {totalItems > 0 && `(${totalItems})`}
+            </Link>
             <Link href='/menu' onClick={() => setMobileOpen(false)} className='hover:text-primary'>Menu</Link>
             <Link href='/about' onClick={() => setMobileOpen(false)} className='hover:text-primary'>About</Link>
             <Link href='/contact' onClick={() => setMobileOpen(false)} className='hover:text-primary'>Contact</Link>

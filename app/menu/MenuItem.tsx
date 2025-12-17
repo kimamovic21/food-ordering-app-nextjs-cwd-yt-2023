@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useCart } from '@/contexts/CartContext';
+import toast from 'react-hot-toast';
 import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
 
@@ -23,6 +25,7 @@ type Size = 'small' | 'medium' | 'large';
 
 const MenuItem = ({ item }: MenuItemProps) => {
   const [selectedSize, setSelectedSize] = useState<Size>('small');
+  const { addToCart } = useCart();
 
   const displayItem = item || {
     _id: 'default',
@@ -47,7 +50,19 @@ const MenuItem = ({ item }: MenuItemProps) => {
         return displayItem.priceLarge;
       default:
         return displayItem.priceSmall;
-    }
+    };
+  };
+
+  const handleAddToCart = () => {
+    addToCart({
+      _id: displayItem._id,
+      name: displayItem.name,
+      description: displayItem.description,
+      image: displayItem.image,
+      size: selectedSize,
+      price: getPrice(),
+    });
+    toast.success(`${displayItem.name} (${selectedSize}) added to cart!`);
   };
 
   return (
@@ -60,9 +75,13 @@ const MenuItem = ({ item }: MenuItemProps) => {
         )}
       </div>
 
-      <h4 className='font-semibold my-4 text-xl'>{displayItem.name}</h4>
+      <h4 className='font-semibold my-4 text-xl'>
+        {displayItem.name}
+      </h4>
 
-      <p className='mt-4 text-gray-600 text-sm grow'>{displayItem.description}</p>
+      <p className='mt-4 text-gray-600 text-sm grow'>
+        {displayItem.description}
+      </p>
 
       <div className='flex gap-1 justify-center mt-3'>
         <button
@@ -71,12 +90,14 @@ const MenuItem = ({ item }: MenuItemProps) => {
         >
           Small
         </button>
+
         <button
           onClick={() => setSelectedSize('medium')}
           className={`px-2 py-1 rounded text-xs transition ${selectedSize === 'medium' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
         >
           Medium
         </button>
+
         <button
           onClick={() => setSelectedSize('large')}
           className={`px-2 py-1 rounded text-xs transition ${selectedSize === 'large' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
@@ -85,7 +106,10 @@ const MenuItem = ({ item }: MenuItemProps) => {
         </button>
       </div>
 
-      <button className='mt-4 bg-primary text-white rounded-full px-8 py-2'>
+      <button
+        onClick={handleAddToCart}
+        className='mt-4 bg-primary text-white rounded-full px-8 py-2 hover:bg-orange-700 transition'
+      >
         Add to cart ${getPrice()?.toFixed(2) || '0.00'}
       </button>
     </div>
