@@ -305,3 +305,9 @@ Cart global state - second part
 -update UI in component cart/page.tsx
 -update UI for component Header.tsx
 -update component layout.tsx
+
+
+Cart global state - third part
+
+-in api/menu-items.ts file import model category
+-update UI for user form in component cart/page.tsx

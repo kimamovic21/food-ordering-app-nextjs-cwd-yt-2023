@@ -1,3 +1,4 @@
+import '@/models/category';
 import { MenuItem } from '@/models/menuItem';
 import { isAdmin } from '../auth/[...nextauth]/route';
 import cloudinary from '@/libs/cloudinary';
