@@ -6,10 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhook",
+    "stripe:trigger": "stripe trigger checkout.session.completed"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.11.1",
+    "@stripe/react-stripe-js": "^5.4.1",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.8.0",
     "mongodb": "^6.21.0",
@@ -19,7 +22,8 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hot-toast": "^2.6.0",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "stripe": "^20.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

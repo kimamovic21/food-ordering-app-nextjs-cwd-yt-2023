@@ -297,6 +297,7 @@ Cart global state - first part
 -create component cart and page.tsx
 -update component MenuItem.tsx to use cart context
 -update component Header.tsx to display total number of menu items in the cart
+-open route: http://localhost:3000/cart
 
 
 Cart global state - second part
@@ -305,9 +306,38 @@ Cart global state - second part
 -update UI in component cart/page.tsx
 -update UI for component Header.tsx
 -update component layout.tsx
+-open route: http://localhost:3000/cart
 
 
 Cart global state - third part
 
 -in api/menu-items.ts file import model category
 -update UI for user form in component cart/page.tsx
+-open route: http://localhost:3000/cart
+
+
+Stripe payment - first part
+
+-open link: https://dashboard.stripe.com
+-open Stripe website and create new sandbox
+-open link: https://www.npmjs.com/package/stripe
+-type command: npm i stripe
+-open link: https://www.npmjs.com/package/@stripe/react-stripe-js
+-type command: npm i @stripe/react-stripe-js
+-in .env file create variables STRIPE_PK, STRIPE_SK and STRIPE_WEBHOOK_SECRET
+-in folder models create order.ts file and model Order
+-in folder api create folder checkout and route.ts file
+-in checkout/route.ts create and export async function POST()
+-create folder webhook and route.ts file
+-in webhook/route.ts file create and export async function POST()
+-in component cart/page.tsx update checkout logic
+-create folder checkout and component page.tsx
+-update package.json file with new commands
+-type command: stripe
+-type command: stripe login
+-type command: stripe listen --forward-to localhost:3000/api/webhook
+-open route: http://localhost:3000/cart and click button Proceed to Checkout
+-open MongoDB to see saved order with property paid: false
+-open route: https://checkout.stripe.com/c/pay/[stripeId]
+-add your payment information and click button Pay
+-open MongoDB to see saved order with property paid: true

@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { FaPlus, FaMinus, FaTrash } from 'react-icons/fa';
-import { useCart } from '@/contexts/CartContext';
 import { useSession } from 'next-auth/react';
-import useProfile from '@/contexts/UseProfile';
-import Link from 'next/link';
+import { toast } from 'react-hot-toast';
+import { useCart } from '@/contexts/CartContext';
 import Image from 'next/image';
+import Link from 'next/link';
 import Pizza from '@/public/pizza.png';
+import useProfile from '@/contexts/UseProfile';
 
 const CartPage = () => {
   const {
@@ -29,6 +30,7 @@ const CartPage = () => {
     city: '',
     country: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (profileData) {
@@ -42,9 +44,63 @@ const CartPage = () => {
     }
   }, [profileData]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCheckout = async () => {
+    if (!isLoggedIn) {
+      toast.error('Please sign in to proceed to checkout.');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      toast.error('Your cart is empty.');
+      return;
+    }
+
+    const missingField = Object.entries(formData).find(([, value]) => !value);
+    if (missingField) {
+      toast.error('Please complete your delivery details.');
+      return;
+    }
+
+    if (!profileData?.email) {
+      toast.error('We could not find your email. Please re-login.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          cartItems,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'Failed to start checkout.');
+      }
+
+      const data = await response.json();
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Checkout URL missing.');
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Unable to proceed to checkout.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (cartItems.length === 0) {
@@ -292,8 +348,13 @@ const CartPage = () => {
           </div>
 
           {isLoggedIn ? (
-            <button className='w-full bg-primary text-white py-2.5 sm:py-3 rounded-full font-semibold text-base sm:text-lg hover:bg-orange-700 transition'>
-              Proceed to Checkout
+            <button
+              onClick={handleCheckout}
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
+              className='w-full bg-primary text-white py-2.5 sm:py-3 rounded-full font-semibold text-base sm:text-lg hover:bg-orange-700 transition disabled:opacity-70 disabled:cursor-not-allowed'
+            >
+              {isSubmitting ? 'Redirecting...' : 'Proceed to Checkout'}
             </button>
           ) : (
             <button disabled className='w-full bg-gray-400 text-white py-2.5 sm:py-3 rounded-full font-semibold text-base sm:text-lg cursor-not-allowed'>
