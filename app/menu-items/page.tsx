@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import UserTabs from '@/components/shared/UserTabs';
+import Title from '@/components/shared/Title';
 import useProfile from '@/contexts/UseProfile';
 import MenuItemImage from './MenuItemImage';
 import MenuItemForm from './MenuItemForm';
@@ -236,7 +236,7 @@ const MenuItemsPage = () => {
 
   return (
     <section className='mt-8'>
-      <UserTabs isAdmin={true} />
+      <Title>Menu Items</Title>
 
       <form className='mt-8 max-w-md mx-auto' onSubmit={handleSubmit}>
         <div className='flex items-start gap-6'>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import UserTabs from '@/components/shared/UserTabs';
+// UserTabs removed; tabs are now in Header
 import useProfile from '@/contexts/UseProfile';
 import Link from 'next/link';
 import OrderInfoCard from './OrderInfoCard';
@@ -78,7 +78,6 @@ const OrderDetailPage = () => {
 
   return (
     <section className='mt-8'>
-      <UserTabs isAdmin={true} />
 
       <div className='mt-8 max-w-4xl mx-auto'>
         <div className='flex items-center justify-between mb-6'>

@@ -400,3 +400,11 @@ User profile update
 -open Cloudinary service to see saved user image
 -update upload/users/route.ts file
 -open route: http://localhost:3000/profile and update image and user info
+
+
+Header component update
+
+-update component Header.tsx
+-in folder shared create component Title.tsx
+-remove component UserTabs.tsx
+-update page.tsx components

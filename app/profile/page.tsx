@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import toast from 'react-hot-toast';
-import UserTabs from '@/components/shared/UserTabs';
+import Title from '@/components/shared/Title';
 import UserProfileForm from './UserProfileForm';
 import UserProfileImage from './UserProfileImage';
 
@@ -175,11 +175,11 @@ const ProfilePage = () => {
   };
 
   return (
-    <section className='mt-8 max-w-2xl mx-auto'>
-      <UserTabs isAdmin={isAdmin} />
+    <section className='mt-8 max-w-3xl mx-auto'>
+      <Title>Profile</Title>
 
       <div className='max-w-2xl mx-auto mt-8'>
-        <div className='flex gap-4 items-start'>
+        <div className='flex flex-col md:flex-row gap-4 md:items-start'>
           <UserProfileImage
             imageUrl={imageUrl}
             previewUrl={previewUrl}

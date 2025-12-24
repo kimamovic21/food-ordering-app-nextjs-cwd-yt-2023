@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import UserTabs from '@/components/shared/UserTabs';
+import Title from '@/components/shared/Title';
 import useProfile from '@/contexts/UseProfile';
 import toast from 'react-hot-toast';
 
@@ -80,8 +80,8 @@ const CategoriesPage = () => {
   };
 
   return (
-    <section className='mt-8 max-w-2xl mx-auto'>
-      <UserTabs isAdmin={true} />
+    <section className='mt-8 max-w-3xl mx-auto'>
+      <Title>Categories</Title>
 
       <form className='mt-8' onSubmit={handleCategorySubmit}>
         <div className='flex gap-2 items-end'>
@@ -116,9 +116,7 @@ const CategoriesPage = () => {
       </form>
 
       <div>
-        <h2 className='mt-8 mb-4 text-xl font-semibold'>
-          Existing categories
-        </h2>
+        <Title className='mt-8 mb-4'>Existing categories</Title>
 
         {categories.length === 0 && (
           <p>No categories yet.</p>

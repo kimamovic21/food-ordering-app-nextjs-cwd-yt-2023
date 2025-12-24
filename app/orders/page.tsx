@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import UserTabs from '@/components/shared/UserTabs';
+import Title from '@/components/shared/Title';
 import useProfile from '@/contexts/UseProfile';
 import OrdersTable from './OrdersTable';
 
@@ -51,7 +51,7 @@ const OrdersPage = () => {
 
   return (
     <section className='mt-8 flex flex-col min-h-[calc(100vh-8rem)]'>
-      <UserTabs isAdmin={true} />
+      <Title>Orders</Title>
 
       <div className='mt-8 flex-1 flex flex-col'>
         <div className='flex-1'>
