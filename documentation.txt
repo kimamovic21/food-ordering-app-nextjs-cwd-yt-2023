@@ -390,3 +390,13 @@ My orders page - second part
 -open route: http://localhost:3000/my-orders and click Finish Payment button
 -open route: http://localhost:3000/my-orders/[id]
 -open Stripe dashboard to see payments
+
+
+User profile update
+
+-in folder public add image for default user
+-in component profile create components UserProfileForm.tsx and UserProfileImage.tsx
+-in component profile/page.tsx import created components
+-open Cloudinary service to see saved user image
+-update upload/users/route.ts file
+-open route: http://localhost:3000/profile and update image and user info
