@@ -408,3 +408,20 @@ Header component update
 -in folder shared create component Title.tsx
 -remove component UserTabs.tsx
 -update page.tsx components
+
+
+Statistics charts
+
+-open link: https://ui.shadcn.com
+-open link: https://ui.shadcn.com/docs
+-open link: https://ui.shadcn.com/docs/components/chart
+-open link: https://ui.shadcn.com/docs/installation/next
+-type command: npx shadcn@latest init
+-type command: npx shadcn@latest add chart
+-open globals.css file
+-open components.json file
+-open folder ui and tsx components
+-ope folder lib and utils.ts file
+-in folder api create folder statistics and route.ts file
+-create folder statistics and component page.tsx
+-update globals.css file
