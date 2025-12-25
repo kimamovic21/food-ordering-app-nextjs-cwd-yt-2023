@@ -43,10 +43,10 @@ const OrdersTable = ({ orders, loading }: OrdersTableProps) => {
   }
 
   return (
-    <div className='rounded-xl border border-gray-200 bg-white shadow-sm'>
+    <div className='border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-950 shadow-sm'>
       <div className='overflow-x-auto'>
         <Table className='w-full min-w-[900px] table-fixed'>
-          <TableHeader className='bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-600'>
+          <TableHeader className='bg-gray-50 dark:bg-slate-900 text-left text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300'>
             <TableRow>
               <TableHead className='p-3 w-32'>Order ID</TableHead>
               <TableHead className='p-3 w-52'>Date</TableHead>
@@ -56,17 +56,17 @@ const OrdersTable = ({ orders, loading }: OrdersTableProps) => {
               <TableHead className='p-3 w-32'>Action</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className='divide-y divide-gray-100'>
+          <TableBody className='divide-y divide-gray-100 dark:divide-gray-700'>
             {orders.map((order) => (
-              <TableRow key={order._id} className='hover:bg-gray-50'>
-                <TableCell className='p-3 font-semibold text-gray-900 text-xs'>
+              <TableRow key={order._id} className='hover:bg-gray-50 dark:hover:bg-slate-900'>
+                <TableCell className='p-3 font-semibold text-gray-900 dark:text-gray-100 text-xs'>
                   {order._id.substring(0, 8)}...
                 </TableCell>
-                <TableCell className='p-3 text-gray-700'>
+                <TableCell className='p-3 text-gray-700 dark:text-gray-300'>
                   {formatDate(order.createdAt)}
                 </TableCell>
-                <TableCell className='p-3 text-gray-700'>{order.email}</TableCell>
-                <TableCell className='p-3 font-semibold text-gray-900'>
+                <TableCell className='p-3 text-gray-700 dark:text-gray-300'>{order.email}</TableCell>
+                <TableCell className='p-3 font-semibold text-gray-900 dark:text-gray-100'>
                   ${order.total.toFixed(2)}
                 </TableCell>
                 <TableCell className='p-3'>

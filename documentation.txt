@@ -485,3 +485,8 @@ Dark mode - Shadcn components
 -in components ModeToggle.tsx and ThemeProvider.tsx add code from official documentation
 -in component layout.tsx import component ThemeProvider
 -in component Header.tsx import component ModeToggle
+
+
+Tables dark mode fix
+
+-update Tailwind CSS classes in components UsersTable.tsx, OrdersTable.tsx and MyOrdersTable.tsx
