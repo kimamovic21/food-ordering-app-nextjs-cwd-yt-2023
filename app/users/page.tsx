@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Title from '@/components/shared/Title';
 import useProfile from '@/contexts/UseProfile';
-import Image from 'next/image';
+import UsersTable from './UsersTable';
 
 type UserType = {
   _id: string;
@@ -64,61 +64,7 @@ const UsersPage = () => {
 
           {!loadingUsers && users.length === 0 && <p>No users found.</p>}
 
-          {!loadingUsers && users.length > 0 && (
-            <div className='rounded-xl border border-gray-200 bg-white shadow-sm'>
-              <div className='overflow-x-auto'>
-                <table className='min-w-full text-sm'>
-                  <thead className='bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-600'>
-                    <tr>
-                      <th className='p-3'>Photo</th>
-                      <th className='p-3'>Name</th>
-                      <th className='p-3'>Email</th>
-                      <th className='p-3'>Phone</th>
-                      <th className='p-3'>Street address</th>
-                      <th className='p-3'>City / Postal</th>
-                      <th className='p-3'>Country</th>
-                      <th className='p-3'>Role</th>
-                    </tr>
-                  </thead>
-                  <tbody className='divide-y divide-gray-100'>
-                    {users.map((user) => (
-                      <tr key={user._id} className='hover:bg-gray-50'>
-                        <td className='p-3'>
-                          <div className='w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center'>
-                            {user.image ? (
-                              <Image
-                                src={user.image}
-                                alt={`${user.name}'s avatar`}
-                                width={48}
-                                height={48}
-                                className='w-12 h-12 rounded-full object-cover'
-                                referrerPolicy='no-referrer'
-                              />
-                            ) : (
-                              <span className='text-gray-400 text-xs'>No image</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className='p-3 font-semibold text-gray-900'>{user.name}</td>
-                        <td className='p-3 text-gray-700'>{user.email}</td>
-                        <td className='p-3 text-gray-700'>{user.phone || '—'}</td>
-                        <td className='p-3 text-gray-700'>{user.streetAddress || '—'}</td>
-                        <td className='p-3 text-gray-700'>
-                          {[user.city, user.postalCode].filter(Boolean).join(' ') || '—'}
-                        </td>
-                        <td className='p-3 text-gray-700'>{user.country || '—'}</td>
-                        <td className='p-3'>
-                          <span className='px-2 py-1 rounded-full text-xs border border-gray-300 bg-gray-50'>
-                            {user.admin ? 'Admin' : 'User'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          {!loadingUsers && users.length > 0 && <UsersTable users={users} />}
         </div>
 
         <div className='mt-auto pt-4 pb-4'>

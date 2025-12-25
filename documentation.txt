@@ -425,3 +425,11 @@ Statistics charts
 -in folder api create folder statistics and route.ts file
 -create folder statistics and component page.tsx
 -update globals.css file
+-open route: http://localhost:3000/statistics
+
+
+Users table update
+
+-in folder users create component UsersTable.tsx
+-in component page.tsx import component UsersTable.tsx
+-open route: http://localhost:3000/users
