@@ -3,7 +3,9 @@ import HomeMenu from './HomeMenu';
 import AboutUs from './AboutUs';
 import ContactUs from './ContactUs';
 
-const HomePage = () => {
+const HomePage = async () => {
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   return (
     <>
       <Hero />

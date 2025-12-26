@@ -521,3 +521,10 @@ Home menu items - Shadcn components
 -in folder (home) update tsx components with Shadcn components
 -update Tailwind CSS classes
 -update component layout.tsx and globals.css file
+
+
+Home page skeleton component
+
+-open link: https://ui.shadcn.com/docs/components/skeleton
+-type command: npx shadcn@latest add skeleton
+-create components skeleton.tsx
