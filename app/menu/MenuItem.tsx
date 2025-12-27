@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
@@ -66,8 +68,8 @@ const MenuItem = ({ item }: MenuItemProps) => {
   };
 
   return (
-    <div className='bg-gray-200 p-4 rounded-lg text-center group hover:bg-gray-100 transition-all hover:shadow-md hover:shadow-black/20 flex flex-col'>
-      <div className='text-center relative h-40'>
+    <Card className='p-0 overflow-hidden hover:shadow-lg transition-shadow flex flex-col'>
+      <div className='text-center relative h-40 p-4 bg-muted'>
         {isRemoteImage ? (
           <img src={imageUrl} alt={displayItem.name} className='mx-auto h-40 w-auto object-contain' />
         ) : (
@@ -75,44 +77,50 @@ const MenuItem = ({ item }: MenuItemProps) => {
         )}
       </div>
 
-      <h4 className='font-semibold my-4 text-xl'>
-        {displayItem.name}
-      </h4>
+      <div className='p-4 flex flex-col flex-1'>
+        <h4 className='font-semibold text-xl'>
+          {displayItem.name}
+        </h4>
 
-      <p className='mt-4 text-gray-600 text-sm grow'>
-        {displayItem.description}
-      </p>
+        <p className='mt-4 text-muted-foreground text-sm flex-1'>
+          {displayItem.description}
+        </p>
 
-      <div className='flex gap-1 justify-center mt-3'>
-        <button
-          onClick={() => setSelectedSize('small')}
-          className={`px-2 py-1 rounded text-xs transition ${selectedSize === 'small' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+        <div className='flex gap-1 justify-center mt-4'>
+          <Button
+            onClick={() => setSelectedSize('small')}
+            variant={selectedSize === 'small' ? 'default' : 'outline'}
+            size='sm'
+          >
+            Small
+          </Button>
+
+          <Button
+            onClick={() => setSelectedSize('medium')}
+            variant={selectedSize === 'medium' ? 'default' : 'outline'}
+            size='sm'
+          >
+            Medium
+          </Button>
+
+          <Button
+            onClick={() => setSelectedSize('large')}
+            variant={selectedSize === 'large' ? 'default' : 'outline'}
+            size='sm'
+          >
+            Large
+          </Button>
+        </div>
+
+        <Button
+          onClick={handleAddToCart}
+          className='w-full mt-4'
+          size='lg'
         >
-          Small
-        </button>
-
-        <button
-          onClick={() => setSelectedSize('medium')}
-          className={`px-2 py-1 rounded text-xs transition ${selectedSize === 'medium' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-        >
-          Medium
-        </button>
-
-        <button
-          onClick={() => setSelectedSize('large')}
-          className={`px-2 py-1 rounded text-xs transition ${selectedSize === 'large' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-        >
-          Large
-        </button>
+          Add to cart ${getPrice()?.toFixed(2) || '0.00'}
+        </Button>
       </div>
-
-      <button
-        onClick={handleAddToCart}
-        className='mt-4 bg-primary text-white rounded-full px-8 py-2 hover:bg-orange-700 transition'
-      >
-        Add to cart ${getPrice()?.toFixed(2) || '0.00'}
-      </button>
-    </div>
+    </Card>
   );
 };
 

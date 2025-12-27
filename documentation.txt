@@ -485,7 +485,7 @@ Dark mode - Shadcn components
 -in components ModeToggle.tsx and ThemeProvider.tsx add code from official documentation
 -in component layout.tsx import component ThemeProvider
 -in component Header.tsx import component ModeToggle
-
+-open route: http://localhost:3000 and click button Toggle theme
 
 Tables dark mode fix
 
@@ -514,6 +514,7 @@ Menu items - Shadcn components update
 -update Tailwind CSS classes in tsx components in folder menu-items
 -update Tailwind CSS classes in globals.css file
 -in tsx components import shadcn components from folder ui
+-open route: http://localhost:3000/menu-items
 
 
 Home menu items - Shadcn components
@@ -521,6 +522,7 @@ Home menu items - Shadcn components
 -in folder (home) update tsx components with Shadcn components
 -update Tailwind CSS classes
 -update component layout.tsx and globals.css file
+-open route: http://localhost:3000
 
 
 Home page skeleton component
@@ -528,3 +530,11 @@ Home page skeleton component
 -open link: https://ui.shadcn.com/docs/components/skeleton
 -type command: npx shadcn@latest add skeleton
 -create components skeleton.tsx
+-open route: http://localhost:3000
+
+
+Menu skeleton component
+
+-create component loading.tsx
+-update components page.tsx and MenuItem.tsx
+-open route: http://localhost:3000/menu
