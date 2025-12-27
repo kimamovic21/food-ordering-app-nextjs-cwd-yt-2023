@@ -50,7 +50,15 @@ const getCategoryName = (item: MenuItem) => {
   return item.category?.name?.toLowerCase() || '';
 };
 
-const AdminItemCard = ({ item, onEdit, onDelete }: { item: MenuItem; onEdit: (i: MenuItem) => void; onDelete: (id: string) => void }) => {
+const AdminItemCard = ({
+  item,
+  onEdit,
+  onDelete,
+}: {
+  item: MenuItem;
+  onEdit: (i: MenuItem) => void;
+  onDelete: (id: string) => void;
+}) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handleDeleteClick = () => {
@@ -64,48 +72,62 @@ const AdminItemCard = ({ item, onEdit, onDelete }: { item: MenuItem; onEdit: (i:
 
   return (
     <>
-      <Card className='hover:bg-accent/20 transition'>
-        <CardContent className='flex items-center gap-4'>
-          <div className='relative w-24 h-24 rounded-lg overflow-hidden bg-muted shrink-0'>
-            {item.image ? (
-              <Image src={item.image} alt={item.name} fill className='object-cover' />
-            ) : (
-              <div className='w-full h-full flex items-center justify-center text-muted-foreground text-xs'>No image</div>
-            )}
-          </div>
+      <Card className='hover:shadow-lg transition-shadow overflow-hidden flex flex-col h-full'>
+        <div className='relative w-full h-48 bg-muted overflow-hidden'>
+          {item.image ? (
+            <Image
+              src={item.image}
+              alt={item.name}
+              fill
+              className='object-cover hover:scale-105 transition-transform'
+            />
+          ) : (
+            <div className='w-full h-full flex items-center justify-center text-muted-foreground text-sm'>
+              No image
+            </div>
+          )}
+        </div>
 
-          <div className='grow'>
-            <h3 className='font-semibold text-lg'>{item.name}</h3>
-            {item.category && (
-              <p className='text-xs text-muted-foreground'>
-                Category: {typeof item.category === 'string' ? item.category : item.category?.name}
-              </p>
-            )}
-            {item.description && <p className='text-muted-foreground/80 text-sm'>{item.description}</p>}
+        <CardContent className='flex flex-col grow pt-4'>
+          <h3 className='font-semibold text-lg leading-tight'>{item.name}</h3>
+          {item.category && (
+            <p className='text-xs text-muted-foreground mt-1'>
+              {typeof item.category === 'string' ? item.category : item.category?.name}
+            </p>
+          )}
+          {item.description && (
+            <p className='text-muted-foreground/80 text-sm mt-2 line-clamp-2'>{item.description}</p>
+          )}
 
-            {item.priceSmall !== undefined && item.priceMedium !== undefined && item.priceLarge !== undefined ? (
-              <div className='flex gap-3 mt-2'>
-                <span className='text-sm'>
-                  <span className='text-muted-foreground'>S:</span>{' '}
-                  <span className='font-semibold text-primary'>${item.priceSmall.toFixed(2)}</span>
-                </span>
-                <span className='text-sm'>
-                  <span className='text-muted-foreground'>M:</span>{' '}
-                  <span className='font-semibold text-primary'>${item.priceMedium.toFixed(2)}</span>
-                </span>
-                <span className='text-sm'>
-                  <span className='text-muted-foreground'>L:</span>{' '}
-                  <span className='font-semibold text-primary'>${item.priceLarge.toFixed(2)}</span>
-                </span>
-              </div>
-            ) : (
-              <p className='text-destructive text-sm mt-1'>Prices missing - please edit this item</p>
-            )}
-          </div>
+          {item.priceSmall !== undefined &&
+          item.priceMedium !== undefined &&
+          item.priceLarge !== undefined ? (
+            <div className='flex flex-wrap gap-2 mt-3 text-xs'>
+              <span>
+                <span className='text-muted-foreground'>S:</span>{' '}
+                <span className='font-semibold text-primary'>${item.priceSmall.toFixed(2)}</span>
+              </span>
+              <span>
+                <span className='text-muted-foreground'>M:</span>{' '}
+                <span className='font-semibold text-primary'>${item.priceMedium.toFixed(2)}</span>
+              </span>
+              <span>
+                <span className='text-muted-foreground'>L:</span>{' '}
+                <span className='font-semibold text-primary'>${item.priceLarge.toFixed(2)}</span>
+              </span>
+            </div>
+          ) : (
+            <p className='text-destructive text-xs mt-2'>Prices missing</p>
+          )}
         </CardContent>
-        <CardFooter className='flex-col gap-2'>
-          <Button className='w-full' variant='outline' onClick={() => onEdit(item)}>Edit</Button>
-          <Button className='w-full' variant='destructive' onClick={handleDeleteClick}>Delete</Button>
+
+        <CardFooter className='flex gap-2 pt-2'>
+          <Button className='flex-1' variant='outline' size='sm' onClick={() => onEdit(item)}>
+            Edit
+          </Button>
+          <Button className='flex-1' variant='destructive' size='sm' onClick={handleDeleteClick}>
+            Delete
+          </Button>
         </CardFooter>
       </Card>
 
@@ -141,14 +163,16 @@ const MenuItems = ({ menuItems, onEdit, onDelete }: MenuItemsProps) => {
     <div className='mt-12'>
       <h2 className='text-2xl font-semibold mb-6'>Menu Items</h2>
 
-      <div className='space-y-10'>
+      <div className='space-y-12'>
         {categories.map((cat) => {
-          const items = menuItems.filter((mi) => cat.matchers.some((m) => getCategoryName(mi) === m));
+          const items = menuItems.filter((mi) =>
+            cat.matchers.some((m) => getCategoryName(mi) === m)
+          );
           return (
             <section key={cat.label}>
-              <h3 className='text-xl font-semibold mb-4'>{cat.label}</h3>
+              <h3 className='text-2xl font-semibold mb-6'>{cat.label}</h3>
               {items.length > 0 ? (
-                <div className='grid grid-cols-1 gap-4'>
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
                   {items.map((item) => (
                     <AdminItemCard key={item._id} item={item} onEdit={onEdit} onDelete={onDelete} />
                   ))}

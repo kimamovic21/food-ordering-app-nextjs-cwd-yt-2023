@@ -558,3 +558,13 @@ Users and user by id skeleton components
 -in tsx component update shadcn components form folder ui
 -open route: http://localhost:3000/users
 -open route: http://localhost:3000/users/[id]
+
+
+Menu items components update
+
+-create folders edit and new
+-in created folders create components page.tsx and loading.tsx
+-update component menu-items/page.tsx
+-open route: http://localhost:3000/menu-items
+-open route: http://localhost:3000/menu-items/new
+-open route: http://localhost:3000/menu-items/edit/[id]
