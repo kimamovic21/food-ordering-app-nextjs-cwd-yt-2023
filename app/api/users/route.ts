@@ -10,6 +10,22 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
+  const id = url.searchParams.get('id');
+
+  if (id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return Response.json({ error: 'Invalid user ID' }, { status: 400 });
+    }
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return Response.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    return Response.json({ user });
+  }
+
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
   const limit = 5;
   const skip = (page - 1) * limit;

@@ -548,3 +548,13 @@ My orders and order by id skeleton components
 -in tsx components import shadcn components from folder ui
 -open route: http://localhost:3000/my-orders
 -open route: http://localhost:3000/my-orders/[id]
+
+
+Users and user by id skeleton components
+
+-in folder api/users update route.ts file for fetching user data
+-in folder users create components loading.tsx
+-create folder [id] and component page.tsx for displaying user details
+-in tsx component update shadcn components form folder ui
+-open route: http://localhost:3000/users
+-open route: http://localhost:3000/users/[id]

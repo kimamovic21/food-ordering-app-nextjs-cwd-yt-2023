@@ -12,6 +12,7 @@ import {
 import Title from '@/components/shared/Title';
 import useProfile from '@/contexts/UseProfile';
 import UsersTable from './UsersTable';
+import UsersLoading from './loading';
 
 type UserType = {
   _id: string;
@@ -46,6 +47,10 @@ const UsersPage = () => {
         setLoadingUsers(true);
         const res = await fetch(`/api/users?page=${currentPage}`);
         const json = await res.json();
+
+        // Add 500ms delay before showing users
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         setUsers(json.users || []);
         setTotalPages(json.totalPages || 1);
       } catch (error) {
@@ -58,8 +63,17 @@ const UsersPage = () => {
     fetchUsers();
   }, [loading, data?.admin, searchParams]);
 
-  if (loading) return 'Loading user info...';
-  if (!data?.admin) return 'Not an admin';
+  if (loading || loadingUsers) {
+    return <UsersLoading />;
+  }
+
+  if (!data?.admin) {
+    return (
+      <div className='min-h-[calc(100vh-8rem)] flex items-center justify-center'>
+        <p className='text-lg'>Not an admin</p>
+      </div>
+    );
+  }
 
   return (
     <section className='mt-8 flex flex-col min-h-[calc(100vh-8rem)] max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10'>
@@ -67,11 +81,9 @@ const UsersPage = () => {
 
       <div className='mt-8 flex-1 flex flex-col'>
         <div className='flex-1'>
-          {loadingUsers && <p>Loading users...</p>}
+          {users.length === 0 && <p>No users found.</p>}
 
-          {!loadingUsers && users.length === 0 && <p>No users found.</p>}
-
-          {!loadingUsers && users.length > 0 && <UsersTable users={users} />}
+          {users.length > 0 && <UsersTable users={users} />}
         </div>
 
         <div className='mt-auto pt-4 pb-4'>
