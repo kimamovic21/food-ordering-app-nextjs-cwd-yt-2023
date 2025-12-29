@@ -588,3 +588,8 @@ Menu & Menu items - displaying all categories from db
 -update menu-items/route.ts file
 -update components menu-items/page.tsx and MenuItems.tsx
 -update components menu/page.tsx and MenuItem.tsx
+
+
+Shadcn and (home) components update
+
+-in folders ui and (home) refactor existing code

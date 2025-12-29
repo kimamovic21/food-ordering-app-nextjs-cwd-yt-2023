@@ -20,23 +20,18 @@ const Hero = () => {
         </p>
 
         <div className='flex gap-4'>
-          <Button className='uppercase rounded-full' size="lg">
+          <Button className='uppercase rounded-full' size='lg'>
             Order now <FaArrowCircleRight />
           </Button>
 
-          <Button variant="outline" className='rounded-full' size="lg">
+          <Button variant='outline' className='rounded-full' size='lg'>
             Learn more <FaArrowCircleRight />
           </Button>
         </div>
       </div>
 
       <div className='relative'>
-        <Image
-          src={Pizza}
-          alt='Pizza Cover'
-          layout='fill'
-          objectFit='contain'
-        />
+        <Image src={Pizza} alt='Pizza Cover' layout='fill' objectFit='contain' />
       </div>
     </section>
   );

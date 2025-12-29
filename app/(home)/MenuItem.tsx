@@ -5,7 +5,7 @@ import { useCart } from '@/contexts/CartContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
-import Image from 'next/image'
+import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
 
 interface MenuItemType {
@@ -40,7 +40,9 @@ const MenuItem = ({ item }: MenuItemProps) => {
   };
 
   const imageUrl = displayItem.image || Pizza.src;
-  const isRemoteImage = typeof imageUrl === 'string' && (imageUrl.startsWith('http') || imageUrl.includes('cloudinary'));
+  const isRemoteImage =
+    typeof imageUrl === 'string' &&
+    (imageUrl.startsWith('http') || imageUrl.includes('cloudinary'));
 
   const getPrice = () => {
     switch (selectedSize) {
@@ -88,43 +90,35 @@ const MenuItem = ({ item }: MenuItemProps) => {
       </div>
 
       <div className='p-4 flex flex-col flex-1'>
-        <h4 className='font-semibold text-xl'>
-          {displayItem.name}
-        </h4>
+        <h4 className='font-semibold text-xl'>{displayItem.name}</h4>
 
-        <p className='mt-4 text-muted-foreground text-sm flex-1'>
-          {displayItem.description}
-        </p>
+        <p className='mt-4 text-muted-foreground text-sm flex-1'>{displayItem.description}</p>
 
         <div className='flex gap-1 justify-center mt-4'>
           <Button
             onClick={() => setSelectedSize('small')}
             variant={selectedSize === 'small' ? 'default' : 'outline'}
-            size="sm"
+            size='sm'
           >
             Small
           </Button>
           <Button
             onClick={() => setSelectedSize('medium')}
             variant={selectedSize === 'medium' ? 'default' : 'outline'}
-            size="sm"
+            size='sm'
           >
             Medium
           </Button>
           <Button
             onClick={() => setSelectedSize('large')}
             variant={selectedSize === 'large' ? 'default' : 'outline'}
-            size="sm"
+            size='sm'
           >
             Large
           </Button>
         </div>
 
-        <Button
-          onClick={handleAddToCart}
-          className='w-full mt-4'
-          size="lg"
-        >
+        <Button onClick={handleAddToCart} className='w-full mt-4' size='lg'>
           Add to cart ${getPrice()?.toFixed(2) || '0.00'}
         </Button>
       </div>

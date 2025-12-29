@@ -49,9 +49,7 @@ const HomeMenu = () => {
           Check out
         </h3>
 
-        <h2 className='text-primary font-bold text-4xl italic'>
-          Menu
-        </h2>
+        <h2 className='text-primary font-bold text-4xl italic'>Menu</h2>
       </div>
 
       {loading ? (
@@ -63,7 +61,9 @@ const HomeMenu = () => {
           ))}
         </div>
       ) : (
-        <div className='text-center py-8 text-gray-500 dark:text-gray-400'>No pizzas available at the moment...</div>
+        <div className='text-center py-8 text-gray-500 dark:text-gray-400'>
+          No pizzas available at the moment...
+        </div>
       )}
     </section>
   );
