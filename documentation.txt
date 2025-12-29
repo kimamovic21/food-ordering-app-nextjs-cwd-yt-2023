@@ -570,3 +570,14 @@ Menu items components update
 -open route: http://localhost:3000/menu-items
 -open route: http://localhost:3000/menu-items/new
 -open route: http://localhost:3000/menu-items/edit/[id]
+
+
+Categories - delete category & shadcn components
+
+-update route.ts file with function DELETE()
+-in component categories/page.tsx import shadcn components from folder ui
+-update ui and ux for editing and deleting categories
+-create category test and menu item with category test
+-open route: http://localhost:3000/categories to see all categories
+-delete category test
+-open Cloudinary service to see if menu item image is deleted
