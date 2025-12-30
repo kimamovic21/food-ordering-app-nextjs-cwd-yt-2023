@@ -1,3 +1,5 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 type CustomerInfoCardProps = {
   email: string;
   phone: string;
@@ -16,35 +18,39 @@ const CustomerInfoCard = ({
   country,
 }: CustomerInfoCardProps) => {
   return (
-    <div className='bg-white rounded-xl border border-gray-200 shadow-sm p-6'>
-      <h2 className='text-lg font-semibold mb-4'>Customer Information</h2>
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-        <div>
-          <p className='text-sm text-gray-600'>Email</p>
-          <p className='font-semibold text-gray-900'>{email}</p>
+    <Card>
+      <CardHeader>
+        <CardTitle>Customer Information</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div>
+            <p className='text-sm text-muted-foreground'>Email</p>
+            <p className='font-semibold text-foreground'>{email}</p>
+          </div>
+          <div>
+            <p className='text-sm text-muted-foreground'>Phone</p>
+            <p className='font-semibold text-foreground'>{phone}</p>
+          </div>
+          <div>
+            <p className='text-sm text-muted-foreground'>Street Address</p>
+            <p className='font-semibold text-foreground'>{streetAddress}</p>
+          </div>
+          <div>
+            <p className='text-sm text-muted-foreground'>Postal Code</p>
+            <p className='font-semibold text-foreground'>{postalCode}</p>
+          </div>
+          <div>
+            <p className='text-sm text-muted-foreground'>City</p>
+            <p className='font-semibold text-foreground'>{city}</p>
+          </div>
+          <div>
+            <p className='text-sm text-muted-foreground'>Country</p>
+            <p className='font-semibold text-foreground'>{country}</p>
+          </div>
         </div>
-        <div>
-          <p className='text-sm text-gray-600'>Phone</p>
-          <p className='font-semibold text-gray-900'>{phone}</p>
-        </div>
-        <div>
-          <p className='text-sm text-gray-600'>Street Address</p>
-          <p className='font-semibold text-gray-900'>{streetAddress}</p>
-        </div>
-        <div>
-          <p className='text-sm text-gray-600'>Postal Code</p>
-          <p className='font-semibold text-gray-900'>{postalCode}</p>
-        </div>
-        <div>
-          <p className='text-sm text-gray-600'>City</p>
-          <p className='font-semibold text-gray-900'>{city}</p>
-        </div>
-        <div>
-          <p className='text-sm text-gray-600'>Country</p>
-          <p className='font-semibold text-gray-900'>{country}</p>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

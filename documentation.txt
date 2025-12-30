@@ -625,3 +625,10 @@ Orders - skeleton component
 -in component orders/page.tsx import skeleton component
 -update component OrdersTable.tsx
 -open route: http://localhost:3000/orders
+
+
+Order by id - shadcn components
+
+-in folder order/[id] create component loading.tsx
+-update tsx components with shadcn components
+-open route: http://localhost:3000/orders/[id]

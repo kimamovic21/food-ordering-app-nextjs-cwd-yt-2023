@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-// UserTabs removed; tabs are now in Header
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
 import useProfile from '@/contexts/UseProfile';
 import Link from 'next/link';
 import OrderInfoCard from './OrderInfoCard';
@@ -67,52 +76,124 @@ const OrderDetailPage = () => {
     }
   }, [orderId, profileData?.admin, profileLoading]);
 
-  if (profileLoading) return 'Loading user info...';
-  if (!profileData?.admin) return 'Not an admin';
+  if (profileLoading || (loading && !order)) {
+    return (
+      <section className='mt-8 max-w-6xl mx-auto px-4 sm:px-6 lg:px-10'>
+        <Breadcrumb className='mb-6'>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <Skeleton className='h-4 w-16' />
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <Skeleton className='h-4 w-24' />
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
-  if (loading) return <div className='mt-8'>Loading order details...</div>;
+        <div className='space-y-6'>
+          <Card>
+            <CardHeader>
+              <Skeleton className='h-6 w-full max-w-xs' />
+            </CardHeader>
+            <CardContent>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                {[...Array(4)].map((_, idx) => (
+                  <div key={idx}>
+                    <Skeleton className='h-4 w-40 mb-2' />
+                    <Skeleton className='h-6 w-full' />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className='h-6 w-full max-w-xs' />
+            </CardHeader>
+            <CardContent>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                {[...Array(6)].map((_, idx) => (
+                  <div key={idx}>
+                    <Skeleton className='h-4 w-40 mb-2' />
+                    <Skeleton className='h-6 w-full' />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className='h-6 w-full max-w-xs' />
+            </CardHeader>
+            <CardContent>
+              <div className='space-y-4'>
+                <div className='space-y-2'>
+                  {[...Array(3)].map((_, idx) => (
+                    <Skeleton key={idx} className='h-12 w-full' />
+                  ))}
+                </div>
+                <div className='border-t pt-4 space-y-2'>
+                  <div className='flex justify-between'>
+                    <Skeleton className='h-5 w-20' />
+                    <Skeleton className='h-5 w-16' />
+                  </div>
+                  <div className='flex justify-between border-t pt-2'>
+                    <Skeleton className='h-6 w-16' />
+                    <Skeleton className='h-6 w-20' />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+    );
+  }
+
+  if (!profileData?.admin) return 'Not an admin';
 
   if (error) return <div className='mt-8 text-red-600'>{error}</div>;
 
   if (!order) return <div className='mt-8'>Order not found</div>;
 
   return (
-    <section className='mt-8'>
+    <section className='mt-8 max-w-6xl mx-auto px-4 sm:px-6 lg:px-10'>
+      <Breadcrumb className='mb-6'>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href='/orders'>Orders</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Order Details</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
-      <div className='mt-8 max-w-4xl mx-auto'>
-        <div className='flex items-center justify-between mb-6'>
-          <h1 className='text-3xl font-bold'>Order Details</h1>
-          <Link
-            href='/orders'
-            className='px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-medium'
-          >
-            ← Back
-          </Link>
-        </div>
+      <div className='space-y-6'>
+        <OrderInfoCard
+          orderId={order._id}
+          paid={order.paid}
+          createdAt={order.createdAt}
+          updatedAt={order.updatedAt}
+          stripeSessionId={order.stripeSessionId}
+        />
 
-        <div className='space-y-6'>
-          <OrderInfoCard
-            orderId={order._id}
-            paid={order.paid}
-            createdAt={order.createdAt}
-            updatedAt={order.updatedAt}
-            stripeSessionId={order.stripeSessionId}
-          />
+        <CustomerInfoCard
+          email={order.email}
+          phone={order.phone}
+          streetAddress={order.streetAddress}
+          postalCode={order.postalCode}
+          city={order.city}
+          country={order.country}
+        />
 
-          <CustomerInfoCard
-            email={order.email}
-            phone={order.phone}
-            streetAddress={order.streetAddress}
-            postalCode={order.postalCode}
-            city={order.city}
-            country={order.country}
-          />
-
-          <OrderItemsCard
-            cartProducts={order.cartProducts}
-            total={order.total}
-          />
-        </div>
+        <OrderItemsCard cartProducts={order.cartProducts} total={order.total} />
       </div>
     </section>
   );
