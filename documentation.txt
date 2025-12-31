@@ -665,3 +665,14 @@ Folder (auth)
 
 -in folder app create folder (auth)
 -move folders register and login with tsx components in folder (auth)
+
+
+Register shadcn components
+
+-open link: https://www.npmjs.com/package/react-google-button
+-type command: npm i react-google-button
+-in folder register RegisterUserForm.tsx 
+-in component RegisterUserForm.tsx import shadcn components
+-add zod validation
+-in component register/page.tsx import component RegisterUserForm
+-open route: http://localhost:3000/register

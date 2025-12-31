@@ -25,7 +25,7 @@ input[type='password']:not([data-slot='input']),
 input[type='tel']:not([data-slot='input']),
 input[type='text']:not([data-slot='input']) {
   @apply block w-full mb-2 rounded-xl;
-  @apply border p-2 border-gray-300 bg-gray-100;
+  @apply border p-2 border-gray-300 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white;
 }
 
 input[type='email']:disabled:not([data-slot='input']),
