@@ -686,3 +686,14 @@ Login shadcn components
 -create component loading.tsx
 -in component login/page.tsx import component LoginUserForm
 -open route: http://localhost:3000/login
+
+
+Statistics for orders and users update
+
+-in folder api/statistics create folders orders and users
+-in folders orders and users create route.ts files
+-in folder statistics create folders users and orders
+-in folders users and orders create components page.tsx
+-open route: http://localhost:3000/statistics
+-open route: http://localhost:3000/statistics/users
+-open route: http://localhost:3000/statistics/orders

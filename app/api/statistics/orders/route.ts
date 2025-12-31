@@ -1,31 +1,28 @@
 import mongoose from 'mongoose';
-import { Order } from '@/models/order';
-import { User } from '@/models/user';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/libs/authOptions';
+import { Order } from '@/models/order';
+import { User } from '@/models/user';
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
-    // Check if user is admin
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await mongoose.connect(process.env.MONGODB_URL as string);
 
-    // Get user to check admin status
-    const user = await User.findOne({ email: session.user.email });
-    if (!user || !user.admin) {
+    const adminUser = await User.findOne({ email: session.user.email });
+    if (!adminUser || !adminUser.admin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Get all orders
     const orders = await Order.find().sort({ createdAt: -1 });
+    const now = new Date();
 
-    // Calculate statistics
     const totalOrders = orders.length;
     const paidOrders = orders.filter((order) => order.paid).length;
     const unpaidOrders = orders.filter((order) => !order.paid).length;
@@ -33,11 +30,6 @@ export async function GET() {
       .filter((order) => order.paid)
       .reduce((sum, order) => sum + order.total, 0);
 
-    // Get total users
-    const totalUsers = await User.countDocuments();
-
-    // Group orders by date for charts
-    const now = new Date();
     const ordersLast12Months = orders.filter((order) => {
       const orderDate = new Date(order.createdAt);
       const monthsAgo = new Date(now);
@@ -45,8 +37,7 @@ export async function GET() {
       return orderDate >= monthsAgo;
     });
 
-    // Orders per month for the last 12 months
-    const ordersPerMonth: { [key: string]: number } = {};
+    const ordersPerMonth: Record<string, number> = {};
     for (let i = 11; i >= 0; i--) {
       const date = new Date(now);
       date.setMonth(date.getMonth() - i);
@@ -65,30 +56,29 @@ export async function GET() {
       }
     });
 
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     const monthlyData = Object.entries(ordersPerMonth).map(([month, count]) => {
       const [year, monthNum] = month.split('-');
-      const monthNames = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
       return {
-        month: `${monthNames[parseInt(monthNum) - 1]} ${year}`,
+        month: `${monthNames[parseInt(monthNum, 10) - 1]} ${year}`,
         orders: count,
       };
     });
 
-    // Daily data for area chart (last 365 days)
-    const dailyOrdersMap: { [key: string]: number } = {};
+    const dailyOrdersMap: Record<string, number> = {};
     const ordersLast365Days = orders.filter((order) => {
       const orderDate = new Date(order.createdAt);
       const daysAgo = new Date(now);
@@ -96,7 +86,6 @@ export async function GET() {
       return orderDate >= daysAgo;
     });
 
-    // Initialize all days in the last 365 days
     for (let i = 364; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
@@ -122,12 +111,11 @@ export async function GET() {
       paidOrders,
       unpaidOrders,
       totalIncome,
-      totalUsers,
       monthlyData,
       dailyData,
     });
   } catch (error) {
-    console.error('Error fetching statistics:', error);
-    return NextResponse.json({ error: 'Failed to fetch statistics' }, { status: 500 });
+    console.error('Error fetching orders statistics:', error);
+    return NextResponse.json({ error: 'Failed to fetch orders statistics' }, { status: 500 });
   }
 }
