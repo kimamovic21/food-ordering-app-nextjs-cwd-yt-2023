@@ -35,20 +35,16 @@ const RegisterPage = () => {
     } catch (err) {
       console.error(err);
       setError(true);
-    };
+    }
   };
 
   return (
     <section className='mt-8 w-lg'>
-      <h2 className='text-center text-primary text-4xl mb-4'>
-        Register
-      </h2>
+      <h2 className='text-center text-primary text-4xl mb-4'>Register</h2>
 
       {userCreated && (
         <div className='my-4 text-center text-green-700'>
-          <span className='mr-1'>
-            User created. Now you can
-          </span>
+          <span className='mr-1'>User created. Now you can</span>
           <Link href={'/login'} className='underline'>
             Login.
           </Link>
@@ -56,21 +52,16 @@ const RegisterPage = () => {
       )}
 
       {error && (
-        <div className='my-4 text-center text-red-700'>
-          There was an error. Please try again.
-        </div>
+        <div className='my-4 text-center text-red-700'>There was an error. Please try again.</div>
       )}
 
-      <form
-        className='w-full'
-        onSubmit={handleFormSubmit}
-      >
+      <form className='w-full' onSubmit={handleFormSubmit}>
         <input
           name='name'
           type='text'
           placeholder='name'
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
           disabled={creatingUser}
           required
         />
@@ -80,7 +71,7 @@ const RegisterPage = () => {
           type='text'
           placeholder='email'
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           disabled={creatingUser}
           required
         />
@@ -90,40 +81,30 @@ const RegisterPage = () => {
           type='password'
           placeholder='password'
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
           disabled={creatingUser}
           required
         />
 
-        <button
-          type='submit'
-          disabled={creatingUser}
-        >
+        <button type='submit' disabled={creatingUser}>
           Register
         </button>
-        <p className='my-4 text-center text-gray-500'>
-          or register with provider
-        </p>
+        <p className='my-4 text-center text-gray-500'>or register with provider</p>
         <button
           type='button'
           className='flex items-center gap-4'
-          onClick={() => signIn('google', {
-            callbackUrl: '/'
-          })}
+          onClick={() =>
+            signIn('google', {
+              callbackUrl: '/',
+            })
+          }
         >
-          <Image
-            src={GoogleIcon}
-            alt='Google Icon'
-            width={24}
-            height={24}
-          />
+          <Image src={GoogleIcon} alt='Google Icon' width={24} height={24} />
           Register with Google
         </button>
 
         <div className='text-center my-4 border-t border-gray-500 pt-4'>
-          <span className='mr-1 text-gray-500'>
-            Existing account?
-          </span>
+          <span className='mr-1 text-gray-500'>Existing account?</span>
           <Link href={'/login'} className='underline text-blue-600'>
             Login here
           </Link>

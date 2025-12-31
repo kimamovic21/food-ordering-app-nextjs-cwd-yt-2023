@@ -659,3 +659,9 @@ About and contact pages UI update
 -update ui in components about/page.tsx and contact/page.tsx
 -open route: http://localhost:3000/about
 -open route: http://localhost:3000/contact
+
+
+Folder (auth)
+
+-in folder app create folder (auth)
+-move folders register and login with tsx components in folder (auth)

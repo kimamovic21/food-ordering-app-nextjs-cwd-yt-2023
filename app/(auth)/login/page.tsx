@@ -21,38 +21,31 @@ const LoginPage = () => {
       await signIn('credentials', {
         email,
         password,
-        callbackUrl: '/'
+        callbackUrl: '/',
       });
 
       setLoginInProgress(false);
     } catch (err) {
       console.error(err);
       setError(true);
-    };
+    }
   };
 
   return (
     <section className='mt-8 w-lg'>
-      <h2 className='text-center text-primary text-4xl mb-4'>
-        Login
-      </h2>
+      <h2 className='text-center text-primary text-4xl mb-4'>Login</h2>
 
       {error && (
-        <div className='my-4 text-center text-red-700'>
-          There was an error. Please try again.
-        </div>
+        <div className='my-4 text-center text-red-700'>There was an error. Please try again.</div>
       )}
 
-      <form
-        className='w-full'
-        onSubmit={handleFormSubmit}
-      >
+      <form className='w-full' onSubmit={handleFormSubmit}>
         <input
           name='email'
           type='text'
           placeholder='email'
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           disabled={loginInProgress}
           required
         />
@@ -62,40 +55,30 @@ const LoginPage = () => {
           type='password'
           placeholder='password'
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
           disabled={loginInProgress}
           required
         />
 
-        <button
-          type='submit'
-          disabled={loginInProgress}
-        >
+        <button type='submit' disabled={loginInProgress}>
           Login
         </button>
-        <p className='my-4 text-center text-gray-500'>
-          or login with provider
-        </p>
+        <p className='my-4 text-center text-gray-500'>or login with provider</p>
         <button
           type='button'
           className='flex items-center gap-4'
-          onClick={() => signIn('google', {
-            callbackUrl: '/'
-          })}
+          onClick={() =>
+            signIn('google', {
+              callbackUrl: '/',
+            })
+          }
         >
-          <Image
-            src={GoogleIcon}
-            alt='Google Icon'
-            width={24}
-            height={24}
-          />
+          <Image src={GoogleIcon} alt='Google Icon' width={24} height={24} />
           Login with Google
         </button>
 
         <div className='text-center my-4 border-t border-gray-500 pt-4'>
-          <span className='mr-1 text-gray-500'>
-            Don&apos;t have an account?
-          </span>
+          <span className='mr-1 text-gray-500'>Don&apos;t have an account?</span>
           <Link href={'/register'} className='underline text-blue-600'>
             Register here
           </Link>
