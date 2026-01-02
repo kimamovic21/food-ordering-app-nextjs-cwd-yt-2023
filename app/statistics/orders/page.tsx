@@ -21,6 +21,7 @@ import {
 import useProfile from '@/contexts/UseProfile';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
+import OrdersStatisticsLoading from './loading';
 
 interface OrdersStatistics {
   totalOrders: number;
@@ -111,12 +112,7 @@ const OrdersStatisticsPage = () => {
   } satisfies ChartConfig;
 
   if (profileLoading || loading) {
-    return (
-      <section className='mt-8 max-w-7xl mx-auto px-4'>
-        <Title>Orders statistics</Title>
-        <div className='mt-4 text-center'>Loading...</div>
-      </section>
-    );
+    return <OrdersStatisticsLoading />;
   }
 
   if (!statistics) {

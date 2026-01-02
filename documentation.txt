@@ -697,3 +697,14 @@ Statistics for orders and users update
 -open route: http://localhost:3000/statistics
 -open route: http://localhost:3000/statistics/users
 -open route: http://localhost:3000/statistics/orders
+
+
+Statistics skeleton components
+
+-in folder statistics create component loading.tsx
+-in statistics/page.tsx component import component StatisticsLoading
+-in folders orders and users create components loading.tsx
+-in page.tsx components import loading components
+-open route: http://localhost:3000/statistics
+-open route: http://localhost:3000/statistics/orders
+-open route: http://localhost:3000/statistics/users

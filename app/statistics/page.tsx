@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import useProfile from '@/contexts/UseProfile';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
+import StatisticsLoading from './loading';
 
 interface StatisticsSummary {
   totalOrders: number;
@@ -54,12 +55,7 @@ const StatisticsPage = () => {
   }, [profileData]);
 
   if (profileLoading || loading) {
-    return (
-      <section className='mt-8 max-w-7xl mx-auto px-4'>
-        <Title>Statistics</Title>
-        <div className='mt-8 text-center'>Loading...</div>
-      </section>
-    );
+    return <StatisticsLoading />;
   }
 
   if (!statistics) {
