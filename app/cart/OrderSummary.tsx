@@ -1,6 +1,4 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -18,7 +16,7 @@ interface OrderSummaryProps {
   disableOnClick?: boolean;
 }
 
-const OrderSummary: React.FC<OrderSummaryProps & { formData?: any }> = ({
+const OrderSummary: React.FC<OrderSummaryProps> = ({
   subtotal,
   deliveryFee,
   loyaltyDiscountPercentage,
@@ -29,17 +27,11 @@ const OrderSummary: React.FC<OrderSummaryProps & { formData?: any }> = ({
   handleCheckout,
   calculatingFee,
   disableOnClick = true,
-  formData,
 }) => {
   const [clicked, setClicked] = useState(false);
   const tax = subtotal * 0.1;
   const finalDeliveryFee = deliveryFee - loyaltyDiscount;
   const total = subtotal + tax + finalDeliveryFee;
-
-  // Reset clicked state when formData changes (user edits delivery info)
-  useEffect(() => {
-    setClicked(false);
-  }, [formData]);
 
   return (
     <div className='bg-card border rounded-xl p-4 sm:p-6 space-y-3 sm:space-y-4'>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, CreditCard } from 'lucide-react';
+import { useState } from 'react';
 import {
   Table,
   TableHeader,
@@ -10,6 +10,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Eye, CreditCard } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -30,6 +31,8 @@ type MyOrdersTableProps = {
 };
 
 const MyOrdersTable = ({ orders, loading }: MyOrdersTableProps) => {
+  const [processingPayment, setProcessingPayment] = useState<string | null>(null);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -38,6 +41,30 @@ const MyOrdersTable = ({ orders, loading }: MyOrdersTableProps) => {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleFinishPayment = async (orderId: string) => {
+    try {
+      setProcessingPayment(orderId);
+      const res = await fetch(`/api/payment-link?orderId=${orderId}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Failed to get payment link');
+        return;
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert('Payment link not available');
+      }
+    } catch (error) {
+      console.error('Error fetching payment link:', error);
+      alert('Failed to get payment link');
+    } finally {
+      setProcessingPayment(null);
+    }
   };
 
   if (loading) {
@@ -99,7 +126,7 @@ const MyOrdersTable = ({ orders, loading }: MyOrdersTableProps) => {
               <TableHead className='p-3 w-32'>Total</TableHead>
               <TableHead className='p-3 w-32'>Payment</TableHead>
               <TableHead className='p-3 w-36'>Order Status</TableHead>
-              <TableHead className='p-3 w-40'>Actions</TableHead>
+              <TableHead className='p-3 w-40'>Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className='divide-y divide-border'>
@@ -140,25 +167,30 @@ const MyOrdersTable = ({ orders, loading }: MyOrdersTableProps) => {
                   </Badge>
                 </TableCell>
                 <TableCell className='p-3'>
-                  <div className='flex gap-2'>
+                  <div className='flex items-center gap-4'>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Link href={`/my-orders/${order._id}`} aria-label='View Order'>
-                          <Eye className='size-5' />
+                        <Link
+                          href={`/my-orders/${order._id}`}
+                          aria-label='View Order'
+                          className='flex items-center'
+                        >
+                          <Eye className='size-5 text-muted-foreground hover:text-primary transition-colors align-middle' />
                         </Link>
                       </TooltipTrigger>
-                      <TooltipContent>View order details</TooltipContent>
+                      <TooltipContent>Order details</TooltipContent>
                     </Tooltip>
                     {!order.paymentStatus && (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Link
-                            href={`/checkout/${order._id}`}
+                          <CreditCard
                             aria-label='Finish Payment'
-                            className='cursor-pointer text-primary'
-                          >
-                            <CreditCard className='size-5' />
-                          </Link>
+                            onClick={() => handleFinishPayment(order._id)}
+                            className={`size-5 text-primary align-middle cursor-pointer hover:opacity-80 ${processingPayment === order._id ? 'opacity-50 pointer-events-none' : ''}`}
+                            style={{ verticalAlign: 'middle' }}
+                            tabIndex={0}
+                            role='button'
+                          />
                         </TooltipTrigger>
                         <TooltipContent>Finish payment</TooltipContent>
                       </Tooltip>

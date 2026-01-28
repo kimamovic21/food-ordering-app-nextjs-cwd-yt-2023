@@ -2,56 +2,6 @@ import { isAdminOrManager } from '@/app/api/auth/[...nextauth]/route';
 import { Order } from '@/models/order';
 import mongoose from 'mongoose';
 
-export async function POST(request: Request) {
-  await mongoose.connect(process.env.MONGODB_URL as string);
-
-  try {
-    const body = await request.json();
-    // Validate required fields
-    const requiredFields = [
-      'email',
-      'phone',
-      'streetAddress',
-      'postalCode',
-      'city',
-      'country',
-      'cartProducts',
-      'deliveryFee',
-      'total',
-    ];
-    for (const field of requiredFields) {
-      if (!body[field]) {
-        return Response.json({ error: `Missing field: ${field}` }, { status: 400 });
-      }
-    }
-
-    const order = await Order.create({
-      userId: body.userId,
-      email: body.email,
-      phone: body.phone,
-      streetAddress: body.streetAddress,
-      postalCode: body.postalCode,
-      city: body.city,
-      country: body.country,
-      cartProducts: body.cartProducts,
-      deliveryFee: body.deliveryFee,
-      deliveryFeeBreakdown: body.deliveryFeeBreakdown,
-      loyaltyDiscount: body.loyaltyDiscount,
-      loyaltyDiscountPercentage: body.loyaltyDiscountPercentage,
-      loyaltyTier: body.loyaltyTier,
-      total: body.total,
-      orderPaid: false,
-      orderStatus: 'placed',
-      courierId: null,
-      stripeSessionId: null,
-    });
-
-    return Response.json({ order: normalizeOrder(order.toObject()) });
-  } catch (error: any) {
-    return Response.json({ error: error.message || 'Order creation failed.' }, { status: 500 });
-  }
-}
-
 const normalizeOrder = (order: any) => ({
   ...order,
   paymentStatus: Boolean(order.orderPaid ?? order.paymentStatus ?? order.paid),
@@ -60,15 +10,13 @@ const normalizeOrder = (order: any) => ({
 
 export async function GET(request: Request) {
   await mongoose.connect(process.env.MONGODB_URL as string);
+
+  if (!(await isAdminOrManager())) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const url = new URL(request.url);
-  // Get user session
-  const session = await import('@/libs/authOptions')
-    .then((m) => m.authOptions)
-    .then(async (authOptions) => {
-      const { getServerSession } = await import('next-auth/next');
-      return getServerSession(authOptions);
-    });
-  const userEmail = session?.user?.email;
+
   const id = url.searchParams.get('id');
 
   if (id) {
@@ -80,17 +28,6 @@ export async function GET(request: Request) {
 
     if (!order) {
       return Response.json({ error: 'Order not found' }, { status: 404 });
-    }
-
-    // Only allow if user is owner, or admin/manager
-    if (
-      !userEmail ||
-      (order.email !== userEmail &&
-        !(await import('@/app/api/auth/[...nextauth]/route')
-          .then((m) => m.isAdminOrManager())
-          .catch(() => false)))
-    ) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     return Response.json({ order: normalizeOrder(order) });

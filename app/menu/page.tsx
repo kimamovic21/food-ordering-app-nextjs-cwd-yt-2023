@@ -61,7 +61,7 @@ const MenuPage = () => {
   }, []);
 
   useEffect(() => {
-    const query = searchParams.get('q');
+    const query = searchParams!.get('q');
     if (query) {
       setSearchInput(query);
       setActiveSearch(query);

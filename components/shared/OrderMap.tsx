@@ -36,12 +36,12 @@ const courierIcon = createCustomIcon('red');
 const customerIcon = createCustomIcon('blue');
 
 // Component to update map view when locations change
-function MapUpdater({ 
-  coordinates, 
+function MapUpdater({
+  coordinates,
   courierLocation,
-  hasCustomerLocation
-}: { 
-  coordinates: [number, number] | null; 
+  hasCustomerLocation,
+}: {
+  coordinates: [number, number] | null;
   courierLocation: [number, number] | null;
   hasCustomerLocation: boolean;
 }) {
@@ -55,7 +55,7 @@ function MapUpdater({
       // Calculate center point between courier and customer
       center = [
         (coordinates[0] + courierLocation[0]) / 2,
-        (coordinates[1] + courierLocation[1]) / 2
+        (coordinates[1] + courierLocation[1]) / 2,
       ];
       zoom = 14;
     } else if (courierLocation) {
@@ -96,18 +96,16 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
 
       try {
         setCourierLoading(true);
-        
+
         // Use different endpoint based on whether orderId is provided (admin view) or not (courier view)
-        const endpoint = orderId 
+        const endpoint = orderId
           ? `/api/orders/courier-location?orderId=${orderId}`
           : '/api/my-delivery/location';
-        
+
         const res = await fetch(endpoint);
         if (res.ok) {
           const data = await res.json();
           const { latitude, longitude } = data.location || {};
-
-          console.log('Fetched courier location:', { latitude, longitude });
 
           // Validate that we have valid numeric coordinates
           if (
@@ -143,7 +141,7 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
       const geocodeAddress = async () => {
         try {
           setLoading(true);
-          
+
           // Only geocode if we have all required address components
           if (!address || !city || !postalCode || !country) {
             if (isMountedRef.current) {
@@ -152,7 +150,7 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
             }
             return;
           }
-          
+
           // Format address for geocoding
           const fullAddress = `${address}, ${city}, ${postalCode}, ${country}`;
           const encodedAddress = encodeURIComponent(fullAddress);
@@ -221,7 +219,7 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
       };
     }, [address, city, postalCode, country, orderId]);
 
-    if (loading && (address && city && postalCode && country)) {
+    if (loading && address && city && postalCode && country) {
       return (
         <div className='border rounded-lg p-4 h-[300px] flex items-center justify-center bg-slate-50 dark:bg-slate-900'>
           <p className='text-muted-foreground'>Loading map...</p>
@@ -261,7 +259,7 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
       // Both courier and customer location - center between them
       mapCenter = [
         (coordinates[0] + courierLocation[0]) / 2,
-        (coordinates[1] + courierLocation[1]) / 2
+        (coordinates[1] + courierLocation[1]) / 2,
       ];
       mapZoom = 14;
     } else if (courierLocation) {
@@ -288,10 +286,14 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
           />
-          
+
           {/* Component to update map view when locations change */}
-          <MapUpdater coordinates={coordinates} courierLocation={courierLocation} hasCustomerLocation={hasCustomerLocation} />
-          
+          <MapUpdater
+            coordinates={coordinates}
+            courierLocation={courierLocation}
+            hasCustomerLocation={hasCustomerLocation}
+          />
+
           {/* Draw route line if courier location is available and customer location exists */}
           {courierLocation && coordinates && (
             <Polyline

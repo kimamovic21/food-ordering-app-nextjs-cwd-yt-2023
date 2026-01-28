@@ -218,87 +218,72 @@ const CartPage = () => {
   const isSubmittingRef = useRef(false);
   const handleCheckout = async () => {
     if (isSubmittingRef.current || isSubmitting) return;
-    if (!isLoggedIn) {
-      toast.error('Please sign in to proceed to checkout.');
-      return;
-    }
-    if (cartItems.length === 0) {
-      toast.error('Your cart is empty.');
-      return;
-    }
-    const missingField = Object.entries(formData).find(([, value]) => !value);
-    if (missingField) {
-      toast.error('Please complete your delivery details.', {
-        style: { background: '#ef4444', color: 'white' },
-        className: 'font-semibold',
-      });
-      return;
-    }
-    if (!profileData?.email) {
-      toast.error('We could not find your email. Please re-login.');
-      return;
-    }
 
     setIsSubmitting(true);
     isSubmittingRef.current = true;
-    toast.loading('Redirecting to checkout...', { id: 'redirect-toast' });
+
     try {
-      // Prepare order data
-      const orderData = {
-        userId: profileData?._id,
-        email: profileData?.email,
-        phone: formData.phone,
-        streetAddress: formData.streetAddress,
-        postalCode: formData.postalCode,
-        city: formData.city,
-        country: formData.country,
-        cartProducts: cartItems.map((item) => ({
-          productId: item._id,
-          name: item.name,
-          size: item.size,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        deliveryFee: deliveryFee?.totalFee || 5,
-        deliveryFeeBreakdown: deliveryFee || {
-          baseFee: 5,
-          weatherAdjustment: 0,
-          totalAdjustment: 0,
-        },
-        loyaltyDiscount: calculateLoyaltyDiscount(
-          deliveryFee?.totalFee || 5,
-          loyaltyDiscountPercentage
-        ),
-        loyaltyDiscountPercentage,
-        loyaltyTier: profileData?.loyaltyTier || null,
-        total:
-          getTotalPrice() +
-          (deliveryFee?.totalFee || 5) -
-          calculateLoyaltyDiscount(deliveryFee?.totalFee || 5, loyaltyDiscountPercentage),
-      };
-
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create order.');
+      if (!isLoggedIn) {
+        toast.error('Please sign in to proceed to checkout.');
+        return;
       }
-
-      const { order } = await response.json();
-      if (!order || !order._id) {
-        throw new Error('Order creation failed.');
+      if (cartItems.length === 0) {
+        toast.error('Your cart is empty.');
+        return;
       }
-
-      setTimeout(() => {
-        toast.success('Redirection successful!', { id: 'redirect-toast' });
-        window.location.href = `/checkout/${order._id}`;
-      }, 500);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create order.', { id: 'redirect-toast' });
+      const missingField = Object.entries(formData).find(([, value]) => !value);
+      if (missingField) {
+        toast.error('Please complete your delivery details.');
+        return;
+      }
+      if (!profileData?.email) {
+        toast.error('We could not find your email. Please re-login.');
+        return;
+      }
+      await toast.promise(
+        (async () => {
+          const actualDeliveryFee = deliveryFee?.totalFee || 5;
+          const loyaltyDiscount = calculateLoyaltyDiscount(
+            actualDeliveryFee,
+            loyaltyDiscountPercentage
+          );
+          const response = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...formData,
+              cartItems,
+              deliveryFee: deliveryFee?.totalFee || 5,
+              deliveryFeeBreakdown: deliveryFee
+                ? {
+                    baseFee: deliveryFee.baseFee,
+                    weatherAdjustment: deliveryFee.weatherAdjustment,
+                    totalAdjustment: deliveryFee.totalAdjustment,
+                  }
+                : null,
+              loyaltyDiscount,
+              loyaltyDiscountPercentage,
+            }),
+          });
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.error || 'Failed to start checkout.');
+          }
+          const data = await response.json();
+          if (data?.url) {
+            window.location.href = data.url;
+          } else {
+            throw new Error('Checkout URL missing.');
+          }
+        })(),
+        {
+          loading: 'Processing checkout...',
+          success: 'Redirecting to payment...',
+          error: (err) => err?.message || 'Unable to proceed to checkout.',
+        }
+      );
     } finally {
       setIsSubmitting(false);
       isSubmittingRef.current = false;
@@ -360,7 +345,6 @@ const CartPage = () => {
             isSubmitting={isSubmitting}
             handleCheckout={handleCheckout}
             calculatingFee={calculatingFee}
-            formData={formData}
           />
         </div>
       </div>

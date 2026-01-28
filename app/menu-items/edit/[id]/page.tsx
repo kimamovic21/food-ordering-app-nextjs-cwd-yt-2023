@@ -25,7 +25,7 @@ interface Category {
 const EditMenuItemPage = () => {
   const router = useRouter();
   const params = useParams();
-  const id = params.id as string;
+  const id = (params as any)!.id as string;
   const form = useForm();
   const { data, loading } = useProfile();
 

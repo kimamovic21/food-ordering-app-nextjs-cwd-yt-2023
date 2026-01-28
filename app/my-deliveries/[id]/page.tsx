@@ -44,7 +44,7 @@ type DeliveredOrder = {
 };
 
 const DeliveryDetailsPage = () => {
-  const params = useParams();
+  const params = useParams()!;
   const { data: profileData, loading: profileLoading } = useProfile();
   const [order, setOrder] = useState<DeliveredOrder | null>(null);
   const [loading, setLoading] = useState(true);

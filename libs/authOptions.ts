@@ -1,13 +1,13 @@
 import { User } from '@/models/user';
 import { MongoDBAdapter } from '@auth/mongodb-adapter';
+import { mongoConnect } from '@/libs/mongoConnect';
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
-import client from '@/libs/mongoConnect';
 
 // Use a dedicated database for NextAuth to avoid collection conflicts
-const mongoAdapter = MongoDBAdapter(client, { databaseName: 'next-auth' });
+const mongoAdapter = MongoDBAdapter(mongoConnect, { databaseName: 'next-auth' });
 
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -96,7 +96,7 @@ export const authOptions = {
           try {
             // Check if this is the first user in the database
             const userCount = await User.countDocuments();
-            const role = userCount === 0 ? 'admin' : (token?.role || 'user');
+            const role = userCount === 0 ? 'admin' : token?.role || 'user';
             userInDb = await User.create({
               name: session.user.name || 'User',
               email: session.user.email,

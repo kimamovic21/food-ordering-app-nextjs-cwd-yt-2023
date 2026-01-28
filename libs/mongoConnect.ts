@@ -1,34 +1,24 @@
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import mongoose from 'mongoose';
 
 const MONGODB_URL = process.env.MONGODB_URL as string;
 
-if (!process.env.MONGODB_URL) {
-  throw new Error(`Invalid/Missing environment variable: ${MONGODB_URL}`);
+if (!MONGODB_URL) {
+  throw new Error('Please define the MONGODB_URL environment variable');
 }
 
-const uri = process.env.MONGODB_URL;
-const options = {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-};
+let cached = (global as any).mongoose;
 
-let client: MongoClient;
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null };
+}
 
-if (process.env.NODE_ENV === 'development') {
-  const globalWithMongo = global as typeof globalThis & {
-    _mongoClient?: MongoClient;
-  };
-
-  if (!globalWithMongo._mongoClient) {
-    globalWithMongo._mongoClient = new MongoClient(uri, options);
+export async function mongoConnect() {
+  if (cached.conn) {
+    return cached.conn;
   }
-
-  client = globalWithMongo._mongoClient;
-} else {
-  client = new MongoClient(uri, options);
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URL).then((mongoose) => mongoose);
+  }
+  cached.conn = await cached.promise;
+  return cached.conn;
 }
-
-export default client;

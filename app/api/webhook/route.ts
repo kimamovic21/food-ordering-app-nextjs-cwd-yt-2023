@@ -38,34 +38,17 @@ export async function POST(req: Request) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     const orderId = session.metadata?.orderId;
+
     if (orderId) {
       await mongoose.connect(process.env.MONGODB_URL as string);
       const order = await Order.findById(orderId);
       if (order) {
-        order.orderPaid = true;
-        order.paid = true;
-        if (!order.orderStatus) {
-          order.orderStatus = 'pending';
+        (order as any).orderPaid = true;
+        (order as any).paid = true; // keep legacy flag in sync
+        if (!(order as any).orderStatus) {
+          (order as any).orderStatus = 'pending';
         }
         order.stripeSessionId = session.id;
-        await order.save();
-      }
-    }
-  }
-
-  if (event.type === 'payment_intent.succeeded') {
-    const intent = event.data.object as Stripe.PaymentIntent;
-    const orderId = intent.metadata?.orderId;
-    if (orderId) {
-      await mongoose.connect(process.env.MONGODB_URL as string);
-      const order = await Order.findById(orderId);
-      if (order) {
-        order.orderPaid = true;
-        order.paid = true;
-        if (!order.orderStatus) {
-          order.orderStatus = 'pending';
-        }
-        order.stripeSessionId = intent.id;
         await order.save();
       }
     }

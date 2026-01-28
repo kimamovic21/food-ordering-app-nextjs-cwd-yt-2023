@@ -49,8 +49,6 @@ const OrdersPage = () => {
       return;
     }
 
-    console.log('User is admin or manager, fetching orders:', { role: data?.role });
-
     const currentPage = Math.max(1, parseInt(searchParams?.get('page') || '1', 10));
     setPage(currentPage);
 
@@ -69,7 +67,6 @@ const OrdersPage = () => {
         }
 
         const json = await res.json();
-        console.log('Orders response:', json);
         setOrders(json.orders || []);
         setTotalPages(json.totalPages || 1);
       } catch (error) {
