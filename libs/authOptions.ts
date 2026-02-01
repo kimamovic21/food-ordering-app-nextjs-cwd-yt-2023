@@ -1,13 +1,13 @@
 import { User } from '@/models/user';
 import { MongoDBAdapter } from '@auth/mongodb-adapter';
-import { mongoConnect } from '@/libs/mongoConnect';
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
+import mongoClientPromise from '@/libs/mongodbClient';
 
 // Use a dedicated database for NextAuth to avoid collection conflicts
-const mongoAdapter = MongoDBAdapter(mongoConnect, { databaseName: 'next-auth' });
+const mongoAdapter = MongoDBAdapter(mongoClientPromise, { databaseName: 'next-auth' });
 
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,

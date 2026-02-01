@@ -98,7 +98,12 @@ const LoginUserForm = () => {
                     placeholder='Enter your email'
                     disabled={isLoading}
                     aria-invalid={!!form.formState.errors.email}
-                    className={'rounded-md!' + (form.formState.errors.email ? ' border-2 border-destructive ring-1 ring-destructive' : '')}
+                    className={
+                      'rounded-md!' +
+                      (form.formState.errors.email
+                        ? ' border-2 border-destructive ring-1 ring-destructive'
+                        : '')
+                    }
                     {...field}
                   />
                 </FormControl>
@@ -116,10 +121,7 @@ const LoginUserForm = () => {
                 <FormControl>
                   <div>
                     {/* Password input with only eye icon */}
-                    <InputPasswordEyeOnly
-                      value={field.value}
-                      onChange={field.onChange}
-                    />
+                    <InputPasswordEyeOnly value={field.value} onChange={field.onChange} />
                   </div>
                 </FormControl>
                 {form.formState.errors.password && (
@@ -142,12 +144,13 @@ const LoginUserForm = () => {
           <span className='w-full border-t border-border' />
         </div>
         <div className='relative flex justify-center text-xs uppercase'>
-          <span className='bg-background px-2 text-muted-foreground'>Or continue with</span>
+          <span className='bg-background px-2 text-muted-foreground'>Or</span>
         </div>
       </div>
 
       <div className='flex justify-center'>
         <GoogleButton
+          label='Continue with Google'
           onClick={handleGoogleSignIn}
           type='light'
           className='dark:opacity-90 hover:opacity-80 transition-opacity'

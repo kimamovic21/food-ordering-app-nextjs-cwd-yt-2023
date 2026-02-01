@@ -985,3 +985,10 @@ Refactor checkout flow and remove Stripe Elements integration
 -update files authOptions.ts and mongoConnect.ts
 -type command: npm i micro
 -fix type errors in tsx components
+
+
+Use MongoDB client promise and clean up auth forms
+
+-create mongodbClient.ts file
+-in authOptions.ts file import variable mongoClientPromise from mongodbClient.ts
+-update ui in form components

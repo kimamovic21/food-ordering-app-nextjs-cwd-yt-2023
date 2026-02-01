@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import {
   Form,
   FormControl,
@@ -16,10 +17,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import InputPasswordStrengthDemo from '@/components/shadcn-studio/input/input-46';
-import GoogleButton from 'react-google-button';
-import { toast } from 'sonner';
 import Link from 'next/link';
+import GoogleButton from 'react-google-button';
+import InputPasswordStrengthDemo from '@/components/shadcn-studio/input/input-46';
 
 const registerSchema = z.object({
   name: z
@@ -145,7 +145,12 @@ const RegisterUserForm = () => {
                     placeholder='Enter your name'
                     disabled={isLoading}
                     aria-invalid={!!form.formState.errors.name}
-                    className={'rounded-md ' + (form.formState.errors.name ? 'border-2 border-destructive ring-1 ring-destructive' : '')}
+                    className={
+                      'rounded-md ' +
+                      (form.formState.errors.name
+                        ? 'border-2 border-destructive ring-1 ring-destructive'
+                        : '')
+                    }
                     {...field}
                   />
                 </FormControl>
@@ -166,7 +171,12 @@ const RegisterUserForm = () => {
                     placeholder='Enter your email'
                     disabled={isLoading}
                     aria-invalid={!!form.formState.errors.email}
-                    className={'rounded-md!' + (form.formState.errors.email ? 'border-2 border-destructive ring-1 ring-destructive' : '')}
+                    className={
+                      'rounded-md!' +
+                      (form.formState.errors.email
+                        ? 'border-2 border-destructive ring-1 ring-destructive'
+                        : '')
+                    }
                     {...field}
                   />
                 </FormControl>
@@ -184,10 +194,7 @@ const RegisterUserForm = () => {
                 <FormControl>
                   <div>
                     {/* Password strength component, now controlled by react-hook-form */}
-                    <InputPasswordStrengthDemo
-                      value={field.value}
-                      onChange={field.onChange}
-                    />
+                    <InputPasswordStrengthDemo value={field.value} onChange={field.onChange} />
                   </div>
                 </FormControl>
                 {form.formState.errors.password && (
@@ -210,12 +217,13 @@ const RegisterUserForm = () => {
           <span className='w-full border-t border-border' />
         </div>
         <div className='relative flex justify-center text-xs uppercase'>
-          <span className='bg-background px-2 text-muted-foreground'>Or continue with</span>
+          <span className='bg-background px-2 text-muted-foreground'>Or</span>
         </div>
       </div>
 
       <div className='flex justify-center'>
         <GoogleButton
+          label='Continue with Google'
           onClick={handleGoogleSignIn}
           type='light'
           className='dark:opacity-90 hover:opacity-80 transition-opacity'
