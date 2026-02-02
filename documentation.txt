@@ -992,3 +992,9 @@ Use MongoDB client promise and clean up auth forms
 -create mongodbClient.ts file
 -in authOptions.ts file import variable mongoClientPromise from mongodbClient.ts
 -update ui in form components
+
+
+Add restaurant CRUD, UI, API and model
+
+-add CRUD logic for restaurant
+-

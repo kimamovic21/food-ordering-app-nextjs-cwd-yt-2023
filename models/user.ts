@@ -18,6 +18,7 @@ const UserSchema = new Schema(
     latitude: { type: Number, default: null },
     longitude: { type: Number, default: null },
     lastLocationUpdate: { type: Date, default: null },
+    restaurantId: { type: Schema.Types.ObjectId, ref: 'Restaurant', default: null },
   },
   { timestamps: true }
 );

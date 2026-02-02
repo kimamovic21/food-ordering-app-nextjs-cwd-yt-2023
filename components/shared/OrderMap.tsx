@@ -14,6 +14,7 @@ type OrderMapProps = {
   country?: string;
   customerEmail?: string;
   orderId?: string; // Optional order ID for admin view
+  shouldFetchCourier?: boolean; // Set to false to only show restaurant/location without fetching courier
 };
 
 export type OrderMapHandle = {
@@ -34,6 +35,7 @@ const createCustomIcon = (color: string) => {
 
 const courierIcon = createCustomIcon('red');
 const customerIcon = createCustomIcon('blue');
+const restaurantIcon = createCustomIcon('orange');
 
 // Component to update map view when locations change
 function MapUpdater({
@@ -77,7 +79,7 @@ function MapUpdater({
 }
 
 const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
-  ({ address, city, postalCode, country, customerEmail, orderId }, ref) => {
+  ({ address, city, postalCode, country, customerEmail, orderId, shouldFetchCourier = true }, ref) => {
     const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
     const [courierLocation, setCourierLocation] = useState<[number, number] | null>(null);
     const [loading, setLoading] = useState(true);
@@ -207,15 +209,22 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
 
       geocodeAddress();
 
-      // Fetch immediately on mount
-      fetchCourierLocation();
+      // Only fetch courier location if enabled
+      if (shouldFetchCourier) {
+        // Fetch immediately on mount
+        fetchCourierLocation();
 
-      // Set interval for polling every 60 seconds
-      const interval = setInterval(fetchCourierLocation, 60000);
+        // Set interval for polling every 60 seconds
+        const interval = setInterval(fetchCourierLocation, 60000);
+
+        return () => {
+          isMountedRef.current = false;
+          clearInterval(interval);
+        };
+      }
 
       return () => {
         isMountedRef.current = false;
-        clearInterval(interval);
       };
     }, [address, city, postalCode, country, orderId]);
 
@@ -323,12 +332,12 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
             </Marker>
           )}
 
-          {/* Customer Location Marker (Blue) - only show if we have customer location */}
+          {/* Location Marker - Restaurant (Orange) or Delivery (Blue) */}
           {coordinates && (
-            <Marker position={coordinates} icon={customerIcon}>
+            <Marker position={coordinates} icon={shouldFetchCourier ? customerIcon : restaurantIcon}>
               <Popup>
                 <div className='text-sm'>
-                  <p className='font-semibold mb-1'>Delivery Location</p>
+                  <p className='font-semibold mb-1'>{shouldFetchCourier ? 'Delivery Location' : 'Restaurant Location'}</p>
                   {customerEmail && <p className='text-xs text-gray-600 mb-1'>{customerEmail}</p>}
                   {address && <p className='text-xs'>{address}</p>}
                   {city && postalCode && (

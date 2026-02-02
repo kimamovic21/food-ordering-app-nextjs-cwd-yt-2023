@@ -185,6 +185,14 @@ const Header = () => {
                       <>
                         <Link
                           className={`${
+                            pathname?.startsWith('/restaurant') ? 'text-primary font-semibold' : ''
+                          }`}
+                          href={'/restaurant'}
+                        >
+                          Restaurant
+                        </Link>
+                        <Link
+                          className={`${
                             pathname === '/categories' ? 'text-primary font-semibold' : ''
                           }`}
                           href={'/categories'}
@@ -399,6 +407,13 @@ const Header = () => {
                 )}
                 {isAdmin && (
                   <>
+                    <Link
+                      href='/restaurant'
+                      onClick={() => setMobileOpen(false)}
+                      className='hover:text-primary'
+                    >
+                      Restaurant
+                    </Link>
                     <Link
                       href='/categories'
                       onClick={() => setMobileOpen(false)}

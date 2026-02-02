@@ -42,6 +42,7 @@ export async function POST(req: Request) {
       role,
       availability: false,
       takenOrder: null,
+      restaurantId: null,
     });
 
     return Response.json(createdUser, { status: 201 });

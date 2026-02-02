@@ -113,6 +113,7 @@ export const authOptions = {
               latitude: null,
               longitude: null,
               lastLocationUpdate: null,
+              restaurantId: null,
             });
 
             // Mirror data back into session
@@ -185,6 +186,7 @@ export const authOptions = {
             role,
             availability: false,
             takenOrder: null,
+            restaurantId: null,
           });
         }
       } catch (err) {
