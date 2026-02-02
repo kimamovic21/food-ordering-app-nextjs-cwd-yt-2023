@@ -32,6 +32,7 @@ const EditMenuItemPage = () => {
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
+  const [foodType, setFoodType] = useState('food');
   const [priceSmall, setPriceSmall] = useState('');
   const [priceMedium, setPriceMedium] = useState('');
   const [priceLarge, setPriceLarge] = useState('');
@@ -62,9 +63,10 @@ const EditMenuItemPage = () => {
         setName(item.name);
         setDescription(item.description);
         setCategoryId(typeof item.category === 'string' ? item.category : item.category?._id || '');
-        setPriceSmall(item.priceSmall.toString());
-        setPriceMedium(item.priceMedium.toString());
-        setPriceLarge(item.priceLarge.toString());
+        setFoodType(item.foodType || 'food');
+        setPriceSmall(item.priceSmall ? item.priceSmall.toString() : '');
+        setPriceMedium(item.priceMedium ? item.priceMedium.toString() : '');
+        setPriceLarge(item.priceLarge ? item.priceLarge.toString() : '');
         setImage(item.image || '');
         setImagePreview(item.image || '');
       }
@@ -111,14 +113,20 @@ const EditMenuItemPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      name.trim() === '' ||
-      categoryId.trim() === '' ||
-      priceSmall.trim() === '' ||
-      priceMedium.trim() === '' ||
-      priceLarge.trim() === ''
-    ) {
-      toast.error('Name, category, and all prices are required', {
+    if (name.trim() === '' || categoryId.trim() === '') {
+      toast.error('Name and category are required', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+      return;
+    }
+
+    // Check if at least one price is provided
+    const hasAnyPrice = priceSmall.trim() !== '' || priceMedium.trim() !== '' || priceLarge.trim() !== '';
+    if (!hasAnyPrice) {
+      toast.error('At least one price is required', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -130,11 +138,16 @@ const EditMenuItemPage = () => {
     setIsSaving(true);
 
     try {
-      const s = Number(priceSmall);
-      const m = Number(priceMedium);
-      const l = Number(priceLarge);
+      const s = priceSmall.trim() ? Number(priceSmall) : null;
+      const m = priceMedium.trim() ? Number(priceMedium) : null;
+      const l = priceLarge.trim() ? Number(priceLarge) : null;
 
-      if (isNaN(s) || isNaN(m) || isNaN(l)) {
+      // Validate that all prices (if provided) are valid numbers
+      if (
+        (priceSmall.trim() && isNaN(s as number)) ||
+        (priceMedium.trim() && isNaN(m as number)) ||
+        (priceLarge.trim() && isNaN(l as number))
+      ) {
         toast.error('All prices must be valid numbers', {
           style: {
             background: '#ef4444',
@@ -158,6 +171,7 @@ const EditMenuItemPage = () => {
         name,
         description,
         category: categoryId,
+        foodType,
         priceSmall: s,
         priceMedium: m,
         priceLarge: l,
@@ -272,6 +286,7 @@ const EditMenuItemPage = () => {
                   categoryId={categoryId}
                   categories={categories}
                   description={description}
+                  foodType={foodType}
                   priceSmall={priceSmall}
                   priceMedium={priceMedium}
                   priceLarge={priceLarge}
@@ -280,6 +295,7 @@ const EditMenuItemPage = () => {
                   onNameChange={setName}
                   onCategoryChange={setCategoryId}
                   onDescriptionChange={setDescription}
+                  onFoodTypeChange={setFoodType}
                   onPriceSmallChange={setPriceSmall}
                   onPriceMediumChange={setPriceMedium}
                   onPriceLargeChange={setPriceLarge}

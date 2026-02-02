@@ -9,7 +9,7 @@ interface CartItem {
   _id: string;
   name: string;
   size: string;
-  price: number;
+  price: number | null;
   quantity: number;
   image?: string;
 }
@@ -88,6 +88,7 @@ const CartItems: React.FC<CartItemsProps> = ({
           const isRemoteImage =
             typeof imageUrl === 'string' &&
             (imageUrl.startsWith('http') || imageUrl.includes('cloudinary'));
+          const itemPrice = typeof item.price === 'number' && Number.isFinite(item.price) ? item.price : 0;
           return (
             <div
               key={`${item._id}-${item.size}`}
@@ -117,11 +118,13 @@ const CartItems: React.FC<CartItemsProps> = ({
                   <h3 className='text-base sm:text-lg font-semibold text-foreground truncate'>
                     {item.name}
                   </h3>
-                  <p className='text-xs sm:text-sm text-muted-foreground capitalize'>
-                    Size: {item.size}
-                  </p>
+                  {item.size !== 'single' && (
+                    <p className='text-xs sm:text-sm text-muted-foreground capitalize'>
+                      Size: {item.size}
+                    </p>
+                  )}
                   <p className='text-xs sm:text-sm font-semibold text-primary mt-1'>
-                    ${item.price.toFixed(2)} each
+                    ${itemPrice.toFixed(2)} each
                   </p>
                 </div>
               </div>
@@ -154,7 +157,7 @@ const CartItems: React.FC<CartItemsProps> = ({
                 <div className='flex items-center gap-3 ml-auto'>
                   <div className='text-right'>
                     <p className='font-bold text-base sm:text-lg text-foreground whitespace-nowrap'>
-                      ${(item.price * item.quantity).toFixed(2)}
+                      ${(itemPrice * item.quantity).toFixed(2)}
                     </p>
                   </div>
                   <FaTrash

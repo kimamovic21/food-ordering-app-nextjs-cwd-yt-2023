@@ -30,6 +30,7 @@ const NewMenuItemPage = () => {
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
+  const [foodType, setFoodType] = useState('food');
   const [priceSmall, setPriceSmall] = useState('');
   const [priceMedium, setPriceMedium] = useState('');
   const [priceLarge, setPriceLarge] = useState('');
@@ -91,30 +92,41 @@ const NewMenuItemPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      name.trim() === '' ||
-      categoryId.trim() === '' ||
-      priceSmall.trim() === '' ||
-      priceMedium.trim() === '' ||
-      priceLarge.trim() === ''
-    ) {
-          toast.error('Name, category, and all prices are required', {
-            style: {
-              background: '#ef4444',
-              color: 'white',
-            },
-          });
+    if (name.trim() === '' || categoryId.trim() === '') {
+      toast.error('Name and category are required', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+      return;
+    }
+
+    // Check if at least one price is provided
+    const hasAnyPrice = priceSmall.trim() !== '' || priceMedium.trim() !== '' || priceLarge.trim() !== '';
+    if (!hasAnyPrice) {
+      toast.error('At least one price is required', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
       return;
     }
 
     setIsSaving(true);
 
     try {
-      const s = Number(priceSmall);
-      const m = Number(priceMedium);
-      const l = Number(priceLarge);
+      const s = priceSmall.trim() ? Number(priceSmall) : null;
+      const m = priceMedium.trim() ? Number(priceMedium) : null;
+      const l = priceLarge.trim() ? Number(priceLarge) : null;
 
-      if (isNaN(s) || isNaN(m) || isNaN(l)) {
+      // Validate that all prices (if provided) are valid numbers
+      if (
+        (priceSmall.trim() && isNaN(s as number)) ||
+        (priceMedium.trim() && isNaN(m as number)) ||
+        (priceLarge.trim() && isNaN(l as number))
+      ) {
         toast.error('All prices must be valid numbers');
         setIsSaving(false);
         return;
@@ -136,6 +148,7 @@ const NewMenuItemPage = () => {
         name,
         description,
         category: categoryId,
+        foodType,
         priceSmall: s,
         priceMedium: m,
         priceLarge: l,
@@ -174,6 +187,7 @@ const NewMenuItemPage = () => {
     setName('');
     setDescription('');
     setCategoryId('');
+    setFoodType('food');
     setPriceSmall('');
     setPriceMedium('');
     setPriceLarge('');
@@ -185,6 +199,19 @@ const NewMenuItemPage = () => {
   const showSkeleton = loading || isCategoriesLoading;
 
   if (!loading && data?.role !== 'admin') return 'Not an admin.';
+
+  if (!loading && data?.role === 'admin' && !data?.restaurantId) {
+    return (
+      <section className='mt-8 pb-10 max-w-3xl mx-auto'>
+        <div className='bg-red-50 border border-red-200 rounded-lg p-6 text-center'>
+          <h2 className='text-lg font-semibold text-red-800 mb-2'>No Restaurant</h2>
+          <p className='text-red-700'>
+            You need to have a restaurant created before you can add menu items. Please create or link a restaurant to your account first.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className='mt-8 pb-10'>
@@ -262,6 +289,7 @@ const NewMenuItemPage = () => {
                   categoryId={categoryId}
                   categories={categories}
                   description={description}
+                  foodType={foodType}
                   priceSmall={priceSmall}
                   priceMedium={priceMedium}
                   priceLarge={priceLarge}
@@ -270,6 +298,7 @@ const NewMenuItemPage = () => {
                   onNameChange={setName}
                   onCategoryChange={setCategoryId}
                   onDescriptionChange={setDescription}
+                  onFoodTypeChange={setFoodType}
                   onPriceSmallChange={setPriceSmall}
                   onPriceMediumChange={setPriceMedium}
                   onPriceLargeChange={setPriceLarge}

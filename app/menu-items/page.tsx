@@ -38,20 +38,17 @@ const MenuItemsListPage = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    const query = searchParams!.get('q');
-    if (query) {
-      setSearchInput(query);
-      setActiveSearch(query);
-    }
-  }, [searchParams]);
+  }, [data?._id]); // Re-fetch when user ID changes
 
   const fetchData = async () => {
     try {
+      // If user is admin, fetch only their menu items
+      const url = data?.role === 'admin' && data?._id
+        ? `/api/menu-items?adminId=${data._id}`
+        : '/api/menu-items';
+
       const [itemsRes, catsRes] = await Promise.all([
-        fetch('/api/menu-items'),
+        fetch(url),
         fetch('/api/categories'),
       ]);
       const items = await itemsRes.json();

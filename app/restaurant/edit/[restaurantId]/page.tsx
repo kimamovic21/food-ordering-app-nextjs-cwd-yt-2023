@@ -3,13 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import RestaurantForm from '../../RestaurantForm';
 import { toast } from 'sonner';
-
-interface TaxRule {
-  name: string;
-  percentage: number;
-}
+import RestaurantForm from '../../RestaurantForm';
 
 interface WorkingHours {
   day: string;

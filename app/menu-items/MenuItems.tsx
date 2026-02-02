@@ -21,9 +21,9 @@ interface MenuItem {
   name: string;
   description: string;
   category?: { _id: string; name: string } | string;
-  priceSmall: number;
-  priceMedium: number;
-  priceLarge: number;
+  priceSmall: number | null;
+  priceMedium: number | null;
+  priceLarge: number | null;
 }
 
 interface Category {
@@ -95,26 +95,28 @@ const AdminItemCard = ({
             <p className='text-muted-foreground/80 text-sm mt-2 line-clamp-2'>{item.description}</p>
           )}
 
-          {item.priceSmall !== undefined &&
-          item.priceMedium !== undefined &&
-          item.priceLarge !== undefined ? (
-            <div className='flex flex-wrap gap-2 mt-3 text-xs'>
-              <span>
-                <span className='text-muted-foreground'>S:</span>{' '}
-                <span className='font-semibold text-primary'>${item.priceSmall.toFixed(2)}</span>
-              </span>
-              <span>
-                <span className='text-muted-foreground'>M:</span>{' '}
-                <span className='font-semibold text-primary'>${item.priceMedium.toFixed(2)}</span>
-              </span>
-              <span>
-                <span className='text-muted-foreground'>L:</span>{' '}
-                <span className='font-semibold text-primary'>${item.priceLarge.toFixed(2)}</span>
-              </span>
-            </div>
-          ) : (
-            <p className='text-destructive text-xs mt-2'>Prices missing</p>
-          )}
+          {(() => {
+            const prices = [
+              { label: 'S', value: item.priceSmall },
+              { label: 'M', value: item.priceMedium },
+              { label: 'L', value: item.priceLarge },
+            ].filter((p) => typeof p.value === 'number' && Number.isFinite(p.value));
+
+            if (prices.length === 0) {
+              return <p className='text-destructive text-xs mt-2'>Prices missing</p>;
+            }
+
+            return (
+              <div className='flex flex-wrap gap-2 mt-3 text-xs'>
+                {prices.map((price) => (
+                  <span key={price.label}>
+                    <span className='text-muted-foreground'>{price.label}:</span>{' '}
+                    <span className='font-semibold text-primary'>${price.value!.toFixed(2)}</span>
+                  </span>
+                ))}
+              </div>
+            );
+          })()}
         </CardContent>
 
         <CardFooter className='flex gap-2 pt-2'>

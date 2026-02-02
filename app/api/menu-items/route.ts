@@ -1,8 +1,11 @@
 import '@/models/category';
 import { MenuItem } from '@/models/menuItem';
+import { User } from '@/models/user';
 import { isAdmin } from '../auth/[...nextauth]/route';
 import cloudinary from '@/libs/cloudinary';
 import mongoose from 'mongoose';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/libs/authOptions';
 
 export async function POST(req: Request) {
   try {
@@ -12,15 +15,32 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get current user's ID and restaurantId
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return Response.json({ error: 'User session not found' }, { status: 401 });
+    }
+
+    const currentUser = await User.findOne({ email: session.user.email });
+    if (!currentUser) {
+      return Response.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Check if user has a restaurant
+    if (!currentUser.restaurantId) {
+      return Response.json({ error: 'You must have a restaurant to create menu items' }, { status: 403 });
+    }
+
     const data = await req.json();
 
-    if (!data.priceSmall || !data.priceMedium || !data.priceLarge) {
-      console.error('Missing prices:', {
-        priceSmall: data.priceSmall,
-        priceMedium: data.priceMedium,
-        priceLarge: data.priceLarge,
-      });
-      return Response.json({ error: 'All prices are required' }, { status: 400 });
+    // At least one price must be provided
+    const hasAnyPrice = data.priceSmall || data.priceMedium || data.priceLarge;
+    if (!hasAnyPrice) {
+      return Response.json({ error: 'At least one price is required' }, { status: 400 });
+    }
+
+    if (!data.foodType || !['food', 'drink'].includes(data.foodType)) {
+      return Response.json({ error: 'Invalid food type. Must be "food" or "drink"' }, { status: 400 });
     }
 
     const menuItemData = {
@@ -28,9 +48,12 @@ export async function POST(req: Request) {
       description: data.description,
       image: data.image || '',
       category: data.category,
-      priceSmall: Number(data.priceSmall),
-      priceMedium: Number(data.priceMedium),
-      priceLarge: Number(data.priceLarge),
+      foodType: data.foodType,
+      priceSmall: data.priceSmall ? Number(data.priceSmall) : null,
+      priceMedium: data.priceMedium ? Number(data.priceMedium) : null,
+      priceLarge: data.priceLarge ? Number(data.priceLarge) : null,
+      adminId: currentUser._id,
+      restaurantId: currentUser.restaurantId,
     };
 
     const menuItemDoc = await MenuItem.create(menuItemData);
@@ -47,10 +70,17 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const _id = searchParams.get('_id');
+  const adminId = searchParams.get('adminId');
 
   if (_id) {
     const item = await MenuItem.findById(_id).populate('category');
     return Response.json(item ? [item] : []);
+  }
+
+  // If adminId is provided, filter by that admin
+  if (adminId) {
+    const items = await MenuItem.find({ adminId }).populate('category');
+    return Response.json(items);
   }
 
   const items = await MenuItem.find().populate('category');
@@ -67,13 +97,14 @@ export async function PUT(req: Request) {
 
     const { _id, ...data } = await req.json();
 
-    if (!data.priceSmall || !data.priceMedium || !data.priceLarge) {
-      console.error('Missing prices:', {
-        priceSmall: data.priceSmall,
-        priceMedium: data.priceMedium,
-        priceLarge: data.priceLarge,
-      });
-      return Response.json({ error: 'All prices are required' }, { status: 400 });
+    // At least one price must be provided
+    const hasAnyPrice = data.priceSmall || data.priceMedium || data.priceLarge;
+    if (!hasAnyPrice) {
+      return Response.json({ error: 'At least one price is required' }, { status: 400 });
+    }
+
+    if (!data.foodType || !['food', 'drink'].includes(data.foodType)) {
+      return Response.json({ error: 'Invalid food type. Must be "food" or "drink"' }, { status: 400 });
     }
 
     const updateData = {
@@ -81,9 +112,10 @@ export async function PUT(req: Request) {
       description: data.description,
       image: data.image || '',
       category: data.category,
-      priceSmall: Number(data.priceSmall),
-      priceMedium: Number(data.priceMedium),
-      priceLarge: Number(data.priceLarge),
+      foodType: data.foodType,
+      priceSmall: data.priceSmall ? Number(data.priceSmall) : null,
+      priceMedium: data.priceMedium ? Number(data.priceMedium) : null,
+      priceLarge: data.priceLarge ? Number(data.priceLarge) : null,
     };
 
     const updated = await MenuItem.findByIdAndUpdate(_id, updateData, { new: true });
@@ -126,3 +158,4 @@ export async function DELETE(req: Request) {
 
   return Response.json(true);
 }
+

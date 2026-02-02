@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,16 +14,16 @@ interface MenuItemType {
   name: string;
   description: string;
   category?: { _id: string; name: string } | string;
-  priceSmall: number;
-  priceMedium: number;
-  priceLarge: number;
+  priceSmall: number | null;
+  priceMedium: number | null;
+  priceLarge: number | null;
 }
 
 interface MenuItemProps {
   item?: MenuItemType;
 }
 
-type Size = 'small' | 'medium' | 'large';
+type Size = 'small' | 'medium' | 'large' | 'single';
 
 const MenuItem = ({ item }: MenuItemProps) => {
   const [selectedSize, setSelectedSize] = useState<Size>('small');
@@ -44,34 +44,65 @@ const MenuItem = ({ item }: MenuItemProps) => {
     typeof imageUrl === 'string' &&
     (imageUrl.startsWith('http') || imageUrl.includes('cloudinary'));
 
-  const getPrice = () => {
-    switch (selectedSize) {
-      case 'small':
-        return displayItem.priceSmall;
-      case 'medium':
-        return displayItem.priceMedium;
-      case 'large':
-        return displayItem.priceLarge;
-      default:
-        return displayItem.priceSmall;
+  const availableSizes = (['small', 'medium', 'large'] as Size[])
+    .map((size) => {
+      const value =
+        size === 'small'
+          ? displayItem.priceSmall
+          : size === 'medium'
+          ? displayItem.priceMedium
+          : displayItem.priceLarge;
+      return { size, value };
+    })
+    .filter((entry) => typeof entry.value === 'number' && Number.isFinite(entry.value));
+
+  useEffect(() => {
+    if (availableSizes.length === 1) {
+      setSelectedSize('single');
+      return;
     }
+
+    if (availableSizes.length > 0) {
+      const firstSize = availableSizes[0].size;
+      setSelectedSize((prev) => (availableSizes.some((s) => s.size === prev) ? prev : firstSize));
+    }
+  }, [displayItem._id, displayItem.priceSmall, displayItem.priceMedium, displayItem.priceLarge]);
+
+  const getPrice = () => {
+    if (selectedSize === 'single') {
+      return availableSizes[0]?.value ?? null;
+    }
+
+    const selected = availableSizes.find((s) => s.size === selectedSize);
+    if (selected) return selected.value;
+    return availableSizes[0]?.value ?? null;
   };
 
   const handleAddToCart = () => {
+    const price = getPrice();
+    if (price == null) return;
+
+    const sizeForCart = availableSizes.length === 1 ? 'single' : selectedSize;
+
     addToCart({
       _id: displayItem._id,
       name: displayItem.name,
       description: displayItem.description,
       image: displayItem.image,
-      size: selectedSize,
-      price: getPrice(),
+      size: sizeForCart,
+      price,
     });
-    toast.success(`${displayItem.name} (${selectedSize}) added to cart!`, {
-      style: {
-        background: '#22c55e', // Tailwind green-500
-        color: 'white',
-      },
-    });
+    toast.success(
+      availableSizes.length === 1
+        ? `${displayItem.name} added to cart!`
+        : `${displayItem.name} (${selectedSize}) added to cart!`,
+      {
+        style: {
+          background: '#22c55e', // Tailwind green-500
+          color: 'white',
+        },
+      }
+    );
   };
 
   return (
@@ -101,33 +132,22 @@ const MenuItem = ({ item }: MenuItemProps) => {
 
         <p className='mt-4 text-muted-foreground text-sm flex-1'>{displayItem.description}</p>
 
-        <div className='flex gap-1 justify-center mt-4'>
-          <Button
-            onClick={() => setSelectedSize('small')}
-            variant={selectedSize === 'small' ? 'default' : 'outline'}
-            size='sm'
-          >
-            Small
-          </Button>
+        {availableSizes.length > 1 && (
+          <div className='flex gap-1 justify-center mt-4'>
+            {availableSizes.map((entry) => (
+              <Button
+                key={entry.size}
+                onClick={() => setSelectedSize(entry.size)}
+                variant={selectedSize === entry.size ? 'default' : 'outline'}
+                size='sm'
+              >
+                {entry.size.charAt(0).toUpperCase() + entry.size.slice(1)}
+              </Button>
+            ))}
+          </div>
+        )}
 
-          <Button
-            onClick={() => setSelectedSize('medium')}
-            variant={selectedSize === 'medium' ? 'default' : 'outline'}
-            size='sm'
-          >
-            Medium
-          </Button>
-
-          <Button
-            onClick={() => setSelectedSize('large')}
-            variant={selectedSize === 'large' ? 'default' : 'outline'}
-            size='sm'
-          >
-            Large
-          </Button>
-        </div>
-
-        <Button onClick={handleAddToCart} className='w-full mt-4' size='lg'>
+        <Button onClick={handleAddToCart} className='w-full mt-4' size='lg' disabled={getPrice() == null}>
           Add to cart ${getPrice()?.toFixed(2) || '0.00'}
         </Button>
       </div>

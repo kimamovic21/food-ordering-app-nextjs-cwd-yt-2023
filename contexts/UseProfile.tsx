@@ -13,6 +13,7 @@ interface ProfileData {
   country?: string;
   availability?: boolean;
   loyaltyTier?: string;
+  restaurantId?: string;
 }
 
 const useProfile = () => {

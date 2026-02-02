@@ -1004,3 +1004,8 @@ Remove manager role and related functionality
 -remove all manager related logic from route.ts files and tsx components
 
 
+
+Add foodType, optional prices and admin scoping
+
+-update MenuItem model in menuItem.ts file 
+-update menu items ui logic

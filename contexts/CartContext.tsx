@@ -1,21 +1,14 @@
 'use client';
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  ReactNode
-} from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 export interface CartItem {
   _id: string;
   name: string;
   description: string;
   image?: string;
-  size: 'small' | 'medium' | 'large';
-  price: number;
+  size: 'small' | 'medium' | 'large' | 'single';
+  price: number | null;
   quantity: number;
 }
 
@@ -54,30 +47,26 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         setCartItems(JSON.parse(storedCart));
       } catch (error) {
         console.error('Error loading cart from local storage:', error);
-      };
-    };
+      }
+    }
     setIsLoaded(true);
   }, []);
 
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem('cart', JSON.stringify(cartItems));
-    };
+    }
   }, [cartItems, isLoaded]);
 
   const addToCart = (item: Omit<CartItem, 'quantity'>) => {
     setCartItems((prevItems) => {
-      const existingItem = prevItems.find(
-        (i) => i._id === item._id && i.size === item.size
-      );
+      const existingItem = prevItems.find((i) => i._id === item._id && i.size === item.size);
 
       if (existingItem) {
         return prevItems.map((i) =>
-          i._id === item._id && i.size === item.size
-            ? { ...i, quantity: i.quantity + 1 }
-            : i
+          i._id === item._id && i.size === item.size ? { ...i, quantity: i.quantity + 1 } : i
         );
-      };
+      }
 
       return [...prevItems, { ...item, quantity: 1 }];
     });
@@ -93,13 +82,11 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     if (quantity <= 0) {
       removeFromCart(id, size);
       return;
-    };
+    }
 
     setCartItems((prevItems) =>
       prevItems.map((item) =>
-        item._id === id && item.size === size
-          ? { ...item, quantity }
-          : item
+        item._id === id && item.size === size ? { ...item, quantity } : item
       )
     );
   };
@@ -113,7 +100,10 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   };
 
   const getTotalPrice = () => {
-    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+    return cartItems.reduce((total, item) => {
+      const price = typeof item.price === 'number' && Number.isFinite(item.price) ? item.price : 0;
+      return total + price * item.quantity;
+    }, 0);
   };
 
   return (
