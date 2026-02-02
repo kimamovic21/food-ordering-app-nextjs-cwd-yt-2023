@@ -40,7 +40,7 @@ const UsersPage = () => {
   useEffect(() => {
     if (loading) return;
 
-    if (data?.role !== 'admin' && data?.role !== 'manager') return;
+    if (data?.role !== 'admin') return;
 
     const currentPage = Math.max(1, parseInt(searchParams?.get('page') || '1', 10));
     setPage(currentPage);
@@ -70,10 +70,10 @@ const UsersPage = () => {
     return <UsersLoading />;
   }
 
-  if (data?.role !== 'admin' && data?.role !== 'manager') {
+  if (data?.role !== 'admin') {
     return (
       <div className='min-h-[calc(100vh-8rem)] flex items-center justify-center'>
-        <p className='text-lg'>Not an admin or manager</p>
+        <p className='text-lg'>Not an admin</p>
       </div>
     );
   }

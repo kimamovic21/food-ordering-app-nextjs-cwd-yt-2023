@@ -5,6 +5,71 @@ import { mongoConnect } from '@/libs/mongoConnect';
 import { Restaurant } from '@/models/restaurant';
 import { User } from '@/models/user';
 
+type BlockedDateInput = {
+  date?: string | Date;
+  reason?: string;
+};
+
+const normalizeBlockedDates = (blockedDates: unknown) => {
+  console.log('normalizeBlockedDates input:', JSON.stringify(blockedDates));
+  
+  if (!Array.isArray(blockedDates)) {
+    console.log('blockedDates is not an array, returning empty array');
+    return [] as { date: Date; reason: string }[];
+  }
+
+  const normalized: { date: Date; reason: string }[] = [];
+
+  for (const entry of blockedDates as BlockedDateInput[]) {
+    console.log('Processing blocked date entry:', entry);
+    const reason = typeof entry.reason === 'string' ? entry.reason.trim() : '';
+    const rawDate = entry.date instanceof Date ? entry.date : new Date(entry.date || '');
+    
+    console.log('Parsed reason:', reason, 'Parsed date:', rawDate, 'Valid:', !Number.isNaN(rawDate.getTime()));
+
+    if (!reason || Number.isNaN(rawDate.getTime())) {
+      console.error('Invalid blocked date entry - reason:', reason, 'date valid:', !Number.isNaN(rawDate.getTime()));
+      throw new Error('Invalid blocked date entry');
+    }
+
+    normalized.push({ date: rawDate, reason });
+  }
+
+  console.log('Normalized blocked dates:', normalized);
+  return normalized;
+};
+
+const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boolean = false) => {
+  const tax = typeof body.tax === 'number' ? body.tax : Number(body.tax) || 17;
+  const courierFee = typeof body.courierFee === 'number' ? body.courierFee : Number(body.courierFee) || 5;
+  const totalEmployees = typeof body.totalEmployees === 'number' ? body.totalEmployees : Number(body.totalEmployees) || 1;
+
+  const payload: any = {
+    name: body.name,
+    street: body.street,
+    city: body.city,
+    postalCode: body.postalCode,
+    country: body.country,
+    latitude: Number(body.latitude) || 0,
+    longitude: Number(body.longitude) || 0,
+    contact: body.contact,
+    email: body.email,
+    webAddress: body.webAddress || '',
+    description: body.description,
+    tax: Math.min(100, Math.max(0, tax)),
+    courierFee: Math.max(0, courierFee),
+    workingHours: Array.isArray(body.workingHours) ? body.workingHours : [],
+    blockedDates: normalizeBlockedDates(body.blockedDates),
+    totalEmployees: Math.max(1, totalEmployees),
+  };
+  
+  if (includeId && body._id) {
+    payload._id = body._id;
+  }
+  
+  return payload;
+};
+
 export async function GET() {
   try {
     await mongoConnect();
@@ -24,10 +89,27 @@ export async function GET() {
     }
 
     // Get restaurant by owner ID
-    const restaurant = await Restaurant.findOne({ ownerId: user._id });
+    let restaurant = await Restaurant.findOne({ ownerId: user._id });
 
     if (!restaurant) {
       return NextResponse.json({ restaurant: null }, { status: 200 });
+    }
+
+    const legacyTaxRules = (restaurant as any).taxRules as
+      | { percentage?: number }[]
+      | undefined;
+
+    if (legacyTaxRules && legacyTaxRules.length > 0) {
+      const legacyTax =
+        typeof legacyTaxRules[0]?.percentage === 'number'
+          ? legacyTaxRules[0]?.percentage
+          : restaurant.tax;
+
+      restaurant = await Restaurant.findByIdAndUpdate(
+        restaurant._id,
+        { $set: { tax: legacyTax }, $unset: { taxRules: '' } },
+        { new: true }
+      );
     }
 
     return NextResponse.json({ restaurant }, { status: 200 });
@@ -59,9 +141,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    const payload = sanitizeRestaurantPayload(body, false);
+
+    console.log('CREATE Restaurant payload:', JSON.stringify(payload, null, 2));
+    console.log('Tax in payload:', payload.tax, 'Type:', typeof payload.tax);
+    console.log('Blocked dates in payload:', payload.blockedDates);
 
     // Validate description length
-    if (body.description && (body.description.length < 20 || body.description.length > 200)) {
+    if (
+      payload.description &&
+      (payload.description.length < 20 || payload.description.length > 200)
+    ) {
       return NextResponse.json(
         { error: 'Description must be between 20 and 200 characters' },
         { status: 400 }
@@ -69,10 +159,31 @@ export async function POST(req: NextRequest) {
     }
 
     // Create restaurant
-    const restaurant = await Restaurant.create({
-      ...body,
+    const restaurantData = {
       ownerId: user._id,
-    });
+      name: payload.name,
+      street: payload.street,
+      city: payload.city,
+      postalCode: payload.postalCode,
+      country: payload.country,
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+      contact: payload.contact,
+      email: payload.email,
+      webAddress: payload.webAddress,
+      description: payload.description,
+      tax: payload.tax,
+      courierFee: payload.courierFee,
+      workingHours: payload.workingHours,
+      blockedDates: payload.blockedDates,
+      totalEmployees: payload.totalEmployees,
+    };
+
+    console.log('Restaurant data before create:', JSON.stringify(restaurantData, null, 2));
+
+    const restaurant = await Restaurant.create(restaurantData);
+
+    console.log('Created restaurant:', JSON.stringify(restaurant.toObject(), null, 2));
 
     // Update user with restaurant ID
     await User.findByIdAndUpdate(user._id, { restaurantId: restaurant._id });
@@ -80,6 +191,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ restaurant }, { status: 201 });
   } catch (error) {
     console.error('Error creating restaurant:', error);
+    if (error instanceof Error && error.message.includes('Invalid blocked date')) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Failed to create restaurant' }, { status: 500 });
   }
 }
@@ -100,7 +214,13 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { _id, ...updateData } = body;
+    const payload = sanitizeRestaurantPayload(body, true);
+    const { _id, ...updateData } = payload;
+    
+    console.log('UPDATE Restaurant _id:', _id);
+    console.log('UPDATE Restaurant data:', JSON.stringify(updateData, null, 2));
+    console.log('Tax in updateData:', updateData.tax, 'Type:', typeof updateData.tax);
+    console.log('Blocked dates in updateData:', updateData.blockedDates);
 
     // Validate description length
     if (
@@ -124,14 +244,23 @@ export async function PUT(req: NextRequest) {
     }
 
     // Update restaurant
-    const updatedRestaurant = await Restaurant.findByIdAndUpdate(_id, updateData, {
+    const updatedRestaurant = await Restaurant.findByIdAndUpdate(
+      _id,
+      { ...updateData, $unset: { taxRules: '' } },
+      {
       new: true,
       runValidators: true,
-    });
+      }
+    );
+
+    console.log('Updated restaurant:', JSON.stringify(updatedRestaurant, null, 2));
 
     return NextResponse.json({ restaurant: updatedRestaurant }, { status: 200 });
   } catch (error) {
     console.error('Error updating restaurant:', error);
+    if (error instanceof Error && error.message.includes('Invalid blocked date')) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Failed to update restaurant' }, { status: 500 });
   }
 }

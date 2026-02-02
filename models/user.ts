@@ -12,7 +12,7 @@ const UserSchema = new Schema(
     postalCode: { type: String, default: '' },
     city: { type: String, default: '' },
     country: { type: String, default: '' },
-    role: { type: String, enum: ['user', 'manager', 'admin', 'courier'], default: 'user' },
+    role: { type: String, enum: ['user', 'admin', 'courier'], default: 'user' },
     availability: { type: Boolean, default: false },
     takenOrder: { type: Schema.Types.ObjectId, ref: 'Order', default: null },
     latitude: { type: Number, default: null },

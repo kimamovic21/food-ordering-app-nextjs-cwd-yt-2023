@@ -89,6 +89,70 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
 
   const [newBlockedDate, setNewBlockedDate] = useState({ date: '', reason: '' });
 
+  const toIsoDate = (value: string | Date) => {
+    if (!value) return '';
+    
+    // If it's already a Date object
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? '' : value.toISOString();
+    }
+    
+    // If it's a string in YYYY-MM-DD format (from date input)
+    if (typeof value === 'string') {
+      // Check if it's already in ISO format
+      if (value.includes('T')) {
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+      }
+      
+      // If it's YYYY-MM-DD, append time to avoid timezone issues
+      const date = new Date(value + 'T00:00:00.000Z');
+      return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+    }
+    
+    return '';
+  };
+
+  const buildPayload = (data: RestaurantFormData, includeId: boolean = false) => {
+    const payload: any = {
+      name: data.name,
+      street: data.street,
+      city: data.city,
+      postalCode: data.postalCode,
+      country: data.country,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      contact: data.contact,
+      email: data.email,
+      webAddress: data.webAddress,
+      description: data.description,
+      tax: data.tax,
+      courierFee: data.courierFee,
+      workingHours: data.workingHours,
+      blockedDates: data.blockedDates
+        .map((blocked) => {
+          const isoDate = toIsoDate(blocked.date);
+          console.log('Converting blocked date:', blocked.date, '-> ISO:', isoDate);
+          return {
+            date: isoDate,
+            reason: blocked.reason.trim(),
+          };
+        })
+        .filter((blocked) => {
+          const isValid = Boolean(blocked.date && blocked.reason);
+          console.log('Blocked date valid?', isValid, blocked);
+          return isValid;
+        }),
+      totalEmployees: data.totalEmployees,
+    };
+    
+    if (includeId && data._id) {
+      payload._id = data._id;
+    }
+    
+    return payload;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -165,11 +229,28 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
       toast.error('Please fill in both date and reason');
       return;
     }
-    setFormData((prev) => ({
-      ...prev,
-      blockedDates: [...prev.blockedDates, newBlockedDate],
-    }));
+
+    const normalizedDate = toIsoDate(newBlockedDate.date);
+    console.log('Adding blocked date - Input:', newBlockedDate.date, 'Normalized:', normalizedDate);
+    
+    if (!normalizedDate) {
+      toast.error('Please enter a valid date');
+      return;
+    }
+
+    setFormData((prev) => {
+      const newBlockedDates = [
+        ...prev.blockedDates,
+        { date: normalizedDate, reason: newBlockedDate.reason.trim() },
+      ];
+      console.log('Updated blockedDates array:', newBlockedDates);
+      return {
+        ...prev,
+        blockedDates: newBlockedDates,
+      };
+    });
     setNewBlockedDate({ date: '', reason: '' });
+    toast.success('Blocked date added');
   };
 
   const removeBlockedDate = (index: number) => {
@@ -234,15 +315,24 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
       setLoading(true);
 
       const method = isEdit ? 'PUT' : 'POST';
+      const payload = buildPayload(formData, isEdit);
+      
+      console.log('Submitting restaurant payload:', JSON.stringify(payload, null, 2));
+      console.log('Tax value:', payload.tax, 'Type:', typeof payload.tax);
+      console.log('Blocked dates count:', payload.blockedDates.length);
+      console.log('Blocked dates detail:', payload.blockedDates);
+
       const response = await fetch('/api/restaurant', {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
+
+      console.log('Server response:', JSON.stringify(data, null, 2));
 
       if (!response.ok) {
         throw new Error(data.error || `Failed to ${isEdit ? 'update' : 'create'} restaurant`);
@@ -600,7 +690,7 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
       <Card>
         <CardHeader>
           <CardTitle>Blocked Dates</CardTitle>
-          <CardDescription>Mark days when your restaurant will be closed</CardDescription>
+          <CardDescription>Mark days when your restaurant will be closed. Fill in the date and reason, then click + to add.</CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
           <div className='flex gap-2'>

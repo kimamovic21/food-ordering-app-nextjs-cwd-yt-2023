@@ -58,7 +58,6 @@ const UserDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [makingCourier, setMakingCourier] = useState(false);
-  const [makingManager, setMakingManager] = useState(false);
   const [makingAdmin, setMakingAdmin] = useState(false);
   const { data: profileData, loading: profileLoading } = useProfile();
 
@@ -168,92 +167,6 @@ const UserDetailsPage = () => {
       });
     } finally {
       setMakingCourier(false);
-    }
-  };
-
-  const handleMakeManager = async () => {
-    if (!user) return;
-
-    try {
-      setMakingManager(true);
-      const res = await fetch('/api/users/make-manager', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.error || 'Failed to make manager', {
-          style: {
-            background: '#ef4444',
-            color: 'white',
-          },
-        });
-        return;
-      }
-
-      setUser({ ...user, role: 'manager' });
-      toast.success('User has been promoted to manager', {
-        style: {
-          background: '#22c55e',
-          color: 'white',
-        },
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to make manager', {
-        style: {
-          background: '#ef4444',
-          color: 'white',
-        },
-      });
-    } finally {
-      setMakingManager(false);
-    }
-  };
-
-  const handleRemoveManager = async () => {
-    if (!user) return;
-
-    try {
-      setMakingManager(true);
-      const res = await fetch('/api/users/remove-manager', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.error || 'Failed to remove manager', {
-          style: {
-            background: '#ef4444',
-            color: 'white',
-          },
-        });
-        return;
-      }
-
-      setUser({ ...user, role: 'user' });
-      toast.success('User manager role has been removed', {
-        style: {
-          background: '#22c55e',
-          color: 'white',
-        },
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to remove manager', {
-        style: {
-          background: '#ef4444',
-          color: 'white',
-        },
-      });
-    } finally {
-      setMakingManager(false);
     }
   };
 
@@ -469,7 +382,6 @@ const UserDetailsPage = () => {
 
               {profileData?.role === 'admin' &&
                 user.role !== 'courier' &&
-                user.role !== 'manager' &&
                 user.role !== 'admin' && (
                   <div className='mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 space-y-3'>
                     <AlertDialog>
@@ -492,34 +404,6 @@ const UserDetailsPage = () => {
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={handleMakeCourier}
-                            className='bg-primary hover:bg-primary/90'
-                          >
-                            Confirm
-                          </AlertDialogAction>
-                        </div>
-                      </AlertDialogContent>
-                    </AlertDialog>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          disabled={makingManager}
-                          className='w-full bg-primary hover:bg-primary/90'
-                        >
-                          {makingManager ? 'Making Manager...' : 'Make Manager'}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Make Manager</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to make {user.name} a manager?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <div className='flex gap-3 justify-end'>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={handleMakeManager}
                             className='bg-primary hover:bg-primary/90'
                           >
                             Confirm
@@ -579,35 +463,6 @@ const UserDetailsPage = () => {
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={handleRemoveCourier}
-                          className='bg-red-600 hover:bg-red-700'
-                        >
-                          Confirm
-                        </AlertDialogAction>
-                      </div>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              )}
-
-              {profileData?.role === 'admin' && user.role === 'manager' && (
-                <div className='mt-6 pt-6 border-t border-gray-200 dark:border-gray-700'>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button disabled={makingManager} variant='destructive' className='w-full'>
-                        {makingManager ? 'Removing Manager...' : 'Remove Manager'}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remove Manager</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to remove {user.name} from manager role?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <div className='flex gap-3 justify-end'>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleRemoveManager}
                           className='bg-red-600 hover:bg-red-700'
                         >
                           Confirm

@@ -44,8 +44,8 @@ const OrdersPage = () => {
   useEffect(() => {
     if (loading) return;
 
-    if (data?.role !== 'admin' && data?.role !== 'manager') {
-      console.warn('User is not admin or manager:', { role: data?.role, data });
+    if (data?.role !== 'admin') {
+      console.warn('User is not admin:', { role: data?.role, data });
       return;
     }
 
@@ -133,8 +133,8 @@ const OrdersPage = () => {
     );
   }
 
-  if (!data?.role || (data.role !== 'admin' && data.role !== 'manager'))
-    return 'Not an admin or manager';
+  if (!data?.role || data.role !== 'admin')
+    return 'Not an admin';
 
   return (
     <section className='mt-8 flex flex-col min-h-[calc(100vh-8rem)] max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10'>

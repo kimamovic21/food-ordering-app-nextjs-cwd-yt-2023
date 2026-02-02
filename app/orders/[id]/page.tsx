@@ -121,7 +121,7 @@ const OrderDetailPage = () => {
   const orderId = params?.id as string;
 
   useEffect(() => {
-    if (profileLoading || (profileData?.role !== 'admin' && profileData?.role !== 'manager'))
+    if (profileLoading || profileData?.role !== 'admin')
       return;
 
     const fetchOrder = async (showLoading = true) => {
@@ -436,8 +436,8 @@ const OrderDetailPage = () => {
     );
   }
 
-  if (!profileData?.role || (profileData.role !== 'admin' && profileData.role !== 'manager'))
-    return 'Not an admin or manager';
+  if (!profileData?.role || profileData.role !== 'admin')
+    return 'Not an admin';
 
   if (error) return <div className='mt-8 text-red-600'>{error}</div>;
 

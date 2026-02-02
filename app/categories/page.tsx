@@ -193,8 +193,8 @@ const CategoriesPage = () => {
     return renderSkeleton();
   }
 
-  if (!profileData || (profileData?.role !== 'admin' && profileData?.role !== 'manager')) {
-    return 'Not an admin or manager';
+  if (!profileData || profileData?.role !== 'admin') {
+    return 'Not an admin';
   }
 
   return (

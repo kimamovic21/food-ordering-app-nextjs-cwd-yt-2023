@@ -997,4 +997,10 @@ Use MongoDB client promise and clean up auth forms
 Add restaurant CRUD, UI, API and model
 
 -add CRUD logic for restaurant
--
+
+
+Remove manager role and related functionality
+
+-remove all manager related logic from route.ts files and tsx components
+
+

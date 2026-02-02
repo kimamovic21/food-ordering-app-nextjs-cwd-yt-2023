@@ -1,11 +1,11 @@
-import { isAdmin, isAdminOrManager } from '@/app/api/auth/[...nextauth]/route';
+import { isAdmin } from '@/app/api/auth/[...nextauth]/route';
 import { User } from '@/models/user';
 import mongoose from 'mongoose';
 
 export async function GET(request: Request) {
   await mongoose.connect(process.env.MONGODB_URL as string);
 
-  if (!(await isAdminOrManager())) {
+  if (!(await isAdmin())) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

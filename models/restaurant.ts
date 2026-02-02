@@ -85,4 +85,11 @@ const RestaurantSchema = new Schema(
   { timestamps: true }
 );
 
+// In dev, Next.js hot-reloads can retain old models. Ensure schema updates take effect.
+try {
+  if (models.Restaurant) {
+    delete models.Restaurant;
+  }
+} catch {}
+
 export const Restaurant = models?.Restaurant || model('Restaurant', RestaurantSchema);

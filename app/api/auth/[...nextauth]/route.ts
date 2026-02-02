@@ -21,24 +21,6 @@ export const isAdmin = async () => {
   return user.role === 'admin';
 };
 
-export const isAdminOrManager = async () => {
-  const session = await getServerSession(authOptions);
-  const userEmail = session?.user?.email;
-
-  if (!userEmail) {
-    return false;
-  }
-
-  await mongoose.connect(process.env.MONGODB_URL as string);
-  const user = await User.findOne({ email: userEmail });
-
-  if (!user) {
-    return false;
-  }
-
-  return user.role === 'admin' || user.role === 'manager';
-};
-
 export const isSuperAdmin = async () => {
   const session = await getServerSession(authOptions);
   const userEmail = session?.user?.email;

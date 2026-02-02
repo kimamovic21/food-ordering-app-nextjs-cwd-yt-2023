@@ -84,9 +84,6 @@ const UsersTable = ({ users }: UsersTableProps) => {
                   } else if (role === 'courier') {
                     className +=
                       ' bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-100';
-                  } else if (role === 'manager') {
-                    className +=
-                      ' bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-100';
                   }
 
                   return (

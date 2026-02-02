@@ -137,8 +137,8 @@ const MenuItemsListPage = () => {
 
   const showSkeleton = loading || isLoading;
 
-  if (!loading && data?.role !== 'admin' && data?.role !== 'manager')
-    return 'Not an admin or manager.';
+  if (!loading && data?.role !== 'admin')
+    return 'Not an admin.';
 
   return (
     <section className='mt-8'>

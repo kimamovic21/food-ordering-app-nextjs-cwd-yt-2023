@@ -19,7 +19,7 @@ export async function GET() {
     await mongoose.connect(process.env.MONGODB_URL as string);
 
     const adminUser = await User.findOne({ email: session.user.email });
-    if (!adminUser || (adminUser.role !== 'admin' && adminUser.role !== 'manager')) {
+    if (!adminUser || adminUser.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
