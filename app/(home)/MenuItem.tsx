@@ -17,6 +17,7 @@ interface MenuItemType {
   priceSmall: number;
   priceMedium: number;
   priceLarge: number;
+  restaurantId: string;
 }
 
 interface MenuItemProps {
@@ -27,7 +28,7 @@ type PizzaSize = 'small' | 'medium' | 'large';
 
 const MenuItem = ({ item }: MenuItemProps) => {
   const [selectedSize, setSelectedSize] = useState<PizzaSize>('small');
-  const { addToCart } = useCart();
+  const { addToCart, getCartRestaurantId } = useCart();
 
   const displayItem = item || {
     _id: 'default',
@@ -37,6 +38,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
     priceSmall: 10,
     priceMedium: 13,
     priceLarge: 16,
+    restaurantId: 'default',
   };
 
   const imageUrl = displayItem.image || Pizza.src;
@@ -58,6 +60,17 @@ const MenuItem = ({ item }: MenuItemProps) => {
   };
 
   const handleAddToCart = () => {
+    const cartRestaurantId = getCartRestaurantId();
+    
+    // Check if trying to add from a different restaurant
+    if (cartRestaurantId && cartRestaurantId !== displayItem.restaurantId) {
+      toast.error('Your cart contains items from another restaurant', {
+        description: 'Clear your cart to add items from a different restaurant',
+        duration: 4000,
+      });
+      return;
+    }
+
     addToCart({
       _id: displayItem._id,
       name: displayItem.name,
@@ -65,6 +78,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
       image: displayItem.image,
       size: selectedSize,
       price: getPrice(),
+      restaurantId: displayItem.restaurantId,
     });
     toast.success(`${displayItem.name} (${selectedSize}) added to cart!`, {
       style: {

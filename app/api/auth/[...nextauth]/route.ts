@@ -24,7 +24,8 @@ export const isAdmin = async () => {
 export const isSuperAdmin = async () => {
   const session = await getServerSession(authOptions);
   const userEmail = session?.user?.email;
-  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+  const superAdminEmail =
+    process.env.SUPER_ADMIN_EMAIL || process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
 
   if (!userEmail || !superAdminEmail) {
     return false;

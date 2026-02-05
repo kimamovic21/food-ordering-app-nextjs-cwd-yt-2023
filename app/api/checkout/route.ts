@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/libs/authOptions';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
+import { Restaurant } from '@/models/restaurant';
 import { calculateLoyaltyStatus } from '@/libs/loyaltyCalculator';
 import mongoose from 'mongoose';
 import Stripe from 'stripe';
@@ -17,12 +18,7 @@ type CartItemPayload = {
   size: string;
   price: number;
   quantity: number;
-};
-
-type DeliveryFeeBreakdown = {
-  baseFee: number;
-  weatherAdjustment: number;
-  totalAdjustment: number;
+  restaurantId: string;
 };
 
 export const runtime = 'nodejs';
@@ -45,8 +41,6 @@ export async function POST(req: Request) {
     city,
     country,
     cartItems,
-    deliveryFee,
-    deliveryFeeBreakdown,
     loyaltyDiscount,
     loyaltyDiscountPercentage,
   } = body as {
@@ -56,8 +50,6 @@ export async function POST(req: Request) {
     city?: string;
     country?: string;
     cartItems?: CartItemPayload[];
-    deliveryFee?: number;
-    deliveryFeeBreakdown?: DeliveryFeeBreakdown;
     loyaltyDiscount?: number;
     loyaltyDiscountPercentage?: number;
   };
@@ -77,9 +69,10 @@ export async function POST(req: Request) {
       size: item.size,
       price: Number(item.price),
       quantity: Number(item.quantity),
+      restaurantId: String(item.restaurantId),
     }))
     .filter((item) =>
-      Boolean(item._id && item.name && item.size && item.quantity > 0 && item.price > 0)
+      Boolean(item._id && item.name && item.size && item.quantity > 0 && item.price > 0 && item.restaurantId)
     );
 
   if (sanitizedItems.length === 0) {
@@ -91,6 +84,20 @@ export async function POST(req: Request) {
   const user = await User.findOne({ email: session.user.email });
   if (!user) {
     return Response.json({ error: 'User not found' }, { status: 404 });
+  }
+
+  const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+
+  // Single restaurant checkout (enforced by frontend)
+  const restaurantId = sanitizedItems[0]?.restaurantId;
+  if (!restaurantId) {
+    return Response.json({ error: 'No restaurant found in cart' }, { status: 400 });
+  }
+
+  // Fetch restaurant data
+  const restaurant = await Restaurant.findById(restaurantId);
+  if (!restaurant) {
+    return Response.json({ error: `Restaurant ${restaurantId} not found` }, { status: 404 });
   }
 
   // Verify loyalty discount by checking user's actual order count
@@ -109,14 +116,9 @@ export async function POST(req: Request) {
   }
 
   const subtotal = sanitizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * 0.1;
-  const calculatedDeliveryFee = deliveryFee || 5;
-  const discountedDeliveryFee = calculatedDeliveryFee - verifiedLoyaltyDiscount;
-  const calculatedDeliveryFeeBreakdown = deliveryFeeBreakdown || {
-    baseFee: 5,
-    weatherAdjustment: 0,
-    totalAdjustment: 0,
-  };
+  const tax = subtotal * (restaurant.tax / 100);
+  const deliveryFee = restaurant.courierFee;
+  const discountedDeliveryFee = deliveryFee - verifiedLoyaltyDiscount;
   const total = subtotal + tax + discountedDeliveryFee;
 
   const order = await Order.create({
@@ -133,9 +135,11 @@ export async function POST(req: Request) {
       size: item.size,
       quantity: item.quantity,
       price: item.price,
+      restaurantId: item.restaurantId,
     })),
-    deliveryFee: calculatedDeliveryFee,
-    deliveryFeeBreakdown: calculatedDeliveryFeeBreakdown,
+    restaurantId: restaurant._id,
+    taxPercentage: restaurant.tax,
+    deliveryFee: discountedDeliveryFee,
     loyaltyDiscount: verifiedLoyaltyDiscount,
     loyaltyDiscountPercentage: verifiedLoyaltyPercentage,
     loyaltyTier: loyaltyStatus.currentTier?.name || null,
@@ -145,11 +149,9 @@ export async function POST(req: Request) {
     orderStatus: 'placed',
   });
 
-  const origin =
-    req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
-    ...sanitizedItems.map((item) => ({
+  // Add items to Stripe line items
+  sanitizedItems.forEach((item) => {
+    stripeLineItems.push({
       quantity: item.quantity,
       price_data: {
         currency: 'usd',
@@ -158,43 +160,50 @@ export async function POST(req: Request) {
           name: `${item.name} (${item.size})`,
         },
       },
-    })),
-  ];
+    });
+  });
 
-  lineItems.push(
-    {
-      quantity: 1,
-      price_data: {
-        currency: 'usd',
-        unit_amount: Math.max(Math.round(tax * 100), 1),
-        product_data: { name: 'Tax' },
+  // Add tax
+  stripeLineItems.push({
+    quantity: 1,
+    price_data: {
+      currency: 'usd',
+      unit_amount: Math.max(Math.round(tax * 100), 1),
+      product_data: { name: `Tax` },
+    },
+  });
+
+  // Add delivery fee
+  stripeLineItems.push({
+    quantity: 1,
+    price_data: {
+      currency: 'usd',
+      unit_amount: Math.round(discountedDeliveryFee * 100),
+      product_data: {
+        name:
+          verifiedLoyaltyDiscount > 0
+            ? `Delivery Fee (${verifiedLoyaltyPercentage}% loyalty discount applied)`
+            : `Delivery Fee`,
       },
     },
-    {
-      quantity: 1,
-      price_data: {
-        currency: 'usd',
-        unit_amount: Math.round(discountedDeliveryFee * 100),
-        product_data: {
-          name:
-            verifiedLoyaltyDiscount > 0
-              ? `Delivery Fee (${verifiedLoyaltyPercentage}% loyalty discount applied)`
-              : 'Delivery Fee',
-        },
-      },
-    }
-  );
+  });
+
+  const origin =
+    req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   const stripeSession = await stripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
     customer_email: session.user.email,
-    metadata: { orderId: order._id.toString() },
-    line_items: lineItems,
+    metadata: { 
+      orderId: order._id.toString()
+    },
+    line_items: stripeLineItems,
     success_url: `${origin}/checkout?status=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/checkout?status=cancelled`,
   });
 
+  // Update order with stripe session ID
   order.stripeSessionId = stripeSession.id;
   await order.save();
 

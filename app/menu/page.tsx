@@ -17,6 +17,7 @@ interface MenuItemType {
   priceSmall: number;
   priceMedium: number;
   priceLarge: number;
+  restaurantId: string;
 }
 
 interface Category {

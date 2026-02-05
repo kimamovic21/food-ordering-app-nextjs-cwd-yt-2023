@@ -11,21 +11,15 @@ type BlockedDateInput = {
 };
 
 const normalizeBlockedDates = (blockedDates: unknown) => {
-  console.log('normalizeBlockedDates input:', JSON.stringify(blockedDates));
-  
   if (!Array.isArray(blockedDates)) {
-    console.log('blockedDates is not an array, returning empty array');
     return [] as { date: Date; reason: string }[];
   }
 
   const normalized: { date: Date; reason: string }[] = [];
 
   for (const entry of blockedDates as BlockedDateInput[]) {
-    console.log('Processing blocked date entry:', entry);
     const reason = typeof entry.reason === 'string' ? entry.reason.trim() : '';
     const rawDate = entry.date instanceof Date ? entry.date : new Date(entry.date || '');
-    
-    console.log('Parsed reason:', reason, 'Parsed date:', rawDate, 'Valid:', !Number.isNaN(rawDate.getTime()));
 
     if (!reason || Number.isNaN(rawDate.getTime())) {
       console.error('Invalid blocked date entry - reason:', reason, 'date valid:', !Number.isNaN(rawDate.getTime()));
@@ -35,7 +29,6 @@ const normalizeBlockedDates = (blockedDates: unknown) => {
     normalized.push({ date: rawDate, reason });
   }
 
-  console.log('Normalized blocked dates:', normalized);
   return normalized;
 };
 
@@ -143,10 +136,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const payload = sanitizeRestaurantPayload(body, false);
 
-    console.log('CREATE Restaurant payload:', JSON.stringify(payload, null, 2));
-    console.log('Tax in payload:', payload.tax, 'Type:', typeof payload.tax);
-    console.log('Blocked dates in payload:', payload.blockedDates);
-
     // Validate description length
     if (
       payload.description &&
@@ -179,11 +168,7 @@ export async function POST(req: NextRequest) {
       totalEmployees: payload.totalEmployees,
     };
 
-    console.log('Restaurant data before create:', JSON.stringify(restaurantData, null, 2));
-
     const restaurant = await Restaurant.create(restaurantData);
-
-    console.log('Created restaurant:', JSON.stringify(restaurant.toObject(), null, 2));
 
     // Update user with restaurant ID
     await User.findByIdAndUpdate(user._id, { restaurantId: restaurant._id });
@@ -216,11 +201,6 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const payload = sanitizeRestaurantPayload(body, true);
     const { _id, ...updateData } = payload;
-    
-    console.log('UPDATE Restaurant _id:', _id);
-    console.log('UPDATE Restaurant data:', JSON.stringify(updateData, null, 2));
-    console.log('Tax in updateData:', updateData.tax, 'Type:', typeof updateData.tax);
-    console.log('Blocked dates in updateData:', updateData.blockedDates);
 
     // Validate description length
     if (
@@ -252,8 +232,6 @@ export async function PUT(req: NextRequest) {
       runValidators: true,
       }
     );
-
-    console.log('Updated restaurant:', JSON.stringify(updatedRestaurant, null, 2));
 
     return NextResponse.json({ restaurant: updatedRestaurant }, { status: 200 });
   } catch (error) {

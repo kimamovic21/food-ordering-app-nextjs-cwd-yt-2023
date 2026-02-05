@@ -12,26 +12,10 @@ const CartProductSchema = new Schema(
     size: { type: String, required: true },
     quantity: { type: Number, required: true },
     price: { type: Number, required: true },
-  },
-  { _id: false }
-);
-
-const DeliveryFeeSchema = new Schema(
-  {
-    baseFee: { 
-      type: Number, 
-      required: true,
-      min: 0,
-    },
-    weatherAdjustment: { 
-      type: Number, 
-      default: 0,
-      min: 0,
-    },
-    totalAdjustment: { 
-      type: Number, 
-      default: 0,
-      min: 0,
+    restaurantId: { 
+      type: Schema.Types.ObjectId, 
+      ref: 'Restaurant', 
+      required: true 
     },
   },
   { _id: false }
@@ -48,20 +32,25 @@ const OrderSchema = new Schema(
     country: { type: String, required: true },
     cartProducts: { type: [CartProductSchema], required: true },
     
-    // Delivery fee breakdown
+    // Restaurant reference
+    restaurantId: { 
+      type: Schema.Types.ObjectId, 
+      ref: 'Restaurant', 
+      required: true 
+    },
+    
+    // Tax and fees (dynamic from restaurant)
+    taxPercentage: { 
+      type: Number, 
+      required: true,
+      min: 0,
+      max: 100 
+    },
     deliveryFee: { 
       type: Number, 
       required: true,
       default: 5,
       min: 0,
-    },
-    deliveryFeeBreakdown: { 
-      type: DeliveryFeeSchema, 
-      default: {
-        baseFee: 5,
-        weatherAdjustment: 0,
-        totalAdjustment: 0,
-      },
     },
     
     // Loyalty discount

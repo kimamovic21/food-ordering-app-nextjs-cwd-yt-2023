@@ -43,22 +43,12 @@ type OrderDetailsType = {
   paymentStatus: boolean;
   orderStatus: 'placed' | 'processing' | 'ready' | 'transportation' | 'completed';
   createdAt: string;
+  taxPercentage?: number;
   deliveryFee?: number;
-  deliveryFeeBreakdown?: {
-    baseFee: number;
-    altitudeAdjustment: number;
-    weatherAdjustment: number;
-    totalAdjustment: number;
-    altitude?: number;
-    weather?: {
-      condition: 'clear' | 'rain' | 'snow' | 'storm';
-      temperature: number;
-      windSpeed: number;
-    };
-  };
   loyaltyDiscount?: number;
   loyaltyDiscountPercentage?: number;
   loyaltyTier?: string;
+  restaurantId?: string;
 };
 
 // Map loads client-side only because Leaflet touches window during module init
@@ -282,7 +272,7 @@ const MyOrderDetailPage = () => {
               orderStatus={order.orderStatus}
               createdAt={order.createdAt}
               deliveryFee={order.deliveryFee}
-              deliveryFeeBreakdown={order.deliveryFeeBreakdown}
+              taxPercentage={order.taxPercentage}
             />
 
             <CustomerInfoCard
@@ -300,8 +290,8 @@ const MyOrderDetailPage = () => {
             <OrderItemsCard
               cartProducts={order.cartProducts}
               total={order.total}
+              taxPercentage={order.taxPercentage}
               deliveryFee={order.deliveryFee}
-              deliveryFeeBreakdown={order.deliveryFeeBreakdown}
               loyaltyDiscount={order.loyaltyDiscount}
               loyaltyDiscountPercentage={order.loyaltyDiscountPercentage}
               loyaltyTier={order.loyaltyTier}

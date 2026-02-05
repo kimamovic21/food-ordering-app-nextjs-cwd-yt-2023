@@ -16,24 +16,11 @@ type CartProduct = {
   price: number;
 };
 
-type DeliveryFeeBreakdown = {
-  baseFee?: number;
-  altitudeAdjustment?: number;
-  weatherAdjustment?: number;
-  totalAdjustment?: number;
-  altitude?: number;
-  weather?: {
-    condition: 'clear' | 'rain' | 'snow' | 'storm';
-    temperature: number;
-    windSpeed: number;
-  };
-};
-
 type OrderItemsCardProps = {
   cartProducts: CartProduct[];
   total: number;
+  taxPercentage?: number;
   deliveryFee?: number;
-  deliveryFeeBreakdown?: DeliveryFeeBreakdown;
   loyaltyDiscount?: number;
   loyaltyDiscountPercentage?: number;
   loyaltyTier?: string;
@@ -42,14 +29,15 @@ type OrderItemsCardProps = {
 const OrderItemsCard = ({
   cartProducts,
   total,
+  taxPercentage,
   deliveryFee,
-  deliveryFeeBreakdown,
   loyaltyDiscount,
   loyaltyDiscountPercentage,
   loyaltyTier,
 }: OrderItemsCardProps) => {
   const subtotal = cartProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * 0.1;
+  const taxPercent = taxPercentage || 10;
+  const calculatedTax = subtotal * (taxPercent / 100);
   const discount = loyaltyDiscount || 0;
   const calculatedDeliveryFee = deliveryFee || 5;
   const discountedDeliveryFee = calculatedDeliveryFee - discount;
@@ -93,11 +81,11 @@ const OrderItemsCard = ({
             <span>${subtotal.toFixed(2)}</span>
           </div>
           <div className='flex justify-between text-muted-foreground'>
-            <span>Tax (10%):</span>
-            <span>${tax.toFixed(2)}</span>
+            <span>Tax ({taxPercent}%):</span>
+            <span>${calculatedTax.toFixed(2)}</span>
           </div>
 
-          {/* Delivery Fee Breakdown */}
+          {/* Delivery Fee */}
           <div className='border-t pt-2 space-y-1'>
             <div className='flex justify-between text-muted-foreground'>
               <span>Delivery Fee:</span>
@@ -114,40 +102,12 @@ const OrderItemsCard = ({
                 <span>-${discount.toFixed(2)}</span>
               </div>
             )}
-
-            {deliveryFeeBreakdown?.altitudeAdjustment ? (
-              <div className='flex justify-between text-muted-foreground text-sm pl-2'>
-                <span>
-                  + Altitude{' '}
-                  {deliveryFeeBreakdown.altitude
-                    ? `(+${Math.round(deliveryFeeBreakdown.altitude)}m)`
-                    : ''}
-                  :
-                </span>
-                <span>${deliveryFeeBreakdown.altitudeAdjustment.toFixed(2)}</span>
-              </div>
-            ) : null}
-            {deliveryFeeBreakdown?.weatherAdjustment ? (
-              <div className='flex justify-between text-muted-foreground text-sm pl-2'>
-                <span>
-                  + Weather{' '}
-                  {deliveryFeeBreakdown.weather?.condition
-                    ? `(${deliveryFeeBreakdown.weather.condition})`
-                    : ''}
-                  :
-                </span>
-                <span>${deliveryFeeBreakdown.weatherAdjustment.toFixed(2)}</span>
-              </div>
-            ) : null}
-            {(deliveryFeeBreakdown &&
-              (deliveryFeeBreakdown.altitudeAdjustment ||
-                deliveryFeeBreakdown.weatherAdjustment)) ||
-            discount > 0 ? (
+            {discount > 0 && (
               <div className='flex justify-between text-muted-foreground font-semibold border-t border-dashed pt-1'>
                 <span>Final Delivery Fee:</span>
                 <span>${discountedDeliveryFee.toFixed(2)}</span>
               </div>
-            ) : null}
+            )}
           </div>
 
           <div className='flex justify-between text-lg font-semibold pt-2 border-t'>

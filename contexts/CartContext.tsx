@@ -10,16 +10,19 @@ export interface CartItem {
   size: 'small' | 'medium' | 'large' | 'single';
   price: number | null;
   quantity: number;
+  restaurantId: string;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (item: Omit<CartItem, 'quantity'>) => void;
+  addToCart: (item: Omit<CartItem, 'quantity'>) => boolean; // Returns true if added, false if different restaurant
   removeFromCart: (id: string, size: string) => void;
   updateQuantity: (id: string, size: string, quantity: number) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
+  getCartRestaurantId: () => string | null; // Get the restaurantId of items in cart
+  clearAndAddToCart: (item: Omit<CartItem, 'quantity'>) => void; // Clear cart and add new item from different restaurant
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -44,9 +47,18 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     const storedCart = localStorage.getItem('cart');
     if (storedCart) {
       try {
-        setCartItems(JSON.parse(storedCart));
+        const parsedItems = JSON.parse(storedCart);
+        // Filter out items without restaurantId (old cart items)
+        const validItems = parsedItems.filter((item: any) => item.restaurantId);
+        
+        if (validItems.length !== parsedItems.length) {
+          console.warn('Removed cart items without restaurantId:', parsedItems.length - validItems.length);
+        }
+        
+        setCartItems(validItems);
       } catch (error) {
         console.error('Error loading cart from local storage:', error);
+        localStorage.removeItem('cart'); // Clear invalid cart
       }
     }
     setIsLoaded(true);
@@ -58,8 +70,16 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     }
   }, [cartItems, isLoaded]);
 
-  const addToCart = (item: Omit<CartItem, 'quantity'>) => {
+  const addToCart = (item: Omit<CartItem, 'quantity'>): boolean => {
+    let canAdd = true;
+    
     setCartItems((prevItems) => {
+      // Check if cart is empty or if item is from the same restaurant
+      if (prevItems.length > 0 && prevItems[0].restaurantId !== item.restaurantId) {
+        canAdd = false;
+        return prevItems; // Don't add, return unchanged
+      }
+
       const existingItem = prevItems.find((i) => i._id === item._id && i.size === item.size);
 
       if (existingItem) {
@@ -70,6 +90,8 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
       return [...prevItems, { ...item, quantity: 1 }];
     });
+    
+    return canAdd;
   };
 
   const removeFromCart = (id: string, size: string) => {
@@ -95,6 +117,15 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     setCartItems([]);
   }, []);
 
+  const getCartRestaurantId = (): string | null => {
+    if (cartItems.length === 0) return null;
+    return cartItems[0].restaurantId;
+  };
+
+  const clearAndAddToCart = (item: Omit<CartItem, 'quantity'>) => {
+    setCartItems([{ ...item, quantity: 1 }]);
+  };
+
   const getTotalItems = () => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
@@ -116,6 +147,8 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         clearCart,
         getTotalItems,
         getTotalPrice,
+        getCartRestaurantId,
+        clearAndAddToCart,
       }}
     >
       {children}

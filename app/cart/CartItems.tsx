@@ -84,17 +84,17 @@ const CartItems: React.FC<CartItemsProps> = ({
     <>
       <div className='space-y-4 mb-6 sm:mb-8'>
         {cartItems.map((item) => {
-          const imageUrl = item.image || Pizza.src;
+          const safeImageSrc = item.image || Pizza;
           const isRemoteImage =
-            typeof imageUrl === 'string' &&
-            (imageUrl.startsWith('http') || imageUrl.includes('cloudinary'));
+            typeof safeImageSrc === 'string' &&
+            (safeImageSrc.startsWith('http') || safeImageSrc.includes('cloudinary'));
           const itemPrice =
             typeof item.price === 'number' && Number.isFinite(item.price) ? item.price : 0;
-          const isValidImageUrl = typeof item.image === 'string' && item.image.startsWith('http');
+          const isValidImageUrl = typeof item.image === 'string' && item.image.length > 0;
           return (
             <div
               key={`${item._id}-${item.size}`}
-              className='bg-card border rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4'
+              className='bg-card border rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4'
             >
               <div className='flex items-start gap-3 w-full sm:w-auto'>
                 <div className='w-16 h-16 sm:w-20 sm:h-20 shrink-0'>
@@ -103,7 +103,7 @@ const CartItems: React.FC<CartItemsProps> = ({
                       <Image
                         width={80}
                         height={80}
-                        src={item.image}
+                        src={safeImageSrc}
                         alt={item.name}
                         className='w-full h-full object-contain rounded'
                         onError={() => {
@@ -112,7 +112,7 @@ const CartItems: React.FC<CartItemsProps> = ({
                       />
                     ) : (
                       <Image
-                        src={item.image}
+                        src={safeImageSrc}
                         alt={item.name}
                         width={80}
                         height={80}
@@ -126,7 +126,7 @@ const CartItems: React.FC<CartItemsProps> = ({
                     <Image
                       width={80}
                       height={80}
-                      src={Pizza.src}
+                      src={Pizza}
                       alt={item.name}
                       className='w-full h-full object-contain rounded'
                     />
@@ -146,47 +146,43 @@ const CartItems: React.FC<CartItemsProps> = ({
                   </p>
                 </div>
               </div>
-              <div className='flex items-center w-full gap-3 sm:gap-4'>
-                <div className='flex items-center gap-2 sm:gap-3'>
-                  <FaMinus
-                    size={20}
-                    onClick={() =>
-                      handleUpdateQuantity(item._id, item.size, item.quantity - 1, 'remove')
-                    }
-                    className='bg-accent hover:bg-accent/80 rounded-full p-1.5 sm:p-2 lg:p-1.5 transition cursor-pointer text-foreground w-8 h-8 sm:w-8 sm:h-8 lg:w-6 lg:h-6 inline-flex items-center justify-center'
-                    role='button'
-                    tabIndex={0}
-                    aria-label='Decrease quantity'
-                  />
-                  <span className='font-semibold text-base sm:text-lg w-6 sm:w-8 text-center'>
-                    {item.quantity}
-                  </span>
-                  <FaPlus
-                    size={20}
-                    onClick={() =>
-                      handleUpdateQuantity(item._id, item.size, item.quantity + 1, 'add')
-                    }
-                    className='bg-accent hover:bg-accent/80 rounded-full p-1.5 sm:p-2 lg:p-1.5 transition cursor-pointer text-foreground w-8 h-8 sm:w-8 sm:h-8 lg:w-6 lg:h-6 inline-flex items-center justify-center'
-                    role='button'
-                    tabIndex={0}
-                    aria-label='Increase quantity'
-                  />
+              <div className='flex items-center gap-2 sm:gap-3 ml-auto'>
+                <FaMinus
+                  size={20}
+                  onClick={() =>
+                    handleUpdateQuantity(item._id, item.size, item.quantity - 1, 'remove')
+                  }
+                  className='bg-accent hover:bg-accent/80 rounded-full p-1.5 sm:p-2 lg:p-1.5 transition cursor-pointer text-foreground w-8 h-8 sm:w-8 sm:h-8 lg:w-6 lg:h-6 inline-flex items-center justify-center'
+                  role='button'
+                  tabIndex={0}
+                  aria-label='Decrease quantity'
+                />
+                <span className='font-semibold text-base sm:text-lg w-6 sm:w-8 text-center'>
+                  {item.quantity}
+                </span>
+                <FaPlus
+                  size={20}
+                  onClick={() =>
+                    handleUpdateQuantity(item._id, item.size, item.quantity + 1, 'add')
+                  }
+                  className='bg-accent hover:bg-accent/80 rounded-full p-1.5 sm:p-2 lg:p-1.5 transition cursor-pointer text-foreground w-8 h-8 sm:w-8 sm:h-8 lg:w-6 lg:h-6 inline-flex items-center justify-center'
+                  role='button'
+                  tabIndex={0}
+                  aria-label='Increase quantity'
+                />
+                <div className='text-right ml-2 sm:ml-3'>
+                  <p className='font-bold text-base sm:text-lg text-foreground whitespace-nowrap'>
+                    ${(itemPrice * item.quantity).toFixed(2)}
+                  </p>
                 </div>
-                <div className='flex items-center gap-3 ml-auto'>
-                  <div className='text-right'>
-                    <p className='font-bold text-base sm:text-lg text-foreground whitespace-nowrap'>
-                      ${(itemPrice * item.quantity).toFixed(2)}
-                    </p>
-                  </div>
-                  <FaTrash
-                    size={16}
-                    onClick={() => handleRemoveFromCart(item._id, item.size)}
-                    className='text-destructive hover:opacity-90 transition cursor-pointer'
-                    role='button'
-                    tabIndex={0}
-                    aria-label='Remove item'
-                  />
-                </div>
+                <FaTrash
+                  size={16}
+                  onClick={() => handleRemoveFromCart(item._id, item.size)}
+                  className='text-destructive hover:opacity-90 transition cursor-pointer ml-1'
+                  role='button'
+                  tabIndex={0}
+                  aria-label='Remove item'
+                />
               </div>
             </div>
           );

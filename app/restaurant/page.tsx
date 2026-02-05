@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Phone, Mail, Globe, Users, Clock, DollarSign, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
@@ -115,10 +116,92 @@ export default function RestaurantPage() {
 
   if (loading) {
     return (
-      <div className='container mx-auto py-8 px-4'>
-        <div className='animate-pulse space-y-4'>
-          <div className='h-8 bg-muted rounded w-1/4' />
-          <div className='h-64 bg-muted rounded' />
+      <div className='container mx-auto py-8 px-4 max-w-7xl'>
+        {/* Header Skeleton */}
+        <div className='flex justify-between items-center mb-6'>
+          <Skeleton className='h-10 w-64' />
+          <div className='flex gap-2'>
+            <Skeleton className='h-10 w-24' />
+            <Skeleton className='h-10 w-24' />
+          </div>
+        </div>
+
+        {/* Cards Grid Skeleton */}
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+          {/* Basic Information Card Skeleton */}
+          <Card>
+            <CardHeader>
+              <Skeleton className='h-6 w-40' />
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className='space-y-3'>
+                <Skeleton className='h-4 w-24' />
+                <Skeleton className='h-4 w-full' />
+                <Skeleton className='h-4 w-5/6' />
+              </div>
+              <div className='space-y-3'>
+                <Skeleton className='h-4 w-20' />
+                <Skeleton className='h-4 w-full' />
+              </div>
+              <div className='space-y-3'>
+                <Skeleton className='h-4 w-24' />
+                <Skeleton className='h-4 w-full' />
+              </div>
+              <div className='space-y-3'>
+                <Skeleton className='h-4 w-24' />
+                <Skeleton className='h-4 w-3/4' />
+              </div>
+              <div className='space-y-3'>
+                <Skeleton className='h-4 w-32' />
+                <Skeleton className='h-4 w-16' />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pricing & Fees Card Skeleton */}
+          <Card>
+            <CardHeader>
+              <Skeleton className='h-6 w-40' />
+            </CardHeader>
+            <CardContent className='space-y-6'>
+              <div className='flex items-center gap-2'>
+                <div className='w-4 h-4 bg-muted rounded animate-pulse' />
+                <div className='flex-1'>
+                  <Skeleton className='h-4 w-24 mb-2' />
+                  <Skeleton className='h-6 w-20' />
+                </div>
+              </div>
+              <div>
+                <Skeleton className='h-4 w-24 mb-2' />
+                <Skeleton className='h-7 w-16' />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Working Hours Card Skeleton */}
+          <Card>
+            <CardHeader>
+              <Skeleton className='h-6 w-40' />
+            </CardHeader>
+            <CardContent className='space-y-3'>
+              {[...Array(7)].map((_, i) => (
+                <div key={i} className='flex justify-between items-center py-2 border-b last:border-0'>
+                  <Skeleton className='h-4 w-20' />
+                  <Skeleton className='h-4 w-28' />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Location Map Card Skeleton */}
+          <Card className='md:col-span-3'>
+            <CardHeader>
+              <Skeleton className='h-6 w-24' />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className='h-[400px] w-full rounded-lg' />
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -165,7 +248,7 @@ export default function RestaurantPage() {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
         {/* Basic Information */}
         <Card>
           <CardHeader>
@@ -223,24 +306,6 @@ export default function RestaurantPage() {
                 <p className='text-sm text-muted-foreground'>Total Employees</p>
                 <p>{restaurant.totalEmployees}</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Map */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Location</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='h-[400px] rounded-lg overflow-hidden'>
-              <OrderMap
-                address={restaurant.street}
-                city={restaurant.city}
-                postalCode={restaurant.postalCode}
-                country={restaurant.country}
-                shouldFetchCourier={false}
-              />
             </div>
           </CardContent>
         </Card>
@@ -306,6 +371,24 @@ export default function RestaurantPage() {
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Location Map */}
+        <Card className='md:col-span-3'>
+          <CardHeader>
+            <CardTitle>Location</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='h-[400px] rounded-lg overflow-hidden'>
+              <OrderMap
+                address={restaurant.street}
+                city={restaurant.city}
+                postalCode={restaurant.postalCode}
+                country={restaurant.country}
+                shouldFetchCourier={false}
+              />
+            </div>
           </CardContent>
         </Card>
       </div>

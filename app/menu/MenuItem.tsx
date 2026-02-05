@@ -17,6 +17,7 @@ interface MenuItemType {
   priceSmall: number | null;
   priceMedium: number | null;
   priceLarge: number | null;
+  restaurantId: string;
 }
 
 interface MenuItemProps {
@@ -27,7 +28,7 @@ type Size = 'small' | 'medium' | 'large' | 'single';
 
 const MenuItem = ({ item }: MenuItemProps) => {
   const [userSelectedSize, setUserSelectedSize] = useState<Size>('small');
-  const { addToCart } = useCart();
+  const { addToCart, getCartRestaurantId } = useCart();
 
   const displayItem = item || {
     _id: 'default',
@@ -37,6 +38,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
     priceSmall: 10,
     priceMedium: 13,
     priceLarge: 16,
+    restaurantId: 'default',
   };
 
   const imageUrl = displayItem.image || Pizza.src;
@@ -73,6 +75,17 @@ const MenuItem = ({ item }: MenuItemProps) => {
   };
 
   const handleAddToCart = () => {
+    const cartRestaurantId = getCartRestaurantId();
+    
+    // Check if trying to add from a different restaurant
+    if (cartRestaurantId && cartRestaurantId !== displayItem.restaurantId) {
+      toast.error('Your cart contains items from another restaurant', {
+        description: 'Clear your cart to add items from a different restaurant',
+        duration: 4000,
+      });
+      return;
+    }
+
     const price = getPrice();
     if (price == null) return;
 
@@ -85,6 +98,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
       image: displayItem.image,
       size: sizeForCart,
       price,
+      restaurantId: displayItem.restaurantId,
     });
     toast.success(
       availableSizes.length === 1

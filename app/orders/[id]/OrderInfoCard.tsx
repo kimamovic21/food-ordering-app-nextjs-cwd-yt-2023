@@ -1,13 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-type DeliveryFeeBreakdown = {
-  baseFee?: number;
-  altitudeAdjustment?: number;
-  weatherAdjustment?: number;
-  totalAdjustment?: number;
-};
-
 type OrderInfoCardProps = {
   orderId: string;
   paymentStatus: boolean;
@@ -16,7 +9,7 @@ type OrderInfoCardProps = {
   updatedAt: string;
   stripeSessionId?: string;
   deliveryFee?: number;
-  deliveryFeeBreakdown?: DeliveryFeeBreakdown;
+  taxPercentage?: number;
 };
 
 const OrderInfoCard = ({
@@ -27,7 +20,7 @@ const OrderInfoCard = ({
   updatedAt,
   stripeSessionId,
   deliveryFee,
-  deliveryFeeBreakdown,
+  taxPercentage,
 }: OrderInfoCardProps) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -101,39 +94,25 @@ const OrderInfoCard = ({
             </div>
           )}
 
-          {/* Row 5: Delivery Fee (if available) */}
-          {deliveryFee !== undefined && (
+          {/* Row 5: Delivery Fee and Tax (if available) */}
+          {(deliveryFee !== undefined || taxPercentage !== undefined) && (
             <div className='border-t pt-4'>
               <p className='text-sm text-muted-foreground mb-2 font-semibold'>
-                Delivery Fee Details
+                Fee Details
               </p>
               <div className='space-y-1 text-sm'>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>Base Fee:</span>
-                  <span className='font-semibold text-foreground'>
-                    ${(deliveryFeeBreakdown?.baseFee || 5).toFixed(2)}
-                  </span>
-                </div>
-                {deliveryFeeBreakdown?.altitudeAdjustment ? (
-                  <div className='flex justify-between text-xs pl-2'>
-                    <span className='text-muted-foreground'>+ Altitude:</span>
-                    <span className='text-foreground'>
-                      ${deliveryFeeBreakdown.altitudeAdjustment.toFixed(2)}
-                    </span>
+                {taxPercentage !== undefined && (
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>Tax:</span>
+                    <span className='font-semibold text-foreground'>{taxPercentage}%</span>
                   </div>
-                ) : null}
-                {deliveryFeeBreakdown?.weatherAdjustment ? (
-                  <div className='flex justify-between text-xs pl-2'>
-                    <span className='text-muted-foreground'>+ Weather:</span>
-                    <span className='text-foreground'>
-                      ${deliveryFeeBreakdown.weatherAdjustment.toFixed(2)}
-                    </span>
+                )}
+                {deliveryFee !== undefined && (
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>Delivery Fee:</span>
+                    <span className='font-semibold text-foreground'>${deliveryFee.toFixed(2)}</span>
                   </div>
-                ) : null}
-                <div className='flex justify-between border-t pt-1 font-semibold'>
-                  <span className='text-foreground'>Total:</span>
-                  <span className='text-foreground'>${deliveryFee.toFixed(2)}</span>
-                </div>
+                )}
               </div>
             </div>
           )}

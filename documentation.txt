@@ -1017,3 +1017,10 @@ Validate images, fix uploads, refine menu UI
 -update .ts files and .tsx components to handle image upload to Cloudinary service
 -update testimonial text
 -in folder app/menu update component MenuItem.jsx
+
+
+Enforce single-restaurant cart & restaurant fees
+
+-open link: https://www.npmjs.com/package/baseline-browser-mapping
+-type command: npm i -D baseline-browser-mapping@latest
+-update route.ts file and order model
