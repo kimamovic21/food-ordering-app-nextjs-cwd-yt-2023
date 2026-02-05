@@ -77,17 +77,35 @@ const MenuItem = ({ item }: MenuItemProps) => {
   return (
     <Card className='p-0 overflow-hidden hover:shadow-lg transition-shadow flex flex-col'>
       <div className='text-center relative h-40 p-4 bg-muted'>
-        {isRemoteImage ? (
-          <Image
-            width={140}
-            height={140}
-            src={imageUrl}
-            alt={displayItem.name}
-            className='mx-auto h-40 w-auto object-contain'
-          />
+        {displayItem.image &&
+        typeof displayItem.image === 'string' &&
+        displayItem.image.startsWith('http') ? (
+          isRemoteImage ? (
+            <Image
+              width={140}
+              height={140}
+              src={displayItem.image}
+              alt={displayItem.name}
+              className='mx-auto h-40 w-auto object-contain'
+              onError={() => {
+                console.warn(`Failed to load image: ${displayItem.image}`);
+              }}
+            />
+          ) : (
+            <Image
+              src={displayItem.image}
+              alt={displayItem.name}
+              width={140}
+              height={140}
+              className='mx-auto'
+              onError={() => {
+                console.warn(`Failed to load image: ${displayItem.image}`);
+              }}
+            />
+          )
         ) : (
           <Image
-            src={imageUrl}
+            src={Pizza.src}
             alt={displayItem.name}
             width={140}
             height={140}

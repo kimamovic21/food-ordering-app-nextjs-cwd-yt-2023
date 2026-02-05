@@ -18,44 +18,44 @@ export type TestimonialItem = {
 
 const testimonials: TestimonialItem[] = [
   {
-    name: 'Craig Bator',
-    role: 'CEO & Co Founder',
-    company: 'Zendesk',
+    name: 'Emma Wilson',
+    role: 'Customer',
+    company: 'Food Lover',
     avatar:
       'https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-1.png?width=40&height=40&format=auto',
     rating: 5,
     content:
-      "I've been using shadcn/studio for a year now and it's made managing my finances so much easier and quick.",
+      'The pizza quality is absolutely amazing! Fresh ingredients and delicious toppings every single time. Highly recommend!',
   },
   {
-    name: 'Martin Dorwart',
-    role: 'Product manager',
-    company: 'Orbit',
+    name: 'James Rodriguez',
+    role: 'Regular Customer',
+    company: 'Busy Professional',
     avatar:
       'https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-2.png?width=40&height=40&format=auto',
-    rating: 4,
+    rating: 5,
     content:
-      "With shadcn/studio, I can easily track my investments and see how they're performing in real-time.",
+      "The delivery service is incredibly fast and reliable. My orders arrive hot and fresh. Best ordering experience I've had!",
   },
   {
-    name: 'Sarah Johnson',
-    role: 'Lead Designer',
-    company: 'Figma',
+    name: 'Sophie Chen',
+    role: 'Food Enthusiast',
+    company: 'Creative Professional',
     avatar:
       'https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-3.png?width=40&height=40&format=auto',
     rating: 5,
     content:
-      "The UI components are beautifully designed and incredibly easy to customize. It's transformed our design workflow.",
+      'Ordering is so easy and seamless! The app is intuitive and checkout is super quick. I use it multiple times a week!',
   },
   {
-    name: 'Alex Chen',
-    role: 'Frontend Developer',
-    company: 'Vercel',
+    name: 'Marcus Johnson',
+    role: 'Regular Diner',
+    company: 'Happy Customer',
     avatar:
       'https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-4.png?width=40&height=40&format=auto',
-    rating: 4,
+    rating: 5,
     content:
-      'shadcn/studio has saved us countless hours in development. The component library is comprehensive and well-documented.',
+      'Great selection of pizza varieties and affordable prices. The loyalty program rewards are fantastic. Keep it up!',
   },
 ];
 
@@ -121,10 +121,10 @@ function TestimonialsComponent({ testimonials: testimonialsProp }: TestimonialsC
               Testimonials
             </Badge>
             <h2 className='text-2xl font-semibold sm:text-3xl lg:text-4xl'>
-              Trusted by leaders from various industries
+              Loved by Food Enthusiasts Everywhere
             </h2>
             <p className='text-muted-foreground text-xl'>
-              From career changes to dream jobs, here&apos;s how Shadcn Studio helped.
+              Discover how our service makes ordering delicious pizza quick, easy, and enjoyable.
             </p>
             <CarouselNavButtons />
           </div>

@@ -11,12 +11,23 @@ interface MenuItemImageProps {
 
 const MenuItemImage = ({ imagePreview, image, onImageSelect, disabled }: MenuItemImageProps) => {
   const displayImage = imagePreview || image;
+  const isValidImage =
+    (displayImage && typeof displayImage === 'string' && displayImage.startsWith('http')) ||
+    displayImage?.startsWith('data:');
 
   return (
     <div className='flex flex-col items-center gap-3'>
       <div className='relative w-28 h-28 md:w-36 md:h-36 lg:w-64 lg:h-64 rounded-lg overflow-hidden bg-muted flex items-center justify-center'>
-        {displayImage ? (
-          <Image src={displayImage} alt='Menu item' fill className='object-cover' />
+        {isValidImage ? (
+          <Image
+            src={displayImage}
+            alt='Menu item'
+            fill
+            className='object-cover'
+            onError={() => {
+              console.warn(`Failed to load preview image: ${displayImage}`);
+            }}
+          />
         ) : (
           <span className='text-muted-foreground text-sm'>No image</span>
         )}

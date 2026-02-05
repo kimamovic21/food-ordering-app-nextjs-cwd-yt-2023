@@ -103,10 +103,15 @@ const EditMenuItemPage = () => {
     });
 
     if (!res.ok) {
-      throw new Error('Upload failed');
+      const errorText = await res.text();
+      throw new Error(`Upload failed: ${res.status} - ${errorText}`);
     }
 
     const json = await res.json();
+    if (!json.url || typeof json.url !== 'string' || !json.url.startsWith('http')) {
+      console.error('Invalid upload response:', json);
+      throw new Error(`Invalid image URL returned from upload: ${JSON.stringify(json)}`);
+    }
     return json.url;
   };
 
@@ -124,7 +129,8 @@ const EditMenuItemPage = () => {
     }
 
     // Check if at least one price is provided
-    const hasAnyPrice = priceSmall.trim() !== '' || priceMedium.trim() !== '' || priceLarge.trim() !== '';
+    const hasAnyPrice =
+      priceSmall.trim() !== '' || priceMedium.trim() !== '' || priceLarge.trim() !== '';
     if (!hasAnyPrice) {
       toast.error('At least one price is required', {
         style: {
@@ -160,11 +166,13 @@ const EditMenuItemPage = () => {
 
       let imageUrl = image;
       if (imageFile) {
-        imageUrl = (await toast.promise(uploadImage(imageFile), {
+        const uploadPromise = uploadImage(imageFile);
+        toast.promise(uploadPromise, {
           loading: 'Uploading image...',
           success: 'Image uploaded!',
           error: 'Image upload failed',
-        })) as string;
+        });
+        imageUrl = await uploadPromise;
       }
 
       const menuItemData = {

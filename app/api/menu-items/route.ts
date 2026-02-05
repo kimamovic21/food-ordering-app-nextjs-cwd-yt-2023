@@ -2,10 +2,10 @@ import '@/models/category';
 import { MenuItem } from '@/models/menuItem';
 import { User } from '@/models/user';
 import { isAdmin } from '../auth/[...nextauth]/route';
-import cloudinary from '@/libs/cloudinary';
-import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
+import mongoose from 'mongoose';
+import cloudinary from '@/libs/cloudinary';
 
 export async function POST(req: Request) {
   try {
@@ -28,7 +28,10 @@ export async function POST(req: Request) {
 
     // Check if user has a restaurant
     if (!currentUser.restaurantId) {
-      return Response.json({ error: 'You must have a restaurant to create menu items' }, { status: 403 });
+      return Response.json(
+        { error: 'You must have a restaurant to create menu items' },
+        { status: 403 }
+      );
     }
 
     const data = await req.json();
@@ -40,7 +43,20 @@ export async function POST(req: Request) {
     }
 
     if (!data.foodType || !['food', 'drink'].includes(data.foodType)) {
-      return Response.json({ error: 'Invalid food type. Must be "food" or "drink"' }, { status: 400 });
+      return Response.json(
+        { error: 'Invalid food type. Must be "food" or "drink"' },
+        { status: 400 }
+      );
+    }
+
+    // Validate image URL if provided
+    if (data.image && typeof data.image === 'string') {
+      if (!data.image.startsWith('http')) {
+        return Response.json(
+          { error: 'Invalid image URL. Must be a valid HTTP(S) URL' },
+          { status: 400 }
+        );
+      }
     }
 
     const menuItemData = {
@@ -104,7 +120,20 @@ export async function PUT(req: Request) {
     }
 
     if (!data.foodType || !['food', 'drink'].includes(data.foodType)) {
-      return Response.json({ error: 'Invalid food type. Must be "food" or "drink"' }, { status: 400 });
+      return Response.json(
+        { error: 'Invalid food type. Must be "food" or "drink"' },
+        { status: 400 }
+      );
+    }
+
+    // Validate image URL if provided
+    if (data.image && typeof data.image === 'string') {
+      if (!data.image.startsWith('http')) {
+        return Response.json(
+          { error: 'Invalid image URL. Must be a valid HTTP(S) URL' },
+          { status: 400 }
+        );
+      }
     }
 
     const updateData = {
@@ -158,4 +187,3 @@ export async function DELETE(req: Request) {
 
   return Response.json(true);
 }
-

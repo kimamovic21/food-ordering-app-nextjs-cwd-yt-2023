@@ -1009,3 +1009,11 @@ Add foodType, optional prices and admin scoping
 
 -update MenuItem model in menuItem.ts file 
 -update menu items ui logic
+
+
+
+Validate images, fix uploads, refine menu UI
+
+-update .ts files and .tsx components to handle image upload to Cloudinary service
+-update testimonial text
+-in folder app/menu update component MenuItem.jsx

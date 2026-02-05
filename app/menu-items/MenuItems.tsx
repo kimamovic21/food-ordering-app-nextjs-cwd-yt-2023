@@ -70,12 +70,15 @@ const AdminItemCard = ({
     <>
       <Card className='hover:shadow-lg transition-shadow overflow-hidden flex flex-col h-full'>
         <div className='relative w-full h-48 bg-muted overflow-hidden'>
-          {item.image ? (
+          {item.image && typeof item.image === 'string' && item.image.startsWith('http') ? (
             <Image
               src={item.image}
               alt={item.name}
               fill
               className='object-cover hover:scale-105 transition-transform'
+              onError={() => {
+                console.warn(`Failed to load image: ${item.image}`);
+              }}
             />
           ) : (
             <div className='w-full h-full flex items-center justify-center text-muted-foreground text-sm'>
@@ -122,7 +125,12 @@ const AdminItemCard = ({
         <CardFooter className='flex gap-2 pt-2'>
           {isAdmin && (
             <>
-              <Button className='flex-1' variant='outline' size='sm' onClick={() => onEdit(item._id)}>
+              <Button
+                className='flex-1'
+                variant='outline'
+                size='sm'
+                onClick={() => onEdit(item._id)}
+              >
                 Edit
               </Button>
               <Button
@@ -177,7 +185,13 @@ const MenuItems = ({ menuItems, categories, onEdit, onDelete, isAdmin = true }: 
               <h3 className='text-2xl font-semibold mb-6 capitalize'>{category.name}</h3>
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
                 {items.map((item) => (
-                  <AdminItemCard key={item._id} item={item} onEdit={onEdit} onDelete={onDelete} isAdmin={isAdmin} />
+                  <AdminItemCard
+                    key={item._id}
+                    item={item}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    isAdmin={isAdmin}
+                  />
                 ))}
               </div>
             </section>

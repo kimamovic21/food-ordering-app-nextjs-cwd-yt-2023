@@ -88,7 +88,9 @@ const CartItems: React.FC<CartItemsProps> = ({
           const isRemoteImage =
             typeof imageUrl === 'string' &&
             (imageUrl.startsWith('http') || imageUrl.includes('cloudinary'));
-          const itemPrice = typeof item.price === 'number' && Number.isFinite(item.price) ? item.price : 0;
+          const itemPrice =
+            typeof item.price === 'number' && Number.isFinite(item.price) ? item.price : 0;
+          const isValidImageUrl = typeof item.image === 'string' && item.image.startsWith('http');
           return (
             <div
               key={`${item._id}-${item.size}`}
@@ -96,20 +98,36 @@ const CartItems: React.FC<CartItemsProps> = ({
             >
               <div className='flex items-start gap-3 w-full sm:w-auto'>
                 <div className='w-16 h-16 sm:w-20 sm:h-20 shrink-0'>
-                  {isRemoteImage ? (
-                    <Image
-                      width={80}
-                      height={80}
-                      src={imageUrl}
-                      alt={item.name}
-                      className='w-full h-full object-contain rounded'
-                    />
+                  {isValidImageUrl ? (
+                    isRemoteImage ? (
+                      <Image
+                        width={80}
+                        height={80}
+                        src={item.image}
+                        alt={item.name}
+                        className='w-full h-full object-contain rounded'
+                        onError={() => {
+                          console.warn(`Failed to load image: ${item.image}`);
+                        }}
+                      />
+                    ) : (
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        width={80}
+                        height={80}
+                        className='w-full h-full object-contain rounded'
+                        onError={() => {
+                          console.warn(`Failed to load image: ${item.image}`);
+                        }}
+                      />
+                    )
                   ) : (
                     <Image
-                      src={imageUrl}
-                      alt={item.name}
                       width={80}
                       height={80}
+                      src={Pizza.src}
+                      alt={item.name}
                       className='w-full h-full object-contain rounded'
                     />
                   )}

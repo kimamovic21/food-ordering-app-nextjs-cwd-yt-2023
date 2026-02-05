@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,7 @@ interface MenuItemProps {
 type Size = 'small' | 'medium' | 'large' | 'single';
 
 const MenuItem = ({ item }: MenuItemProps) => {
-  const [selectedSize, setSelectedSize] = useState<Size>('small');
+  const [userSelectedSize, setUserSelectedSize] = useState<Size>('small');
   const { addToCart } = useCart();
 
   const displayItem = item || {
@@ -50,30 +50,24 @@ const MenuItem = ({ item }: MenuItemProps) => {
         size === 'small'
           ? displayItem.priceSmall
           : size === 'medium'
-          ? displayItem.priceMedium
-          : displayItem.priceLarge;
+            ? displayItem.priceMedium
+            : displayItem.priceLarge;
       return { size, value };
     })
     .filter((entry) => typeof entry.value === 'number' && Number.isFinite(entry.value));
 
-  useEffect(() => {
-    if (availableSizes.length === 1) {
-      setSelectedSize('single');
-      return;
-    }
-
-    if (availableSizes.length > 0) {
-      const firstSize = availableSizes[0].size;
-      setSelectedSize((prev) => (availableSizes.some((s) => s.size === prev) ? prev : firstSize));
-    }
-  }, [displayItem._id, displayItem.priceSmall, displayItem.priceMedium, displayItem.priceLarge]);
+  const effectiveSelectedSize: Size = (() => {
+    if (availableSizes.length === 1) return 'single';
+    if (availableSizes.some((entry) => entry.size === userSelectedSize)) return userSelectedSize;
+    return availableSizes[0]?.size ?? 'small';
+  })();
 
   const getPrice = () => {
-    if (selectedSize === 'single') {
+    if (effectiveSelectedSize === 'single') {
       return availableSizes[0]?.value ?? null;
     }
 
-    const selected = availableSizes.find((s) => s.size === selectedSize);
+    const selected = availableSizes.find((s) => s.size === effectiveSelectedSize);
     if (selected) return selected.value;
     return availableSizes[0]?.value ?? null;
   };
@@ -82,7 +76,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
     const price = getPrice();
     if (price == null) return;
 
-    const sizeForCart = availableSizes.length === 1 ? 'single' : selectedSize;
+    const sizeForCart = availableSizes.length === 1 ? 'single' : effectiveSelectedSize;
 
     addToCart({
       _id: displayItem._id,
@@ -95,7 +89,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
     toast.success(
       availableSizes.length === 1
         ? `${displayItem.name} added to cart!`
-        : `${displayItem.name} (${selectedSize}) added to cart!`,
+        : `${displayItem.name} (${effectiveSelectedSize}) added to cart!`,
       {
         style: {
           background: '#22c55e', // Tailwind green-500
@@ -108,22 +102,36 @@ const MenuItem = ({ item }: MenuItemProps) => {
   return (
     <Card className='p-0 overflow-hidden hover:shadow-lg transition-shadow flex flex-col'>
       <div className='text-center relative h-40 p-4 bg-muted'>
-        {isRemoteImage ? (
-          <Image
-            src={imageUrl}
-            alt={displayItem.name}
-             width={140}
-            height={140}
-            className='mx-auto h-40 w-auto object-contain'
-          />
+        {displayItem.image &&
+        typeof displayItem.image === 'string' &&
+        displayItem.image.startsWith('http') ? (
+          isRemoteImage ? (
+            <Image
+              src={displayItem.image}
+              alt={displayItem.name}
+              width={140}
+              height={140}
+              className='mx-auto h-40 w-auto object-contain'
+              onError={() => {
+                console.warn(`Failed to load image: ${displayItem.image}`);
+              }}
+            />
+          ) : (
+            <Image
+              src={displayItem.image}
+              alt={displayItem.name}
+              width={140}
+              height={140}
+              className='mx-auto'
+              onError={() => {
+                console.warn(`Failed to load image: ${displayItem.image}`);
+              }}
+            />
+          )
         ) : (
-          <Image
-            src={imageUrl}
-            alt={displayItem.name}
-            width={140}
-            height={140}
-            className='mx-auto'
-          />
+          <div className='flex items-center justify-center h-40 text-muted-foreground text-sm'>
+            No image available
+          </div>
         )}
       </div>
 
@@ -137,8 +145,8 @@ const MenuItem = ({ item }: MenuItemProps) => {
             {availableSizes.map((entry) => (
               <Button
                 key={entry.size}
-                onClick={() => setSelectedSize(entry.size)}
-                variant={selectedSize === entry.size ? 'default' : 'outline'}
+                onClick={() => setUserSelectedSize(entry.size)}
+                variant={effectiveSelectedSize === entry.size ? 'default' : 'outline'}
                 size='sm'
               >
                 {entry.size.charAt(0).toUpperCase() + entry.size.slice(1)}
@@ -147,7 +155,12 @@ const MenuItem = ({ item }: MenuItemProps) => {
           </div>
         )}
 
-        <Button onClick={handleAddToCart} className='w-full mt-4' size='lg' disabled={getPrice() == null}>
+        <Button
+          onClick={handleAddToCart}
+          className='w-full mt-4'
+          size='lg'
+          disabled={getPrice() == null}
+        >
           Add to cart ${getPrice()?.toFixed(2) || '0.00'}
         </Button>
       </div>

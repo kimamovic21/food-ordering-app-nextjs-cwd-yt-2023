@@ -82,10 +82,15 @@ const NewMenuItemPage = () => {
     });
 
     if (!res.ok) {
-      throw new Error('Upload failed');
+      const errorText = await res.text();
+      throw new Error(`Upload failed: ${res.status} - ${errorText}`);
     }
 
     const json = await res.json();
+    if (!json.url || typeof json.url !== 'string' || !json.url.startsWith('http')) {
+      console.error('Invalid upload response:', json);
+      throw new Error(`Invalid image URL returned from upload: ${JSON.stringify(json)}`);
+    }
     return json.url;
   };
 
@@ -134,14 +139,13 @@ const NewMenuItemPage = () => {
 
       let imageUrl = '';
       if (imageFile) {
-        imageUrl = await toast.promise(
-          uploadImage(imageFile),
-          {
-            loading: 'Uploading image...',
-            success: 'Image uploaded!',
-            error: 'Image upload failed',
-          }
-        ) as string;
+        const uploadPromise = uploadImage(imageFile);
+        toast.promise(uploadPromise, {
+          loading: 'Uploading image...',
+          success: 'Image uploaded!',
+          error: 'Image upload failed',
+        });
+        imageUrl = await uploadPromise;
       }
 
       const menuItemData = {
