@@ -188,14 +188,16 @@ const Header = () => {
                         >
                           Restaurant
                         </Link>
-                        <Link
-                          className={`${
-                            pathname === '/categories' ? 'text-primary font-semibold' : ''
-                          }`}
-                          href={'/categories'}
-                        >
-                          Categories
-                        </Link>
+                        {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
+                          <Link
+                            className={`${
+                              pathname === '/categories' ? 'text-primary font-semibold' : ''
+                            }`}
+                            href={'/categories'}
+                          >
+                            Categories
+                          </Link>
+                        )}
                         <Link
                           className={`${
                             pathname?.startsWith('/menu-items') ? 'text-primary font-semibold' : ''
@@ -226,14 +228,16 @@ const Header = () => {
                         >
                           Orders
                         </Link>
-                        <Link
-                          className={`${
-                            pathname === '/statistics' ? 'text-primary font-semibold' : ''
-                          }`}
-                          href={'/statistics'}
-                        >
-                          Statistics
-                        </Link>
+                        {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
+                          <Link
+                            className={`${
+                              pathname === '/statistics' ? 'text-primary font-semibold' : ''
+                            }`}
+                            href={'/statistics'}
+                          >
+                            Statistics
+                          </Link>
+                        )}
                       </>
                     )}
                   </>
@@ -411,13 +415,15 @@ const Header = () => {
                     >
                       Restaurant
                     </Link>
-                    <Link
-                      href='/categories'
-                      onClick={() => setMobileOpen(false)}
-                      className='hover:text-primary'
-                    >
-                      Categories
-                    </Link>
+                    {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
+                      <Link
+                        href='/categories'
+                        onClick={() => setMobileOpen(false)}
+                        className='hover:text-primary'
+                      >
+                        Categories
+                      </Link>
+                    )}
                     <Link
                       href='/menu-items'
                       onClick={() => setMobileOpen(false)}
@@ -446,13 +452,15 @@ const Header = () => {
                     >
                       Orders
                     </Link>
-                    <Link
-                      href='/statistics'
-                      onClick={() => setMobileOpen(false)}
-                      className='hover:text-primary'
-                    >
-                      Statistics
-                    </Link>
+                    {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
+                      <Link
+                        href='/statistics'
+                        onClick={() => setMobileOpen(false)}
+                        className='hover:text-primary'
+                      >
+                        Statistics
+                      </Link>
+                    )}
                   </>
                 )}
                 <Button

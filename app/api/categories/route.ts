@@ -2,9 +2,14 @@ import { Category } from '@/models/category';
 import { MenuItem } from '@/models/menuItem';
 import cloudinary from '@/libs/cloudinary';
 import mongoose from 'mongoose';
+import { isSuperAdmin } from '@/app/api/auth/[...nextauth]/route';
 
 export async function POST(request: Request) {
   mongoose.connect(process.env.MONGODB_URL as string);
+
+  if (!(await isSuperAdmin())) {
+    return new Response(JSON.stringify({ error: 'Only super admin can create categories' }), { status: 401 });
+  }
 
   const { name } = await request.json();
   try {
@@ -22,6 +27,10 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   mongoose.connect(process.env.MONGODB_URL as string);
 
+  if (!(await isSuperAdmin())) {
+    return new Response(JSON.stringify({ error: 'Only super admin can update categories' }), { status: 401 });
+  }
+
   const { _id, name } = await request.json();
 
   const categoryDocument = await Category.findByIdAndUpdate(_id, { name }, { new: true });
@@ -31,6 +40,10 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   mongoose.connect(process.env.MONGODB_URL as string);
+
+  if (!(await isSuperAdmin())) {
+    return new Response(JSON.stringify({ error: 'Only super admin can delete categories' }), { status: 401 });
+  }
 
   const { _id } = await request.json();
 

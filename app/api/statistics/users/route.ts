@@ -1,23 +1,16 @@
 import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/libs/authOptions';
+import { isSuperAdmin } from '@/app/api/auth/[...nextauth]/route';
 import { User } from '@/models/user';
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Check if user is super admin
+    if (!(await isSuperAdmin())) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     await mongoose.connect(process.env.MONGODB_URL as string);
-
-    const adminUser = await User.findOne({ email: session.user.email });
-    if (!adminUser || adminUser.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
 
     const users = await User.find().sort({ createdAt: -1 });
     const now = new Date();

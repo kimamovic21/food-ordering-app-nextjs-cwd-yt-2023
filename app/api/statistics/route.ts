@@ -2,28 +2,19 @@ import mongoose from 'mongoose';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/libs/authOptions';
+import { isSuperAdmin } from '@/app/api/auth/[...nextauth]/route';
 
 const getPaymentStatus = (order: any) =>
   Boolean(order.orderPaid ?? order.paymentStatus ?? order.paid);
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
-    // Check if user is admin
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Check if user is super admin
+    if (!(await isSuperAdmin())) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     await mongoose.connect(process.env.MONGODB_URL as string);
-
-    // Get user to check admin status
-    const user = await User.findOne({ email: session.user.email });
-    if (!user || user.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
 
     // Get all orders
     const orders = await Order.find().sort({ createdAt: -1 });

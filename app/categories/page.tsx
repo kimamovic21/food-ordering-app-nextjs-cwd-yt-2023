@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { redirect } from 'next/navigation';
 import { Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -194,7 +195,11 @@ const CategoriesPage = () => {
   }
 
   if (!profileData || profileData?.role !== 'admin') {
-    return 'Not an admin';
+    redirect('/');
+  }
+
+  if (profileData?.email !== process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL) {
+    redirect('/');
   }
 
   return (

@@ -23,7 +23,7 @@ const StatisticsPage = () => {
   const { loading: profileLoading, data: profileData } = useProfile();
 
   useEffect(() => {
-    if (!profileLoading && profileData?.role !== 'admin') {
+    if (!profileLoading && (profileData?.role !== 'admin' || profileData?.email !== process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL)) {
       redirect('/');
     }
   }, [profileLoading, profileData]);
@@ -49,7 +49,7 @@ const StatisticsPage = () => {
       }
     };
 
-    if (profileData?.role === 'admin') {
+    if (profileData?.role === 'admin' && profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL) {
       fetchStatistics();
     }
   }, [profileData]);

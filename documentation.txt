@@ -1024,3 +1024,10 @@ Enforce single-restaurant cart & restaurant fees
 -open link: https://www.npmjs.com/package/baseline-browser-mapping
 -type command: npm i -D baseline-browser-mapping@latest
 -update route.ts file and order model
+
+
+
+Restrict admin access to super admin
+
+-update route.ts files
+-update component Header.tsx
