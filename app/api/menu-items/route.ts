@@ -111,7 +111,28 @@ export async function PUT(req: Request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get current user's ID
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return Response.json({ error: 'User session not found' }, { status: 401 });
+    }
+
+    const currentUser = await User.findOne({ email: session.user.email });
+    if (!currentUser) {
+      return Response.json({ error: 'User not found' }, { status: 404 });
+    }
+
     const { _id, ...data } = await req.json();
+    
+    // Check if the menu item belongs to the current user
+    const existingItem = await MenuItem.findById(_id);
+    if (!existingItem) {
+      return Response.json({ error: 'Menu item not found' }, { status: 404 });
+    }
+    
+    if (existingItem.adminId.toString() !== currentUser._id.toString()) {
+      return Response.json({ error: 'You are not authorized to edit this menu item' }, { status: 403 });
+    }
 
     // At least one price must be provided
     const hasAnyPrice = data.priceSmall || data.priceMedium || data.priceLarge;
@@ -163,11 +184,31 @@ export async function DELETE(req: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Get current user's ID
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return Response.json({ error: 'User session not found' }, { status: 401 });
+  }
+
+  const currentUser = await User.findOne({ email: session.user.email });
+  if (!currentUser) {
+    return Response.json({ error: 'User not found' }, { status: 404 });
+  }
+
   const { searchParams } = new URL(req.url);
   const _id = searchParams.get('_id');
 
   if (_id) {
     const menuItem = await MenuItem.findById(_id);
+    
+    // Check if the menu item belongs to the current user
+    if (!menuItem) {
+      return Response.json({ error: 'Menu item not found' }, { status: 404 });
+    }
+    
+    if (menuItem.adminId.toString() !== currentUser._id.toString()) {
+      return Response.json({ error: 'You are not authorized to delete this menu item' }, { status: 403 });
+    }
 
     if (menuItem && menuItem.image) {
       const matches = menuItem.image.match(/menu-items\/([^\.]+)/);

@@ -44,8 +44,10 @@ const EditMenuItemPage = () => {
   const [isDataLoading, setIsDataLoading] = useState(true);
 
   useEffect(() => {
-    fetchCategoriesAndItem();
-  }, [id]);
+    if (data?._id) {
+      fetchCategoriesAndItem();
+    }
+  }, [id, data?._id]);
 
   const fetchCategoriesAndItem = async () => {
     try {
@@ -60,6 +62,19 @@ const EditMenuItemPage = () => {
       const items = await itemRes.json();
       if (items.length > 0) {
         const item = items[0];
+        
+        // Check if the current user is the owner of this menu item
+        if (data?._id && item.adminId && item.adminId !== data._id) {
+          toast.error('You are not authorized to edit this menu item', {
+            style: {
+              background: '#ef4444',
+              color: 'white',
+            },
+          });
+          router.push('/menu-items');
+          return;
+        }
+        
         setName(item.name);
         setDescription(item.description);
         setCategoryId(typeof item.category === 'string' ? item.category : item.category?._id || '');

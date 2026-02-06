@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import useProfile from '@/contexts/UseProfile';
@@ -27,7 +27,6 @@ interface Category {
 
 const MenuItemsListPage = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { data, loading } = useProfile();
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -35,12 +34,23 @@ const MenuItemsListPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchInput, setSearchInput] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // Immediately clear data when user changes
   useEffect(() => {
-    fetchData();
-  }, [data?._id]); // Re-fetch when user ID changes
+    if (data?._id !== currentUserId) {
+      setMenuItems([]);
+      setCategories([]);
+      setSearchInput('');
+      setActiveSearch('');
+      setIsLoading(true);
+      setCurrentUserId(data?._id || null);
+    }
+  }, [data?._id, currentUserId]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    const startTime = Date.now();
+    
     try {
       // If user is admin, fetch only their menu items
       const url = data?.role === 'admin' && data?._id
@@ -53,6 +63,14 @@ const MenuItemsListPage = () => {
       ]);
       const items = await itemsRes.json();
       const cats = await catsRes.json();
+      
+      // Calculate remaining time to reach 500ms minimum
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, 500 - elapsed);
+      
+      // Wait for the remaining time to ensure 500ms minimum delay
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+      
       setMenuItems(items);
       setCategories(cats);
     } catch (error) {
@@ -66,7 +84,13 @@ const MenuItemsListPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [data?.role, data?._id]);
+
+  useEffect(() => {
+    if (data?._id) {
+      fetchData();
+    }
+  }, [fetchData, data?._id]);
 
   const handleEdit = (id: string) => {
     router.push(`/menu-items/edit/${id}`);
@@ -122,6 +146,9 @@ const MenuItemsListPage = () => {
   };
 
   const filteredItems = useMemo(() => {
+    // Don't return any items if we're loading or user is changing
+    if (isLoading || data?._id !== currentUserId) return [];
+    
     if (!activeSearch) return menuItems;
 
     const searchLower = activeSearch.toLowerCase();
@@ -130,9 +157,10 @@ const MenuItemsListPage = () => {
         item.name.toLowerCase().includes(searchLower) ||
         item.description.toLowerCase().includes(searchLower)
     );
-  }, [menuItems, activeSearch]);
+  }, [menuItems, activeSearch, isLoading, data?._id, currentUserId]);
 
-  const showSkeleton = loading || isLoading;
+  // Show skeleton when loading OR when user has changed but data hasn't loaded yet
+  const showSkeleton = loading || isLoading || (data?._id !== currentUserId);
 
   if (!loading && data?.role !== 'admin')
     return 'Not an admin.';
