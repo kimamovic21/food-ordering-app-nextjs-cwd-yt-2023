@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { OrderMapHandle } from '@/components/shared/OrderMap';
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -17,7 +18,6 @@ import Link from 'next/link';
 import OrderInfoCard from './OrderInfoCard';
 import CustomerInfoCard from './CustomerInfoCard';
 import OrderItemsCard from './OrderItemsCard';
-import type { OrderMapHandle } from '@/components/shared/OrderMap';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to prevent SSR issues with Leaflet

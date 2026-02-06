@@ -21,7 +21,7 @@ const AboutPage = () => {
           <header className='space-y-3'>
             <h1 className='text-4xl font-bold tracking-tight text-foreground'>About Pizza Hub</h1>
             <p className='text-muted-foreground'>
-              We're a neighborhood-first pizzeria crafting classic favorites and seasonal specials
+              We&apos;re a neighborhood-first pizzeria crafting classic favorites and seasonal specials
               with honest ingredients, slow-fermented dough, and a whole lot of care.
             </p>
           </header>
@@ -30,7 +30,7 @@ const AboutPage = () => {
             <h2 className='text-2xl font-semibold text-foreground'>Our Story</h2>
             <p className='text-foreground'>
               Pizza Hub started with a simple idea: great pizza brings people together. From our
-              first bake to our busiest weekends, we've focused on doing the simple things well—
+              first bake to our busiest weekends, we&apos;ve focused on doing the simple things well—
               thoughtfully sourced ingredients, time-tested methods, and warm hospitality.
             </p>
             <p className='text-foreground'>
@@ -57,7 +57,7 @@ const AboutPage = () => {
           <li>
             Quality first: we prioritize ingredients, technique, and consistency over shortcuts.
           </li>
-          <li>Community matters: we're proud to support local producers and events.</li>
+          <li>Community matters: we&apos;re proud to support local producers and events.</li>
           <li>
             Sustainability: we reduce waste and choose responsible packaging wherever possible.
           </li>
@@ -67,7 +67,7 @@ const AboutPage = () => {
       <section className='rounded-lg border border-border p-6 bg-card'>
         <h3 className='text-xl font-semibold mb-2 text-foreground'>Come By, Say Hi</h3>
         <p className='text-muted-foreground'>
-          Whether it's a weeknight slice or a weekend feast, we'd love to serve you.
+          Whether it&apos;s a weeknight slice or a weekend feast, we&apos;d love to serve you.
         </p>
       </section>
     </section>

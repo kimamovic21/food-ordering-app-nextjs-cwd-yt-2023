@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import { ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 type UserProfileImageProps = {
   imageUrl?: string | null;

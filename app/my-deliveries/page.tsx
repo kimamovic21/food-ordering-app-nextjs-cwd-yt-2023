@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import useProfile from '@/contexts/UseProfile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Calendar, MapPin, DollarSign } from 'lucide-react';
+import useProfile from '@/contexts/UseProfile';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
 

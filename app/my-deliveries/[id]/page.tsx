@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import useProfile from '@/contexts/UseProfile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Breadcrumb,
@@ -15,6 +14,7 @@ import {
 import { Package, Calendar, MapPin, DollarSign, Phone, CreditCard, Mail } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import useProfile from '@/contexts/UseProfile';
 
 type CartProduct = {
   productId: string;

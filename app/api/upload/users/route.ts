@@ -1,4 +1,4 @@
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { type UploadApiResponse } from 'cloudinary';
 import { authOptions } from '@/libs/authOptions';
 import { User } from '@/models/user';

@@ -21,7 +21,7 @@ const ContactPage = () => {
           <header className='space-y-3'>
             <h1 className='text-4xl font-bold tracking-tight text-foreground'>Contact Pizza Hub</h1>
             <p className='text-muted-foreground'>
-              Questions, feedback, or catering inquiries? We're here to help.
+              Questions, feedback, or catering inquiries? We&apos;re here to help.
             </p>
           </header>
 
@@ -64,7 +64,7 @@ const ContactPage = () => {
       <section className='rounded-lg border border-border p-6 bg-card'>
         <h3 className='text-xl font-semibold mb-2 text-foreground'>Catering & Events</h3>
         <p className='text-muted-foreground'>
-          Planning something special? Reach out and we'll help you build a crowd-pleasing menu.
+          Planning something special? Reach out and we&apos;ll help you build a crowd-pleasing menu.
         </p>
       </section>
     </section>
