@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "commitlint": "commitlint",
     "stripe:listen": "cd .. && stripe listen --forward-to localhost:3000/api/webhook",
     "stripe:trigger": "stripe trigger checkout.session.completed"
   },
@@ -54,6 +55,8 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.4.1",
+    "@commitlint/config-conventional": "^20.4.1",
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",

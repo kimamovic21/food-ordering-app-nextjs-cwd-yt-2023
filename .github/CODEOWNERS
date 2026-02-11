@@ -1,0 +1,13 @@
+# Default owner for everything in the repo
+
+* @kimamovic21
+
+## Example scoped ownership (uncomment if you want to split by area)
+
+## /app/ @kimamovic21
+
+## /components/ @kimamovic21
+
+## /libs/ @kimamovic21
+
+## /models/ @kimamovic21

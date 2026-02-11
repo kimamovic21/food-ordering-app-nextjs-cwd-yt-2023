@@ -1046,3 +1046,12 @@ Add loading skeletons and clean imports
 -create components loading.tsx
 -remove unused imports form tsx components
 -update imports in route.ts files
+
+
+
+Add project config and tooling files
+
+-open link: https://www.npmjs.com/package/commitlint
+-type command: npm i -D @commitlint/cli @commitlint/config-conventional
+-update package.json file
+-create new config folder and files
