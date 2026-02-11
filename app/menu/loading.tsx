@@ -5,7 +5,7 @@ const MenuPageLoading = () => {
   const categories = ['Pizza', 'Pasta', 'Desserts', 'Soup', 'Coffee'];
 
   return (
-    <main className='max-w-6xl mx-auto px-4 py-12'>
+    <main className='max-w-7xl mx-auto px-4 py-12'>
       {/* Header Skeleton */}
       <header className='mb-10 text-center'>
         <Skeleton className='h-10 w-32 mx-auto mb-3' />

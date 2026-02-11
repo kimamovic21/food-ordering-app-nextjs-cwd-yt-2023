@@ -199,6 +199,14 @@ Admin menu items - third part
 
 Admin menu items - fourth part
 
+
+Menu page enhancements
+
+-added filtering by categories and price range
+-added sorting (price low to high, high to low, newest, oldest)
+-added shareable URL params for search, filters, and pagination
+-added category previews with View more buttons
+
 -update logic for small, medium and large menu item price
 -update menuItem.ts file and model MenuItem
 -update price info in route.ts file
@@ -1055,3 +1063,7 @@ Add project config and tooling files
 -type command: npm i -D @commitlint/cli @commitlint/config-conventional
 -update package.json file
 -create new config folder and files
+
+
+
+Add advanced menu filtering, sorting & pagination

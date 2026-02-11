@@ -1,10 +1,20 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import MenuItem from './MenuItem';
 import SearchInput from './SearchInput';
 
@@ -14,9 +24,9 @@ interface MenuItemType {
   name: string;
   description: string;
   category?: { _id: string; name: string } | string;
-  priceSmall: number;
-  priceMedium: number;
-  priceLarge: number;
+  priceSmall: number | null;
+  priceMedium: number | null;
+  priceLarge: number | null;
   restaurantId: string;
 }
 
@@ -25,70 +35,238 @@ interface Category {
   name: string;
 }
 
+interface CategorySummary {
+  _id: string;
+  name: string;
+  items: MenuItemType[];
+  total: number;
+}
+
+type SortOption = 'price_asc' | 'price_desc' | 'newest' | 'oldest';
+
+const DEFAULT_SORT: SortOption = 'newest';
+
+const toCategorySlug = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+
+const isObjectId = (value: string) => /^[a-f0-9]{24}$/i.test(value);
+
 const MenuPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [items, setItems] = useState<MenuItemType[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [isResultsLoading, setIsResultsLoading] = useState(false);
+  const [results, setResults] = useState<MenuItemType[]>([]);
+  const [totalResults, setTotalResults] = useState(0);
+  const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<SortOption>(DEFAULT_SORT);
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+
+  const pageSize = 10;
+
+  const categoryNameBySlug = useMemo(() => {
+    const entries = categories.map((category) => [toCategorySlug(category.name), category.name]);
+    return Object.fromEntries(entries);
+  }, [categories]);
+
+ 
+
+  const isResultsView =
+    activeSearch.length > 0 ||
+    selectedCategories.length > 0 ||
+    minPrice.length > 0 ||
+    maxPrice.length > 0 ||
+    sortBy !== DEFAULT_SORT;
+
+  const filterKey = useMemo(
+    () =>
+      JSON.stringify({
+        activeSearch,
+        selectedCategories: [...selectedCategories].sort(),
+        minPrice,
+        maxPrice,
+        sortBy,
+      }),
+    [activeSearch, selectedCategories, minPrice, maxPrice, sortBy]
+  );
+  const lastFilterKeyRef = useRef(filterKey);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCategories = async () => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        const [itemsResponse, categoriesResponse] = await Promise.all([
-          fetch('/api/menu-items'),
-          fetch('/api/categories'),
-        ]);
-
-        const itemsData = await itemsResponse.json();
-        const categoriesData = await categoriesResponse.json();
-
-        setItems(Array.isArray(itemsData) ? itemsData : []);
-        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+        setCategories(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error('Error fetching data:', error);
-        setItems([]);
+        console.error('Error fetching categories:', error);
         setCategories([]);
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchData();
+    fetchCategories();
   }, []);
 
   useEffect(() => {
-    const query = searchParams!.get('q');
-    if (query) {
-      setSearchInput(query);
-      setActiveSearch(query);
-    }
-  }, [searchParams]);
+    const query = searchParams?.get('q') || '';
+    const categoriesParam = searchParams?.get('categories') || '';
+    const sortParam = (searchParams?.get('sort') || DEFAULT_SORT) as SortOption;
+    const minPriceParam = searchParams?.get('minPrice') || '';
+    const maxPriceParam = searchParams?.get('maxPrice') || '';
+    const pageParam = Number(searchParams?.get('page') || '1');
 
-  const getCategoryId = (item: MenuItemType) => {
-    if (typeof item.category === 'string') return item.category;
-    return item.category?._id || '';
+    const rawCategories = categoriesParam
+      ? categoriesParam
+          .split(',')
+          .filter(Boolean)
+          .map((value) => value.trim())
+      : [];
+
+    const resolvedCategories = rawCategories.map((value) => {
+      if (isObjectId(value)) {
+        const match = categories.find((category) => category._id === value);
+        return match ? toCategorySlug(match.name) : value;
+      }
+
+      return toCategorySlug(value);
+    });
+
+    setSearchInput(query);
+    setActiveSearch(query);
+    setSelectedCategories(resolvedCategories);
+    setSortBy(['price_asc', 'price_desc', 'newest', 'oldest'].includes(sortParam) ? sortParam : DEFAULT_SORT);
+    setMinPrice(minPriceParam);
+    setMaxPrice(maxPriceParam);
+    setPage(Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1);
+
+    if (rawCategories.some(isObjectId) && categories.length > 0) {
+      updateQueryParams({ categories: resolvedCategories });
+    }
+  }, [searchParams, categories]);
+
+  useEffect(() => {
+    if (!isResultsView) {
+      setResults([]);
+      setTotalResults(0);
+      return;
+    }
+
+    if (lastFilterKeyRef.current !== filterKey) {
+      setResults([]);
+      setTotalResults(0);
+      lastFilterKeyRef.current = filterKey;
+    }
+  }, [filterKey, isResultsView]);
+
+  useEffect(() => {
+    if (isResultsView) return;
+
+    const fetchSummary = async () => {
+      setIsSummaryLoading(true);
+      try {
+        const response = await fetch(`/api/menu-items?groupBy=category&perCategory=3`);
+        const data = await response.json();
+        setCategorySummaries(Array.isArray(data?.categories) ? data.categories : []);
+      } catch (error) {
+        console.error('Error fetching menu summaries:', error);
+        setCategorySummaries([]);
+      } finally {
+        setIsSummaryLoading(false);
+      }
+    };
+
+    fetchSummary();
+  }, [isResultsView]);
+
+  useEffect(() => {
+    if (!isResultsView) return;
+
+    const controller = new AbortController();
+
+    const fetchResults = async () => {
+      setIsResultsLoading(true);
+
+      try {
+        const params = new URLSearchParams();
+        params.set('limit', String(pageSize));
+        params.set('page', String(page));
+        params.set('sort', sortBy);
+
+        if (activeSearch) params.set('q', activeSearch);
+        if (selectedCategories.length > 0) params.set('categories', selectedCategories.join(','));
+        if (minPrice) params.set('minPrice', minPrice);
+        if (maxPrice) params.set('maxPrice', maxPrice);
+
+        const response = await fetch(`/api/menu-items?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        const data = await response.json();
+
+        const items = Array.isArray(data?.items) ? data.items : [];
+        const total = typeof data?.total === 'number' ? data.total : 0;
+
+        setTotalResults(total);
+        setResults((prev) => (page === 1 ? items : [...prev, ...items]));
+      } catch (error) {
+        if (!(error instanceof DOMException)) {
+          console.error('Error fetching results:', error);
+        }
+      } finally {
+        setIsResultsLoading(false);
+      }
+    };
+
+    fetchResults();
+
+    return () => controller.abort();
+  }, [
+    isResultsView,
+    activeSearch,
+    selectedCategories,
+    minPrice,
+    maxPrice,
+    sortBy,
+    page,
+  ]);
+
+  const updateQueryParams = (updates: Record<string, string | string[] | null>) => {
+    const params = new URLSearchParams(searchParams?.toString() || '');
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) {
+        params.delete(key);
+        return;
+      }
+
+      params.set(key, Array.isArray(value) ? value.join(',') : value);
+    });
+
+    const queryString = params.toString();
+    router.replace(queryString ? `/menu?${queryString}` : '/menu', { scroll: false });
   };
 
   const handleSearch = () => {
     const trimmedSearch = searchInput.trim();
     setActiveSearch(trimmedSearch);
-
-    if (trimmedSearch) {
-      router.push(`/menu?q=${encodeURIComponent(trimmedSearch)}`);
-    } else {
-      router.push('/menu');
-    }
+    setPage(1);
+    updateQueryParams({ q: trimmedSearch || null, page: '1' });
   };
 
-  const handleReset = () => {
+  const handleResetSearch = () => {
     setSearchInput('');
     setActiveSearch('');
-    router.push('/menu');
+    setPage(1);
+    updateQueryParams({ q: null, page: '1' });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -97,27 +275,74 @@ const MenuPage = () => {
     }
   };
 
-  const filteredItems = useMemo(() => {
-    if (!activeSearch) return items;
+  const handleSortChange = (value: SortOption) => {
+    setSortBy(value);
+    setPage(1);
+    updateQueryParams({ sort: value === DEFAULT_SORT ? null : value, page: '1' });
+  };
 
-    const searchLower = activeSearch.toLowerCase();
-    return items.filter(
-      (item) =>
-        item.name.toLowerCase().includes(searchLower) ||
-        item.description.toLowerCase().includes(searchLower)
-    );
-  }, [items, activeSearch]);
+  const toggleCategory = (categorySlug: string) => {
+    const nextSelected = selectedCategories.includes(categorySlug)
+      ? selectedCategories.filter((slug) => slug !== categorySlug)
+      : [...selectedCategories, categorySlug];
 
-  const groupedItems = useMemo(() => {
-    return categories.map((category) => ({
-      label: category.name,
-      items: items.filter((item) => getCategoryId(item) === category._id),
-    }));
-  }, [items, categories]);
+    setSelectedCategories(nextSelected);
+    setPage(1);
+    updateQueryParams({ categories: nextSelected, page: '1' });
+  };
+
+  const handleClearFilters = () => {
+    setSelectedCategories([]);
+    setSortBy(DEFAULT_SORT);
+    setMinPrice('');
+    setMaxPrice('');
+    setPage(1);
+    updateQueryParams({
+      categories: null,
+      sort: null,
+      minPrice: null,
+      maxPrice: null,
+      page: '1',
+    });
+  };
+
+  const handleClearAll = () => {
+    setSearchInput('');
+    setActiveSearch('');
+    setSelectedCategories([]);
+    setSortBy(DEFAULT_SORT);
+    setMinPrice('');
+    setMaxPrice('');
+    setPage(1);
+    updateQueryParams({
+      q: null,
+      categories: null,
+      sort: null,
+      minPrice: null,
+      maxPrice: null,
+      page: '1',
+    });
+  };
+
+  const handleViewMoreCategory = (categorySlug: string) => {
+    setSelectedCategories([categorySlug]);
+    setPage(1);
+    updateQueryParams({ categories: [categorySlug], page: '1' });
+  };
+
+  const handleLoadMore = () => {
+    if (results.length >= totalResults) return;
+    const nextPage = page + 1;
+    setPage(nextPage);
+    updateQueryParams({ page: String(nextPage) });
+  };
+
+  const hasActiveFilters =
+    selectedCategories.length > 0 || minPrice.length > 0 || maxPrice.length > 0 || sortBy !== DEFAULT_SORT;
 
   return (
-    <main className='max-w-6xl mx-auto px-4 py-12'>
-      {loading ? (
+    <main className='max-w-7xl mx-auto px-4 py-12'>
+      {(isSummaryLoading && categorySummaries.length === 0) || (isResultsLoading && results.length === 0) ? (
         <>
           <header className='mb-10 text-center'>
             <Skeleton className='h-10 w-32 mx-auto mb-3' />
@@ -130,8 +355,8 @@ const MenuPage = () => {
                 <Skeleton className='h-8 w-24 mb-4' />
 
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                  {[...Array(3)].map((_, index) => (
-                    <Card key={index} className='p-0 overflow-hidden flex flex-col'>
+                  {[...Array(3)].map((_, cardIndex) => (
+                    <Card key={cardIndex} className='p-0 overflow-hidden flex flex-col'>
                       <div className='relative h-40 p-4 bg-muted'>
                         <Skeleton className='mx-auto h-32 w-32 rounded-full' />
                       </div>
@@ -162,89 +387,201 @@ const MenuPage = () => {
         </>
       ) : (
         <>
-          <header className='mb-10 text-center'>
-            <h1 className='text-4xl font-bold mb-3'>Menu</h1>
-            <p className='text-muted-foreground'>Browse your favorite food and drinks.</p>
-          </header>
+          <div className='grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start'>
+            <div className='space-y-10'>
+              <div className='space-y-6'>
+                <header className='space-y-3'>
+                  <h1 className='text-4xl font-bold'>Menu</h1>
+                  <p className='text-muted-foreground'>Browse your favorite food and drinks.</p>
+                </header>
 
-          {/* Search Section */}
-          <div className='mb-8 max-w-2xl mx-auto'>
-            <div className='flex gap-2 items-center'>
-              <div className='flex-1'>
-                <SearchInput
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  onSearch={handleSearch}
-                  onClear={() => setSearchInput('')}
-                  onKeyPress={handleKeyPress}
-                />
-              </div>
-              {activeSearch && (
-                <Button
-                  onClick={handleReset}
-                  variant='outline'
-                  className='gap-2 h-11 px-6'
-                  type='button'
-                >
-                  Reset
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Search Results Section */}
-          {activeSearch && (
-            <div className='mb-10'>
-              <div className='bg-muted/50 rounded-lg p-6'>
-                <div className='flex items-center justify-between mb-4'>
-                  <h2 className='text-2xl font-semibold'>
-                    Search Results for &quot;{activeSearch}&quot;
-                  </h2>
-                  <span className='text-sm text-muted-foreground'>
-                    {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'} found
-                  </span>
+                <div className='flex flex-col sm:flex-row gap-3 sm:items-center'>
+                  <div className='flex-1'>
+                    <SearchInput
+                      value={searchInput}
+                      onChange={setSearchInput}
+                      onSearch={handleSearch}
+                      onClear={() => setSearchInput('')}
+                      onKeyPress={handleKeyPress}
+                    />
+                  </div>
+                  {activeSearch && (
+                    <Button onClick={handleResetSearch} variant='outline' className='h-11 px-5' type='button'>
+                      Reset search
+                    </Button>
+                  )}
                 </div>
 
-                {filteredItems.length > 0 ? (
-                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                    {filteredItems.map((item) => (
-                      <MenuItem key={item._id} item={item} />
+                {(activeSearch || hasActiveFilters) && (
+                  <div className='flex flex-wrap items-center gap-2 text-sm'>
+                    {activeSearch && (
+                      <Badge variant='secondary'>Search: {activeSearch}</Badge>
+                    )}
+                    {selectedCategories.map((categorySlug) => (
+                      <Badge key={categorySlug} variant='secondary'>
+                        {categoryNameBySlug[categorySlug] || categorySlug}
+                      </Badge>
                     ))}
-                  </div>
-                ) : (
-                  <div className='text-center py-8'>
-                    <p className='text-muted-foreground'>
-                      No menu items found matching your search.
-                    </p>
-                    <Button onClick={handleReset} variant='outline' className='mt-4'>
-                      View All Menu Items
+                    {minPrice && <Badge variant='secondary'>Min ${minPrice}</Badge>}
+                    {maxPrice && <Badge variant='secondary'>Max ${maxPrice}</Badge>}
+                    {sortBy !== DEFAULT_SORT && (
+                      <Badge variant='secondary'>
+                        Sort: {sortBy === 'price_asc'
+                          ? 'Low to high'
+                          : sortBy === 'price_desc'
+                            ? 'High to low'
+                            : sortBy === 'oldest'
+                              ? 'Oldest added'
+                              : 'Newest added'}
+                      </Badge>
+                    )}
+                    <Button variant='ghost' className='h-8 px-2' onClick={handleClearAll}>
+                      Clear all
                     </Button>
                   </div>
                 )}
               </div>
-            </div>
-          )}
 
-          {/* Categories Section - Only show when not searching */}
-          {!activeSearch && (
-            <div className='space-y-10'>
-              {groupedItems.map(({ label, items }) => {
-                if (items.length === 0) return null;
-
-                return (
-                  <section key={label}>
-                    <h2 className='text-2xl font-semibold mb-4 capitalize'>{label}</h2>
-
-                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                      {items.map((item) => (
-                        <MenuItem key={item._id} item={item} />
-                      ))}
+              <div className='space-y-10'>
+                {isResultsView ? (
+                  <section className='space-y-6'>
+                    <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2'>
+                      <h2 className='text-2xl font-semibold'>Menu results</h2>
+                      <span className='text-sm text-muted-foreground'>
+                        {totalResults} {totalResults === 1 ? 'item' : 'items'} found
+                      </span>
                     </div>
+
+                    {results.length > 0 ? (
+                      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                        {results.map((item) => (
+                          <MenuItem key={item._id} item={item} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className='text-center py-10'>
+                        <p className='text-muted-foreground'>No menu items match these filters.</p>
+                        <Button onClick={handleClearAll} variant='outline' className='mt-4'>
+                          Clear all filters
+                        </Button>
+                      </div>
+                    )}
+
+                    {results.length > 0 && results.length < totalResults && (
+                      <div className='flex justify-center'>
+                        <Button onClick={handleLoadMore} disabled={isResultsLoading} className='px-8'>
+                          {isResultsLoading ? 'Loading...' : 'View more'}
+                        </Button>
+                      </div>
+                    )}
                   </section>
-                );
-              })}
+                ) : (
+                  <div className='space-y-10'>
+                    {categorySummaries.map((summary) => {
+                      if (summary.items.length === 0) return null;
+
+                      return (
+                        <section key={summary._id}>
+                          <div className='flex items-center justify-between mb-4'>
+                            <h2 className='text-2xl font-semibold capitalize'>{summary.name}</h2>
+                            <span className='text-sm text-muted-foreground'>{summary.total} items</span>
+                          </div>
+
+                          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                            {summary.items.map((item) => (
+                              <MenuItem key={item._id} item={item} />
+                            ))}
+                          </div>
+
+                          {summary.total > summary.items.length && (
+                            <div className='mt-4 flex justify-end'>
+                              <Button onClick={() => handleViewMoreCategory(toCategorySlug(summary.name))}>
+                                View more
+                              </Button>
+                            </div>
+                          )}
+                        </section>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+
+            <Card className='w-full p-5 space-y-5'>
+              <div className='space-y-2'>
+                <p className='text-sm font-semibold'>Sort by</p>
+                <Select value={sortBy} onValueChange={(value) => handleSortChange(value as SortOption)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder='Sort menu items' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='newest'>Newest added</SelectItem>
+                    <SelectItem value='oldest'>Oldest added</SelectItem>
+                    <SelectItem value='price_asc'>Low price to high</SelectItem>
+                    <SelectItem value='price_desc'>High price to low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className='space-y-3'>
+                <p className='text-sm font-semibold'>Filter by category</p>
+                <div className='grid grid-cols-1 gap-2'>
+                  {categories.map((category) => (
+                    <label key={category._id} className='flex items-center gap-2 text-sm leading-none'>
+                      <Checkbox
+                        className='h-4 w-4 shrink-0 p-0 flex-none'
+                        checked={selectedCategories.includes(category._id)}
+                        onCheckedChange={() => toggleCategory(category._id)}
+                      />
+                      <span className='min-w-0 capitalize'>{category.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className='space-y-3'>
+                <p className='text-sm font-semibold'>Price range</p>
+                <div className='grid grid-cols-2 gap-3'>
+                  <div className='space-y-1'>
+                    <span className='text-xs text-muted-foreground'>Min price</span>
+                    <Input
+                      type='number'
+                      min='0'
+                      value={minPrice}
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setMinPrice(nextValue);
+                        setPage(1);
+                        updateQueryParams({ minPrice: nextValue || null, page: '1' });
+                      }}
+                      placeholder='10'
+                    />
+                  </div>
+                  <div className='space-y-1'>
+                    <span className='text-xs text-muted-foreground'>Max price</span>
+                    <Input
+                      type='number'
+                      min='0'
+                      value={maxPrice}
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setMaxPrice(nextValue);
+                        setPage(1);
+                        updateQueryParams({ maxPrice: nextValue || null, page: '1' });
+                      }}
+                      placeholder='50'
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button variant='outline' className='w-full' onClick={handleClearFilters}>
+                Reset filters
+              </Button>
+            </Card>
+          </div>
+
         </>
       )}
     </main>

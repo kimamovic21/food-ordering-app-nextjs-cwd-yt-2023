@@ -45,7 +45,7 @@ label + input {
 
 button:not([data-slot='button']):not([data-slot='alert-dialog-action']):not(
     [data-slot='alert-dialog-cancel']
-  ),
+  ):not([data-slot='checkbox']),
 .button {
   @apply flex w-full justify-center gap-2 font-semibold cursor-pointer;
   @apply border border-gray-300 rounded-xl px-6 py-2;
