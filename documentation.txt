@@ -1069,4 +1069,9 @@ Add project config and tooling files
 Add advanced menu filtering, sorting & pagination
 
 
+
 Handle drink pricing, auth fixes, and UI tweaks
+
+
+
+Add MenuItem modal and restaurant details

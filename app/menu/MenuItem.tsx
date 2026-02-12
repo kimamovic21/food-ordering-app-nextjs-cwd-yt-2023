@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
+import MenuItemModal from './MenuItemModal';
 
 interface MenuItemType {
   _id: string;
@@ -27,6 +28,7 @@ interface MenuItemProps {
 type Size = 'small' | 'medium' | 'large' | 'single';
 
 const MenuItem = ({ item }: MenuItemProps) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [userSelectedSize, setUserSelectedSize] = useState<Size>('small');
   const { addToCart, getCartRestaurantId } = useCart();
 
@@ -76,8 +78,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
 
   const handleAddToCart = () => {
     const cartRestaurantId = getCartRestaurantId();
-    
-    // Check if trying to add from a different restaurant
+
     if (cartRestaurantId && cartRestaurantId !== displayItem.restaurantId) {
       toast.error('Your cart contains items from another restaurant', {
         description: 'Clear your cart to add items from a different restaurant',
@@ -100,13 +101,14 @@ const MenuItem = ({ item }: MenuItemProps) => {
       price,
       restaurantId: displayItem.restaurantId,
     });
+
     toast.success(
       availableSizes.length === 1
         ? `${displayItem.name} added to cart!`
         : `${displayItem.name} (${effectiveSelectedSize}) added to cart!`,
       {
         style: {
-          background: '#22c55e', // Tailwind green-500
+          background: '#22c55e',
           color: 'white',
         },
       }
@@ -114,71 +116,61 @@ const MenuItem = ({ item }: MenuItemProps) => {
   };
 
   return (
-    <Card className='p-0 overflow-hidden hover:shadow-lg transition-shadow flex flex-col'>
-      <div className='text-center relative h-40 p-4 bg-muted'>
-        {displayItem.image &&
-        typeof displayItem.image === 'string' &&
-        displayItem.image.startsWith('http') ? (
-          isRemoteImage ? (
-            <Image
-              src={displayItem.image}
-              alt={displayItem.name}
-              width={140}
-              height={140}
-              className='mx-auto h-40 w-auto object-contain'
-              onError={() => {
-                console.warn(`Failed to load image: ${displayItem.image}`);
-              }}
-            />
-          ) : (
-            <Image
-              src={displayItem.image}
-              alt={displayItem.name}
-              width={140}
-              height={140}
-              className='mx-auto'
-              onError={() => {
-                console.warn(`Failed to load image: ${displayItem.image}`);
-              }}
-            />
-          )
-        ) : (
-          <div className='flex items-center justify-center h-40 text-muted-foreground text-sm'>
-            No image available
-          </div>
-        )}
-      </div>
-
-      <div className='p-4 flex flex-col flex-1'>
-        <h4 className='font-semibold text-xl'>{displayItem.name}</h4>
-
-        <p className='mt-4 text-muted-foreground text-sm flex-1'>{displayItem.description}</p>
-
-        {availableSizes.length > 1 && (
-          <div className='flex gap-1 justify-center mt-4'>
-            {availableSizes.map((entry) => (
-              <Button
-                key={entry.size}
-                onClick={() => setUserSelectedSize(entry.size)}
-                variant={effectiveSelectedSize === entry.size ? 'default' : 'outline'}
-                size='sm'
-              >
-                {entry.size.charAt(0).toUpperCase() + entry.size.slice(1)}
-              </Button>
-            ))}
-          </div>
-        )}
-
-        <Button
-          onClick={handleAddToCart}
-          className='w-full mt-4'
-          size='lg'
-          disabled={getPrice() == null}
+    <>
+      <Card className='p-0 overflow-hidden hover:shadow-lg transition-shadow flex flex-col'>
+        <div
+          className='text-center relative h-40 p-4 bg-muted hover:bg-muted/80 transition-colors flex items-center justify-center cursor-pointer'
+          onClick={() => setIsModalOpen(true)}
         >
-          Add to cart ${getPrice()?.toFixed(2) || '0.00'}
-        </Button>
-      </div>
-    </Card>
+          {displayItem.image &&
+          typeof displayItem.image === 'string' &&
+          displayItem.image.startsWith('http') ? (
+            isRemoteImage ? (
+              <Image
+                src={displayItem.image}
+                alt={displayItem.name}
+                width={140}
+                height={140}
+                className='mx-auto h-40 w-auto object-contain'
+                onError={() => {
+                  console.warn(`Failed to load image: ${displayItem.image}`);
+                }}
+              />
+            ) : (
+              <Image
+                src={displayItem.image}
+                alt={displayItem.name}
+                width={140}
+                height={140}
+                className='mx-auto'
+                onError={() => {
+                  console.warn(`Failed to load image: ${displayItem.image}`);
+                }}
+              />
+            )
+          ) : (
+            <div className='flex items-center justify-center h-40 text-muted-foreground text-sm'>
+              No image available
+            </div>
+          )}
+        </div>
+
+        <div className='p-4 flex flex-col flex-1'>
+          <h4 className='font-semibold text-lg text-center'>{displayItem.name}</h4>
+
+          <Button
+            onClick={handleAddToCart}
+            className='w-full mt-4'
+            size='lg'
+            disabled={getPrice() == null}
+          >
+            Add to cart ${getPrice()?.toFixed(2) || '0.00'}
+          </Button>
+        </div>
+      </Card>
+
+      {item && <MenuItemModal item={item} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
+    </>
   );
 };
 
