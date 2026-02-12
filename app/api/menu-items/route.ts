@@ -74,17 +74,20 @@ export async function POST(req: Request) {
 
     const data = await req.json();
 
-    // At least one price must be provided
-    const hasAnyPrice = data.priceSmall || data.priceMedium || data.priceLarge;
-    if (!hasAnyPrice) {
-      return Response.json({ error: 'At least one price is required' }, { status: 400 });
-    }
-
     if (!data.foodType || !['food', 'drink'].includes(data.foodType)) {
       return Response.json(
         { error: 'Invalid food type. Must be "food" or "drink"' },
         { status: 400 }
       );
+    }
+
+    // At least one price must be provided
+    const hasAnyPrice =
+      data.foodType === 'drink'
+        ? data.priceSmall != null && data.priceSmall !== ''
+        : data.priceSmall || data.priceMedium || data.priceLarge;
+    if (!hasAnyPrice) {
+      return Response.json({ error: 'At least one price is required' }, { status: 400 });
     }
 
     // Validate image URL if provided
@@ -104,8 +107,8 @@ export async function POST(req: Request) {
       category: data.category,
       foodType: data.foodType,
       priceSmall: data.priceSmall ? Number(data.priceSmall) : null,
-      priceMedium: data.priceMedium ? Number(data.priceMedium) : null,
-      priceLarge: data.priceLarge ? Number(data.priceLarge) : null,
+      priceMedium: data.foodType === 'drink' ? null : data.priceMedium ? Number(data.priceMedium) : null,
+      priceLarge: data.foodType === 'drink' ? null : data.priceLarge ? Number(data.priceLarge) : null,
       adminId: currentUser._id,
       restaurantId: currentUser.restaurantId,
     };
@@ -307,17 +310,20 @@ export async function PUT(req: Request) {
       return Response.json({ error: 'You are not authorized to edit this menu item' }, { status: 403 });
     }
 
-    // At least one price must be provided
-    const hasAnyPrice = data.priceSmall || data.priceMedium || data.priceLarge;
-    if (!hasAnyPrice) {
-      return Response.json({ error: 'At least one price is required' }, { status: 400 });
-    }
-
     if (!data.foodType || !['food', 'drink'].includes(data.foodType)) {
       return Response.json(
         { error: 'Invalid food type. Must be "food" or "drink"' },
         { status: 400 }
       );
+    }
+
+    // At least one price must be provided
+    const hasAnyPrice =
+      data.foodType === 'drink'
+        ? data.priceSmall != null && data.priceSmall !== ''
+        : data.priceSmall || data.priceMedium || data.priceLarge;
+    if (!hasAnyPrice) {
+      return Response.json({ error: 'At least one price is required' }, { status: 400 });
     }
 
     // Validate image URL if provided
@@ -337,8 +343,8 @@ export async function PUT(req: Request) {
       category: data.category,
       foodType: data.foodType,
       priceSmall: data.priceSmall ? Number(data.priceSmall) : null,
-      priceMedium: data.priceMedium ? Number(data.priceMedium) : null,
-      priceLarge: data.priceLarge ? Number(data.priceLarge) : null,
+      priceMedium: data.foodType === 'drink' ? null : data.priceMedium ? Number(data.priceMedium) : null,
+      priceLarge: data.foodType === 'drink' ? null : data.priceLarge ? Number(data.priceLarge) : null,
     };
 
     const updated = await MenuItem.findByIdAndUpdate(_id, updateData, { new: true });

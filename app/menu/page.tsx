@@ -141,9 +141,12 @@ const MenuPage = () => {
       return toCategorySlug(value);
     });
 
+    // Remove duplicates from resolvedCategories
+    const uniqueCategories = Array.from(new Set(resolvedCategories));
+
     setSearchInput(query);
     setActiveSearch(query);
-    setSelectedCategories(resolvedCategories);
+    setSelectedCategories(uniqueCategories);
     setSortBy(['price_asc', 'price_desc', 'newest', 'oldest'].includes(sortParam) ? sortParam : DEFAULT_SORT);
     setMinPrice(minPriceParam);
     setMaxPrice(maxPriceParam);
@@ -284,7 +287,7 @@ const MenuPage = () => {
   const toggleCategory = (categorySlug: string) => {
     const nextSelected = selectedCategories.includes(categorySlug)
       ? selectedCategories.filter((slug) => slug !== categorySlug)
-      : [...selectedCategories, categorySlug];
+      : [...new Set([...selectedCategories, categorySlug])];
 
     setSelectedCategories(nextSelected);
     setPage(1);
@@ -527,16 +530,20 @@ const MenuPage = () => {
               <div className='space-y-3'>
                 <p className='text-sm font-semibold'>Filter by category</p>
                 <div className='grid grid-cols-1 gap-2'>
-                  {categories.map((category) => (
-                    <label key={category._id} className='flex items-center gap-2 text-sm leading-none'>
-                      <Checkbox
-                        className='h-4 w-4 shrink-0 p-0 flex-none'
-                        checked={selectedCategories.includes(category._id)}
-                        onCheckedChange={() => toggleCategory(category._id)}
-                      />
-                      <span className='min-w-0 capitalize'>{category.name}</span>
-                    </label>
-                  ))}
+                  {categories.map((category) => {
+                    const categorySlug = toCategorySlug(category.name);
+
+                    return (
+                      <label key={category._id} className='flex items-center gap-2 text-sm leading-none'>
+                        <Checkbox
+                          className='h-4 w-4 shrink-0 p-0 flex-none'
+                          checked={selectedCategories.includes(categorySlug)}
+                          onCheckedChange={() => toggleCategory(categorySlug)}
+                        />
+                        <span className='min-w-0 capitalize'>{category.name}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 

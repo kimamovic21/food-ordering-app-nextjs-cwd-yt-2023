@@ -145,7 +145,9 @@ const EditMenuItemPage = () => {
 
     // Check if at least one price is provided
     const hasAnyPrice =
-      priceSmall.trim() !== '' || priceMedium.trim() !== '' || priceLarge.trim() !== '';
+      foodType === 'drink'
+        ? priceSmall.trim() !== ''
+        : priceSmall.trim() !== '' || priceMedium.trim() !== '' || priceLarge.trim() !== '';
     if (!hasAnyPrice) {
       toast.error('At least one price is required', {
         style: {
@@ -196,8 +198,8 @@ const EditMenuItemPage = () => {
         category: categoryId,
         foodType,
         priceSmall: s,
-        priceMedium: m,
-        priceLarge: l,
+        priceMedium: foodType === 'drink' ? null : m,
+        priceLarge: foodType === 'drink' ? null : l,
         image: imageUrl || '',
       };
 
@@ -230,6 +232,14 @@ const EditMenuItemPage = () => {
   };
 
   const showSkeleton = loading || isDataLoading;
+
+  const handleFoodTypeChange = (value: string) => {
+    setFoodType(value);
+    if (value === 'drink') {
+      setPriceMedium('');
+      setPriceLarge('');
+    }
+  };
 
   if (!loading && data?.role !== 'admin') return 'Not an admin.';
 
@@ -318,7 +328,7 @@ const EditMenuItemPage = () => {
                   onNameChange={setName}
                   onCategoryChange={setCategoryId}
                   onDescriptionChange={setDescription}
-                  onFoodTypeChange={setFoodType}
+                  onFoodTypeChange={handleFoodTypeChange}
                   onPriceSmallChange={setPriceSmall}
                   onPriceMediumChange={setPriceMedium}
                   onPriceLargeChange={setPriceLarge}

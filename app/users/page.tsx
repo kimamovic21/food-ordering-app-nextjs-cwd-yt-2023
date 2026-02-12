@@ -36,11 +36,13 @@ const UsersPage = () => {
   const { data, loading } = useProfile();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const isSuperAdmin =
+    data?.role === 'admin' && data?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
 
   useEffect(() => {
     if (loading) return;
 
-    if (data?.role !== 'admin') return;
+    if (!isSuperAdmin) return;
 
     const currentPage = Math.max(1, parseInt(searchParams?.get('page') || '1', 10));
     setPage(currentPage);
@@ -64,16 +66,16 @@ const UsersPage = () => {
     };
 
     fetchUsers();
-  }, [loading, data?.role, searchParams]);
+  }, [loading, isSuperAdmin, searchParams]);
 
   if (loading || loadingUsers) {
     return <UsersLoading />;
   }
 
-  if (data?.role !== 'admin') {
+  if (!isSuperAdmin) {
     return (
       <div className='min-h-[calc(100vh-8rem)] flex items-center justify-center'>
-        <p className='text-lg'>Not an admin</p>
+        <p className='text-lg'>Not authorized</p>
       </div>
     );
   }
