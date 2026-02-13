@@ -10,7 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { MapPin, Plus, Minus, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import RestaurantImageUpload from './RestaurantImageUpload';
 
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
   ssr: false,
@@ -47,6 +49,7 @@ interface RestaurantFormData {
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;
+  image: string;
 }
 
 interface RestaurantFormProps {
@@ -64,9 +67,36 @@ const defaultWorkingHours: WorkingHours[] = [
   { day: 'sunday', openTime: '10:00', closeTime: '21:00', isClosed: false },
 ];
 
+const formatRestaurantDataForForm = (restaurant: RestaurantFormData | undefined) => {
+  if (!restaurant) return undefined;
+
+  const blockedDates = Array.isArray(restaurant.blockedDates) ? restaurant.blockedDates : [];
+
+  return {
+    ...restaurant,
+    blockedDates: blockedDates.map((bd) => {
+      const date = new Date(bd.date);
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      return {
+        ...bd,
+        date: `${year}-${month}-${day}`,
+      };
+    }),
+  };
+};
+
 export default function RestaurantForm({ restaurant, isEdit = false }: RestaurantFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isSavingImage, setIsSavingImage] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [isRemovingImage, setIsRemovingImage] = useState(false);
+
+  const formattedRestaurant = formatRestaurantDataForForm(restaurant);
+
   const [formData, setFormData] = useState<RestaurantFormData>({
     name: '',
     street: '',
@@ -84,19 +114,101 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
     workingHours: defaultWorkingHours,
     blockedDates: [],
     totalEmployees: 1,
-    ...restaurant,
+    image: '',
+    ...formattedRestaurant,
   });
 
   const [newBlockedDate, setNewBlockedDate] = useState({ date: '', reason: '' });
 
+  const handleSelectImage = (file: File) => {
+    setSelectedImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setIsRemovingImage(true);
+  };
+
+  const uploadImage = async () => {
+    if (!selectedImageFile) return;
+
+    try {
+      setIsSavingImage(true);
+      const formDataToSend = new FormData();
+      formDataToSend.append('file', selectedImageFile);
+
+      const response = await fetch('/api/upload/restaurants', {
+        method: 'POST',
+        body: formDataToSend,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload image');
+      }
+
+      if (!data.url) {
+        throw new Error('Upload completed but no image URL was returned');
+      }
+
+      setFormData((prev) => ({ ...prev, image: data.url }));
+      setSelectedImageFile(null);
+      setImagePreviewUrl(null);
+      toast.success('Restaurant created successfully', {
+        className: 'bg-emerald-600 text-white border-emerald-600',
+      });
+      return data.url;
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast.error(error.message || 'Failed to upload image');
+      throw error;
+    } finally {
+      setIsSavingImage(false);
+    }
+  };
+
+  const deleteImage = async () => {
+    try {
+      setIsSavingImage(true);
+      const response = await fetch('/api/upload/restaurants', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageUrl: formData.image }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete image');
+      }
+
+      setFormData((prev) => ({ ...prev, image: '' }));
+      setIsRemovingImage(false);
+      toast.success('Image removed successfully');
+    } catch (error: any) {
+      console.error('Error deleting image:', error);
+      toast.error(error.message || 'Failed to delete image');
+      throw error;
+    } finally {
+      setIsSavingImage(false);
+    }
+  };
+
   const toIsoDate = (value: string | Date) => {
     if (!value) return '';
-    
+
     // If it's already a Date object
     if (value instanceof Date) {
       return Number.isNaN(value.getTime()) ? '' : value.toISOString();
     }
-    
+
     // If it's a string in YYYY-MM-DD format (from date input)
     if (typeof value === 'string') {
       // Check if it's already in ISO format
@@ -104,12 +216,12 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
         const date = new Date(value);
         return Number.isNaN(date.getTime()) ? '' : date.toISOString();
       }
-      
+
       // If it's YYYY-MM-DD, append time to avoid timezone issues
       const date = new Date(value + 'T00:00:00.000Z');
       return Number.isNaN(date.getTime()) ? '' : date.toISOString();
     }
-    
+
     return '';
   };
 
@@ -142,12 +254,13 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
           return isValid;
         }),
       totalEmployees: data.totalEmployees,
+      image: data.image,
     };
-    
+
     if (includeId && data._id) {
       payload._id = data._id;
     }
-    
+
     return payload;
   };
 
@@ -186,7 +299,9 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
           longitude: position.coords.longitude,
         }));
         toast.dismiss();
-        toast.success('Location updated successfully');
+        toast.success('Location updated successfully', {
+          className: 'bg-emerald-600 text-white border-emerald-600',
+        });
       },
       (error) => {
         toast.dismiss();
@@ -229,7 +344,7 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
     }
 
     const normalizedDate = toIsoDate(newBlockedDate.date);
-    
+
     if (!normalizedDate) {
       toast.error('Please enter a valid date');
       return;
@@ -297,6 +412,19 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
       toast.error('Description must be between 20 and 200 characters');
       return false;
     }
+    // Check image validation
+    // If removing image, we can't save without one (image is always required now)
+    if (isRemovingImage && !selectedImageFile) {
+      toast.error(
+        'Restaurant must have an image. Please upload a new image before removing the current one.'
+      );
+      return false;
+    }
+    // If no image exists and not selecting a new one, error
+    if (!formData.image && !selectedImageFile) {
+      toast.error('Restaurant image is required');
+      return false;
+    }
     return true;
   };
 
@@ -307,11 +435,35 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
       return;
     }
 
+    let creatingToastId: string | number | undefined;
+
     try {
       setLoading(true);
 
+      const isCreating = !isEdit;
+      creatingToastId = isCreating
+        ? toast.loading('Creating restaurant please wait...')
+        : undefined;
+
+      let imageUrl = formData.image;
+
+      // Upload new image if selected (edit flow replaces image on the server)
+      if (selectedImageFile) {
+        const uploadedUrl = await uploadImage();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+          setFormData((prev) => ({ ...prev, image: uploadedUrl }));
+        }
+      }
+
+      // Only delete image if explicitly removing without replacement
+      if (isRemovingImage && !selectedImageFile) {
+        await deleteImage();
+        imageUrl = '';
+      }
+
       const method = isEdit ? 'PUT' : 'POST';
-      const payload = buildPayload(formData, isEdit);
+      const payload = buildPayload({ ...formData, image: imageUrl }, isEdit);
 
       const response = await fetch('/api/restaurant', {
         method,
@@ -327,12 +479,29 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
         throw new Error(data.error || `Failed to ${isEdit ? 'update' : 'create'} restaurant`);
       }
 
-      toast.success(`Restaurant ${isEdit ? 'updated' : 'created'} successfully`);
+      // Reset image states after successful submission
+      setSelectedImageFile(null);
+      setImagePreviewUrl(null);
+      setIsRemovingImage(false);
+
+      if (creatingToastId) {
+        toast.success('Restaurant created successfully', {
+          id: creatingToastId,
+          className: 'bg-emerald-600 text-white border-emerald-600',
+        });
+      } else {
+        toast.success('Restaurant updated successfully', {
+          className: 'bg-emerald-600 text-white border-emerald-600',
+        });
+      }
       router.push('/restaurant');
     } catch (error: any) {
       console.error('Error submitting form:', error);
       toast.error(error.message || `Failed to ${isEdit ? 'update' : 'create'} restaurant`);
     } finally {
+      if (creatingToastId) {
+        toast.dismiss(creatingToastId);
+      }
       setLoading(false);
     }
   };
@@ -539,7 +708,12 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
                 </div>
               </div>
 
-              <Button type='button' onClick={getCurrentLocation} variant='outline' className='w-full'>
+              <Button
+                type='button'
+                onClick={getCurrentLocation}
+                variant='outline'
+                className='w-full'
+              >
                 <MapPin className='h-4 w-4 mr-2' />
                 Get Current Location
               </Button>
@@ -556,6 +730,59 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
                     postalCode={formData.postalCode}
                     country={formData.country}
                     shouldFetchCourier={false}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Row 2b: Restaurant Image */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Restaurant Image</CardTitle>
+          <CardDescription>Upload a high-quality image of your restaurant *</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+            {/* Upload Controls - Left Side */}
+            <div className='space-y-4'>
+              <RestaurantImageUpload
+                imageUrl={formData.image}
+                previewUrl={imagePreviewUrl}
+                isRemovingImage={isRemovingImage}
+                onSelectImage={handleSelectImage}
+                onRemoveImage={handleRemoveImage}
+                isSaving={isSavingImage}
+                isRequired={!isEdit}
+              />
+            </div>
+
+            {/* Image Preview - Right Side */}
+            {formData.image && !imagePreviewUrl && !isRemovingImage && (
+              <div className='flex flex-col items-center justify-center'>
+                <Label className='mb-4 text-sm font-medium'>Current Image</Label>
+                <div className='relative w-full h-64 rounded-lg overflow-hidden bg-muted/30'>
+                  <Image
+                    src={formData.image}
+                    alt='Restaurant preview'
+                    fill
+                    className='object-cover'
+                  />
+                </div>
+              </div>
+            )}
+
+            {imagePreviewUrl && (
+              <div className='flex flex-col items-center justify-center'>
+                <Label className='mb-4 text-sm font-medium'>Preview</Label>
+                <div className='relative w-full h-64 rounded-lg overflow-hidden bg-muted/30'>
+                  <Image
+                    src={imagePreviewUrl}
+                    alt='Restaurant preview'
+                    fill
+                    className='object-cover'
                   />
                 </div>
               </div>

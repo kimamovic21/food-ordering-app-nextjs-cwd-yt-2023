@@ -24,7 +24,12 @@ const normalizeBlockedDates = (blockedDates: unknown) => {
     const rawDate = entry.date instanceof Date ? entry.date : new Date(entry.date || '');
 
     if (!reason || Number.isNaN(rawDate.getTime())) {
-      console.error('Invalid blocked date entry - reason:', reason, 'date valid:', !Number.isNaN(rawDate.getTime()));
+      console.error(
+        'Invalid blocked date entry - reason:',
+        reason,
+        'date valid:',
+        !Number.isNaN(rawDate.getTime())
+      );
       throw new Error('Invalid blocked date entry');
     }
 
@@ -36,8 +41,12 @@ const normalizeBlockedDates = (blockedDates: unknown) => {
 
 const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boolean = false) => {
   const tax = typeof body.tax === 'number' ? body.tax : Number(body.tax) || 17;
-  const courierFee = typeof body.courierFee === 'number' ? body.courierFee : Number(body.courierFee) || 5;
-  const totalEmployees = typeof body.totalEmployees === 'number' ? body.totalEmployees : Number(body.totalEmployees) || 1;
+  const courierFee =
+    typeof body.courierFee === 'number' ? body.courierFee : Number(body.courierFee) || 5;
+  const totalEmployees =
+    typeof body.totalEmployees === 'number'
+      ? body.totalEmployees
+      : Number(body.totalEmployees) || 1;
 
   const payload: any = {
     name: body.name,
@@ -56,12 +65,13 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
     workingHours: Array.isArray(body.workingHours) ? body.workingHours : [],
     blockedDates: normalizeBlockedDates(body.blockedDates),
     totalEmployees: Math.max(1, totalEmployees),
+    image: body.image || '',
   };
-  
+
   if (includeId && body._id) {
     payload._id = body._id;
   }
-  
+
   return payload;
 };
 
@@ -90,9 +100,7 @@ export async function GET() {
       return NextResponse.json({ restaurant: null }, { status: 200 });
     }
 
-    const legacyTaxRules = (restaurant as any).taxRules as
-      | { percentage?: number }[]
-      | undefined;
+    const legacyTaxRules = (restaurant as any).taxRules as { percentage?: number }[] | undefined;
 
     if (legacyTaxRules && legacyTaxRules.length > 0) {
       const legacyTax =
@@ -149,6 +157,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!payload.image || typeof payload.image !== 'string' || payload.image.trim() === '') {
+      return NextResponse.json({ error: 'Restaurant image is required' }, { status: 400 });
+    }
+
     // Create restaurant
     const restaurantData = {
       ownerId: user._id,
@@ -168,6 +180,7 @@ export async function POST(req: NextRequest) {
       workingHours: payload.workingHours,
       blockedDates: payload.blockedDates,
       totalEmployees: payload.totalEmployees,
+      image: payload.image,
     };
 
     const restaurant = await Restaurant.create(restaurantData);
@@ -209,6 +222,14 @@ export async function PUT(req: NextRequest) {
       updateData.description &&
       (updateData.description.length < 20 || updateData.description.length > 200)
     ) {
+      if (
+        !updateData.image ||
+        typeof updateData.image !== 'string' ||
+        updateData.image.trim() === ''
+      ) {
+        return NextResponse.json({ error: 'Restaurant image is required' }, { status: 400 });
+      }
+
       return NextResponse.json(
         { error: 'Description must be between 20 and 200 characters' },
         { status: 400 }
@@ -230,8 +251,8 @@ export async function PUT(req: NextRequest) {
       _id,
       { ...updateData, $unset: { taxRules: '' } },
       {
-      new: true,
-      runValidators: true,
+        new: true,
+        runValidators: true,
       }
     );
 
@@ -277,6 +298,24 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
+    // Delete restaurant image from Cloudinary if it exists
+    if (restaurant.image && restaurant.image.trim() !== '') {
+      const matches = restaurant.image.match(/restaurants(?:-production)?\/([^\.]+)/);
+      const folder =
+        process.env.NODE_ENV === 'production' ? 'restaurants-production' : 'restaurants';
+      const publicId = matches ? `${folder}/${matches[1]}` : null;
+
+      if (publicId) {
+        try {
+          await cloudinary.uploader.destroy(publicId);
+          console.log(`Deleted restaurant image from Cloudinary: ${publicId}`);
+        } catch (error) {
+          console.error(`Error deleting restaurant image from Cloudinary (${publicId}):`, error);
+          // Continue with deletion even if image deletion fails
+        }
+      }
+    }
+
     // Find all menu items belonging to this restaurant
     const menuItems = await MenuItem.find({ restaurantId: restaurantId });
 
@@ -311,10 +350,10 @@ export async function DELETE(req: NextRequest) {
     await User.findByIdAndUpdate(user._id, { restaurantId: null });
 
     return NextResponse.json(
-      { 
+      {
         message: 'Restaurant deleted successfully',
-        deletedMenuItemsCount: menuItems.length
-      }, 
+        deletedMenuItemsCount: menuItems.length,
+      },
       { status: 200 }
     );
   } catch (error) {

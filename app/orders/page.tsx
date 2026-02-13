@@ -142,8 +142,7 @@ const OrdersPage = () => {
     );
   }
 
-  if (!data?.role || data.role !== 'admin')
-    return 'Not an admin';
+  if (!data?.role || data.role !== 'admin') return 'Not an admin';
 
   return (
     <section className='mt-8 flex flex-col min-h-[calc(100vh-8rem)] max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10'>
@@ -157,13 +156,15 @@ const OrdersPage = () => {
 
       {noRestaurant && !error && (
         <div className='mt-8 flex-1'>
-          <Card className='border border-border bg-card text-card-foreground shadow-sm'>
-            <div className='py-16 text-center'>
-              <h3 className='text-xl font-semibold mb-3'>Ready to start receiving orders?</h3>
-              <p className='text-muted-foreground mb-6'>Create a restaurant to begin managing orders.</p>
+          <Card className='border border-border bg-card text-card-foreground shadow-sm px-6 sm:px-10'>
+            <div className='py-20 sm:py-24 text-center flex flex-col items-center justify-center'>
+              <h3 className='text-xl font-semibold mb-4'>Ready to start receiving orders?</h3>
+              <p className='text-muted-foreground mb-8 max-w-md'>
+                Create a restaurant to begin managing orders.
+              </p>
               <button
                 onClick={() => router.push('/restaurant')}
-                className='bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2 rounded-lg font-medium transition'
+                className='bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 rounded-lg font-medium transition'
               >
                 Create Restaurant
               </button>
@@ -174,91 +175,93 @@ const OrdersPage = () => {
 
       {!noRestaurant && (
         <div className='mt-8 flex-1 flex flex-col'>
-        <div className='flex-1'>
-          {!error && !noRestaurant && loadingOrders && (
-            <Card className='border border-border bg-card text-card-foreground shadow-sm'>
-              <div className='overflow-x-auto'>
-                <Table className='w-full min-w-[900px] table-fixed'>
-                  <TableHeader>
-                    <TableRow>
-                      {[...Array(7)].map((_, idx) => (
-                        <TableHead key={idx} className='p-3'>
-                          <Skeleton className='h-4 w-24' />
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {[...Array(5)].map((_, rowIdx) => (
-                      <TableRow key={rowIdx}>
-                        {[...Array(6)].map((_, cellIdx) => (
-                          <TableCell key={cellIdx} className='p-3'>
-                            <Skeleton className='h-4 w-full' />
-                          </TableCell>
+          <div className='flex-1'>
+            {!error && !noRestaurant && loadingOrders && (
+              <Card className='border border-border bg-card text-card-foreground shadow-sm'>
+                <div className='overflow-x-auto'>
+                  <Table className='w-full min-w-[900px] table-fixed'>
+                    <TableHeader>
+                      <TableRow>
+                        {[...Array(7)].map((_, idx) => (
+                          <TableHead key={idx} className='p-3'>
+                            <Skeleton className='h-4 w-24' />
+                          </TableHead>
                         ))}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
-          )}
-
-          {!loadingOrders && !error && !noRestaurant && orders.length === 0 && <p>No orders found.</p>}
-
-          {!loadingOrders && !error && !noRestaurant && orders.length > 0 && (
-            <OrdersTable orders={orders} loading={loadingOrders} />
-          )}
-        </div>
-
-        <div className='mt-auto pt-4 pb-4'>
-          {loadingOrders || error || noRestaurant ? (
-            <div className='flex items-center justify-center gap-4'>
-              {loadingOrders && (
-                <>
-                  <Skeleton className='h-9 w-24' />
-                  <Skeleton className='h-5 w-28' />
-                  <Skeleton className='h-9 w-24' />
-                </>
-              )}
-            </div>
-          ) : (
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href={`/orders?page=${Math.max(1, page - 1)}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const prev = Math.max(1, page - 1);
-                      router.push(`/orders?page=${prev}`);
-                    }}
-                    aria-disabled={page <= 1}
-                    className={page <= 1 ? 'pointer-events-none opacity-50' : ''}
-                  />
-                </PaginationItem>
-
-                <div className='flex items-center justify-center px-4 text-sm font-medium text-gray-700'>
-                  Page {page} of {totalPages}
+                    </TableHeader>
+                    <TableBody>
+                      {[...Array(5)].map((_, rowIdx) => (
+                        <TableRow key={rowIdx}>
+                          {[...Array(6)].map((_, cellIdx) => (
+                            <TableCell key={cellIdx} className='p-3'>
+                              <Skeleton className='h-4 w-full' />
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
+              </Card>
+            )}
 
-                <PaginationItem>
-                  <PaginationNext
-                    href={`/orders?page=${Math.min(totalPages, page + 1)}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const next = Math.min(totalPages, page + 1);
-                      router.push(`/orders?page=${next}`);
-                    }}
-                    aria-disabled={page >= totalPages}
-                    className={page >= totalPages ? 'pointer-events-none opacity-50' : ''}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
+            {!loadingOrders && !error && !noRestaurant && orders.length === 0 && (
+              <p>No orders found.</p>
+            )}
+
+            {!loadingOrders && !error && !noRestaurant && orders.length > 0 && (
+              <OrdersTable orders={orders} loading={loadingOrders} />
+            )}
+          </div>
+
+          <div className='mt-auto pt-4 pb-4'>
+            {loadingOrders || error || noRestaurant ? (
+              <div className='flex items-center justify-center gap-4'>
+                {loadingOrders && (
+                  <>
+                    <Skeleton className='h-9 w-24' />
+                    <Skeleton className='h-5 w-28' />
+                    <Skeleton className='h-9 w-24' />
+                  </>
+                )}
+              </div>
+            ) : (
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href={`/orders?page=${Math.max(1, page - 1)}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const prev = Math.max(1, page - 1);
+                        router.push(`/orders?page=${prev}`);
+                      }}
+                      aria-disabled={page <= 1}
+                      className={page <= 1 ? 'pointer-events-none opacity-50' : ''}
+                    />
+                  </PaginationItem>
+
+                  <div className='flex items-center justify-center px-4 text-sm font-medium text-gray-700'>
+                    Page {page} of {totalPages}
+                  </div>
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href={`/orders?page=${Math.min(totalPages, page + 1)}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const next = Math.min(totalPages, page + 1);
+                        router.push(`/orders?page=${next}`);
+                      }}
+                      aria-disabled={page >= totalPages}
+                      className={page >= totalPages ? 'pointer-events-none opacity-50' : ''}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </div>
         </div>
-      </div>
       )}
     </section>
   );

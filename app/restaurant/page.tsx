@@ -7,9 +7,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { MapPin, Phone, Mail, Globe, Users, Clock, DollarSign, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
   ssr: false,
@@ -46,6 +56,7 @@ interface Restaurant {
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;
+  image: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -55,6 +66,8 @@ export default function RestaurantPage() {
   const router = useRouter();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -89,13 +102,11 @@ export default function RestaurantPage() {
   const handleDelete = async () => {
     if (!restaurant) return;
 
-    if (
-      !confirm('Are you sure you want to delete your restaurant? This action cannot be undone.')
-    ) {
-      return;
-    }
+    let deletingToastId: string | number | undefined;
 
     try {
+      setIsDeleting(true);
+      deletingToastId = toast.loading('Deleting restaurant please wait...');
       const response = await fetch(`/api/restaurant?id=${restaurant._id}`, {
         method: 'DELETE',
       });
@@ -106,11 +117,25 @@ export default function RestaurantPage() {
         throw new Error(data.error || 'Failed to delete restaurant');
       }
 
-      toast.success('Restaurant deleted successfully');
+      if (deletingToastId) {
+        toast.success('Restaurant deleted successfully', { id: deletingToastId });
+      } else {
+        toast.success('Restaurant deleted successfully');
+      }
       setRestaurant(null);
+      setIsDeleteDialogOpen(false);
     } catch (error: any) {
       console.error('Error deleting restaurant:', error);
-      toast.error(error.message || 'Failed to delete restaurant');
+      if (deletingToastId) {
+        toast.error(error.message || 'Failed to delete restaurant', { id: deletingToastId });
+      } else {
+        toast.error(error.message || 'Failed to delete restaurant');
+      }
+    } finally {
+      if (deletingToastId) {
+        toast.dismiss(deletingToastId);
+      }
+      setIsDeleting(false);
     }
   };
 
@@ -185,7 +210,10 @@ export default function RestaurantPage() {
             </CardHeader>
             <CardContent className='space-y-3'>
               {[...Array(7)].map((_, i) => (
-                <div key={i} className='flex justify-between items-center py-2 border-b last:border-0'>
+                <div
+                  key={i}
+                  className='flex justify-between items-center py-2 border-b last:border-0'
+                >
                   <Skeleton className='h-4 w-20' />
                   <Skeleton className='h-4 w-28' />
                 </div>
@@ -241,12 +269,62 @@ export default function RestaurantPage() {
             <Edit className='h-4 w-4 mr-2' />
             Edit
           </Button>
-          <Button onClick={handleDelete} variant='destructive'>
-            <Trash2 className='h-4 w-4 mr-2' />
-            Delete
-          </Button>
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant='destructive' disabled={isDeleting}>
+                <Trash2 className='h-4 w-4 mr-2' />
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </DialogTrigger>
+            <DialogContent showCloseButton={false}>
+              <DialogHeader>
+                <DialogTitle>Delete Restaurant</DialogTitle>
+                <DialogDescription>
+                  This action cannot be undone. This will permanently delete your restaurant and all
+                  related data.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type='button'
+                  variant='destructive'
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Restaurant'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
+
+      {/* Restaurant Image */}
+      {restaurant.image && (
+        <div className='mb-8'>
+          <Card>
+            <CardContent className='p-0'>
+              <div className='relative w-full h-96 rounded-lg overflow-hidden'>
+                <Image
+                  src={restaurant.image}
+                  alt={restaurant.name}
+                  fill
+                  className='object-cover'
+                  priority
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
         {/* Basic Information */}
