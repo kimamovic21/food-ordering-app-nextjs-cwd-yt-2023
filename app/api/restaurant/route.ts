@@ -4,6 +4,8 @@ import { authOptions } from '@/libs/authOptions';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { Restaurant } from '@/models/restaurant';
 import { User } from '@/models/user';
+import { MenuItem } from '@/models/menuItem';
+import cloudinary from '@/libs/cloudinary';
 
 type BlockedDateInput = {
   date?: string | Date;
@@ -275,13 +277,46 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
+    // Find all menu items belonging to this restaurant
+    const menuItems = await MenuItem.find({ restaurantId: restaurantId });
+
+    // Delete images from Cloudinary for each menu item
+    for (const menuItem of menuItems) {
+      if (menuItem.image) {
+        const matches = menuItem.image.match(/menu-items\/([^\.]+)/);
+        const publicId = matches ? `menu-items/${matches[1]}` : null;
+
+        if (publicId) {
+          try {
+            await cloudinary.uploader.destroy(publicId);
+            console.log(`Deleted Cloudinary image: ${publicId}`);
+          } catch (error) {
+            console.error(`Error deleting image from Cloudinary (${publicId}):`, error);
+            // Continue with deletion even if image deletion fails
+          }
+        }
+      }
+    }
+
+    // Delete all menu items belonging to this restaurant
+    if (menuItems.length > 0) {
+      await MenuItem.deleteMany({ restaurantId: restaurantId });
+      console.log(`Deleted ${menuItems.length} menu items for restaurant ${restaurantId}`);
+    }
+
     // Delete restaurant
     await Restaurant.findByIdAndDelete(restaurantId);
 
     // Remove restaurant ID from user
     await User.findByIdAndUpdate(user._id, { restaurantId: null });
 
-    return NextResponse.json({ message: 'Restaurant deleted successfully' }, { status: 200 });
+    return NextResponse.json(
+      { 
+        message: 'Restaurant deleted successfully',
+        deletedMenuItemsCount: menuItems.length
+      }, 
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error deleting restaurant:', error);
     return NextResponse.json({ error: 'Failed to delete restaurant' }, { status: 500 });

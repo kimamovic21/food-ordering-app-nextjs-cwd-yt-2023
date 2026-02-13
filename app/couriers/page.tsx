@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,14 +21,21 @@ type CourierType = {
 };
 
 const CouriersPage = () => {
+  const router = useRouter();
   const { data: profileData, loading: profileLoading } = useProfile();
   const [couriers, setCouriers] = useState<CourierType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isSuperAdmin =
+    profileData?.role === 'admin' && profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
 
   useEffect(() => {
-    if (profileLoading || profileData?.role !== 'admin')
+    if (profileLoading) return;
+
+    if (!isSuperAdmin) {
+      router.push('/');
       return;
+    }
 
     const fetchCouriers = async () => {
       try {
@@ -47,7 +55,7 @@ const CouriersPage = () => {
     };
 
     fetchCouriers();
-  }, [profileData?.role, profileLoading]);
+  }, [isSuperAdmin, profileLoading, router]);
 
   if (profileLoading) {
     return (
@@ -62,16 +70,6 @@ const CouriersPage = () => {
               <Skeleton key={idx} className='h-24 w-full rounded-xl' />
             ))}
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (profileData?.role !== 'admin') {
-    return (
-      <div className='max-w-7xl mx-auto px-4 py-6'>
-        <div className='text-red-500'>
-          Unauthorized: Only admins can access this page
         </div>
       </div>
     );

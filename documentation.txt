@@ -1075,3 +1075,7 @@ Handle drink pricing, auth fixes, and UI tweaks
 
 
 Add MenuItem modal and restaurant details
+
+
+
+Restrict admin pages and delete menu images

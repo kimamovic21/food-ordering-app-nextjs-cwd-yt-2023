@@ -37,6 +37,8 @@ const OrdersPage = () => {
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [error, setError] = useState<string | null>(null);
+  const [noRestaurant, setNoRestaurant] = useState(false);
   const { data, loading } = useProfile();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -60,15 +62,22 @@ const OrdersPage = () => {
         const res = await fetch(`/api/orders?page=${currentPage}`);
 
         if (!res.ok) {
-          console.error('API error:', res.status, res.statusText);
           const errorData = await res.json();
-          console.error('Error details:', errorData);
+          if (res.status === 403) {
+            setNoRestaurant(true);
+            setError(null);
+          } else {
+            setError(errorData.error || 'Failed to load orders');
+            setNoRestaurant(false);
+          }
           return;
         }
 
         const json = await res.json();
         setOrders(json.orders || []);
         setTotalPages(json.totalPages || 1);
+        setError(null);
+        setNoRestaurant(false);
       } catch (error) {
         console.error('Failed to load orders', error);
       } finally {
@@ -140,9 +149,33 @@ const OrdersPage = () => {
     <section className='mt-8 flex flex-col min-h-[calc(100vh-8rem)] max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10'>
       <Title>Orders</Title>
 
-      <div className='mt-8 flex-1 flex flex-col'>
+      {error && (
+        <div className='mt-4 bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-3 rounded-lg'>
+          {error}
+        </div>
+      )}
+
+      {noRestaurant && !error && (
+        <div className='mt-8 flex-1'>
+          <Card className='border border-border bg-card text-card-foreground shadow-sm'>
+            <div className='py-16 text-center'>
+              <h3 className='text-xl font-semibold mb-3'>Ready to start receiving orders?</h3>
+              <p className='text-muted-foreground mb-6'>Create a restaurant to begin managing orders.</p>
+              <button
+                onClick={() => router.push('/restaurant')}
+                className='bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2 rounded-lg font-medium transition'
+              >
+                Create Restaurant
+              </button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {!noRestaurant && (
+        <div className='mt-8 flex-1 flex flex-col'>
         <div className='flex-1'>
-          {loadingOrders && (
+          {!error && !noRestaurant && loadingOrders && (
             <Card className='border border-border bg-card text-card-foreground shadow-sm'>
               <div className='overflow-x-auto'>
                 <Table className='w-full min-w-[900px] table-fixed'>
@@ -171,19 +204,23 @@ const OrdersPage = () => {
             </Card>
           )}
 
-          {!loadingOrders && orders.length === 0 && <p>No orders found.</p>}
+          {!loadingOrders && !error && !noRestaurant && orders.length === 0 && <p>No orders found.</p>}
 
-          {!loadingOrders && orders.length > 0 && (
+          {!loadingOrders && !error && !noRestaurant && orders.length > 0 && (
             <OrdersTable orders={orders} loading={loadingOrders} />
           )}
         </div>
 
         <div className='mt-auto pt-4 pb-4'>
-          {loadingOrders ? (
+          {loadingOrders || error || noRestaurant ? (
             <div className='flex items-center justify-center gap-4'>
-              <Skeleton className='h-9 w-24' />
-              <Skeleton className='h-5 w-28' />
-              <Skeleton className='h-9 w-24' />
+              {loadingOrders && (
+                <>
+                  <Skeleton className='h-9 w-24' />
+                  <Skeleton className='h-5 w-28' />
+                  <Skeleton className='h-9 w-24' />
+                </>
+              )}
             </div>
           ) : (
             <Pagination>
@@ -222,6 +259,7 @@ const OrdersPage = () => {
           )}
         </div>
       </div>
+      )}
     </section>
   );
 };

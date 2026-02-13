@@ -42,7 +42,10 @@ const UsersPage = () => {
   useEffect(() => {
     if (loading) return;
 
-    if (!isSuperAdmin) return;
+    if (!isSuperAdmin) {
+      router.push('/');
+      return;
+    }
 
     const currentPage = Math.max(1, parseInt(searchParams?.get('page') || '1', 10));
     setPage(currentPage);
@@ -70,14 +73,6 @@ const UsersPage = () => {
 
   if (loading || loadingUsers) {
     return <UsersLoading />;
-  }
-
-  if (!isSuperAdmin) {
-    return (
-      <div className='min-h-[calc(100vh-8rem)] flex items-center justify-center'>
-        <p className='text-lg'>Not authorized</p>
-      </div>
-    );
   }
 
   return (

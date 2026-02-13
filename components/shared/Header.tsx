@@ -206,20 +206,24 @@ const Header = () => {
                         >
                           Menu Items
                         </Link>
-                        <Link
-                          className={`${pathname?.startsWith('/users') ? 'text-primary font-semibold' : ''}`}
-                          href={'/users'}
-                        >
-                          Users
-                        </Link>
-                        <Link
-                          className={`${
-                            pathname === '/couriers' ? 'text-primary font-semibold' : ''
-                          }`}
-                          href={'/couriers'}
-                        >
-                          Couriers
-                        </Link>
+                        {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
+                          <Link
+                            className={`${pathname?.startsWith('/users') ? 'text-primary font-semibold' : ''}`}
+                            href={'/users'}
+                          >
+                            Users
+                          </Link>
+                        )}
+                        {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
+                          <Link
+                            className={`${
+                              pathname === '/couriers' ? 'text-primary font-semibold' : ''
+                            }`}
+                            href={'/couriers'}
+                          >
+                            Couriers
+                          </Link>
+                        )}
                         <Link
                           className={`${
                             pathname?.startsWith('/orders') ? 'text-primary font-semibold' : ''
@@ -431,20 +435,24 @@ const Header = () => {
                     >
                       Menu Items
                     </Link>
-                    <Link
-                      href='/users'
-                      onClick={() => setMobileOpen(false)}
-                      className='hover:text-primary'
-                    >
-                      Users
-                    </Link>
-                    <Link
-                      href='/couriers'
-                      onClick={() => setMobileOpen(false)}
-                      className='hover:text-primary'
-                    >
-                      Couriers
-                    </Link>
+                    {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
+                      <Link
+                        href='/users'
+                        onClick={() => setMobileOpen(false)}
+                        className='hover:text-primary'
+                      >
+                        Users
+                      </Link>
+                    )}
+                    {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
+                      <Link
+                        href='/couriers'
+                        onClick={() => setMobileOpen(false)}
+                        className='hover:text-primary'
+                      >
+                        Couriers
+                      </Link>
+                    )}
                     <Link
                       href='/orders'
                       onClick={() => setMobileOpen(false)}
