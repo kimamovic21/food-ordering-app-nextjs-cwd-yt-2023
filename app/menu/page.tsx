@@ -68,6 +68,14 @@ const MenuPage = () => {
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
+
+  // Pending filters (what user is selecting)
+  const [pendingSelectedCategories, setPendingSelectedCategories] = useState<string[]>([]);
+  const [pendingSortBy, setPendingSortBy] = useState<SortOption>(DEFAULT_SORT);
+  const [pendingMinPrice, setPendingMinPrice] = useState('');
+  const [pendingMaxPrice, setPendingMaxPrice] = useState('');
+
+  // Applied filters (what triggers fetch)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>(DEFAULT_SORT);
   const [minPrice, setMinPrice] = useState('');
@@ -165,11 +173,17 @@ const MenuPage = () => {
     setSearchInput(query);
     setActiveSearch(query);
     setSelectedCategories(uniqueCategories);
+    setPendingSelectedCategories(uniqueCategories);
     setSortBy(
       ['price_asc', 'price_desc', 'newest', 'oldest'].includes(sortParam) ? sortParam : DEFAULT_SORT
     );
+    setPendingSortBy(
+      ['price_asc', 'price_desc', 'newest', 'oldest'].includes(sortParam) ? sortParam : DEFAULT_SORT
+    );
     setMinPrice(minPriceParam);
+    setPendingMinPrice(minPriceParam);
     setMaxPrice(maxPriceParam);
+    setPendingMaxPrice(maxPriceParam);
     setPage(Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1);
 
     if (rawCategories.some(isObjectId) && categories.length > 0) {
@@ -274,23 +288,38 @@ const MenuPage = () => {
     }
   };
 
-  const handleSortChange = (value: SortOption) => {
-    setSortBy(value);
+  const handleApplyFilters = () => {
+    setSelectedCategories(pendingSelectedCategories);
+    setSortBy(pendingSortBy);
+    setMinPrice(pendingMinPrice);
+    setMaxPrice(pendingMaxPrice);
     setPage(1);
-    updateQueryParams({ sort: value === DEFAULT_SORT ? null : value, page: '1' });
+    updateQueryParams({
+      categories: pendingSelectedCategories.length > 0 ? pendingSelectedCategories : null,
+      sort: pendingSortBy === DEFAULT_SORT ? null : pendingSortBy,
+      minPrice: pendingMinPrice || null,
+      maxPrice: pendingMaxPrice || null,
+      page: '1',
+    });
+  };
+
+  const handleSortChange = (value: SortOption) => {
+    setPendingSortBy(value);
   };
 
   const toggleCategory = (categorySlug: string) => {
-    const nextSelected = selectedCategories.includes(categorySlug)
-      ? selectedCategories.filter((slug) => slug !== categorySlug)
-      : [...new Set([...selectedCategories, categorySlug])];
+    const nextSelected = pendingSelectedCategories.includes(categorySlug)
+      ? pendingSelectedCategories.filter((slug) => slug !== categorySlug)
+      : [...new Set([...pendingSelectedCategories, categorySlug])];
 
-    setSelectedCategories(nextSelected);
-    setPage(1);
-    updateQueryParams({ categories: nextSelected, page: '1' });
+    setPendingSelectedCategories(nextSelected);
   };
 
   const handleClearFilters = () => {
+    setPendingSelectedCategories([]);
+    setPendingSortBy(DEFAULT_SORT);
+    setPendingMinPrice('');
+    setPendingMaxPrice('');
     setSelectedCategories([]);
     setSortBy(DEFAULT_SORT);
     setMinPrice('');
@@ -308,6 +337,10 @@ const MenuPage = () => {
   const handleClearAll = () => {
     setSearchInput('');
     setActiveSearch('');
+    setPendingSelectedCategories([]);
+    setPendingSortBy(DEFAULT_SORT);
+    setPendingMinPrice('');
+    setPendingMaxPrice('');
     setSelectedCategories([]);
     setSortBy(DEFAULT_SORT);
     setMinPrice('');
@@ -324,6 +357,7 @@ const MenuPage = () => {
   };
 
   const handleViewMoreCategory = (categorySlug: string) => {
+    setPendingSelectedCategories([categorySlug]);
     setSelectedCategories([categorySlug]);
     setPage(1);
     updateQueryParams({ categories: [categorySlug], page: '1' });
@@ -527,7 +561,7 @@ const MenuPage = () => {
               <div className='space-y-2'>
                 <p className='text-sm font-semibold'>Sort by</p>
                 <Select
-                  value={sortBy}
+                  value={pendingSortBy}
                   onValueChange={(value) => handleSortChange(value as SortOption)}
                 >
                   <SelectTrigger>
@@ -555,7 +589,7 @@ const MenuPage = () => {
                       >
                         <Checkbox
                           className='h-4 w-4 shrink-0 p-0 flex-none'
-                          checked={selectedCategories.includes(categorySlug)}
+                          checked={pendingSelectedCategories.includes(categorySlug)}
                           onCheckedChange={() => toggleCategory(categorySlug)}
                         />
                         <span className='min-w-0 capitalize'>{category.name}</span>
@@ -573,12 +607,9 @@ const MenuPage = () => {
                     <Input
                       type='number'
                       min='0'
-                      value={minPrice}
+                      value={pendingMinPrice}
                       onChange={(event) => {
-                        const nextValue = event.target.value;
-                        setMinPrice(nextValue);
-                        setPage(1);
-                        updateQueryParams({ minPrice: nextValue || null, page: '1' });
+                        setPendingMinPrice(event.target.value);
                       }}
                       placeholder='10'
                     />
@@ -588,12 +619,9 @@ const MenuPage = () => {
                     <Input
                       type='number'
                       min='0'
-                      value={maxPrice}
+                      value={pendingMaxPrice}
                       onChange={(event) => {
-                        const nextValue = event.target.value;
-                        setMaxPrice(nextValue);
-                        setPage(1);
-                        updateQueryParams({ maxPrice: nextValue || null, page: '1' });
+                        setPendingMaxPrice(event.target.value);
                       }}
                       placeholder='50'
                     />
@@ -601,9 +629,15 @@ const MenuPage = () => {
                 </div>
               </div>
 
-              <Button variant='outline' className='w-full' onClick={handleClearFilters}>
-                Reset filters
-              </Button>
+              <div className='space-y-2'>
+                <Button className='w-full' onClick={handleApplyFilters}>
+                  Apply filters
+                </Button>
+
+                <Button variant='outline' className='w-full' onClick={handleClearFilters}>
+                  Reset filters
+                </Button>
+              </div>
             </Card>
           </div>
         </>

@@ -131,7 +131,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
       setImageItems(items);
       setOriginalImages(formattedRestaurant.images);
     }
-  }, [restaurant, formattedRestaurant.images]);
+  }, [restaurant, formattedRestaurant?.images]);
 
   const [newBlockedDate, setNewBlockedDate] = useState({ date: '', reason: '' });
 

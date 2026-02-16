@@ -1098,3 +1098,7 @@ Add multi-image support and restaurant stats
 
 
 Refactor hooks, map, menu and cart logic
+
+
+
+Add pending filters UI and Apply action
