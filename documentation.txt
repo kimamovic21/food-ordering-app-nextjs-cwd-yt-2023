@@ -1087,3 +1087,9 @@ Add restaurant image upload and handling
 -create folder restaurants and route.ts file
 -create component RestaurantImageUpload.tsx
 -add a logic for image upload to Cloudinary service
+
+
+Add multi-image support and restaurant stats
+
+-add a logic for uploading more images to restaurant
+-add statistics for restaurant

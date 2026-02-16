@@ -37,6 +37,7 @@ A comprehensive full-stack food ordering platform built with Next.js 16 that del
 - **Radix UI** - Headless UI components (Alert Dialog, Avatar, Dropdown Menu, Label, Select, Slot)
 - **Lucide React** - Icon library
 - **React Icons** - Additional icon library
+- **dnd-kit** - Drag-and-drop utilities for sortable images
 - **React Hook Form 7** - Form management
 - **Zod 4** - Schema validation
 - **@hookform/resolvers 5** - Form validation resolver

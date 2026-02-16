@@ -45,7 +45,7 @@ interface Restaurant {
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;
-  image: string;
+  images: string[];
 }
 
 export default function EditRestaurantPage() {

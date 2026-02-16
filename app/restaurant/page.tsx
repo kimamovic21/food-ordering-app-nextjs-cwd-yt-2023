@@ -16,12 +16,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 import { MapPin, Phone, Mail, Globe, Users, Clock, DollarSign, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import RestaurantStatistics from './RestaurantStatistics';
 
-const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
+const RestaurantLocation = dynamic(() => import('./RestaurantLocation'), {
   ssr: false,
   loading: () => <div className='h-[400px] bg-muted animate-pulse rounded-lg' />,
 });
@@ -56,12 +64,12 @@ interface Restaurant {
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;
-  image: string;
+  images: string[];
   createdAt: string;
   updatedAt: string;
 }
 
-export default function RestaurantPage() {
+const RestaurantPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -260,20 +268,25 @@ export default function RestaurantPage() {
   return (
     <div className='container mx-auto py-8 px-4 max-w-7xl'>
       <div className='flex justify-between items-center mb-6'>
-        <h1 className='text-3xl font-bold'>{restaurant.name}</h1>
-        <div className='flex gap-2'>
+        <h1 className='text-3xl font-bold truncate mr-4'>{restaurant.name}</h1>
+        <div className='flex gap-2 shrink-0'>
           <Button
             onClick={() => router.push(`/restaurant/edit/${restaurant._id}`)}
             variant='outline'
+            className='min-w-[90px] max-w-[90px]'
           >
-            <Edit className='h-4 w-4 mr-2' />
+            <Edit className='h-4 w-4 mr-1.5' />
             Edit
           </Button>
           <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant='destructive' disabled={isDeleting}>
-                <Trash2 className='h-4 w-4 mr-2' />
-                {isDeleting ? 'Deleting...' : 'Delete'}
+              <Button
+                variant='destructive'
+                disabled={isDeleting}
+                className='min-w-[90px] max-w-[90px] bg-red-700 hover:bg-red-800 text-white rounded-md!'
+              >
+                <Trash2 className='h-4 w-4 mr-1.5' />
+                Delete
               </Button>
             </DialogTrigger>
             <DialogContent showCloseButton={false}>
@@ -307,20 +320,48 @@ export default function RestaurantPage() {
         </div>
       </div>
 
-      {/* Restaurant Image */}
-      {restaurant.image && (
+      {/* Restaurant Images */}
+      {restaurant.images && restaurant.images.length > 0 && (
         <div className='mb-8'>
           <Card>
             <CardContent className='p-0'>
-              <div className='relative w-full h-96 rounded-lg overflow-hidden'>
-                <Image
-                  src={restaurant.image}
-                  alt={restaurant.name}
-                  fill
-                  className='object-cover'
-                  priority
-                />
-              </div>
+              {restaurant.images.length === 1 ? (
+                // Single image display
+                <div className='relative w-full h-96 rounded-lg overflow-hidden'>
+                  <Image
+                    src={restaurant.images[0]}
+                    alt={restaurant.name}
+                    fill
+                    className='object-cover'
+                    priority
+                  />
+                </div>
+              ) : (
+                // Carousel for multiple images
+                <Carousel className='w-full'>
+                  <CarouselContent>
+                    {restaurant.images.map((imageUrl, index) => (
+                      <CarouselItem key={index}>
+                        <div className='relative w-full h-96 rounded-lg overflow-hidden'>
+                          <Image
+                            src={imageUrl}
+                            alt={`${restaurant.name} - Image ${index + 1}`}
+                            fill
+                            className='object-cover'
+                            priority={index === 0}
+                          />
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <div className='absolute top-1/2 -translate-y-1/2 left-4 z-10'>
+                    <CarouselPrevious variant='default' className='static translate-y-0 h-8 w-8' />
+                  </div>
+                  <div className='absolute top-1/2 -translate-y-1/2 right-4 z-10'>
+                    <CarouselNext variant='default' className='static translate-y-0 h-8 w-8' />
+                  </div>
+                </Carousel>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -459,17 +500,23 @@ export default function RestaurantPage() {
           </CardHeader>
           <CardContent>
             <div className='h-[400px] rounded-lg overflow-hidden'>
-              <OrderMap
-                address={restaurant.street}
-                city={restaurant.city}
-                postalCode={restaurant.postalCode}
-                country={restaurant.country}
-                shouldFetchCourier={false}
+              <RestaurantLocation
+                name={restaurant.name}
+                address={`${restaurant.street}, ${restaurant.city} ${restaurant.postalCode}, ${restaurant.country}`}
+                latitude={restaurant.latitude}
+                longitude={restaurant.longitude}
               />
             </div>
           </CardContent>
         </Card>
+
+        {/* Statistics */}
+        <Card className='md:col-span-3'>
+          <RestaurantStatistics />
+        </Card>
       </div>
     </div>
   );
-}
+};
+
+export default RestaurantPage;

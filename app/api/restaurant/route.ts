@@ -48,6 +48,15 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
       ? body.totalEmployees
       : Number(body.totalEmployees) || 1;
 
+  // Handle images array
+  let images: string[] = [];
+  if (Array.isArray(body.images)) {
+    images = body.images.filter((img): img is string => typeof img === 'string' && img.trim() !== '');
+  } else if (typeof body.image === 'string' && body.image.trim() !== '') {
+    // Backward compatibility: convert single image to array
+    images = [body.image];
+  }
+
   const payload: any = {
     name: body.name,
     street: body.street,
@@ -65,7 +74,7 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
     workingHours: Array.isArray(body.workingHours) ? body.workingHours : [],
     blockedDates: normalizeBlockedDates(body.blockedDates),
     totalEmployees: Math.max(1, totalEmployees),
-    image: body.image || '',
+    images,
   };
 
   if (includeId && body._id) {
@@ -115,6 +124,16 @@ export async function GET() {
       );
     }
 
+    // Migrate old 'image' field to 'images' array for backward compatibility
+    const legacyImage = (restaurant as any).image as string | undefined;
+    if (legacyImage && (!restaurant.images || restaurant.images.length === 0)) {
+      restaurant = await Restaurant.findByIdAndUpdate(
+        restaurant._id,
+        { $set: { images: [legacyImage] }, $unset: { image: '' } },
+        { new: true }
+      );
+    }
+
     return NextResponse.json({ restaurant }, { status: 200 });
   } catch (error) {
     console.error('Error fetching restaurant:', error);
@@ -157,8 +176,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!payload.image || typeof payload.image !== 'string' || payload.image.trim() === '') {
-      return NextResponse.json({ error: 'Restaurant image is required' }, { status: 400 });
+    if (!payload.images || !Array.isArray(payload.images) || payload.images.length === 0) {
+      return NextResponse.json({ error: 'At least one restaurant image is required' }, { status: 400 });
+    }
+
+    if (payload.images.length > 5) {
+      return NextResponse.json({ error: 'Maximum 5 images allowed' }, { status: 400 });
     }
 
     // Create restaurant
@@ -180,7 +203,7 @@ export async function POST(req: NextRequest) {
       workingHours: payload.workingHours,
       blockedDates: payload.blockedDates,
       totalEmployees: payload.totalEmployees,
-      image: payload.image,
+      images: payload.images,
     };
 
     const restaurant = await Restaurant.create(restaurantData);
@@ -222,18 +245,18 @@ export async function PUT(req: NextRequest) {
       updateData.description &&
       (updateData.description.length < 20 || updateData.description.length > 200)
     ) {
-      if (
-        !updateData.image ||
-        typeof updateData.image !== 'string' ||
-        updateData.image.trim() === ''
-      ) {
-        return NextResponse.json({ error: 'Restaurant image is required' }, { status: 400 });
-      }
-
       return NextResponse.json(
         { error: 'Description must be between 20 and 200 characters' },
         { status: 400 }
       );
+    }
+
+    if (!updateData.images || !Array.isArray(updateData.images) || updateData.images.length === 0) {
+      return NextResponse.json({ error: 'At least one restaurant image is required' }, { status: 400 });
+    }
+
+    if (updateData.images.length > 5) {
+      return NextResponse.json({ error: 'Maximum 5 images allowed' }, { status: 400 });
     }
 
     // Find restaurant and verify ownership
@@ -299,19 +322,24 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Delete restaurant image from Cloudinary if it exists
-    if (restaurant.image && restaurant.image.trim() !== '') {
-      const matches = restaurant.image.match(/restaurants(?:-production)?\/([^\.]+)/);
+    if (restaurant.images && Array.isArray(restaurant.images) && restaurant.images.length > 0) {
       const folder =
         process.env.NODE_ENV === 'production' ? 'restaurants-production' : 'restaurants';
-      const publicId = matches ? `${folder}/${matches[1]}` : null;
 
-      if (publicId) {
-        try {
-          await cloudinary.uploader.destroy(publicId);
-          console.log(`Deleted restaurant image from Cloudinary: ${publicId}`);
-        } catch (error) {
-          console.error(`Error deleting restaurant image from Cloudinary (${publicId}):`, error);
-          // Continue with deletion even if image deletion fails
+      for (const imageUrl of restaurant.images) {
+        if (imageUrl && imageUrl.trim() !== '') {
+          const matches = imageUrl.match(/restaurants(?:-production)?\/([^\.]+)/);
+          const publicId = matches ? `${folder}/${matches[1]}` : null;
+
+          if (publicId) {
+            try {
+              await cloudinary.uploader.destroy(publicId);
+              console.log(`Deleted restaurant image from Cloudinary: ${publicId}`);
+            } catch (error) {
+              console.error(`Error deleting restaurant image from Cloudinary (${publicId}):`, error);
+              // Continue with deletion even if image deletion fails
+            }
+          }
         }
       }
     }

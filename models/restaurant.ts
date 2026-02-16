@@ -81,9 +81,15 @@ const RestaurantSchema = new Schema(
       default: 1,
       min: 1,
     },
-    image: {
-      type: String,
-      default: '',
+    images: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function (v: string[]) {
+          return v.length <= 5;
+        },
+        message: 'Maximum 5 images allowed',
+      },
     },
   },
   { timestamps: true }

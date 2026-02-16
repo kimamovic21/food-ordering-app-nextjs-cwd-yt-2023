@@ -46,33 +46,12 @@ export async function POST(req: Request) {
     // Try to find existing restaurant, but don't fail if it doesn't exist yet (new restaurant case)
     const restaurant = await Restaurant.findOne({ ownerId: user._id });
 
-    if (restaurant && restaurant.image && restaurant.image.trim() !== '') {
-      // Delete old image if exists and restaurant is being updated
-      const matches = restaurant.image.match(/restaurants(?:-production)?\/([^\.]+)/);
-      const folder =
-        process.env.NODE_ENV === 'production' ? 'restaurants-production' : 'restaurants';
-      const oldPublicId = matches ? `${folder}/${matches[1]}` : null;
-
-      if (oldPublicId) {
-        try {
-          await cloudinary.uploader.destroy(oldPublicId);
-        } catch (error) {
-          console.error('Error deleting old image:', error);
-          // Continue even if deletion fails
-        }
-      }
-
-      // Update existing restaurant with new image
-      const updatedRestaurant = await Restaurant.findByIdAndUpdate(
-        restaurant._id,
-        { image: uploadedImage.secure_url },
-        { new: true }
-      );
-
+    if (restaurant) {
+      // For existing restaurants, just return the URL without updating the database
+      // The form will handle adding it to the images array
       return Response.json({
         success: true,
         url: uploadedImage.secure_url,
-        restaurant: updatedRestaurant,
       });
     }
 
@@ -110,12 +89,7 @@ export async function DELETE(req: Request) {
       return Response.json({ error: 'No image URL provided' }, { status: 400 });
     }
 
-    const restaurant = await Restaurant.findOne({ ownerId: user._id });
-
-    if (!restaurant) {
-      return Response.json({ error: 'Restaurant not found' }, { status: 404 });
-    }
-
+    // Delete from Cloudinary
     if (imageUrl && imageUrl.trim() !== '') {
       const matches = imageUrl.match(/restaurants(?:-production)?\/([^\.]+)/);
       const folder =
@@ -125,21 +99,16 @@ export async function DELETE(req: Request) {
       if (publicId) {
         try {
           await cloudinary.uploader.destroy(publicId);
+          console.log(`Deleted image from Cloudinary: ${publicId}`);
         } catch (error) {
           console.error('Error deleting image from Cloudinary:', error);
         }
       }
     }
 
-    const updatedRestaurant = await Restaurant.findByIdAndUpdate(
-      restaurant._id,
-      { image: '' },
-      { new: true }
-    );
-
     return Response.json({
       success: true,
-      restaurant: updatedRestaurant,
+      message: 'Image deleted successfully',
     });
   } catch (err) {
     console.error('DELETE ERROR:', err);

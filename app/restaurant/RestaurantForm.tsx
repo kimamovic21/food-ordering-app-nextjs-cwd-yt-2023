@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,11 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { MapPin, Plus, Minus, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import RestaurantImageUpload from './RestaurantImageUpload';
+import RestaurantImagesUpload, { ImageItem } from './RestaurantImagesUpload';
 
-const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
+const RestaurantLocation = dynamic(() => import('./RestaurantLocation'), {
   ssr: false,
   loading: () => <div className='h-[400px] bg-muted animate-pulse rounded-lg' />,
 });
@@ -49,7 +48,7 @@ interface RestaurantFormData {
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;
-  image: string;
+  images: string[];
 }
 
 interface RestaurantFormProps {
@@ -87,13 +86,10 @@ const formatRestaurantDataForForm = (restaurant: RestaurantFormData | undefined)
   };
 };
 
-export default function RestaurantForm({ restaurant, isEdit = false }: RestaurantFormProps) {
+const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isSavingImage, setIsSavingImage] = useState(false);
-  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  const [isRemovingImage, setIsRemovingImage] = useState(false);
 
   const formattedRestaurant = formatRestaurantDataForForm(restaurant);
 
@@ -114,91 +110,33 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
     workingHours: defaultWorkingHours,
     blockedDates: [],
     totalEmployees: 1,
-    image: '',
+    images: [],
     ...formattedRestaurant,
   });
 
+  // Track image items (both existing URLs and new files with previews)
+  const [imageItems, setImageItems] = useState<ImageItem[]>([]);
+
+  // Track original images to know which to delete
+  const [originalImages, setOriginalImages] = useState<string[]>([]);
+
+  // Initialize image items from existing restaurant data
+  useEffect(() => {
+    if (formattedRestaurant?.images && formattedRestaurant.images.length > 0) {
+      const items: ImageItem[] = formattedRestaurant.images.map((url, index) => ({
+        id: `existing-${index}-${url}`,
+        type: 'url' as const,
+        url,
+      }));
+      setImageItems(items);
+      setOriginalImages(formattedRestaurant.images);
+    }
+  }, [restaurant, formattedRestaurant.images]);
+
   const [newBlockedDate, setNewBlockedDate] = useState({ date: '', reason: '' });
 
-  const handleSelectImage = (file: File) => {
-    setSelectedImageFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreviewUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveImage = () => {
-    setIsRemovingImage(true);
-  };
-
-  const uploadImage = async () => {
-    if (!selectedImageFile) return;
-
-    try {
-      setIsSavingImage(true);
-      const formDataToSend = new FormData();
-      formDataToSend.append('file', selectedImageFile);
-
-      const response = await fetch('/api/upload/restaurants', {
-        method: 'POST',
-        body: formDataToSend,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to upload image');
-      }
-
-      if (!data.url) {
-        throw new Error('Upload completed but no image URL was returned');
-      }
-
-      setFormData((prev) => ({ ...prev, image: data.url }));
-      setSelectedImageFile(null);
-      setImagePreviewUrl(null);
-      toast.success('Restaurant created successfully', {
-        className: 'bg-emerald-600 text-white border-emerald-600',
-      });
-      return data.url;
-    } catch (error: any) {
-      console.error('Error uploading image:', error);
-      toast.error(error.message || 'Failed to upload image');
-      throw error;
-    } finally {
-      setIsSavingImage(false);
-    }
-  };
-
-  const deleteImage = async () => {
-    try {
-      setIsSavingImage(true);
-      const response = await fetch('/api/upload/restaurants', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ imageUrl: formData.image }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete image');
-      }
-
-      setFormData((prev) => ({ ...prev, image: '' }));
-      setIsRemovingImage(false);
-      toast.success('Image removed successfully');
-    } catch (error: any) {
-      console.error('Error deleting image:', error);
-      toast.error(error.message || 'Failed to delete image');
-      throw error;
-    } finally {
-      setIsSavingImage(false);
-    }
+  const handleImageItemsChange = (newItems: ImageItem[]) => {
+    setImageItems(newItems);
   };
 
   const toIsoDate = (value: string | Date) => {
@@ -254,7 +192,7 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
           return isValid;
         }),
       totalEmployees: data.totalEmployees,
-      image: data.image,
+      images: data.images,
     };
 
     if (includeId && data._id) {
@@ -300,7 +238,11 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
         }));
         toast.dismiss();
         toast.success('Location updated successfully', {
-          className: 'bg-emerald-600 text-white border-emerald-600',
+          style: {
+            backgroundColor: 'rgb(22 163 74)',
+            color: '#fff',
+            borderColor: 'rgb(22 163 74)',
+          },
         });
       },
       (error) => {
@@ -412,17 +354,13 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
       toast.error('Description must be between 20 and 200 characters');
       return false;
     }
-    // Check image validation
-    // If removing image, we can't save without one (image is always required now)
-    if (isRemovingImage && !selectedImageFile) {
-      toast.error(
-        'Restaurant must have an image. Please upload a new image before removing the current one.'
-      );
+    // Check images validation
+    if (!imageItems || imageItems.length === 0) {
+      toast.error('At least one restaurant image is required');
       return false;
     }
-    // If no image exists and not selecting a new one, error
-    if (!formData.image && !selectedImageFile) {
-      toast.error('Restaurant image is required');
+    if (imageItems.length > 5) {
+      toast.error('Maximum 5 images allowed');
       return false;
     }
     return true;
@@ -436,34 +374,87 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
     }
 
     let creatingToastId: string | number | undefined;
+    let shouldDismissToast = true;
 
     try {
       setLoading(true);
+      setIsSavingImage(true);
 
       const isCreating = !isEdit;
       creatingToastId = isCreating
         ? toast.loading('Creating restaurant please wait...')
-        : undefined;
+        : toast.loading('Updating restaurant please wait...');
 
-      let imageUrl = formData.image;
+      // Step 1: Upload new files to Cloudinary
+      const uploadedUrls: string[] = [];
+      const existingUrls: string[] = [];
 
-      // Upload new image if selected (edit flow replaces image on the server)
-      if (selectedImageFile) {
-        const uploadedUrl = await uploadImage();
-        if (uploadedUrl) {
-          imageUrl = uploadedUrl;
-          setFormData((prev) => ({ ...prev, image: uploadedUrl }));
+      for (const item of imageItems) {
+        if (item.type === 'file' && item.file) {
+          // Upload new file
+          const formDataToSend = new FormData();
+          formDataToSend.append('file', item.file);
+
+          const response = await fetch('/api/upload/restaurants', {
+            method: 'POST',
+            body: formDataToSend,
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Failed to upload image');
+          }
+
+          if (!data.url) {
+            throw new Error('Upload completed but no image URL was returned');
+          }
+
+          uploadedUrls.push(data.url);
+        } else if (item.type === 'url') {
+          // Keep existing URL
+          existingUrls.push(item.url);
         }
       }
 
-      // Only delete image if explicitly removing without replacement
-      if (isRemovingImage && !selectedImageFile) {
-        await deleteImage();
-        imageUrl = '';
+      // Step 2: Determine which original images were removed and delete them from Cloudinary
+      if (isEdit) {
+        const currentUrls = existingUrls;
+        const removedUrls = originalImages.filter((url) => !currentUrls.includes(url));
+
+        for (const removedUrl of removedUrls) {
+          try {
+            await fetch('/api/upload/restaurants', {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ imageUrl: removedUrl }),
+            });
+          } catch (error) {
+            console.error('Error deleting removed image:', error);
+            // Continue even if deletion fails
+          }
+        }
       }
 
+      // Step 3: Build final images array (maintain order from imageItems)
+      const finalImages: string[] = [];
+      for (const item of imageItems) {
+        if (item.type === 'file') {
+          // Find the uploaded URL for this file (match by order)
+          const uploadedUrl = uploadedUrls.shift();
+          if (uploadedUrl) {
+            finalImages.push(uploadedUrl);
+          }
+        } else {
+          finalImages.push(item.url);
+        }
+      }
+
+      // Step 4: Submit the form with final images
       const method = isEdit ? 'PUT' : 'POST';
-      const payload = buildPayload({ ...formData, image: imageUrl }, isEdit);
+      const payload = buildPayload({ ...formData, images: finalImages }, isEdit);
 
       const response = await fetch('/api/restaurant', {
         method,
@@ -479,30 +470,31 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
         throw new Error(data.error || `Failed to ${isEdit ? 'update' : 'create'} restaurant`);
       }
 
-      // Reset image states after successful submission
-      setSelectedImageFile(null);
-      setImagePreviewUrl(null);
-      setIsRemovingImage(false);
-
       if (creatingToastId) {
-        toast.success('Restaurant created successfully', {
-          id: creatingToastId,
-          className: 'bg-emerald-600 text-white border-emerald-600',
-        });
-      } else {
-        toast.success('Restaurant updated successfully', {
-          className: 'bg-emerald-600 text-white border-emerald-600',
-        });
+        toast.success(
+          isCreating ? 'Restaurant created successfully' : 'Restaurant updated successfully',
+          {
+            id: creatingToastId,
+            style: {
+              backgroundColor: 'rgb(22 163 74)',
+              color: '#fff',
+              borderColor: 'rgb(22 163 74)',
+            },
+          }
+        );
+        shouldDismissToast = false;
       }
+
       router.push('/restaurant');
     } catch (error: any) {
       console.error('Error submitting form:', error);
       toast.error(error.message || `Failed to ${isEdit ? 'update' : 'create'} restaurant`);
     } finally {
-      if (creatingToastId) {
+      if (creatingToastId && shouldDismissToast) {
         toast.dismiss(creatingToastId);
       }
       setLoading(false);
+      setIsSavingImage(false);
     }
   };
 
@@ -724,12 +716,11 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
               <div>
                 <Label className='mb-2 block'>Map Preview</Label>
                 <div className='h-[400px] rounded-lg overflow-hidden'>
-                  <OrderMap
-                    address={formData.street}
-                    city={formData.city}
-                    postalCode={formData.postalCode}
-                    country={formData.country}
-                    shouldFetchCourier={false}
+                  <RestaurantLocation
+                    name={formData.name}
+                    address={`${formData.street}, ${formData.city} ${formData.postalCode}, ${formData.country}`}
+                    latitude={formData.latitude}
+                    longitude={formData.longitude}
                   />
                 </div>
               </div>
@@ -738,56 +729,22 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
         </CardContent>
       </Card>
 
-      {/* Row 2b: Restaurant Image */}
+      {/* Row 2b: Restaurant Images */}
       <Card>
         <CardHeader>
-          <CardTitle>Restaurant Image</CardTitle>
-          <CardDescription>Upload a high-quality image of your restaurant *</CardDescription>
+          <CardTitle>Restaurant Images</CardTitle>
+          <CardDescription>
+            Upload up to 5 high-quality images of your restaurant. First image will be the cover
+            photo.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-            {/* Upload Controls - Left Side */}
-            <div className='space-y-4'>
-              <RestaurantImageUpload
-                imageUrl={formData.image}
-                previewUrl={imagePreviewUrl}
-                isRemovingImage={isRemovingImage}
-                onSelectImage={handleSelectImage}
-                onRemoveImage={handleRemoveImage}
-                isSaving={isSavingImage}
-                isRequired={!isEdit}
-              />
-            </div>
-
-            {/* Image Preview - Right Side */}
-            {formData.image && !imagePreviewUrl && !isRemovingImage && (
-              <div className='flex flex-col items-center justify-center'>
-                <Label className='mb-4 text-sm font-medium'>Current Image</Label>
-                <div className='relative w-full h-64 rounded-lg overflow-hidden bg-muted/30'>
-                  <Image
-                    src={formData.image}
-                    alt='Restaurant preview'
-                    fill
-                    className='object-cover'
-                  />
-                </div>
-              </div>
-            )}
-
-            {imagePreviewUrl && (
-              <div className='flex flex-col items-center justify-center'>
-                <Label className='mb-4 text-sm font-medium'>Preview</Label>
-                <div className='relative w-full h-64 rounded-lg overflow-hidden bg-muted/30'>
-                  <Image
-                    src={imagePreviewUrl}
-                    alt='Restaurant preview'
-                    fill
-                    className='object-cover'
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+          <RestaurantImagesUpload
+            imageItems={imageItems}
+            onImageItemsChange={handleImageItemsChange}
+            isSaving={isSavingImage}
+            maxImages={5}
+          />
         </CardContent>
       </Card>
 
@@ -1019,4 +976,6 @@ export default function RestaurantForm({ restaurant, isEdit = false }: Restauran
       </div>
     </form>
   );
-}
+};
+
+export default RestaurantForm;

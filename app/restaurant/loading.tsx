@@ -1,4 +1,4 @@
-export default function RestaurantLoading() {
+const RestaurantLoading = () => {
   return (
     <div className='container mx-auto py-8 px-4 max-w-7xl'>
       <div className='animate-pulse'>
@@ -19,4 +19,6 @@ export default function RestaurantLoading() {
       </div>
     </div>
   );
-}
+};
+
+export default RestaurantLoading;
