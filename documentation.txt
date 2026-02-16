@@ -1102,3 +1102,7 @@ Refactor hooks, map, menu and cart logic
 
 
 Add pending filters UI and Apply action
+
+
+
+Include restaurant images & UI cleanup

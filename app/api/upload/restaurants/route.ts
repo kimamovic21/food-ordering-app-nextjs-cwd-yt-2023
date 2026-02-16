@@ -99,7 +99,6 @@ export async function DELETE(req: Request) {
       if (publicId) {
         try {
           await cloudinary.uploader.destroy(publicId);
-          console.log(`Deleted image from Cloudinary: ${publicId}`);
         } catch (error) {
           console.error('Error deleting image from Cloudinary:', error);
         }

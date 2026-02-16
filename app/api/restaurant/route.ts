@@ -51,7 +51,9 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
   // Handle images array
   let images: string[] = [];
   if (Array.isArray(body.images)) {
-    images = body.images.filter((img): img is string => typeof img === 'string' && img.trim() !== '');
+    images = body.images.filter(
+      (img): img is string => typeof img === 'string' && img.trim() !== ''
+    );
   } else if (typeof body.image === 'string' && body.image.trim() !== '') {
     // Backward compatibility: convert single image to array
     images = [body.image];
@@ -177,7 +179,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!payload.images || !Array.isArray(payload.images) || payload.images.length === 0) {
-      return NextResponse.json({ error: 'At least one restaurant image is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'At least one restaurant image is required' },
+        { status: 400 }
+      );
     }
 
     if (payload.images.length > 5) {
@@ -252,7 +257,10 @@ export async function PUT(req: NextRequest) {
     }
 
     if (!updateData.images || !Array.isArray(updateData.images) || updateData.images.length === 0) {
-      return NextResponse.json({ error: 'At least one restaurant image is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'At least one restaurant image is required' },
+        { status: 400 }
+      );
     }
 
     if (updateData.images.length > 5) {
@@ -334,9 +342,11 @@ export async function DELETE(req: NextRequest) {
           if (publicId) {
             try {
               await cloudinary.uploader.destroy(publicId);
-              console.log(`Deleted restaurant image from Cloudinary: ${publicId}`);
             } catch (error) {
-              console.error(`Error deleting restaurant image from Cloudinary (${publicId}):`, error);
+              console.error(
+                `Error deleting restaurant image from Cloudinary (${publicId}):`,
+                error
+              );
               // Continue with deletion even if image deletion fails
             }
           }
@@ -356,7 +366,6 @@ export async function DELETE(req: NextRequest) {
         if (publicId) {
           try {
             await cloudinary.uploader.destroy(publicId);
-            console.log(`Deleted Cloudinary image: ${publicId}`);
           } catch (error) {
             console.error(`Error deleting image from Cloudinary (${publicId}):`, error);
             // Continue with deletion even if image deletion fails
@@ -368,7 +377,6 @@ export async function DELETE(req: NextRequest) {
     // Delete all menu items belonging to this restaurant
     if (menuItems.length > 0) {
       await MenuItem.deleteMany({ restaurantId: restaurantId });
-      console.log(`Deleted ${menuItems.length} menu items for restaurant ${restaurantId}`);
     }
 
     // Delete restaurant

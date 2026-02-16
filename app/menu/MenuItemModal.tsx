@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
-import Pizza from '@/public/pizza.png';
 import { Clock, MapPin, Phone, Mail, Globe } from 'lucide-react';
+import Image from 'next/image';
+import Pizza from '@/public/pizza.png';
 
 interface MenuItemType {
   _id: string;
@@ -30,6 +30,7 @@ interface RestaurantType {
   email: string;
   webAddress?: string;
   description: string;
+  images?: string[];
   workingHours?: Array<{
     day: string;
     openTime: string;
@@ -60,11 +61,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
   const availableSizes = (['small', 'medium', 'large'] as Size[])
     .map((size) => {
       const value =
-        size === 'small'
-          ? item.priceSmall
-          : size === 'medium'
-            ? item.priceMedium
-            : item.priceLarge;
+        size === 'small' ? item.priceSmall : size === 'medium' ? item.priceMedium : item.priceLarge;
       return { size, value };
     })
     .filter((entry) => typeof entry.value === 'number' && Number.isFinite(entry.value));
@@ -152,16 +149,20 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className='fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm' onClick={onClose}>
+    <div
+      className='fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm'
+      onClick={onClose}
+    >
       <div
         className='relative bg-white dark:bg-slate-950 rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl'
         onClick={(e) => e.stopPropagation()}
       >
         {/* Item Image - Fixed */}
-        <div className='relative h-64 bg-gray-100 dark:bg-muted p-4 shrink-0 flex items-center justify-center cursor-pointer transition-colors' onClick={() => onClose()}>
-          {item.image &&
-          typeof item.image === 'string' &&
-          item.image.startsWith('http') ? (
+        <div
+          className='relative h-64 bg-gray-100 dark:bg-muted p-4 shrink-0 flex items-center justify-center cursor-pointer transition-colors'
+          onClick={() => onClose()}
+        >
+          {item.image && typeof item.image === 'string' && item.image.startsWith('http') ? (
             isRemoteImage ? (
               <Image
                 src={item.image}
@@ -198,13 +199,17 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
             {/* Item Details */}
             <div>
               <h2 className='text-3xl font-bold mb-3 text-gray-900 dark:text-white'>{item.name}</h2>
-              <p className='text-gray-600 dark:text-gray-300 text-base leading-relaxed'>{item.description}</p>
+              <p className='text-gray-600 dark:text-gray-300 text-base leading-relaxed'>
+                {item.description}
+              </p>
             </div>
 
             {/* Size Selection */}
             {availableSizes.length > 1 && (
               <div className='space-y-3'>
-                <label className='text-sm font-semibold text-gray-900 dark:text-white'>Select Size:</label>
+                <label className='text-sm font-semibold text-gray-900 dark:text-white'>
+                  Select Size:
+                </label>
                 <div className='flex gap-2 flex-wrap'>
                   {availableSizes.map((entry) => (
                     <Button
@@ -234,51 +239,82 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
             {/* Restaurant Information */}
             {isLoading ? (
               <div className='border-t border-gray-200 dark:border-slate-700 pt-6'>
-                <p className='text-center text-gray-500 dark:text-gray-400'>Loading restaurant info...</p>
+                <p className='text-center text-gray-500 dark:text-gray-400'>
+                  Loading restaurant info...
+                </p>
               </div>
             ) : restaurant ? (
               <div className='border-t border-gray-200 dark:border-slate-700 pt-6 space-y-4'>
-                <h3 className='text-xl font-semibold text-gray-900 dark:text-white'>Restaurant Information</h3>
+                <h3 className='text-xl font-semibold text-gray-900 dark:text-white'>
+                  Restaurant Information
+                </h3>
 
-                {/* Restaurant Contact Section */}
-                <div className='space-y-3'>
-                  <div className='flex items-start gap-3'>
-                    <span className='font-semibold min-w-[120px] text-gray-900 dark:text-white'>Name:</span>
-                    <span className='text-gray-700 dark:text-gray-300'>{restaurant.name}</span>
-                  </div>
-
-                  <div className='flex items-start gap-3'>
-                    <MapPin className='w-5 h-5 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
+                {/* Restaurant Header with Image and Basic Info */}
+                <div className='flex gap-4'>
+                  {/* Restaurant Basic Info Box */}
+                  <div className='flex-1 rounded-lg p-4 space-y-3'>
                     <div>
-                      <p className='text-gray-700 dark:text-gray-300'>
+                      <span className='font-semibold text-gray-900 dark:text-white'>
+                        {restaurant.name}
+                      </span>
+                    </div>
+
+                    <div className='flex items-start gap-2'>
+                      <MapPin className='w-4 h-4 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
+                      <p className='text-sm text-gray-700 dark:text-gray-300'>
                         {restaurant.street}, {restaurant.city} {restaurant.postalCode}
                       </p>
                     </div>
-                  </div>
 
-                  <div className='flex items-start gap-3'>
-                    <Phone className='w-5 h-5 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
-                    <span className='text-gray-700 dark:text-gray-300'>{restaurant.contact}</span>
-                  </div>
+                    <div className='flex items-start gap-2'>
+                      <Phone className='w-4 h-4 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
+                      <span className='text-sm text-gray-700 dark:text-gray-300'>
+                        {restaurant.contact}
+                      </span>
+                    </div>
 
-                  <div className='flex items-start gap-3'>
-                    <Mail className='w-5 h-5 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
-                    <a href={`mailto:${restaurant.email}`} className='text-blue-600 dark:text-blue-400 hover:underline'>
-                      {restaurant.email}
-                    </a>
-                  </div>
-
-                  {restaurant.webAddress && (
-                    <div className='flex items-start gap-3'>
-                      <Globe className='w-5 h-5 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
+                    <div className='flex items-start gap-2'>
+                      <Mail className='w-4 h-4 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
                       <a
-                        href={restaurant.webAddress}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='text-blue-600 dark:text-blue-400 hover:underline'
+                        href={`mailto:${restaurant.email}`}
+                        className='text-sm text-blue-600 dark:text-blue-400 hover:underline'
                       >
-                        {restaurant.webAddress}
+                        {restaurant.email}
                       </a>
+                    </div>
+
+                    {restaurant.webAddress && (
+                      <div className='flex items-start gap-2'>
+                        <Globe className='w-4 h-4 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
+                        <a
+                          href={restaurant.webAddress}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          className='text-sm text-blue-600 dark:text-blue-400 hover:underline'
+                        >
+                          {restaurant.webAddress}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Restaurant Image */}
+                  {restaurant.images && restaurant.images.length > 0 && (
+                    <div className='shrink-0'>
+                      <div className='relative w-40 h-40 bg-gray-100 dark:bg-slate-800 rounded-lg overflow-hidden'>
+                        <Image
+                          src={restaurant.images[0]}
+                          alt={restaurant.name}
+                          width={160}
+                          height={160}
+                          className='w-full h-full object-cover'
+                          onError={() => {
+                            console.warn(
+                              `Failed to load restaurant image: ${restaurant.images?.[0]}`
+                            );
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -286,8 +322,12 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
                 {/* Description */}
                 {restaurant.description && (
                   <div>
-                    <p className='text-sm font-semibold mb-2 text-gray-900 dark:text-white'>About:</p>
-                    <p className='text-sm text-gray-600 dark:text-gray-400'>{restaurant.description}</p>
+                    <p className='text-sm font-semibold mb-2 text-gray-900 dark:text-white'>
+                      About:
+                    </p>
+                    <p className='text-sm text-gray-600 dark:text-gray-400'>
+                      {restaurant.description}
+                    </p>
                   </div>
                 )}
 
@@ -296,12 +336,16 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
                   <div>
                     <div className='flex items-center gap-2 mb-3'>
                       <Clock className='w-5 h-5 text-gray-600 dark:text-gray-400' />
-                      <p className='text-sm font-semibold text-gray-900 dark:text-white'>Working Hours:</p>
+                      <p className='text-sm font-semibold text-gray-900 dark:text-white'>
+                        Working Hours:
+                      </p>
                     </div>
                     <div className='grid grid-cols-2 gap-2 text-sm'>
                       {restaurant.workingHours.map((hours) => (
                         <div key={hours.day} className='flex justify-between'>
-                          <span className='font-medium text-gray-900 dark:text-white'>{formatDay(hours.day)}:</span>
+                          <span className='font-medium text-gray-900 dark:text-white'>
+                            {formatDay(hours.day)}:
+                          </span>
                           <span className='text-gray-600 dark:text-gray-400'>
                             {hours.isClosed ? 'Closed' : `${hours.openTime} - ${hours.closeTime}`}
                           </span>
