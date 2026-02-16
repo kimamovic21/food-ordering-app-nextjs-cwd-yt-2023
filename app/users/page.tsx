@@ -69,7 +69,7 @@ const UsersPage = () => {
     };
 
     fetchUsers();
-  }, [loading, isSuperAdmin, searchParams]);
+  }, [loading, isSuperAdmin, searchParams, router]);
 
   if (loading || loadingUsers) {
     return <UsersLoading />;

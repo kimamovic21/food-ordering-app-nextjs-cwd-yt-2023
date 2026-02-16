@@ -1089,7 +1089,12 @@ Add restaurant image upload and handling
 -add a logic for image upload to Cloudinary service
 
 
+
 Add multi-image support and restaurant stats
 
 -add a logic for uploading more images to restaurant
 -add statistics for restaurant
+
+
+
+Refactor hooks, map, menu and cart logic

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
@@ -80,8 +80,6 @@ const MenuPage = () => {
     return Object.fromEntries(entries);
   }, [categories]);
 
- 
-
   const isResultsView =
     activeSearch.length > 0 ||
     selectedCategories.length > 0 ||
@@ -101,6 +99,26 @@ const MenuPage = () => {
     [activeSearch, selectedCategories, minPrice, maxPrice, sortBy]
   );
   const lastFilterKeyRef = useRef(filterKey);
+
+  // Define updateQueryParams before any useEffect that uses it
+  const updateQueryParams = useCallback(
+    (updates: Record<string, string | string[] | null>) => {
+      const params = new URLSearchParams(searchParams?.toString() || '');
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) {
+          params.delete(key);
+          return;
+        }
+
+        params.set(key, Array.isArray(value) ? value.join(',') : value);
+      });
+
+      const queryString = params.toString();
+      router.replace(queryString ? `/menu?${queryString}` : '/menu', { scroll: false });
+    },
+    [searchParams, router]
+  );
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -147,7 +165,9 @@ const MenuPage = () => {
     setSearchInput(query);
     setActiveSearch(query);
     setSelectedCategories(uniqueCategories);
-    setSortBy(['price_asc', 'price_desc', 'newest', 'oldest'].includes(sortParam) ? sortParam : DEFAULT_SORT);
+    setSortBy(
+      ['price_asc', 'price_desc', 'newest', 'oldest'].includes(sortParam) ? sortParam : DEFAULT_SORT
+    );
     setMinPrice(minPriceParam);
     setMaxPrice(maxPriceParam);
     setPage(Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1);
@@ -155,7 +175,7 @@ const MenuPage = () => {
     if (rawCategories.some(isObjectId) && categories.length > 0) {
       updateQueryParams({ categories: resolvedCategories });
     }
-  }, [searchParams, categories]);
+  }, [searchParams, categories, updateQueryParams]);
 
   useEffect(() => {
     if (!isResultsView) {
@@ -232,31 +252,7 @@ const MenuPage = () => {
     fetchResults();
 
     return () => controller.abort();
-  }, [
-    isResultsView,
-    activeSearch,
-    selectedCategories,
-    minPrice,
-    maxPrice,
-    sortBy,
-    page,
-  ]);
-
-  const updateQueryParams = (updates: Record<string, string | string[] | null>) => {
-    const params = new URLSearchParams(searchParams?.toString() || '');
-
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) {
-        params.delete(key);
-        return;
-      }
-
-      params.set(key, Array.isArray(value) ? value.join(',') : value);
-    });
-
-    const queryString = params.toString();
-    router.replace(queryString ? `/menu?${queryString}` : '/menu', { scroll: false });
-  };
+  }, [isResultsView, activeSearch, selectedCategories, minPrice, maxPrice, sortBy, page]);
 
   const handleSearch = () => {
     const trimmedSearch = searchInput.trim();
@@ -341,11 +337,15 @@ const MenuPage = () => {
   };
 
   const hasActiveFilters =
-    selectedCategories.length > 0 || minPrice.length > 0 || maxPrice.length > 0 || sortBy !== DEFAULT_SORT;
+    selectedCategories.length > 0 ||
+    minPrice.length > 0 ||
+    maxPrice.length > 0 ||
+    sortBy !== DEFAULT_SORT;
 
   return (
     <main className='max-w-7xl mx-auto px-4 py-12'>
-      {(isSummaryLoading && categorySummaries.length === 0) || (isResultsLoading && results.length === 0) ? (
+      {(isSummaryLoading && categorySummaries.length === 0) ||
+      (isResultsLoading && results.length === 0) ? (
         <>
           <header className='mb-10 text-center'>
             <Skeleton className='h-10 w-32 mx-auto mb-3' />
@@ -409,7 +409,12 @@ const MenuPage = () => {
                     />
                   </div>
                   {activeSearch && (
-                    <Button onClick={handleResetSearch} variant='outline' className='h-11 px-5' type='button'>
+                    <Button
+                      onClick={handleResetSearch}
+                      variant='outline'
+                      className='h-11 px-5'
+                      type='button'
+                    >
                       Reset search
                     </Button>
                   )}
@@ -417,9 +422,7 @@ const MenuPage = () => {
 
                 {(activeSearch || hasActiveFilters) && (
                   <div className='flex flex-wrap items-center gap-2 text-sm'>
-                    {activeSearch && (
-                      <Badge variant='secondary'>Search: {activeSearch}</Badge>
-                    )}
+                    {activeSearch && <Badge variant='secondary'>Search: {activeSearch}</Badge>}
                     {selectedCategories.map((categorySlug) => (
                       <Badge key={categorySlug} variant='secondary'>
                         {categoryNameBySlug[categorySlug] || categorySlug}
@@ -429,7 +432,8 @@ const MenuPage = () => {
                     {maxPrice && <Badge variant='secondary'>Max ${maxPrice}</Badge>}
                     {sortBy !== DEFAULT_SORT && (
                       <Badge variant='secondary'>
-                        Sort: {sortBy === 'price_asc'
+                        Sort:{' '}
+                        {sortBy === 'price_asc'
                           ? 'Low to high'
                           : sortBy === 'price_desc'
                             ? 'High to low'
@@ -472,7 +476,11 @@ const MenuPage = () => {
 
                     {results.length > 0 && results.length < totalResults && (
                       <div className='flex justify-center'>
-                        <Button onClick={handleLoadMore} disabled={isResultsLoading} className='px-8'>
+                        <Button
+                          onClick={handleLoadMore}
+                          disabled={isResultsLoading}
+                          className='px-8'
+                        >
                           {isResultsLoading ? 'Loading...' : 'View more'}
                         </Button>
                       </div>
@@ -487,7 +495,9 @@ const MenuPage = () => {
                         <section key={summary._id}>
                           <div className='flex items-center justify-between mb-4'>
                             <h2 className='text-2xl font-semibold capitalize'>{summary.name}</h2>
-                            <span className='text-sm text-muted-foreground'>{summary.total} items</span>
+                            <span className='text-sm text-muted-foreground'>
+                              {summary.total} items
+                            </span>
                           </div>
 
                           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
@@ -498,7 +508,9 @@ const MenuPage = () => {
 
                           {summary.total > summary.items.length && (
                             <div className='mt-4 flex justify-end'>
-                              <Button onClick={() => handleViewMoreCategory(toCategorySlug(summary.name))}>
+                              <Button
+                                onClick={() => handleViewMoreCategory(toCategorySlug(summary.name))}
+                              >
                                 View more
                               </Button>
                             </div>
@@ -514,7 +526,10 @@ const MenuPage = () => {
             <Card className='w-full p-5 space-y-5'>
               <div className='space-y-2'>
                 <p className='text-sm font-semibold'>Sort by</p>
-                <Select value={sortBy} onValueChange={(value) => handleSortChange(value as SortOption)}>
+                <Select
+                  value={sortBy}
+                  onValueChange={(value) => handleSortChange(value as SortOption)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder='Sort menu items' />
                   </SelectTrigger>
@@ -534,7 +549,10 @@ const MenuPage = () => {
                     const categorySlug = toCategorySlug(category.name);
 
                     return (
-                      <label key={category._id} className='flex items-center gap-2 text-sm leading-none'>
+                      <label
+                        key={category._id}
+                        className='flex items-center gap-2 text-sm leading-none'
+                      >
                         <Checkbox
                           className='h-4 w-4 shrink-0 p-0 flex-none'
                           checked={selectedCategories.includes(categorySlug)}
@@ -588,7 +606,6 @@ const MenuPage = () => {
               </Button>
             </Card>
           </div>
-
         </>
       )}
     </main>

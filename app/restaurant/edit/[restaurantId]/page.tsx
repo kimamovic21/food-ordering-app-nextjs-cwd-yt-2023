@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
@@ -48,7 +48,7 @@ interface Restaurant {
   images: string[];
 }
 
-export default function EditRestaurantPage() {
+const EditRestaurantPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
@@ -56,18 +56,7 @@ export default function EditRestaurantPage() {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (status === 'loading') return;
-
-    if (!session?.user || (session.user as any).role !== 'admin') {
-      router.push('/');
-      return;
-    }
-
-    fetchRestaurant();
-  }, [status, session, router, restaurantId]);
-
-  const fetchRestaurant = async () => {
+  const fetchRestaurant = useCallback(async () => {
     try {
       const response = await fetch('/api/restaurant');
       const data = await response.json();
@@ -97,7 +86,18 @@ export default function EditRestaurantPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [restaurantId, router]);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (!session?.user || (session.user as any).role !== 'admin') {
+      router.push('/');
+      return;
+    }
+
+    fetchRestaurant();
+  }, [status, session, router, restaurantId, fetchRestaurant]);
 
   if (loading) {
     return (
@@ -355,3 +355,5 @@ export default function EditRestaurantPage() {
     </div>
   );
 }
+
+export default EditRestaurantPage;

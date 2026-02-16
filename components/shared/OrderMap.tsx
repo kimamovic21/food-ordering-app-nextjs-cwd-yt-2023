@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
+import { useCallback, useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -79,7 +79,10 @@ function MapUpdater({
 }
 
 const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
-  ({ address, city, postalCode, country, customerEmail, orderId, shouldFetchCourier = true }, ref) => {
+  (
+    { address, city, postalCode, country, customerEmail, orderId, shouldFetchCourier = true },
+    ref
+  ) => {
     const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
     const [courierLocation, setCourierLocation] = useState<[number, number] | null>(null);
     const [loading, setLoading] = useState(true);
@@ -87,13 +90,8 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
     const [courierLoading, setCourierLoading] = useState(false);
     const isMountedRef = useRef(true);
 
-    // Expose refetch method to parent component
-    useImperativeHandle(ref, () => ({
-      refetchCourierLocation: fetchCourierLocation,
-    }));
-
     // Fetch courier location every 60 seconds
-    const fetchCourierLocation = async () => {
+    const fetchCourierLocation = useCallback(async () => {
       if (!isMountedRef.current) return;
 
       try {
@@ -135,7 +133,12 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
           setCourierLoading(false);
         }
       }
-    };
+    }, [orderId]);
+
+    // Expose refetch method to parent component
+    useImperativeHandle(ref, () => ({
+      refetchCourierLocation: fetchCourierLocation,
+    }));
 
     useEffect(() => {
       isMountedRef.current = true;
@@ -226,7 +229,7 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
       return () => {
         isMountedRef.current = false;
       };
-    }, [address, city, postalCode, country, orderId]);
+    }, [address, city, postalCode, country, orderId, fetchCourierLocation, shouldFetchCourier]);
 
     if (loading && address && city && postalCode && country) {
       return (
@@ -334,10 +337,15 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
 
           {/* Location Marker - Restaurant (Orange) or Delivery (Blue) */}
           {coordinates && (
-            <Marker position={coordinates} icon={shouldFetchCourier ? customerIcon : restaurantIcon}>
+            <Marker
+              position={coordinates}
+              icon={shouldFetchCourier ? customerIcon : restaurantIcon}
+            >
               <Popup>
                 <div className='text-sm'>
-                  <p className='font-semibold mb-1'>{shouldFetchCourier ? 'Delivery Location' : 'Restaurant Location'}</p>
+                  <p className='font-semibold mb-1'>
+                    {shouldFetchCourier ? 'Delivery Location' : 'Restaurant Location'}
+                  </p>
                   {customerEmail && <p className='text-xs text-gray-600 mb-1'>{customerEmail}</p>}
                   {address && <p className='text-xs'>{address}</p>}
                   {city && postalCode && (

@@ -47,7 +47,6 @@ const OrdersPage = () => {
     if (loading) return;
 
     if (data?.role !== 'admin') {
-      console.warn('User is not admin:', { role: data?.role, data });
       return;
     }
 

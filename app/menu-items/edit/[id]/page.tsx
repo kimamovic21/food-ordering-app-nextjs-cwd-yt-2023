@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useRouter, useParams } from 'next/navigation';
@@ -43,13 +43,7 @@ const EditMenuItemPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);
 
-  useEffect(() => {
-    if (data?._id) {
-      fetchCategoriesAndItem();
-    }
-  }, [id, data?._id]);
-
-  const fetchCategoriesAndItem = async () => {
+  const fetchCategoriesAndItem = useCallback(async () => {
     try {
       const [catsRes, itemRes] = await Promise.all([
         fetch('/api/categories'),
@@ -91,7 +85,13 @@ const EditMenuItemPage = () => {
     } finally {
       setIsDataLoading(false);
     }
-  };
+  }, [id, data?._id, router]);
+
+  useEffect(() => {
+    if (data?._id) {
+      fetchCategoriesAndItem();
+    }
+  }, [data?._id, fetchCategoriesAndItem]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

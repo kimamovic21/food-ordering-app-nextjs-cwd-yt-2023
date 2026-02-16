@@ -158,7 +158,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Item Image - Fixed */}
-        <div className='relative h-64 bg-gray-100 dark:bg-muted p-4 flex-shrink-0 flex items-center justify-center cursor-pointer transition-colors' onClick={() => onClose()}>
+        <div className='relative h-64 bg-gray-100 dark:bg-muted p-4 shrink-0 flex items-center justify-center cursor-pointer transition-colors' onClick={() => onClose()}>
           {item.image &&
           typeof item.image === 'string' &&
           item.image.startsWith('http') ? (
@@ -248,7 +248,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
                   </div>
 
                   <div className='flex items-start gap-3'>
-                    <MapPin className='w-5 h-5 mt-0.5 flex-shrink-0 text-gray-600 dark:text-gray-400' />
+                    <MapPin className='w-5 h-5 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
                     <div>
                       <p className='text-gray-700 dark:text-gray-300'>
                         {restaurant.street}, {restaurant.city} {restaurant.postalCode}
@@ -257,12 +257,12 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
                   </div>
 
                   <div className='flex items-start gap-3'>
-                    <Phone className='w-5 h-5 mt-0.5 flex-shrink-0 text-gray-600 dark:text-gray-400' />
+                    <Phone className='w-5 h-5 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
                     <span className='text-gray-700 dark:text-gray-300'>{restaurant.contact}</span>
                   </div>
 
                   <div className='flex items-start gap-3'>
-                    <Mail className='w-5 h-5 mt-0.5 flex-shrink-0 text-gray-600 dark:text-gray-400' />
+                    <Mail className='w-5 h-5 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
                     <a href={`mailto:${restaurant.email}`} className='text-blue-600 dark:text-blue-400 hover:underline'>
                       {restaurant.email}
                     </a>
@@ -270,7 +270,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
 
                   {restaurant.webAddress && (
                     <div className='flex items-start gap-3'>
-                      <Globe className='w-5 h-5 mt-0.5 flex-shrink-0 text-gray-600 dark:text-gray-400' />
+                      <Globe className='w-5 h-5 mt-0.5 shrink-0 text-gray-600 dark:text-gray-400' />
                       <a
                         href={restaurant.webAddress}
                         target='_blank'

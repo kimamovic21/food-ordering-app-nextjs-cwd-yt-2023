@@ -40,39 +40,43 @@ interface CartProviderProps {
 }
 
 export const CartProvider = ({ children }: CartProviderProps) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Lazy initialization: load from localStorage only once during component mount
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    // Only run on client-side (Next.js safe)
+    if (typeof window === 'undefined') return [];
 
-  useEffect(() => {
     const storedCart = localStorage.getItem('cart');
     if (storedCart) {
       try {
         const parsedItems = JSON.parse(storedCart);
         // Filter out items without restaurantId (old cart items)
         const validItems = parsedItems.filter((item: any) => item.restaurantId);
-        
+
         if (validItems.length !== parsedItems.length) {
-          console.warn('Removed cart items without restaurantId:', parsedItems.length - validItems.length);
+          console.warn(
+            'Removed cart items without restaurantId:',
+            parsedItems.length - validItems.length
+          );
         }
-        
-        setCartItems(validItems);
+
+        return validItems;
       } catch (error) {
         console.error('Error loading cart from local storage:', error);
         localStorage.removeItem('cart'); // Clear invalid cart
+        return [];
       }
     }
-    setIsLoaded(true);
-  }, []);
+    return [];
+  });
 
+  // Save cart to localStorage whenever it changes
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem('cart', JSON.stringify(cartItems));
-    }
-  }, [cartItems, isLoaded]);
+    localStorage.setItem('cart', JSON.stringify(cartItems));
+  }, [cartItems]);
 
   const addToCart = (item: Omit<CartItem, 'quantity'>): boolean => {
     let canAdd = true;
-    
+
     setCartItems((prevItems) => {
       // Check if cart is empty or if item is from the same restaurant
       if (prevItems.length > 0 && prevItems[0].restaurantId !== item.restaurantId) {
@@ -90,7 +94,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
       return [...prevItems, { ...item, quantity: 1 }];
     });
-    
+
     return canAdd;
   };
 
