@@ -1106,3 +1106,7 @@ Add pending filters UI and Apply action
 
 
 Include restaurant images & UI cleanup
+
+
+
+Use ProfilePageLoading for profile loading

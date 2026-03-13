@@ -9,6 +9,7 @@ import type { ExtendedUser } from '@/types/user';
 import Title from '@/components/shared/Title';
 import UserProfileForm from './UserProfileForm';
 import UserProfileImage from './UserProfileImage';
+import ProfilePageLoading from './loading';
 
 const FALLBACK_IMAGE = '/user-default-image.webp';
 
@@ -30,6 +31,13 @@ const ProfilePage = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isRemovingImage, setIsRemovingImage] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isInitialSessionLoading, setIsInitialSessionLoading] = useState(true);
+
+  useEffect(() => {
+    if (status !== 'loading') {
+      setIsInitialSessionLoading(false);
+    }
+  }, [status]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -61,55 +69,8 @@ const ProfilePage = () => {
     [previewUrl]
   );
 
-  if (status === 'loading') {
-    return (
-      <section className='mt-8 w-full px-6 max-w-full'>
-        <div className='h-8 w-36 bg-accent animate-pulse rounded-md' />
-
-        <div className='w-full mt-8'>
-          <div className='flex flex-col md:flex-row gap-10 md:items-start max-w-full'>
-            <div className='flex flex-col items-center md:min-w-40'>
-              <div className='w-32 h-32 md:w-36 md:h-36 rounded-md bg-muted/30 border border-border shadow-sm animate-pulse' />
-              <div className='h-8 w-28 mt-2 bg-accent animate-pulse rounded-md' />
-            </div>
-
-            <div className='flex-1 w-full max-w-full space-y-6'>
-              <div className='space-y-2.5'>
-                <div className='h-5 w-28 bg-accent animate-pulse rounded-md' />
-                <div className='h-11 w-full max-w-full bg-accent animate-pulse rounded-md' />
-              </div>
-              <div className='space-y-2.5'>
-                <div className='h-5 w-24 bg-accent animate-pulse rounded-md' />
-                <div className='h-11 w-full max-w-full bg-accent animate-pulse rounded-md' />
-              </div>
-              <div className='space-y-2.5'>
-                <div className='h-5 w-32 bg-accent animate-pulse rounded-md' />
-                <div className='h-11 w-full max-w-full bg-accent animate-pulse rounded-md' />
-              </div>
-              <div className='space-y-2.5'>
-                <div className='h-5 w-36 bg-accent animate-pulse rounded-md' />
-                <div className='h-11 w-full max-w-full bg-accent animate-pulse rounded-md' />
-              </div>
-              <div className='grid gap-6 sm:grid-cols-2 w-full max-w-full'>
-                <div className='space-y-2.5'>
-                  <div className='h-5 w-20 bg-accent animate-pulse rounded-md' />
-                  <div className='h-11 w-full bg-accent animate-pulse rounded-md' />
-                </div>
-                <div className='space-y-2.5'>
-                  <div className='h-5 w-28 bg-accent animate-pulse rounded-md' />
-                  <div className='h-11 w-full bg-accent animate-pulse rounded-md' />
-                </div>
-              </div>
-              <div className='space-y-2.5'>
-                <div className='h-5 w-24 bg-accent animate-pulse rounded-md' />
-                <div className='h-11 w-full max-w-full bg-accent animate-pulse rounded-md' />
-              </div>
-              <div className='h-11 w-full max-w-full bg-accent animate-pulse rounded-md mt-6' />
-            </div>
-          </div>
-        </div>
-      </section>
-    );
+  if (status === 'loading' && isInitialSessionLoading) {
+    return <ProfilePageLoading />;
   }
   if (status === 'unauthenticated') return null;
 
