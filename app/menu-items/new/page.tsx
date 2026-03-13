@@ -30,7 +30,7 @@ const NewMenuItemPage = () => {
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
-  const [foodType, setFoodType] = useState('food');
+  const [priceType, setPriceType] = useState('single');
   const [priceSmall, setPriceSmall] = useState('');
   const [priceMedium, setPriceMedium] = useState('');
   const [priceLarge, setPriceLarge] = useState('');
@@ -107,18 +107,21 @@ const NewMenuItemPage = () => {
       return;
     }
 
-    // Check if at least one price is provided
-    const hasAnyPrice =
-      foodType === 'drink'
-        ? priceSmall.trim() !== ''
-        : priceSmall.trim() !== '' || priceMedium.trim() !== '' || priceLarge.trim() !== '';
-    if (!hasAnyPrice) {
-      toast.error('At least one price is required', {
-        style: {
-          background: '#ef4444',
-          color: 'white',
-        },
-      });
+    const requiredPriceCount = priceType === 'single' ? 1 : priceType === 'double' ? 2 : 3;
+    const hasEnoughPrices = [priceSmall.trim(), priceMedium.trim(), priceLarge.trim()]
+      .slice(0, requiredPriceCount)
+      .every((price) => price !== '');
+
+    if (!hasEnoughPrices) {
+      toast.error(
+        `Please provide ${requiredPriceCount} price${requiredPriceCount > 1 ? 's' : ''}`,
+        {
+          style: {
+            background: '#ef4444',
+            color: 'white',
+          },
+        }
+      );
       return;
     }
 
@@ -155,10 +158,10 @@ const NewMenuItemPage = () => {
         name,
         description,
         category: categoryId,
-        foodType,
+        priceType,
         priceSmall: s,
-        priceMedium: foodType === 'drink' ? null : m,
-        priceLarge: foodType === 'drink' ? null : l,
+        priceMedium: priceType === 'single' ? null : m,
+        priceLarge: priceType === 'triple' ? l : null,
         image: imageUrl || '',
       };
 
@@ -170,21 +173,21 @@ const NewMenuItemPage = () => {
 
       if (!response.ok) throw new Error('Failed to create menu item');
 
-        toast.success('Menu item created!', {
-          style: {
-            background: '#22c55e',
-            color: 'white',
-          },
-        });
+      toast.success('Menu item created!', {
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
       router.push('/menu-items');
     } catch (err) {
       console.error(err);
-        toast.error('Failed to create menu item', {
-          style: {
-            background: '#ef4444',
-            color: 'white',
-          },
-        });
+      toast.error('Failed to create menu item', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
     } finally {
       setIsSaving(false);
     }
@@ -194,7 +197,7 @@ const NewMenuItemPage = () => {
     setName('');
     setDescription('');
     setCategoryId('');
-    setFoodType('food');
+    setPriceType('single');
     setPriceSmall('');
     setPriceMedium('');
     setPriceLarge('');
@@ -203,10 +206,13 @@ const NewMenuItemPage = () => {
     setImagePreview('');
   };
 
-  const handleFoodTypeChange = (value: string) => {
-    setFoodType(value);
-    if (value === 'drink') {
+  const handlePriceTypeChange = (value: string) => {
+    setPriceType(value);
+    if (value === 'single') {
       setPriceMedium('');
+      setPriceLarge('');
+    }
+    if (value === 'double') {
       setPriceLarge('');
     }
   };
@@ -221,7 +227,8 @@ const NewMenuItemPage = () => {
         <div className='bg-red-50 border border-red-200 rounded-lg p-6 text-center'>
           <h2 className='text-lg font-semibold text-red-800 mb-2'>No Restaurant</h2>
           <p className='text-red-700'>
-            You need to have a restaurant created before you can add menu items. Please create or link a restaurant to your account first.
+            You need to have a restaurant created before you can add menu items. Please create or
+            link a restaurant to your account first.
           </p>
         </div>
       </section>
@@ -304,7 +311,7 @@ const NewMenuItemPage = () => {
                   categoryId={categoryId}
                   categories={categories}
                   description={description}
-                  foodType={foodType}
+                  priceType={priceType}
                   priceSmall={priceSmall}
                   priceMedium={priceMedium}
                   priceLarge={priceLarge}
@@ -313,7 +320,7 @@ const NewMenuItemPage = () => {
                   onNameChange={setName}
                   onCategoryChange={setCategoryId}
                   onDescriptionChange={setDescription}
-                  onFoodTypeChange={handleFoodTypeChange}
+                  onPriceTypeChange={handlePriceTypeChange}
                   onPriceSmallChange={setPriceSmall}
                   onPriceMediumChange={setPriceMedium}
                   onPriceLargeChange={setPriceLarge}

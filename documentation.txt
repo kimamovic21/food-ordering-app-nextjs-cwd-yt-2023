@@ -1110,3 +1110,7 @@ Include restaurant images & UI cleanup
 
 
 Use ProfilePageLoading for profile loading
+
+
+
+Migrate menu items to priceType

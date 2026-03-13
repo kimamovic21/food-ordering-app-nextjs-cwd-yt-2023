@@ -32,7 +32,7 @@ const EditMenuItemPage = () => {
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
-  const [foodType, setFoodType] = useState('food');
+  const [priceType, setPriceType] = useState('single');
   const [priceSmall, setPriceSmall] = useState('');
   const [priceMedium, setPriceMedium] = useState('');
   const [priceLarge, setPriceLarge] = useState('');
@@ -56,7 +56,7 @@ const EditMenuItemPage = () => {
       const items = await itemRes.json();
       if (items.length > 0) {
         const item = items[0];
-        
+
         // Check if the current user is the owner of this menu item
         if (data?._id && item.adminId && item.adminId !== data._id) {
           toast.error('You are not authorized to edit this menu item', {
@@ -68,11 +68,22 @@ const EditMenuItemPage = () => {
           router.push('/menu-items');
           return;
         }
-        
+
         setName(item.name);
         setDescription(item.description);
         setCategoryId(typeof item.category === 'string' ? item.category : item.category?._id || '');
-        setFoodType(item.foodType || 'food');
+
+        const derivedPriceType =
+          item.priceType ||
+          (item.foodType === 'drink'
+            ? 'single'
+            : item.priceLarge != null
+              ? 'triple'
+              : item.priceMedium != null
+                ? 'double'
+                : 'single');
+        setPriceType(derivedPriceType);
+
         setPriceSmall(item.priceSmall ? item.priceSmall.toString() : '');
         setPriceMedium(item.priceMedium ? item.priceMedium.toString() : '');
         setPriceLarge(item.priceLarge ? item.priceLarge.toString() : '');
@@ -143,18 +154,21 @@ const EditMenuItemPage = () => {
       return;
     }
 
-    // Check if at least one price is provided
-    const hasAnyPrice =
-      foodType === 'drink'
-        ? priceSmall.trim() !== ''
-        : priceSmall.trim() !== '' || priceMedium.trim() !== '' || priceLarge.trim() !== '';
-    if (!hasAnyPrice) {
-      toast.error('At least one price is required', {
-        style: {
-          background: '#ef4444',
-          color: 'white',
-        },
-      });
+    const requiredPriceCount = priceType === 'single' ? 1 : priceType === 'double' ? 2 : 3;
+    const hasEnoughPrices = [priceSmall.trim(), priceMedium.trim(), priceLarge.trim()]
+      .slice(0, requiredPriceCount)
+      .every((price) => price !== '');
+
+    if (!hasEnoughPrices) {
+      toast.error(
+        `Please provide ${requiredPriceCount} price${requiredPriceCount > 1 ? 's' : ''}`,
+        {
+          style: {
+            background: '#ef4444',
+            color: 'white',
+          },
+        }
+      );
       return;
     }
 
@@ -196,10 +210,10 @@ const EditMenuItemPage = () => {
         name,
         description,
         category: categoryId,
-        foodType,
+        priceType,
         priceSmall: s,
-        priceMedium: foodType === 'drink' ? null : m,
-        priceLarge: foodType === 'drink' ? null : l,
+        priceMedium: priceType === 'single' ? null : m,
+        priceLarge: priceType === 'triple' ? l : null,
         image: imageUrl || '',
       };
 
@@ -233,10 +247,13 @@ const EditMenuItemPage = () => {
 
   const showSkeleton = loading || isDataLoading;
 
-  const handleFoodTypeChange = (value: string) => {
-    setFoodType(value);
-    if (value === 'drink') {
+  const handlePriceTypeChange = (value: string) => {
+    setPriceType(value);
+    if (value === 'single') {
       setPriceMedium('');
+      setPriceLarge('');
+    }
+    if (value === 'double') {
       setPriceLarge('');
     }
   };
@@ -319,7 +336,7 @@ const EditMenuItemPage = () => {
                   categoryId={categoryId}
                   categories={categories}
                   description={description}
-                  foodType={foodType}
+                  priceType={priceType}
                   priceSmall={priceSmall}
                   priceMedium={priceMedium}
                   priceLarge={priceLarge}
@@ -328,7 +345,7 @@ const EditMenuItemPage = () => {
                   onNameChange={setName}
                   onCategoryChange={setCategoryId}
                   onDescriptionChange={setDescription}
-                  onFoodTypeChange={handleFoodTypeChange}
+                  onPriceTypeChange={handlePriceTypeChange}
                   onPriceSmallChange={setPriceSmall}
                   onPriceMediumChange={setPriceMedium}
                   onPriceLargeChange={setPriceLarge}

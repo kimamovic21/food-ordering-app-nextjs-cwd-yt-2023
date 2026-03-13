@@ -23,6 +23,40 @@ const parsePositiveInt = (value: string | null, fallback: number) => {
   return Math.floor(parsed);
 };
 
+const isValidPriceType = (value: unknown): value is 'single' | 'double' | 'triple' =>
+  value === 'single' || value === 'double' || value === 'triple';
+
+const resolvePriceType = (data: Record<string, unknown>): 'single' | 'double' | 'triple' => {
+  if (isValidPriceType(data.priceType)) {
+    return data.priceType;
+  }
+
+  const legacyFoodType = data.foodType;
+  if (legacyFoodType === 'drink') {
+    return 'single';
+  }
+
+  if (data.priceLarge != null && data.priceLarge !== '') {
+    return 'triple';
+  }
+
+  if (data.priceMedium != null && data.priceMedium !== '') {
+    return 'double';
+  }
+
+  return 'single';
+};
+
+const hasRequiredPricesByType = (
+  priceType: 'single' | 'double' | 'triple',
+  data: Record<string, unknown>
+) => {
+  const prices = [data.priceSmall, data.priceMedium, data.priceLarge];
+  const requiredCount = priceType === 'single' ? 1 : priceType === 'double' ? 2 : 3;
+
+  return prices.slice(0, requiredCount).every((price) => price != null && price !== '');
+};
+
 const toCategorySlug = (value: string) =>
   value
     .toLowerCase()
@@ -74,20 +108,14 @@ export async function POST(req: Request) {
 
     const data = await req.json();
 
-    if (!data.foodType || !['food', 'drink'].includes(data.foodType)) {
+    const priceType = resolvePriceType(data);
+
+    if (!hasRequiredPricesByType(priceType, data)) {
+      const requiredCount = priceType === 'single' ? 1 : priceType === 'double' ? 2 : 3;
       return Response.json(
-        { error: 'Invalid food type. Must be "food" or "drink"' },
+        { error: `Please provide ${requiredCount} price${requiredCount > 1 ? 's' : ''}` },
         { status: 400 }
       );
-    }
-
-    // At least one price must be provided
-    const hasAnyPrice =
-      data.foodType === 'drink'
-        ? data.priceSmall != null && data.priceSmall !== ''
-        : data.priceSmall || data.priceMedium || data.priceLarge;
-    if (!hasAnyPrice) {
-      return Response.json({ error: 'At least one price is required' }, { status: 400 });
     }
 
     // Validate image URL if provided
@@ -105,10 +133,12 @@ export async function POST(req: Request) {
       description: data.description,
       image: data.image || '',
       category: data.category,
-      foodType: data.foodType,
+      priceType,
       priceSmall: data.priceSmall ? Number(data.priceSmall) : null,
-      priceMedium: data.foodType === 'drink' ? null : data.priceMedium ? Number(data.priceMedium) : null,
-      priceLarge: data.foodType === 'drink' ? null : data.priceLarge ? Number(data.priceLarge) : null,
+      priceMedium:
+        priceType === 'single' ? null : data.priceMedium ? Number(data.priceMedium) : null,
+      priceLarge:
+        priceType === 'triple' ? (data.priceLarge ? Number(data.priceLarge) : null) : null,
       adminId: currentUser._id,
       restaurantId: currentUser.restaurantId,
     };
@@ -299,31 +329,28 @@ export async function PUT(req: Request) {
     }
 
     const { _id, ...data } = await req.json();
-    
+
     // Check if the menu item belongs to the current user
     const existingItem = await MenuItem.findById(_id);
     if (!existingItem) {
       return Response.json({ error: 'Menu item not found' }, { status: 404 });
     }
-    
-    if (existingItem.adminId.toString() !== currentUser._id.toString()) {
-      return Response.json({ error: 'You are not authorized to edit this menu item' }, { status: 403 });
-    }
 
-    if (!data.foodType || !['food', 'drink'].includes(data.foodType)) {
+    if (existingItem.adminId.toString() !== currentUser._id.toString()) {
       return Response.json(
-        { error: 'Invalid food type. Must be "food" or "drink"' },
-        { status: 400 }
+        { error: 'You are not authorized to edit this menu item' },
+        { status: 403 }
       );
     }
 
-    // At least one price must be provided
-    const hasAnyPrice =
-      data.foodType === 'drink'
-        ? data.priceSmall != null && data.priceSmall !== ''
-        : data.priceSmall || data.priceMedium || data.priceLarge;
-    if (!hasAnyPrice) {
-      return Response.json({ error: 'At least one price is required' }, { status: 400 });
+    const priceType = resolvePriceType(data);
+
+    if (!hasRequiredPricesByType(priceType, data)) {
+      const requiredCount = priceType === 'single' ? 1 : priceType === 'double' ? 2 : 3;
+      return Response.json(
+        { error: `Please provide ${requiredCount} price${requiredCount > 1 ? 's' : ''}` },
+        { status: 400 }
+      );
     }
 
     // Validate image URL if provided
@@ -341,10 +368,12 @@ export async function PUT(req: Request) {
       description: data.description,
       image: data.image || '',
       category: data.category,
-      foodType: data.foodType,
+      priceType,
       priceSmall: data.priceSmall ? Number(data.priceSmall) : null,
-      priceMedium: data.foodType === 'drink' ? null : data.priceMedium ? Number(data.priceMedium) : null,
-      priceLarge: data.foodType === 'drink' ? null : data.priceLarge ? Number(data.priceLarge) : null,
+      priceMedium:
+        priceType === 'single' ? null : data.priceMedium ? Number(data.priceMedium) : null,
+      priceLarge:
+        priceType === 'triple' ? (data.priceLarge ? Number(data.priceLarge) : null) : null,
     };
 
     const updated = await MenuItem.findByIdAndUpdate(_id, updateData, { new: true });
@@ -379,14 +408,17 @@ export async function DELETE(req: Request) {
 
   if (_id) {
     const menuItem = await MenuItem.findById(_id);
-    
+
     // Check if the menu item belongs to the current user
     if (!menuItem) {
       return Response.json({ error: 'Menu item not found' }, { status: 404 });
     }
-    
+
     if (menuItem.adminId.toString() !== currentUser._id.toString()) {
-      return Response.json({ error: 'You are not authorized to delete this menu item' }, { status: 403 });
+      return Response.json(
+        { error: 'You are not authorized to delete this menu item' },
+        { status: 403 }
+      );
     }
 
     if (menuItem && menuItem.image) {

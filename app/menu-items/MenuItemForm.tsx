@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectContent,
   SelectItem,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ interface MenuItemFormProps {
   categoryId: string;
   categories: Array<{ _id: string; name: string }>;
   description: string;
-  foodType: string;
+  priceType: string;
   priceSmall: string;
   priceMedium: string;
   priceLarge: string;
@@ -27,7 +27,7 @@ interface MenuItemFormProps {
   onNameChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
-  onFoodTypeChange: (value: string) => void;
+  onPriceTypeChange: (value: string) => void;
   onPriceSmallChange: (value: string) => void;
   onPriceMediumChange: (value: string) => void;
   onPriceLargeChange: (value: string) => void;
@@ -39,7 +39,7 @@ const MenuItemForm = ({
   categoryId,
   categories,
   description,
-  foodType,
+  priceType,
   priceSmall,
   priceMedium,
   priceLarge,
@@ -48,7 +48,7 @@ const MenuItemForm = ({
   onNameChange,
   onCategoryChange,
   onDescriptionChange,
-  onFoodTypeChange,
+  onPriceTypeChange,
   onPriceSmallChange,
   onPriceMediumChange,
   onPriceLargeChange,
@@ -58,7 +58,9 @@ const MenuItemForm = ({
     <Card className='grow'>
       <CardContent className='space-y-4'>
         <div>
-          <Label htmlFor='name' className='mb-1 block'>Menu item name</Label>
+          <Label htmlFor='name' className='mb-2 block'>
+            Menu item name
+          </Label>
           <Input
             id='name'
             type='text'
@@ -70,12 +72,10 @@ const MenuItemForm = ({
         </div>
 
         <div>
-          <Label htmlFor='category' className='mb-1 block'>Category</Label>
-          <Select
-            value={categoryId}
-            onValueChange={onCategoryChange}
-            disabled={isSaving}
-          >
+          <Label htmlFor='category' className='mb-2 block'>
+            Category
+          </Label>
+          <Select value={categoryId} onValueChange={onCategoryChange} disabled={isSaving}>
             <SelectTrigger className='w-full'>
               <SelectValue placeholder='Select a category' />
             </SelectTrigger>
@@ -90,7 +90,9 @@ const MenuItemForm = ({
         </div>
 
         <div>
-          <Label htmlFor='description' className='mb-1 block'>Description</Label>
+          <Label htmlFor='description' className='mb-2 block'>
+            Description
+          </Label>
           <Textarea
             id='description'
             value={description}
@@ -101,37 +103,46 @@ const MenuItemForm = ({
         </div>
 
         <div>
-          <Label htmlFor='foodType' className='mb-1 block'>Food Type</Label>
-          <Select
-            value={foodType}
-            onValueChange={onFoodTypeChange}
-            disabled={isSaving}
-          >
+          <Label htmlFor='priceType' className='mb-2 block'>
+            Price Type
+          </Label>
+          <Select value={priceType} onValueChange={onPriceTypeChange} disabled={isSaving}>
             <SelectTrigger className='w-full'>
-              <SelectValue placeholder='Select food type' />
+              <SelectValue placeholder='Select price type' />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='food'>Food</SelectItem>
-              <SelectItem value='drink'>Drink</SelectItem>
+              <SelectItem value='single'>Single price</SelectItem>
+              <SelectItem value='double'>Two prices</SelectItem>
+              <SelectItem value='triple'>Three prices</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label className='mb-2 block'>Prices <span className='text-muted-foreground'>(USD)</span></Label>
+          <Label className='mb-2 block'>
+            Prices <span className='text-muted-foreground'>(USD)</span>
+          </Label>
           <p className='text-sm text-muted-foreground mb-3'>
-            {foodType === 'drink' ? 'Enter price for your drink' : 'Enter one or more prices'}
+            {priceType === 'single'
+              ? 'Enter one price'
+              : priceType === 'double'
+                ? 'Enter two prices'
+                : 'Enter up to three prices'}
           </p>
 
           <div className='grid grid-cols-1 md:grid-cols-3 gap-3'>
-            {foodType === 'drink' ? (
+            {priceType === 'single' ? (
               <>
                 <div>
-                  <Label htmlFor='priceDrink' className='mb-1 block text-xs'>Price</Label>
+                  <Label htmlFor='priceSingle' className='mb-1 block text-xs'>
+                    Price
+                  </Label>
                   <div className='relative'>
-                    <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>$</span>
+                    <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>
+                      $
+                    </span>
                     <Input
-                      id='priceDrink'
+                      id='priceSingle'
                       type='number'
                       step='0.01'
                       min='0'
@@ -142,7 +153,7 @@ const MenuItemForm = ({
                       className='pl-7'
                     />
                   </div>
-                  <p className='text-xs text-muted-foreground mt-1'>Drinks have a single price</p>
+                  <p className='text-xs text-muted-foreground mt-1'>Use one fixed price</p>
                 </div>
                 <div className='invisible'>
                   <Label className='mb-1 block text-xs'>Placeholder</Label>
@@ -155,12 +166,16 @@ const MenuItemForm = ({
                   <p className='text-xs mt-1'>.</p>
                 </div>
               </>
-            ) : (
+            ) : priceType === 'double' ? (
               <>
                 <div>
-                  <Label htmlFor='priceSmall' className='mb-1 block text-xs'>Small</Label>
+                  <Label htmlFor='priceSmall' className='mb-1 block text-xs'>
+                    Price 1
+                  </Label>
                   <div className='relative'>
-                    <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>$</span>
+                    <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>
+                      $
+                    </span>
                     <Input
                       id='priceSmall'
                       type='number'
@@ -176,9 +191,65 @@ const MenuItemForm = ({
                 </div>
 
                 <div>
-                  <Label htmlFor='priceMedium' className='mb-1 block text-xs'>Medium</Label>
+                  <Label htmlFor='priceMedium' className='mb-1 block text-xs'>
+                    Price 2
+                  </Label>
                   <div className='relative'>
-                    <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>$</span>
+                    <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>
+                      $
+                    </span>
+                    <Input
+                      id='priceMedium'
+                      type='number'
+                      step='0.01'
+                      min='0'
+                      value={priceMedium}
+                      onChange={(e) => onPriceMediumChange(e.target.value)}
+                      placeholder='11.99'
+                      disabled={isSaving}
+                      className='pl-7'
+                    />
+                  </div>
+                </div>
+
+                <div className='invisible'>
+                  <Label className='mb-1 block text-xs'>Placeholder</Label>
+                  <Input disabled className='pl-7' />
+                  <p className='text-xs mt-1'>.</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <Label htmlFor='priceSmall' className='mb-1 block text-xs'>
+                    Small
+                  </Label>
+                  <div className='relative'>
+                    <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>
+                      $
+                    </span>
+                    <Input
+                      id='priceSmall'
+                      type='number'
+                      step='0.01'
+                      min='0'
+                      value={priceSmall}
+                      onChange={(e) => onPriceSmallChange(e.target.value)}
+                      placeholder='8.99'
+                      disabled={isSaving}
+                      className='pl-7'
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor='priceMedium' className='mb-1 block text-xs'>
+                    Medium
+                  </Label>
+                  <div className='relative'>
+                    <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>
+                      $
+                    </span>
                     <Input
                       id='priceMedium'
                       type='number'
@@ -194,9 +265,13 @@ const MenuItemForm = ({
                 </div>
 
                 <div>
-                  <Label htmlFor='priceLarge' className='mb-1 block text-xs'>Large</Label>
+                  <Label htmlFor='priceLarge' className='mb-1 block text-xs'>
+                    Large
+                  </Label>
                   <div className='relative'>
-                    <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>$</span>
+                    <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>
+                      $
+                    </span>
                     <Input
                       id='priceLarge'
                       type='number'
