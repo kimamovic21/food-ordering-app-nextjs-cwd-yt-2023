@@ -41,5 +41,11 @@
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "workbench.trustedDomains": [
+    "https://raw.githubusercontent.com"
+  ],
+  "json.schemaDownload.trustedDomains": {
+    "https://raw.githubusercontent.com": true
   }
 }

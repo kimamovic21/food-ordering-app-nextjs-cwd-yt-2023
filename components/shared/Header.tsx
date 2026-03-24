@@ -97,6 +97,12 @@ const Header = () => {
   const isCourier =
     (session?.data?.user as any)?.role === 'courier' || profileData?.role === 'courier';
   const isAdmin = (session?.data?.user as any)?.role === 'admin' || profileData?.role === 'admin';
+  const isPublicRestaurantPage =
+    pathname === '/restaurants' || Boolean(pathname && /^\/restaurants\/[^/]+$/.test(pathname));
+  const isAdminRestaurantPage =
+    pathname === '/restaurant' ||
+    Boolean(pathname && pathname.startsWith('/restaurant/create')) ||
+    Boolean(pathname && pathname.startsWith('/restaurant/edit'));
 
   const handleLogout = async () => {
     toast.success('Successfully logged out', {
@@ -135,6 +141,12 @@ const Header = () => {
                   href='/menu'
                 >
                   Menu
+                </Link>
+                <Link
+                  className={`${isPublicRestaurantPage ? 'text-primary font-semibold' : ''}`}
+                  href='/restaurants'
+                >
+                  Restaurants
                 </Link>
                 <Link
                   className={`${pathname === '/about' ? 'text-primary font-semibold' : ''}`}
@@ -181,9 +193,7 @@ const Header = () => {
                     {isAdmin && (
                       <>
                         <Link
-                          className={`${
-                            pathname?.startsWith('/restaurant') ? 'text-primary font-semibold' : ''
-                          }`}
+                          className={`${isAdminRestaurantPage ? 'text-primary font-semibold' : ''}`}
                           href={'/restaurant'}
                         >
                           Restaurant
@@ -364,6 +374,13 @@ const Header = () => {
             </Link>
             <Link href='/menu' onClick={() => setMobileOpen(false)} className='hover:text-primary'>
               Menu
+            </Link>
+            <Link
+              href='/restaurants'
+              onClick={() => setMobileOpen(false)}
+              className='hover:text-primary'
+            >
+              Restaurants
             </Link>
             <Link href='/about' onClick={() => setMobileOpen(false)} className='hover:text-primary'>
               About

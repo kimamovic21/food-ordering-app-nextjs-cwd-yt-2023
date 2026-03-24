@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import dynamic from 'next/dynamic';
 import RestaurantImagesUpload, { ImageItem } from './RestaurantImagesUpload';
 
-const RestaurantLocation = dynamic(() => import('./RestaurantLocation'), {
+const RestaurantLocation = dynamic(() => import('@/components/shared/RestaurantLocation'), {
   ssr: false,
   loading: () => <div className='h-[400px] bg-muted animate-pulse rounded-lg' />,
 });

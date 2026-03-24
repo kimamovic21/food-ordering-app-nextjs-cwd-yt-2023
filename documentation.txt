@@ -1114,3 +1114,7 @@ Use ProfilePageLoading for profile loading
 
 
 Migrate menu items to priceType
+
+
+
+Add restaurants pages and API endpoints
