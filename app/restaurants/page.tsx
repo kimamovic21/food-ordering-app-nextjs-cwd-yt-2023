@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,7 @@ interface RestaurantListItem {
   description: string;
   image: string | null;
   isOpen: boolean;
+  distanceKm: number | null;
 }
 
 const PAGE_SIZE = 9;
@@ -41,8 +42,11 @@ const RestaurantsPage = () => {
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
-
-  const queryKey = useMemo(() => JSON.stringify({ page, activeSearch }), [page, activeSearch]);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(
+    null
+  );
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
     const query = (searchParams?.get('q') || '').trim();
@@ -65,6 +69,11 @@ const RestaurantsPage = () => {
 
         if (activeSearch) {
           params.set('q', activeSearch);
+        }
+
+        if (userLocation) {
+          params.set('latitude', String(userLocation.latitude));
+          params.set('longitude', String(userLocation.longitude));
         }
 
         const response = await fetch(`/api/restaurants?${params.toString()}`, {
@@ -94,7 +103,42 @@ const RestaurantsPage = () => {
     return () => {
       controller.abort();
     };
-  }, [queryKey, page, activeSearch]);
+  }, [page, activeSearch, userLocation]);
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationLoading(false);
+      setLocationError('Geolocation is not supported in your browser.');
+      return;
+    }
+
+    setLocationLoading(true);
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setLocationLoading(false);
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationError('Location access denied. Showing default order.');
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setLocationError('Location unavailable. Showing default order.');
+        } else if (error.code === error.TIMEOUT) {
+          setLocationError('Location request timed out. Showing default order.');
+        } else {
+          setLocationError('Failed to get your location. Showing default order.');
+        }
+
+        setLocationLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 7000, maximumAge: 60000 }
+    );
+  }, []);
 
   const updateQueryParams = (nextPage: number, nextQuery: string) => {
     const params = new URLSearchParams();
@@ -181,6 +225,13 @@ const RestaurantsPage = () => {
             <p className='text-sm text-muted-foreground'>
               Browse restaurants, discover their details, and choose where you want to order from.
             </p>
+            <p className='text-sm text-muted-foreground'>
+              {locationLoading
+                ? 'Detecting your location for nearest restaurants...'
+                : userLocation
+                  ? 'Showing restaurants from closest to farthest based on your location.'
+                  : locationError || 'Location unavailable. Showing default order.'}
+            </p>
           </div>
 
           {/* Loaded - Search Input */}
@@ -232,6 +283,11 @@ const RestaurantsPage = () => {
                         <MapPin className='h-4 w-4' />
                         {restaurant.city}, {restaurant.country}
                       </p>
+                      {typeof restaurant.distanceKm === 'number' && (
+                        <p className='text-xs text-muted-foreground'>
+                          {restaurant.distanceKm.toFixed(1)} km away
+                        </p>
+                      )}
                     </CardHeader>
                     <CardContent className='space-y-2'>
                       <p className='text-sm text-muted-foreground'>{restaurant.street}</p>

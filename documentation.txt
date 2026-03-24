@@ -1118,3 +1118,7 @@ Migrate menu items to priceType
 
 
 Add restaurants pages and API endpoints
+
+
+
+Add location-based sorting & distance display

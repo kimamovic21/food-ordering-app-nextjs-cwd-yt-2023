@@ -60,6 +60,20 @@ interface RestaurantDetails {
 
 const formatDay = (day: string) => day.charAt(0).toUpperCase() + day.slice(1);
 
+const calculateDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 const RestaurantDetailsPage = () => {
   const params = useParams();
   const id = params?.id as string;
@@ -68,6 +82,11 @@ const RestaurantDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeImage, setActiveImage] = useState(0);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(
+    null
+  );
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -105,6 +124,41 @@ const RestaurantDetailsPage = () => {
       controller.abort();
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationLoading(false);
+      setLocationError('Geolocation is not supported in your browser.');
+      return;
+    }
+
+    setLocationLoading(true);
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setLocationLoading(false);
+      },
+      (geoError) => {
+        if (geoError.code === geoError.PERMISSION_DENIED) {
+          setLocationError('Location permission denied.');
+        } else if (geoError.code === geoError.POSITION_UNAVAILABLE) {
+          setLocationError('Location is unavailable.');
+        } else if (geoError.code === geoError.TIMEOUT) {
+          setLocationError('Location request timed out.');
+        } else {
+          setLocationError('Unable to detect your location.');
+        }
+
+        setLocationLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 7000, maximumAge: 60000 }
+    );
+  }, []);
 
   if (loading) {
     return (
@@ -145,6 +199,17 @@ const RestaurantDetailsPage = () => {
   const selectedImage = hasImages
     ? restaurant.images[Math.min(activeImage, restaurant.images.length - 1)]
     : null;
+  const distanceKm =
+    userLocation &&
+    typeof restaurant.latitude === 'number' &&
+    typeof restaurant.longitude === 'number'
+      ? calculateDistanceKm(
+          userLocation.latitude,
+          userLocation.longitude,
+          restaurant.latitude,
+          restaurant.longitude
+        )
+      : null;
 
   return (
     <section className='mt-8 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10'>
@@ -172,6 +237,13 @@ const RestaurantDetailsPage = () => {
         <p className='text-sm text-muted-foreground flex items-center gap-1'>
           <MapPin className='h-4 w-4' />
           {restaurant.street}, {restaurant.city}, {restaurant.postalCode}, {restaurant.country}
+        </p>
+        <p className='text-sm text-muted-foreground'>
+          {locationLoading
+            ? 'Detecting your location to calculate distance...'
+            : typeof distanceKm === 'number'
+              ? `${distanceKm.toFixed(1)} km from your current location`
+              : locationError || 'Distance unavailable without your location.'}
         </p>
       </div>
 
