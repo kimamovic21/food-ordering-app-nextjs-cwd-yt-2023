@@ -383,7 +383,10 @@ const RestaurantDetailsPage = () => {
         </Card>
       </div>
 
-      <div className='mt-8'>
+      <div className='mt-8 flex flex-wrap gap-3'>
+        <Link href={`/restaurants/${id}/menu`}>
+          <Button>View restaurant menu</Button>
+        </Link>
         <Link href='/restaurants'>
           <Button variant='outline'>Back to restaurants</Button>
         </Link>
