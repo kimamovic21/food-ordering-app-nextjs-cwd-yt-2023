@@ -29,7 +29,7 @@ type Size = 'small' | 'medium' | 'large' | 'single';
 
 const MenuItem = ({ item }: MenuItemProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userSelectedSize, setUserSelectedSize] = useState<Size>('small');
+  const [userSelectedSize] = useState<Size>('small');
   const { addToCart, getCartRestaurantId } = useCart();
 
   const displayItem = item || {
@@ -169,7 +169,9 @@ const MenuItem = ({ item }: MenuItemProps) => {
         </div>
       </Card>
 
-      {item && <MenuItemModal item={item} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
+      {item && (
+        <MenuItemModal item={item} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      )}
     </>
   );
 };

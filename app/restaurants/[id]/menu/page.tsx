@@ -442,7 +442,7 @@ const RestaurantMenuPage = () => {
       )}
 
       {shouldShowSkeleton ? (
-        <MenuPageSkeleton sectionCount={1} cardsPerSection={1} />
+        <MenuPageSkeleton sectionCount={1} cardsPerSection={3} />
       ) : (
         <>
           <div className='grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start'>

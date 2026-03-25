@@ -1126,3 +1126,7 @@ Add location-based sorting & distance display
 
 
 Add restaurant menu API and frontend
+
+
+
+Add MenuPageSkeleton and reuse in menu pages

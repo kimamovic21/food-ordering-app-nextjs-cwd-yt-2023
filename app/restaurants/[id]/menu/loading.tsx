@@ -14,7 +14,7 @@ const RestaurantMenuPageLoading = () => {
         <Skeleton className='h-4 w-24' />
       </div>
 
-      <MenuPageSkeleton sectionCount={1} cardsPerSection={1} />
+      <MenuPageSkeleton sectionCount={1} cardsPerSection={3} />
     </main>
   );
 };

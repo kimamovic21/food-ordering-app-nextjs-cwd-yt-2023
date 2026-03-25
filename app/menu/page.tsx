@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,6 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import MenuItem from './MenuItem';
 import SearchInput from './SearchInput';
+import MenuPageSkeleton from './MenuPageSkeleton';
 
 interface MenuItemType {
   _id: string;
@@ -61,6 +61,7 @@ const MenuPage = () => {
   const searchParams = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   const [isResultsLoading, setIsResultsLoading] = useState(false);
   const [results, setResults] = useState<MenuItemType[]>([]);
@@ -219,6 +220,7 @@ const MenuPage = () => {
         setCategorySummaries([]);
       } finally {
         setIsSummaryLoading(false);
+        setIsInitialLoading(false);
       }
     };
 
@@ -260,6 +262,7 @@ const MenuPage = () => {
         }
       } finally {
         setIsResultsLoading(false);
+        setIsInitialLoading(false);
       }
     };
 
@@ -376,52 +379,15 @@ const MenuPage = () => {
     maxPrice.length > 0 ||
     sortBy !== DEFAULT_SORT;
 
+  const shouldShowSkeleton =
+    isInitialLoading ||
+    (isSummaryLoading && categorySummaries.length === 0) ||
+    (isResultsLoading && results.length === 0);
+
   return (
     <main className='max-w-7xl mx-auto px-4 py-12'>
-      {(isSummaryLoading && categorySummaries.length === 0) ||
-      (isResultsLoading && results.length === 0) ? (
-        <>
-          <header className='mb-10 text-center'>
-            <Skeleton className='h-10 w-32 mx-auto mb-3' />
-            <Skeleton className='h-6 w-64 mx-auto' />
-          </header>
-
-          <div className='space-y-10'>
-            {[1, 2, 3].map((index) => (
-              <section key={index}>
-                <Skeleton className='h-8 w-24 mb-4' />
-
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                  {[...Array(3)].map((_, cardIndex) => (
-                    <Card key={cardIndex} className='p-0 overflow-hidden flex flex-col'>
-                      <div className='relative h-40 p-4 bg-muted'>
-                        <Skeleton className='mx-auto h-32 w-32 rounded-full' />
-                      </div>
-
-                      <div className='p-4 flex flex-col flex-1'>
-                        <Skeleton className='h-7 w-3/4 mb-4' />
-
-                        <div className='space-y-2 flex-1'>
-                          <Skeleton className='h-4 w-full' />
-                          <Skeleton className='h-4 w-full' />
-                          <Skeleton className='h-4 w-5/6' />
-                        </div>
-
-                        <div className='flex gap-1 justify-center mt-4'>
-                          <Skeleton className='h-9 w-20' />
-                          <Skeleton className='h-9 w-20' />
-                          <Skeleton className='h-9 w-20' />
-                        </div>
-
-                        <Skeleton className='h-12 w-full mt-4' />
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        </>
+      {shouldShowSkeleton ? (
+        <MenuPageSkeleton sectionCount={1} cardsPerSection={3} />
       ) : (
         <>
           <div className='grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start'>
