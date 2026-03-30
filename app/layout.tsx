@@ -5,8 +5,7 @@ import { CartProvider } from '@/contexts/CartContext';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import './globals.css';
 import 'leaflet/dist/leaflet.css';
-import Header from '../components/shared/Header';
-import Footer from '../components/shared/Footer';
+import LayoutWrapper from '../components/shared/LayoutWrapper';
 import AppContext from '@/contexts/AppContext';
 
 const roboto = Roboto({
@@ -46,12 +45,10 @@ const RootLayout = ({
           <div className='min-h-screen flex flex-col w-full'>
             <AppContext>
               <CartProvider>
-                <Header />
-                <main className='flex-1 max-w-7xl mx-auto p-4 mt-16'>
-                  <Toaster position='top-center' />
+                <LayoutWrapper>
                   {children}
-                </main>
-                <Footer />
+                  <Toaster position='top-center' />
+                </LayoutWrapper>
               </CartProvider>
             </AppContext>
           </div>

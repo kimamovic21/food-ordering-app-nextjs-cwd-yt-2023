@@ -12,13 +12,7 @@ import {
   AboutLinkSkeleton,
   ContactLinkSkeleton,
   MyOrdersLinkSkeleton,
-  CategoriesLinkSkeleton,
-  MenuItemsLinkSkeleton,
-  UsersLinkSkeleton,
-  CouriersLinkSkeleton,
   MyDeliveryLinkSkeleton,
-  OrdersLinkSkeleton,
-  StatisticsLinkSkeleton,
   ModeToggleSkeleton,
   CartIconSkeleton,
   UserNameSkeleton,
@@ -99,10 +93,6 @@ const Header = () => {
   const isAdmin = (session?.data?.user as any)?.role === 'admin' || profileData?.role === 'admin';
   const isPublicRestaurantPage =
     pathname === '/restaurants' || Boolean(pathname && /^\/restaurants\/[^/]+$/.test(pathname));
-  const isAdminRestaurantPage =
-    pathname === '/restaurant' ||
-    Boolean(pathname && pathname.startsWith('/restaurant/create')) ||
-    Boolean(pathname && pathname.startsWith('/restaurant/edit'));
 
   const handleLogout = async () => {
     toast.success('Successfully logged out', {
@@ -127,12 +117,6 @@ const Header = () => {
                 <ContactLinkSkeleton />
                 <MyOrdersLinkSkeleton />
                 <MyDeliveryLinkSkeleton />
-                <CategoriesLinkSkeleton />
-                <MenuItemsLinkSkeleton />
-                <UsersLinkSkeleton />
-                <CouriersLinkSkeleton />
-                <OrdersLinkSkeleton />
-                <StatisticsLinkSkeleton />
               </>
             ) : (
               <>
@@ -191,68 +175,12 @@ const Header = () => {
                       </>
                     )}
                     {isAdmin && (
-                      <>
-                        <Link
-                          className={`${isAdminRestaurantPage ? 'text-primary font-semibold' : ''}`}
-                          href={'/restaurant'}
-                        >
-                          Restaurant
-                        </Link>
-                        {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
-                          <Link
-                            className={`${
-                              pathname === '/categories' ? 'text-primary font-semibold' : ''
-                            }`}
-                            href={'/categories'}
-                          >
-                            Categories
-                          </Link>
-                        )}
-                        <Link
-                          className={`${
-                            pathname?.startsWith('/menu-items') ? 'text-primary font-semibold' : ''
-                          }`}
-                          href={'/menu-items'}
-                        >
-                          Menu Items
-                        </Link>
-                        {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
-                          <Link
-                            className={`${pathname?.startsWith('/users') ? 'text-primary font-semibold' : ''}`}
-                            href={'/users'}
-                          >
-                            Users
-                          </Link>
-                        )}
-                        {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
-                          <Link
-                            className={`${
-                              pathname === '/couriers' ? 'text-primary font-semibold' : ''
-                            }`}
-                            href={'/couriers'}
-                          >
-                            Couriers
-                          </Link>
-                        )}
-                        <Link
-                          className={`${
-                            pathname?.startsWith('/orders') ? 'text-primary font-semibold' : ''
-                          }`}
-                          href={'/orders'}
-                        >
-                          Orders
-                        </Link>
-                        {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
-                          <Link
-                            className={`${
-                              pathname === '/statistics' ? 'text-primary font-semibold' : ''
-                            }`}
-                            href={'/statistics'}
-                          >
-                            Statistics
-                          </Link>
-                        )}
-                      </>
+                      <Link
+                        className={`${pathname?.startsWith('/admin-dashboard') ? 'text-primary font-semibold' : ''}`}
+                        href={'/admin-dashboard'}
+                      >
+                        Admin Dashboard
+                      </Link>
                     )}
                   </>
                 )}
@@ -428,65 +356,13 @@ const Header = () => {
                   </>
                 )}
                 {isAdmin && (
-                  <>
-                    <Link
-                      href='/restaurant'
-                      onClick={() => setMobileOpen(false)}
-                      className='hover:text-primary'
-                    >
-                      Restaurant
-                    </Link>
-                    {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
-                      <Link
-                        href='/categories'
-                        onClick={() => setMobileOpen(false)}
-                        className='hover:text-primary'
-                      >
-                        Categories
-                      </Link>
-                    )}
-                    <Link
-                      href='/menu-items'
-                      onClick={() => setMobileOpen(false)}
-                      className='hover:text-primary'
-                    >
-                      Menu Items
-                    </Link>
-                    {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
-                      <Link
-                        href='/users'
-                        onClick={() => setMobileOpen(false)}
-                        className='hover:text-primary'
-                      >
-                        Users
-                      </Link>
-                    )}
-                    {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
-                      <Link
-                        href='/couriers'
-                        onClick={() => setMobileOpen(false)}
-                        className='hover:text-primary'
-                      >
-                        Couriers
-                      </Link>
-                    )}
-                    <Link
-                      href='/orders'
-                      onClick={() => setMobileOpen(false)}
-                      className='hover:text-primary'
-                    >
-                      Orders
-                    </Link>
-                    {profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
-                      <Link
-                        href='/statistics'
-                        onClick={() => setMobileOpen(false)}
-                        className='hover:text-primary'
-                      >
-                        Statistics
-                      </Link>
-                    )}
-                  </>
+                  <Link
+                    href='/admin-dashboard'
+                    onClick={() => setMobileOpen(false)}
+                    className='hover:text-primary'
+                  >
+                    Admin Dashboard
+                  </Link>
                 )}
                 <Button
                   onClick={async () => {
