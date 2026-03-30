@@ -10,6 +10,7 @@ import Title from '@/components/shared/Title';
 import AvailabilityToggle from './AvailabilityToggle';
 import LocationShareButton from './LocationShareButton';
 import DeliveryOrderCard from './DeliveryOrderCard';
+import ManualLocationSimulator from './ManualLocationSimulator';
 import MyDeliveryLoading from './loading';
 
 // Dynamic import to prevent SSR issues with Leaflet
@@ -49,6 +50,7 @@ type OrderDetailsType = {
 };
 
 const CourierPage = () => {
+  const isDevelopment = process.env.NODE_ENV === 'development';
   const { data: profileData, loading: profileLoading } = useProfile();
   const [orders, setOrders] = useState<OrderDetailsType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +60,7 @@ const CourierPage = () => {
   const [togglingAvailability, setTogglingAvailability] = useState(false);
   const [sharingLocation, setSharingLocation] = useState(false);
   const [locationShared, setLocationShared] = useState(false);
+  const [locationPollingEnabled, setLocationPollingEnabled] = useState(true);
   const mapRefs = useRef<Map<string, OrderMapHandle>>(new Map());
   const isInitialLoadRef = useRef(true);
 
@@ -299,6 +302,78 @@ const CourierPage = () => {
     }
   };
 
+  const handleManualLocationUpdate = async (latitude: number, longitude: number) => {
+    try {
+      setSharingLocation(true);
+
+      const res = await fetch('/api/my-delivery/location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude, longitude }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to update manual location', {
+          style: {
+            background: '#ef4444',
+            color: 'white',
+          },
+        });
+        return;
+      }
+
+      setLocationShared(true);
+      toast.success('Manual location updated', {
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
+
+      mapRefs.current.forEach((mapRef) => {
+        mapRef.refetchCourierLocation().catch((err) => {
+          console.error('Failed to refetch courier location:', err);
+        });
+      });
+
+      setTimeout(() => {
+        setLocationShared(false);
+      }, 2000);
+
+      if (isDevelopment && locationPollingEnabled) {
+        setLocationPollingEnabled(false);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update manual location', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+    } finally {
+      setSharingLocation(false);
+    }
+  };
+
+  const handleToggleLocationPolling = () => {
+    setLocationPollingEnabled((prev) => {
+      const nextPollingEnabled = !prev;
+
+      toast.success(nextPollingEnabled ? 'Enabled data polling' : 'Disabled data polling', {
+        position: 'top-center',
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
+
+      return nextPollingEnabled;
+    });
+  };
+
   if (profileLoading) {
     return <MyDeliveryLoading />;
   }
@@ -357,6 +432,7 @@ const CourierPage = () => {
                   if (el) mapRefs.current.set('courier-location', el);
                   else mapRefs.current.delete('courier-location');
                 }}
+                enableCourierPolling={locationPollingEnabled}
               />
             </CardContent>
           </Card>
@@ -375,9 +451,20 @@ const CourierPage = () => {
               completing={completing}
               onComplete={handleCompleteOrder}
               mapRefs={mapRefs}
+              enableCourierPolling={locationPollingEnabled}
             />
           ))}
         </div>
+      )}
+
+      {isDevelopment && (
+        <ManualLocationSimulator
+          availability={availability}
+          pollingEnabled={locationPollingEnabled}
+          updating={sharingLocation}
+          onPollingToggle={handleToggleLocationPolling}
+          onManualUpdate={handleManualLocationUpdate}
+        />
       )}
     </div>
   );

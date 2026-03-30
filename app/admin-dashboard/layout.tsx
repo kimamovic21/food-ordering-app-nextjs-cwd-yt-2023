@@ -79,6 +79,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const { data: profileData, loading } = useProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
 
   const isAdmin = profileData?.role === 'admin';
   const isSuperAdmin = isAdmin && profileData?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
@@ -88,6 +89,42 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       router.push('/');
     }
   }, [isAdmin, loading, router]);
+
+  useEffect(() => {
+    if (loading || !isAdmin) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchActiveOrdersCount = async () => {
+      try {
+        const response = await fetch('/api/orders/active-count', { cache: 'no-store' });
+
+        if (!response.ok) {
+          if (response.status === 403 && isMounted) {
+            setActiveOrdersCount(0);
+          }
+          return;
+        }
+
+        const json = await response.json();
+        if (isMounted) {
+          setActiveOrdersCount(Number(json.activeOrdersCount) || 0);
+        }
+      } catch {
+        // Keep the previous count if the network briefly fails.
+      }
+    };
+
+    fetchActiveOrdersCount();
+    const interval = setInterval(fetchActiveOrdersCount, 10000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [loading, isAdmin]);
 
   const links = [
     {
@@ -189,6 +226,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             .filter((link) => (link.superAdminOnly ? isSuperAdmin : true))
             .map((link) => {
               const Icon = link.icon;
+              const isOrdersLink = link.href === '/admin-dashboard/orders';
               const isActive =
                 link.href === '/admin-dashboard'
                   ? pathname === '/admin-dashboard'
@@ -207,6 +245,17 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 >
                   <Icon size={20} />
                   <span>{link.label}</span>
+                  {isOrdersLink && activeOrdersCount > 0 && (
+                    <span
+                      className={`ml-auto inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        isActive
+                          ? 'bg-primary-foreground/20 text-primary-foreground'
+                          : 'bg-amber-100 text-amber-900'
+                      }`}
+                    >
+                      New {activeOrdersCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}

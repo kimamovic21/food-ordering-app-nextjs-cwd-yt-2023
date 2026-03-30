@@ -15,6 +15,7 @@ type OrderMapProps = {
   customerEmail?: string;
   orderId?: string; // Optional order ID for admin view
   shouldFetchCourier?: boolean; // Set to false to only show restaurant/location without fetching courier
+  enableCourierPolling?: boolean;
 };
 
 export type OrderMapHandle = {
@@ -80,7 +81,16 @@ function MapUpdater({
 
 const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
   (
-    { address, city, postalCode, country, customerEmail, orderId, shouldFetchCourier = true },
+    {
+      address,
+      city,
+      postalCode,
+      country,
+      customerEmail,
+      orderId,
+      shouldFetchCourier = true,
+      enableCourierPolling = true,
+    },
     ref
   ) => {
     const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
@@ -217,6 +227,12 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
         // Fetch immediately on mount
         fetchCourierLocation();
 
+        if (!enableCourierPolling) {
+          return () => {
+            isMountedRef.current = false;
+          };
+        }
+
         // Set interval for polling every 60 seconds
         const interval = setInterval(fetchCourierLocation, 60000);
 
@@ -229,7 +245,16 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
       return () => {
         isMountedRef.current = false;
       };
-    }, [address, city, postalCode, country, orderId, fetchCourierLocation, shouldFetchCourier]);
+    }, [
+      address,
+      city,
+      postalCode,
+      country,
+      orderId,
+      fetchCourierLocation,
+      shouldFetchCourier,
+      enableCourierPolling,
+    ]);
 
     if (loading && address && city && postalCode && country) {
       return (

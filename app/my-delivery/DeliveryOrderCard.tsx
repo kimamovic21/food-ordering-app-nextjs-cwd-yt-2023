@@ -47,6 +47,7 @@ interface DeliveryOrderCardProps {
   completing: string | null;
   onComplete: (orderId: string) => void;
   mapRefs: React.MutableRefObject<Map<string, OrderMapHandle>>;
+  enableCourierPolling?: boolean;
 }
 
 const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
@@ -54,6 +55,7 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
   completing,
   onComplete,
   mapRefs,
+  enableCourierPolling = true,
 }) => (
   <Card className='hover:shadow-lg transition-shadow'>
     <CardHeader>
@@ -131,6 +133,7 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
             postalCode={order.postalCode}
             country={order.country}
             customerEmail={order.email}
+            enableCourierPolling={enableCourierPolling}
           />
         </div>
         {/* Delivery Status */}
