@@ -44,6 +44,7 @@ type OrderDetailsType = {
   orderStatus: 'placed' | 'processing' | 'ready' | 'transportation' | 'completed';
   createdAt: string;
   taxPercentage?: number;
+  taxAmount?: number;
   deliveryFee?: number;
   loyaltyDiscount?: number;
   loyaltyDiscountPercentage?: number;
@@ -273,6 +274,7 @@ const MyOrderDetailPage = () => {
               createdAt={order.createdAt}
               deliveryFee={order.deliveryFee}
               taxPercentage={order.taxPercentage}
+              taxAmount={order.taxAmount}
             />
 
             <CustomerInfoCard
@@ -291,6 +293,7 @@ const MyOrderDetailPage = () => {
               cartProducts={order.cartProducts}
               total={order.total}
               taxPercentage={order.taxPercentage}
+              taxAmount={order.taxAmount}
               deliveryFee={order.deliveryFee}
               loyaltyDiscount={order.loyaltyDiscount}
               loyaltyDiscountPercentage={order.loyaltyDiscountPercentage}

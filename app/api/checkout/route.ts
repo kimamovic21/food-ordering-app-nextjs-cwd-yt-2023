@@ -23,6 +23,8 @@ type CartItemPayload = {
 
 export const runtime = 'nodejs';
 
+const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100;
+
 export async function POST(req: Request) {
   if (!stripe) {
     return Response.json({ error: 'Stripe is not configured' }, { status: 500 });
@@ -72,7 +74,14 @@ export async function POST(req: Request) {
       restaurantId: String(item.restaurantId),
     }))
     .filter((item) =>
-      Boolean(item._id && item.name && item.size && item.quantity > 0 && item.price > 0 && item.restaurantId)
+      Boolean(
+        item._id &&
+        item.name &&
+        item.size &&
+        item.quantity > 0 &&
+        item.price > 0 &&
+        item.restaurantId
+      )
     );
 
   if (sanitizedItems.length === 0) {
@@ -115,11 +124,15 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid loyalty discount' }, { status: 400 });
   }
 
-  const subtotal = sanitizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * (restaurant.tax / 100);
+  const subtotal = roundToTwoDecimals(
+    sanitizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  );
+  const taxAmount = roundToTwoDecimals(subtotal * (restaurant.tax / 100));
   const deliveryFee = restaurant.courierFee;
-  const discountedDeliveryFee = deliveryFee - verifiedLoyaltyDiscount;
-  const total = subtotal + tax + discountedDeliveryFee;
+  const discountedDeliveryFee = roundToTwoDecimals(
+    Math.max(deliveryFee - verifiedLoyaltyDiscount, 0)
+  );
+  const total = roundToTwoDecimals(subtotal + discountedDeliveryFee);
 
   const order = await Order.create({
     userId: user._id,
@@ -139,6 +152,7 @@ export async function POST(req: Request) {
     })),
     restaurantId: restaurant._id,
     taxPercentage: restaurant.tax,
+    taxAmount,
     deliveryFee: discountedDeliveryFee,
     loyaltyDiscount: verifiedLoyaltyDiscount,
     loyaltyDiscountPercentage: verifiedLoyaltyPercentage,
@@ -163,16 +177,6 @@ export async function POST(req: Request) {
     });
   });
 
-  // Add tax
-  stripeLineItems.push({
-    quantity: 1,
-    price_data: {
-      currency: 'usd',
-      unit_amount: Math.max(Math.round(tax * 100), 1),
-      product_data: { name: `Tax` },
-    },
-  });
-
   // Add delivery fee
   stripeLineItems.push({
     quantity: 1,
@@ -195,8 +199,8 @@ export async function POST(req: Request) {
     mode: 'payment',
     payment_method_types: ['card'],
     customer_email: session.user.email,
-    metadata: { 
-      orderId: order._id.toString()
+    metadata: {
+      orderId: order._id.toString(),
     },
     line_items: stripeLineItems,
     success_url: `${origin}/checkout?status=success&session_id={CHECKOUT_SESSION_ID}`,

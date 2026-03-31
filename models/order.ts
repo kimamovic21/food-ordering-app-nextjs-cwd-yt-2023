@@ -12,10 +12,10 @@ const CartProductSchema = new Schema(
     size: { type: String, required: true },
     quantity: { type: Number, required: true },
     price: { type: Number, required: true },
-    restaurantId: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'Restaurant', 
-      required: true 
+    restaurantId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Restaurant',
+      required: true,
     },
   },
   { _id: false }
@@ -31,28 +31,33 @@ const OrderSchema = new Schema(
     city: { type: String, required: true },
     country: { type: String, required: true },
     cartProducts: { type: [CartProductSchema], required: true },
-    
+
     // Restaurant reference
-    restaurantId: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'Restaurant', 
-      required: true 
+    restaurantId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Restaurant',
+      required: true,
     },
-    
+
     // Tax and fees (dynamic from restaurant)
-    taxPercentage: { 
-      type: Number, 
+    taxPercentage: {
+      type: Number,
       required: true,
       min: 0,
-      max: 100 
+      max: 100,
     },
-    deliveryFee: { 
-      type: Number, 
+    taxAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    deliveryFee: {
+      type: Number,
       required: true,
       default: 5,
       min: 0,
     },
-    
+
     // Loyalty discount
     loyaltyDiscount: {
       type: Number,
@@ -69,7 +74,7 @@ const OrderSchema = new Schema(
       type: String,
       default: null,
     },
-    
+
     total: { type: Number, required: true },
     orderPaid: { type: Boolean, default: false },
     orderStatus: {

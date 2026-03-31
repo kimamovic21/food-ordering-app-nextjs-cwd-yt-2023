@@ -4,7 +4,8 @@ import Link from 'next/link';
 
 interface OrderSummaryProps {
   subtotal: number;
-  tax: number;
+  includedTax: number;
+  taxPercentage: number;
   deliveryFee: number;
   loyaltyDiscountPercentage: number;
   loyaltyDiscount: number;
@@ -17,7 +18,8 @@ interface OrderSummaryProps {
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
   subtotal,
-  tax,
+  includedTax,
+  taxPercentage,
   deliveryFee,
   loyaltyDiscountPercentage,
   loyaltyDiscount,
@@ -28,7 +30,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   loadingRestaurants,
 }) => {
   const finalDeliveryFee = deliveryFee - loyaltyDiscount;
-  const total = subtotal + tax + finalDeliveryFee;
+  const total = subtotal + finalDeliveryFee;
 
   return (
     <div className='bg-card border rounded-xl p-4 sm:p-6 space-y-3 sm:space-y-4'>
@@ -44,8 +46,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           <span>${subtotal.toFixed(2)}</span>
         </div>
         <div className='flex justify-between text-muted-foreground text-sm sm:text-base'>
-          <span className='font-semibold'>Tax:</span>
-          <span>${tax.toFixed(2)}</span>
+          <span className='font-semibold'>Included Tax ({taxPercentage}%):</span>
+          <span>${includedTax.toFixed(2)}</span>
         </div>
       </div>
       <div className='space-y-2 border-b pb-3'>

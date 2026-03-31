@@ -20,6 +20,7 @@ type OrderItemsCardProps = {
   cartProducts: CartProduct[];
   total: number;
   taxPercentage?: number;
+  taxAmount?: number;
   deliveryFee?: number;
   loyaltyDiscount?: number;
   loyaltyDiscountPercentage?: number;
@@ -30,6 +31,7 @@ const OrderItemsCard = ({
   cartProducts,
   total,
   taxPercentage,
+  taxAmount,
   deliveryFee,
   loyaltyDiscount,
   loyaltyDiscountPercentage,
@@ -37,7 +39,7 @@ const OrderItemsCard = ({
 }: OrderItemsCardProps) => {
   const subtotal = cartProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const taxPercent = taxPercentage || 10;
-  const calculatedTax = subtotal * (taxPercent / 100);
+  const includedTax = taxAmount ?? subtotal * (taxPercent / 100);
   const discount = loyaltyDiscount || 0;
   const calculatedDeliveryFee = deliveryFee || 5;
   const discountedDeliveryFee = calculatedDeliveryFee - discount;
@@ -81,8 +83,8 @@ const OrderItemsCard = ({
             <span>${subtotal.toFixed(2)}</span>
           </div>
           <div className='flex justify-between text-muted-foreground'>
-            <span>Tax ({taxPercent}%):</span>
-            <span>${calculatedTax.toFixed(2)}</span>
+            <span>Included Tax ({taxPercent}%):</span>
+            <span>${includedTax.toFixed(2)}</span>
           </div>
 
           {/* Delivery Fee */}

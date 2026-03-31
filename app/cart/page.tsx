@@ -121,18 +121,18 @@ const CartPage = () => {
 
       // Get the single restaurant ID from cart items
       const restaurantId = cartItems[0]?.restaurantId;
-      
+
       if (!restaurantId) {
         console.warn('No valid restaurant ID found in cart items');
         setRestaurants(new Map());
         setLoadingRestaurants(false);
         return;
       }
-      
+
       setLoadingRestaurants(true);
       try {
         const restaurantData = new Map();
-        
+
         try {
           const response = await fetch(`/api/restaurant/${restaurantId}`);
           if (response.ok) {
@@ -146,7 +146,7 @@ const CartPage = () => {
         } catch (error) {
           console.error(`Failed to fetch restaurant ${restaurantId}:`, error);
         }
-        
+
         setRestaurants(restaurantData);
       } catch (error) {
         console.error('Failed to fetch restaurants:', error);
@@ -198,24 +198,24 @@ const CartPage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Calculate total tax and delivery fee from the single restaurant
+  // Calculate included tax amount and delivery fee from the single restaurant
   const calculateTotals = () => {
     const restaurantId = cartItems[0]?.restaurantId;
-    
+
     if (!restaurantId) {
-      return { totalTax: 0, totalDeliveryFee: 0 };
+      return { includedTax: 0, taxPercentage: 0, totalDeliveryFee: 0 };
     }
-    
+
     const restaurant = restaurants.get(restaurantId);
     if (!restaurant) {
-      return { totalTax: 0, totalDeliveryFee: 0 };
+      return { includedTax: 0, taxPercentage: 0, totalDeliveryFee: 0 };
     }
-    
+
     const subtotal = getTotalPrice();
-    const totalTax = subtotal * (restaurant.tax / 100);
+    const includedTax = subtotal * (restaurant.tax / 100);
     const totalDeliveryFee = restaurant.courierFee || 5;
-    
-    return { totalTax, totalDeliveryFee };
+
+    return { includedTax, taxPercentage: restaurant.tax, totalDeliveryFee };
   };
 
   // Check if cart has items from multiple restaurants
@@ -240,7 +240,7 @@ const CartPage = () => {
   // Check if the single restaurant is open
   const isRestaurantOpen = () => {
     const restaurant = getCartRestaurant();
-    
+
     if (!restaurant || !restaurant.isOpen) {
       return false;
     }
@@ -275,14 +275,16 @@ const CartPage = () => {
         toast.error('You must have items only from one restaurant.');
         return;
       }
-      
+
       // Check if the restaurant is open
       if (!isRestaurantOpen()) {
         const restaurantName = getRestaurantName();
-        toast.error(`${restaurantName} you want to order from is not working at the moment. Please remove items and try ordering from another restaurant.`);
+        toast.error(
+          `${restaurantName} you want to order from is not working at the moment. Please remove items and try ordering from another restaurant.`
+        );
         return;
       }
-      
+
       const missingField = Object.entries(formData).find(([, value]) => !value);
       if (missingField) {
         toast.error('Please complete your delivery details.', {
@@ -298,9 +300,9 @@ const CartPage = () => {
         toast.error('We could not find your email. Please re-login.');
         return;
       }
-      
+
       const { totalDeliveryFee } = calculateTotals();
-      
+
       await toast.promise(
         (async () => {
           const loyaltyDiscount = calculateLoyaltyDiscount(
@@ -362,7 +364,7 @@ const CartPage = () => {
     );
   }
 
-  const { totalTax, totalDeliveryFee } = calculateTotals();
+  const { includedTax, taxPercentage, totalDeliveryFee } = calculateTotals();
   const multipleRestaurants = hasMultipleRestaurants();
   const restaurantOpen = isRestaurantOpen();
   const restaurantName = getRestaurantName();
@@ -376,7 +378,8 @@ const CartPage = () => {
       {multipleRestaurants && (
         <div className='mb-4 p-4 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg'>
           <p className='text-red-800 dark:text-red-200 font-semibold'>
-            ⚠️ You must have items only from one restaurant. Please remove items from other restaurants to continue.
+            ⚠️ You must have items only from one restaurant. Please remove items from other
+            restaurants to continue.
           </p>
         </div>
       )}
@@ -384,7 +387,8 @@ const CartPage = () => {
       {!multipleRestaurants && !restaurantOpen && (
         <div className='mb-4 p-4 bg-orange-100 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg'>
           <p className='text-orange-800 dark:text-orange-200 font-semibold'>
-            {restaurantName} you want to order from is not working at the moment. Please remove items from this restaurant and try ordering from another restaurant.
+            {restaurantName} you want to order from is not working at the moment. Please remove
+            items from this restaurant and try ordering from another restaurant.
           </p>
         </div>
       )}
@@ -407,13 +411,11 @@ const CartPage = () => {
           />
           <OrderSummary
             subtotal={getTotalPrice()}
-            tax={totalTax}
+            includedTax={includedTax}
+            taxPercentage={taxPercentage}
             deliveryFee={totalDeliveryFee}
             loyaltyDiscountPercentage={loyaltyDiscountPercentage}
-            loyaltyDiscount={calculateLoyaltyDiscount(
-              totalDeliveryFee,
-              loyaltyDiscountPercentage
-            )}
+            loyaltyDiscount={calculateLoyaltyDiscount(totalDeliveryFee, loyaltyDiscountPercentage)}
             isLoggedIn={isLoggedIn}
             isSubmitting={isSubmitting}
             handleCheckout={handleCheckout}

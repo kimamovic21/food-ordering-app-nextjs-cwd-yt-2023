@@ -7,6 +7,7 @@ type OrderInfoCardProps = {
   orderStatus: 'placed' | 'processing' | 'ready' | 'transportation' | 'completed';
   createdAt: string;
   taxPercentage?: number;
+  taxAmount?: number;
   deliveryFee?: number;
 };
 
@@ -16,6 +17,7 @@ const OrderInfoCard = ({
   orderStatus,
   createdAt,
   taxPercentage,
+  taxAmount,
   deliveryFee,
 }: OrderInfoCardProps) => {
   const formatDate = (dateString: string) => {
@@ -74,14 +76,20 @@ const OrderInfoCard = ({
         </div>
 
         {/* Fee Details */}
-        {(deliveryFee !== undefined || taxPercentage !== undefined) && (
+        {(deliveryFee !== undefined || taxPercentage !== undefined || taxAmount !== undefined) && (
           <div className='md:col-span-2 border-t pt-4'>
             <p className='text-sm text-muted-foreground mb-2 font-semibold'>Fee Details</p>
             <div className='space-y-1 text-sm'>
               {taxPercentage !== undefined && (
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>Tax:</span>
+                  <span className='text-muted-foreground'>Tax Rate:</span>
                   <span className='font-semibold text-foreground'>{taxPercentage}%</span>
+                </div>
+              )}
+              {taxAmount !== undefined && (
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>Included Tax Amount:</span>
+                  <span className='font-semibold text-foreground'>${taxAmount.toFixed(2)}</span>
                 </div>
               )}
               {deliveryFee !== undefined && (

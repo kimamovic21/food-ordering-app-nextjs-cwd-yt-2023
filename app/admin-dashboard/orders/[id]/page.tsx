@@ -76,6 +76,7 @@ type OrderDetailsType = {
   updatedAt: string;
   stripeSessionId?: string;
   taxPercentage?: number;
+  taxAmount?: number;
   deliveryFee?: number;
   loyaltyDiscount?: number;
   loyaltyDiscountPercentage?: number;
@@ -459,12 +460,14 @@ const OrderDetailPage = () => {
             stripeSessionId={order.stripeSessionId}
             deliveryFee={order.deliveryFee}
             taxPercentage={order.taxPercentage}
+            taxAmount={order.taxAmount}
           />
 
           <OrderItemsCard
             cartProducts={order.cartProducts}
             total={order.total}
             taxPercentage={order.taxPercentage}
+            taxAmount={order.taxAmount}
             deliveryFee={order.deliveryFee}
             loyaltyDiscount={order.loyaltyDiscount}
             loyaltyDiscountPercentage={order.loyaltyDiscountPercentage}

@@ -10,6 +10,7 @@ type OrderInfoCardProps = {
   stripeSessionId?: string;
   deliveryFee?: number;
   taxPercentage?: number;
+  taxAmount?: number;
 };
 
 const OrderInfoCard = ({
@@ -21,6 +22,7 @@ const OrderInfoCard = ({
   stripeSessionId,
   deliveryFee,
   taxPercentage,
+  taxAmount,
 }: OrderInfoCardProps) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -95,14 +97,22 @@ const OrderInfoCard = ({
           )}
 
           {/* Row 5: Delivery Fee and Tax (if available) */}
-          {(deliveryFee !== undefined || taxPercentage !== undefined) && (
+          {(deliveryFee !== undefined ||
+            taxPercentage !== undefined ||
+            taxAmount !== undefined) && (
             <div className='border-t pt-4'>
               <p className='text-sm text-muted-foreground mb-2 font-semibold'>Fee Details</p>
               <div className='space-y-1 text-sm'>
                 {taxPercentage !== undefined && (
                   <div className='flex justify-between'>
-                    <span className='text-muted-foreground'>Tax:</span>
+                    <span className='text-muted-foreground'>Tax Rate:</span>
                     <span className='font-semibold text-foreground'>{taxPercentage}%</span>
+                  </div>
+                )}
+                {taxAmount !== undefined && (
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>Included Tax Amount:</span>
+                    <span className='font-semibold text-foreground'>${taxAmount.toFixed(2)}</span>
                   </div>
                 )}
                 {deliveryFee !== undefined && (
