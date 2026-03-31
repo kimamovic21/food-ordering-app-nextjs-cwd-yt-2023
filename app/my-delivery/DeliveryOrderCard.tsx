@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import type { OrderMapHandle } from '@/components/shared/OrderMap';
 import dynamic from 'next/dynamic';
+import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
 
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), { ssr: false });
 
@@ -40,6 +41,7 @@ type OrderDetailsType = {
   courierId?: { _id: string; name: string; email: string; image?: string };
   createdAt: string;
   updatedAt: string;
+  completedAt?: string | null;
 };
 
 interface DeliveryOrderCardProps {
@@ -67,12 +69,19 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
             {new Date(order.createdAt).toLocaleTimeString()}
           </CardDescription>
         </div>
-        <Badge
-          variant='secondary'
-          className='bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize'
-        >
-          Transportation
-        </Badge>
+        <div className='flex flex-col items-end gap-2'>
+          <Badge
+            variant='secondary'
+            className='bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize'
+          >
+            Transportation
+          </Badge>
+          <OrderElapsedTime
+            createdAt={order.createdAt}
+            completedAt={order.completedAt}
+            isCompleted={order.orderStatus === 'completed'}
+          />
+        </div>
       </div>
     </CardHeader>
     <CardContent>

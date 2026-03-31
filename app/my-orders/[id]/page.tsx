@@ -20,6 +20,7 @@ import CustomerInfoCard from './CustomerInfoCard';
 import OrderItemsCard from './OrderItemsCard';
 import OrderStatusBanner from './OrderStatusBanner';
 import Title from '@/components/shared/Title';
+import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
 
 type CartProduct = {
   productId: string;
@@ -43,6 +44,7 @@ type OrderDetailsType = {
   paymentStatus: boolean;
   orderStatus: 'placed' | 'processing' | 'ready' | 'transportation' | 'completed';
   createdAt: string;
+  completedAt?: string | null;
   taxPercentage?: number;
   taxAmount?: number;
   deliveryFee?: number;
@@ -259,7 +261,17 @@ const MyOrderDetailPage = () => {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <Title>Order Details</Title>
+        <div className='flex items-center justify-between mb-6'>
+          <Title>Order Details</Title>
+          <div className='text-right'>
+            <p className='text-sm text-muted-foreground mb-1'>Order Time</p>
+            <OrderElapsedTime
+              createdAt={order.createdAt}
+              completedAt={order.completedAt}
+              isCompleted={order.orderStatus === 'completed'}
+            />
+          </div>
+        </div>
 
         <OrderStatusBanner status={order.orderStatus} />
 

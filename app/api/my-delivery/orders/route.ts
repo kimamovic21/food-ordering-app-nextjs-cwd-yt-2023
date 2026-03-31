@@ -81,6 +81,7 @@ export async function PATCH(request: Request) {
   // Update order to completed
   order.orderStatus = 'completed';
   order.courierId = user._id;
+  order.completedAt = new Date();
 
   // Clear courier's taken order
   user.takenOrder = null;

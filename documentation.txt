@@ -1142,3 +1142,7 @@ Add active orders badge and manual simulator
 
 
 Store and display included tax amount
+
+
+
+Add order elapsed time display and completedAt

@@ -18,6 +18,7 @@ import Link from 'next/link';
 import OrderInfoCard from './OrderInfoCard';
 import CustomerInfoCard from './CustomerInfoCard';
 import OrderItemsCard from './OrderItemsCard';
+import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to prevent SSR issues with Leaflet
@@ -74,6 +75,7 @@ type OrderDetailsType = {
   courierId?: { _id: string; name: string; email: string; image?: string };
   createdAt: string;
   updatedAt: string;
+  completedAt?: string | null;
   stripeSessionId?: string;
   taxPercentage?: number;
   taxAmount?: number;
@@ -447,6 +449,20 @@ const OrderDetailPage = () => {
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
+
+      <div className='flex items-center justify-between mb-6'>
+        <h1 className='text-3xl font-bold tracking-tight'>
+          Order #{order._id.slice(-8).toUpperCase()}
+        </h1>
+        <div className='text-right'>
+          <p className='text-sm text-muted-foreground mb-1'>Order Time</p>
+          <OrderElapsedTime
+            createdAt={order.createdAt}
+            completedAt={order.completedAt}
+            isCompleted={order.orderStatus === 'completed'}
+          />
+        </div>
+      </div>
 
       <div className='space-y-6'>
         {/* Order Information and Order Items - Side by side on large screens */}
