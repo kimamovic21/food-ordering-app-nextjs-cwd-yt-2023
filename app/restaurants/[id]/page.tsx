@@ -9,6 +9,9 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
+import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
+import ShareActions from '@/components/shared/ShareActions';
+import useFavorites from '@/contexts/UseFavorites';
 
 const RestaurantLocation = dynamic(() => import('@/components/shared/RestaurantLocation'), {
   ssr: false,
@@ -87,6 +90,7 @@ const RestaurantDetailsPage = () => {
   );
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const { data: favorites, setRestaurantFavorite } = useFavorites();
 
   useEffect(() => {
     if (!id) return;
@@ -210,6 +214,7 @@ const RestaurantDetailsPage = () => {
           restaurant.longitude
         )
       : null;
+  const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/restaurants/${restaurant._id}`;
 
   return (
     <section className='mt-8 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10'>
@@ -230,9 +235,17 @@ const RestaurantDetailsPage = () => {
       <div className='mb-6 flex flex-col gap-3'>
         <div className='flex items-center justify-between flex-wrap gap-3'>
           <Title>{restaurant.name}</Title>
-          <Badge variant={restaurant.isOpen ? 'default' : 'secondary'}>
-            {restaurant.isOpen ? 'Open now' : 'Currently closed'}
-          </Badge>
+          <div className='flex items-center gap-2'>
+            <Badge variant={restaurant.isOpen ? 'default' : 'secondary'}>
+              {restaurant.isOpen ? 'Open now' : 'Currently closed'}
+            </Badge>
+            <FavoriteToggleButton
+              type='restaurant'
+              targetId={restaurant._id}
+              isFavorite={favorites.favoriteRestaurantIds.includes(restaurant._id)}
+              onChanged={(nextIsFavorite) => setRestaurantFavorite(restaurant._id, nextIsFavorite)}
+            />
+          </div>
         </div>
         <p className='text-sm text-muted-foreground flex items-center gap-1'>
           <MapPin className='h-4 w-4' />
@@ -245,6 +258,7 @@ const RestaurantDetailsPage = () => {
               ? `${distanceKm.toFixed(1)} km from your current location`
               : locationError || 'Distance unavailable without your location.'}
         </p>
+        <ShareActions url={shareUrl} title={`Check out this restaurant: ${restaurant.name}`} />
       </div>
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>

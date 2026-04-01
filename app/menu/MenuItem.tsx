@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
+import useFavorites from '@/contexts/UseFavorites';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
 import MenuItemModal from './MenuItemModal';
+import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 
 interface MenuItemType {
   _id: string;
@@ -31,6 +33,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userSelectedSize] = useState<Size>('small');
   const { addToCart, getCartRestaurantId } = useCart();
+  const { data: favoritesData, setMenuItemFavorite } = useFavorites();
 
   const displayItem = item || {
     _id: 'default',
@@ -158,14 +161,23 @@ const MenuItem = ({ item }: MenuItemProps) => {
         <div className='p-4 flex flex-col flex-1'>
           <h4 className='font-semibold text-lg text-center'>{displayItem.name}</h4>
 
-          <Button
-            onClick={handleAddToCart}
-            className='w-full mt-4'
-            size='lg'
-            disabled={getPrice() == null}
-          >
-            Add to cart ${getPrice()?.toFixed(2) || '0.00'}
-          </Button>
+          <div className='flex gap-2 mt-4'>
+            <Button
+              onClick={handleAddToCart}
+              className='flex-1'
+              size='lg'
+              disabled={getPrice() == null}
+            >
+              Add to cart ${getPrice()?.toFixed(2) || '0.00'}
+            </Button>
+            <FavoriteToggleButton
+              type='menu-item'
+              targetId={displayItem._id}
+              isFavorite={favoritesData.favoriteMenuItemIds.includes(displayItem._id)}
+              onChanged={(isFavorite) => setMenuItemFavorite(displayItem._id, isFavorite)}
+              className='px-3'
+            />
+          </div>
         </div>
       </Card>
 

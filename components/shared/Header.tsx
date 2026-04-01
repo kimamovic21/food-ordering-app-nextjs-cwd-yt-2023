@@ -153,6 +153,18 @@ const Header = () => {
                       My Orders
                     </Link>
                     <Link
+                      className={`${pathname === '/favorite-meals' ? 'text-primary font-semibold' : ''}`}
+                      href={'/favorite-meals'}
+                    >
+                      Favorite Meals
+                    </Link>
+                    <Link
+                      className={`${pathname === '/favorite-restaurants' ? 'text-primary font-semibold' : ''}`}
+                      href={'/favorite-restaurants'}
+                    >
+                      Favorite Restaurants
+                    </Link>
+                    <Link
                       className={`${pathname === '/loyalty' ? 'text-primary font-semibold' : ''}`}
                       href={'/loyalty'}
                     >
@@ -329,6 +341,20 @@ const Header = () => {
                   className='hover:text-primary'
                 >
                   My Orders
+                </Link>
+                <Link
+                  href='/favorite-meals'
+                  onClick={() => setMobileOpen(false)}
+                  className='hover:text-primary'
+                >
+                  Favorite Meals
+                </Link>
+                <Link
+                  href='/favorite-restaurants'
+                  onClick={() => setMobileOpen(false)}
+                  className='hover:text-primary'
+                >
+                  Favorite Restaurants
                 </Link>
                 <Link
                   href='/loyalty'

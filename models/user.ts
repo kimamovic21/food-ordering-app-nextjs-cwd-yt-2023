@@ -19,6 +19,14 @@ const UserSchema = new Schema(
     longitude: { type: Number, default: null },
     lastLocationUpdate: { type: Date, default: null },
     restaurantId: { type: Schema.Types.ObjectId, ref: 'Restaurant', default: null },
+    favoriteMenuItems: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'MenuItem' }],
+      default: [],
+    },
+    favoriteRestaurants: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'Restaurant' }],
+      default: [],
+    },
   },
   { timestamps: true }
 );

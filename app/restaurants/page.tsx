@@ -16,6 +16,9 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
+import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
+import useFavorites from '@/contexts/UseFavorites';
+import ShareActions from '@/components/shared/ShareActions';
 import SearchInput from './SearchInput';
 
 interface RestaurantListItem {
@@ -47,6 +50,7 @@ const RestaurantsPage = () => {
   );
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const { data: favorites, setRestaurantFavorite } = useFavorites();
 
   useEffect(() => {
     const query = (searchParams?.get('q') || '').trim();
@@ -255,8 +259,11 @@ const RestaurantsPage = () => {
           ) : (
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
               {restaurants.map((restaurant) => (
-                <Link href={`/restaurants/${restaurant._id}`} key={restaurant._id}>
-                  <Card className='h-full overflow-hidden border-border/80 hover:shadow-md transition-shadow'>
+                <Card
+                  key={restaurant._id}
+                  className='h-full overflow-hidden border-border/80 hover:shadow-md transition-shadow'
+                >
+                  <Link href={`/restaurants/${restaurant._id}`}>
                     <div className='relative h-48 w-full bg-muted'>
                       {restaurant.image ? (
                         <Image
@@ -272,33 +279,47 @@ const RestaurantsPage = () => {
                         </div>
                       )}
                     </div>
-                    <CardHeader className='space-y-2'>
-                      <div className='flex items-start justify-between gap-3'>
-                        <CardTitle className='text-xl'>{restaurant.name}</CardTitle>
-                        <Badge variant={restaurant.isOpen ? 'default' : 'secondary'}>
-                          {restaurant.isOpen ? 'Open' : 'Closed'}
-                        </Badge>
-                      </div>
-                      <p className='text-sm text-muted-foreground flex items-center gap-1'>
-                        <MapPin className='h-4 w-4' />
-                        {restaurant.city}, {restaurant.country}
+                  </Link>
+                  <CardHeader className='space-y-2'>
+                    <div className='flex items-start justify-between gap-3'>
+                      <CardTitle className='text-xl'>
+                        <Link href={`/restaurants/${restaurant._id}`}>{restaurant.name}</Link>
+                      </CardTitle>
+                      <FavoriteToggleButton
+                        type='restaurant'
+                        targetId={restaurant._id}
+                        isFavorite={favorites.favoriteRestaurantIds.includes(restaurant._id)}
+                        onChanged={(nextIsFavorite) =>
+                          setRestaurantFavorite(restaurant._id, nextIsFavorite)
+                        }
+                      />
+                    </div>
+                    <Badge variant={restaurant.isOpen ? 'default' : 'secondary'}>
+                      {restaurant.isOpen ? 'Open' : 'Closed'}
+                    </Badge>
+                    <p className='text-sm text-muted-foreground flex items-center gap-1'>
+                      <MapPin className='h-4 w-4' />
+                      {restaurant.city}, {restaurant.country}
+                    </p>
+                    {typeof restaurant.distanceKm === 'number' && (
+                      <p className='text-xs text-muted-foreground'>
+                        {restaurant.distanceKm.toFixed(1)} km away
                       </p>
-                      {typeof restaurant.distanceKm === 'number' && (
-                        <p className='text-xs text-muted-foreground'>
-                          {restaurant.distanceKm.toFixed(1)} km away
-                        </p>
-                      )}
-                    </CardHeader>
-                    <CardContent className='space-y-2'>
-                      <p className='text-sm text-muted-foreground'>{restaurant.street}</p>
-                      <p className='text-sm text-foreground/90'>
-                        {restaurant.description.length > 110
-                          ? `${restaurant.description.slice(0, 110)}...`
-                          : restaurant.description}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
+                    )}
+                  </CardHeader>
+                  <CardContent className='space-y-3'>
+                    <p className='text-sm text-muted-foreground'>{restaurant.street}</p>
+                    <p className='text-sm text-foreground/90'>
+                      {restaurant.description.length > 110
+                        ? `${restaurant.description.slice(0, 110)}...`
+                        : restaurant.description}
+                    </p>
+                    <ShareActions
+                      url={`${typeof window !== 'undefined' ? window.location.origin : ''}/restaurants/${restaurant._id}`}
+                      title={`Check out this restaurant: ${restaurant.name}`}
+                    />
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}

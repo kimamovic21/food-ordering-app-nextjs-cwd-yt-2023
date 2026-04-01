@@ -4,8 +4,12 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
+import useFavorites from '@/contexts/UseFavorites';
+import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
+import ShareActions from '@/components/shared/ShareActions';
 import { Clock, MapPin, Phone, Mail, Globe } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import Pizza from '@/public/pizza.png';
 
 interface MenuItemType {
@@ -52,6 +56,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
   const [restaurant, setRestaurant] = useState<RestaurantType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { addToCart, getCartRestaurantId } = useCart();
+  const { data: favorites, setMenuItemFavorite, setRestaurantFavorite } = useFavorites();
 
   const imageUrl = item.image || Pizza.src;
   const isRemoteImage =
@@ -145,6 +150,9 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
   };
 
   const formatDay = (day: string) => day.charAt(0).toUpperCase() + day.slice(1);
+  const shareBaseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const itemShareUrl = `${shareBaseUrl}/restaurants/${item.restaurantId}/menu`;
+  const restaurantShareUrl = restaurant ? `${shareBaseUrl}/restaurants/${restaurant._id}` : '';
 
   if (!isOpen) return null;
 
@@ -199,6 +207,22 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
               <p className='text-gray-600 dark:text-gray-300 text-base leading-relaxed'>
                 {item.description}
               </p>
+              <div className='mt-4 flex items-center gap-2'>
+                <FavoriteToggleButton
+                  type='menu-item'
+                  targetId={item._id}
+                  isFavorite={favorites.favoriteMenuItemIds.includes(item._id)}
+                  onChanged={(nextIsFavorite) => setMenuItemFavorite(item._id, nextIsFavorite)}
+                  showLabel
+                />
+              </div>
+              <div className='mt-4'>
+                <ShareActions
+                  url={itemShareUrl}
+                  title={`Check out this meal: ${item.name}`}
+                  className='rounded-md border border-gray-200 dark:border-slate-700 p-3'
+                />
+              </div>
             </div>
 
             {availableSizes.length > 1 && (
@@ -249,6 +273,21 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
                       <span className='font-semibold text-gray-900 dark:text-white'>
                         {restaurant.name}
                       </span>
+                      <div className='mt-3 flex flex-wrap items-center gap-2'>
+                        <Link href={`/restaurants/${restaurant._id}`}>
+                          <Button size='sm' variant='outline'>
+                            See restaurant details
+                          </Button>
+                        </Link>
+                        <FavoriteToggleButton
+                          type='restaurant'
+                          targetId={restaurant._id}
+                          isFavorite={favorites.favoriteRestaurantIds.includes(restaurant._id)}
+                          onChanged={(nextIsFavorite) =>
+                            setRestaurantFavorite(restaurant._id, nextIsFavorite)
+                          }
+                        />
+                      </div>
                     </div>
 
                     <div className='flex items-start gap-2'>
@@ -343,6 +382,14 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
                       ))}
                     </div>
                   </div>
+                )}
+
+                {restaurantShareUrl && (
+                  <ShareActions
+                    url={restaurantShareUrl}
+                    title={`Check out this restaurant: ${restaurant.name}`}
+                    className='rounded-md border border-gray-200 dark:border-slate-700 p-3'
+                  />
                 )}
               </div>
             ) : null}

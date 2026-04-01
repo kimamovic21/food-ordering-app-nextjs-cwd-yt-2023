@@ -1146,3 +1146,7 @@ Store and display included tax amount
 
 
 Add order elapsed time display and completedAt
+
+
+
+Add favorites (meals & restaurants) feature
