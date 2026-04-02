@@ -3,6 +3,7 @@ import { authOptions } from '@/libs/authOptions';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
 import { Restaurant } from '@/models/restaurant';
+import { MenuItem } from '@/models/menuItem';
 import { calculateLoyaltyStatus } from '@/libs/loyaltyCalculator';
 import mongoose from 'mongoose';
 import Stripe from 'stripe';
@@ -103,10 +104,64 @@ export async function POST(req: Request) {
     return Response.json({ error: 'No restaurant found in cart' }, { status: 400 });
   }
 
+  // Ensure all cart items are from the same restaurant
+  const cartHasMultipleRestaurants = sanitizedItems.some(
+    (item) => item.restaurantId !== restaurantId
+  );
+  if (cartHasMultipleRestaurants) {
+    return Response.json(
+      { error: 'Cart must contain items from one restaurant only' },
+      { status: 400 }
+    );
+  }
+
   // Fetch restaurant data
   const restaurant = await Restaurant.findById(restaurantId);
   if (!restaurant) {
     return Response.json({ error: `Restaurant ${restaurantId} not found` }, { status: 404 });
+  }
+
+  // Business rule: users cannot place orders from their own restaurant
+  if (user.restaurantId?.toString() === restaurant._id.toString()) {
+    return Response.json({ error: 'You cannot order from your own restaurant' }, { status: 403 });
+  }
+
+  const itemIds = sanitizedItems
+    .map((item) => item._id)
+    .filter((id) => mongoose.Types.ObjectId.isValid(id))
+    .map((id) => new mongoose.Types.ObjectId(id));
+
+  if (itemIds.length !== sanitizedItems.length) {
+    return Response.json({ error: 'Cart contains invalid menu items' }, { status: 400 });
+  }
+
+  const menuItems = await MenuItem.find({ _id: { $in: itemIds } })
+    .select('_id restaurantId adminId')
+    .lean();
+
+  if (menuItems.length !== itemIds.length) {
+    return Response.json({ error: 'Some menu items are no longer available' }, { status: 400 });
+  }
+
+  const menuItemById = new Map(menuItems.map((menuItem) => [menuItem._id.toString(), menuItem]));
+
+  for (const cartItem of sanitizedItems) {
+    const menuItem = menuItemById.get(cartItem._id);
+
+    if (!menuItem) {
+      return Response.json({ error: 'Some menu items are no longer available' }, { status: 400 });
+    }
+
+    if (menuItem.restaurantId?.toString() !== restaurant._id.toString()) {
+      return Response.json(
+        { error: 'Cart item does not belong to the selected restaurant' },
+        { status: 400 }
+      );
+    }
+
+    if (menuItem.adminId?.toString() === user._id.toString()) {
+      return Response.json({ error: 'You cannot order your own menu items' }, { status: 403 });
+    }
   }
 
   // Verify loyalty discount by checking user's actual order count

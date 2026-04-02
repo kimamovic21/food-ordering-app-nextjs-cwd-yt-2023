@@ -22,6 +22,14 @@ const FavoriteRestaurantsLoading = () => {
                 <Skeleton className='h-8 w-8 rounded-full' />
               </div>
               <Skeleton className='h-6 w-16 rounded-full' />
+              <div className='flex items-center gap-2'>
+                <Skeleton className='h-4 w-4 rounded-full' />
+                <Skeleton className='h-4 w-4 rounded-full' />
+                <Skeleton className='h-4 w-4 rounded-full' />
+                <Skeleton className='h-4 w-4 rounded-full' />
+                <Skeleton className='h-4 w-4 rounded-full' />
+                <Skeleton className='h-4 w-20 rounded-md' />
+              </div>
               <Skeleton className='h-4 w-1/2 rounded-md' />
             </CardHeader>
 

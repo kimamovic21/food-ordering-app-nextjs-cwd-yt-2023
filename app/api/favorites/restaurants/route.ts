@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import { User } from '@/models/user';
 import { Restaurant } from '@/models/restaurant';
+import { getRestaurantRatingSummaries } from '@/libs/reviewSummary';
 import mongoose from 'mongoose';
 
 const getAuthorizedUser = async () => {
@@ -88,6 +89,9 @@ export async function GET() {
     .lean();
 
   const now = new Date();
+  const ratingMap = await getRestaurantRatingSummaries(
+    restaurants.map((restaurant) => restaurant._id)
+  );
 
   const formattedRestaurants = restaurants.map((restaurant) => ({
     _id: restaurant._id,
@@ -102,6 +106,8 @@ export async function GET() {
       Array.isArray(restaurant.blockedDates) ? restaurant.blockedDates : [],
       now
     ),
+    averageRating: ratingMap.get(String(restaurant._id))?.averageRating ?? 0,
+    ratingCount: ratingMap.get(String(restaurant._id))?.ratingCount ?? 0,
   }));
 
   return Response.json({ restaurants: formattedRestaurants });

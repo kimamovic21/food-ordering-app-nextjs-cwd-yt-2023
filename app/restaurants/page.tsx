@@ -19,6 +19,7 @@ import Title from '@/components/shared/Title';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import useFavorites from '@/contexts/UseFavorites';
 import ShareActions from '@/components/shared/ShareActions';
+import HeartRating from '@/components/shared/HeartRating';
 import SearchInput from './SearchInput';
 
 interface RestaurantListItem {
@@ -31,6 +32,8 @@ interface RestaurantListItem {
   image: string | null;
   isOpen: boolean;
   distanceKm: number | null;
+  averageRating: number;
+  ratingCount: number;
 }
 
 const PAGE_SIZE = 9;
@@ -297,6 +300,10 @@ const RestaurantsPage = () => {
                     <Badge variant={restaurant.isOpen ? 'default' : 'secondary'}>
                       {restaurant.isOpen ? 'Open' : 'Closed'}
                     </Badge>
+                    <HeartRating
+                      rating={restaurant.averageRating}
+                      ratingCount={restaurant.ratingCount}
+                    />
                     <p className='text-sm text-muted-foreground flex items-center gap-1'>
                       <MapPin className='h-4 w-4' />
                       {restaurant.city}, {restaurant.country}

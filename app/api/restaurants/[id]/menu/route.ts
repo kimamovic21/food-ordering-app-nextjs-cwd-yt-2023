@@ -1,9 +1,10 @@
 import '@/models/category';
 import { NextRequest, NextResponse } from 'next/server';
-import mongoose, { PipelineStage } from 'mongoose';
+import { attachRestaurantRatings } from '@/libs/reviewSummary';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { Category } from '@/models/category';
 import { MenuItem } from '@/models/menuItem';
+import mongoose, { PipelineStage } from 'mongoose';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -72,7 +73,9 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
       }
 
       const item = await MenuItem.findOne({ _id, restaurantId }).populate('category');
-      return NextResponse.json(item ? [item] : []);
+      if (!item) return NextResponse.json([], { status: 200 });
+      const withRatings = await attachRestaurantRatings([item]);
+      return NextResponse.json(withRatings);
     }
 
     if (groupBy === 'category') {
@@ -85,12 +88,13 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
           const items = await MenuItem.find({ restaurantId, category: category._id })
             .sort(summarySort)
             .limit(perCategory);
+          const ratedItems = await attachRestaurantRatings(items);
           const total = await MenuItem.countDocuments({ restaurantId, category: category._id });
 
           return {
             _id: category._id,
             name: category.name,
-            items,
+            items: ratedItems,
             total,
           };
         })
@@ -196,14 +200,15 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
       });
 
       const [result] = await MenuItem.aggregate(pipeline);
-      const items = result?.items ?? [];
+      const items = await attachRestaurantRatings(result?.items ?? []);
       const total = result?.totalCount?.[0]?.count ?? 0;
 
       return NextResponse.json({ items, total, page, pageSize: limit });
     }
 
     const items = await MenuItem.find({ restaurantId }).populate('category');
-    return NextResponse.json(items);
+    const withRatings = await attachRestaurantRatings(items);
+    return NextResponse.json(withRatings);
   } catch (error) {
     console.error('Error fetching restaurant menu items:', error);
     return NextResponse.json({ error: 'Failed to fetch restaurant menu items' }, { status: 500 });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mongoConnect } from '@/libs/mongoConnect';
+import { getRestaurantRatingSummaries } from '@/libs/reviewSummary';
 import { Restaurant } from '@/models/restaurant';
 
 type WorkingHour = {
@@ -88,12 +89,16 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       Array.isArray(restaurant.blockedDates) ? restaurant.blockedDates : [],
       new Date()
     );
+    const ratingMap = await getRestaurantRatingSummaries([restaurant._id]);
+    const rating = ratingMap.get(String(restaurant._id));
 
     return NextResponse.json(
       {
         restaurant: {
           ...restaurant,
           isOpen,
+          averageRating: rating?.averageRating ?? 0,
+          ratingCount: rating?.ratingCount ?? 0,
         },
       },
       { status: 200 }

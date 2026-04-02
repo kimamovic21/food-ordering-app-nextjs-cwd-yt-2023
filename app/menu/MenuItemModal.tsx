@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Clock, MapPin, Phone, Mail, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
+import { Button } from '@/components/ui/button';
+import Image from 'next/image';
+import Link from 'next/link';
+import useProfile from '@/contexts/UseProfile';
 import useFavorites from '@/contexts/UseFavorites';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import ShareActions from '@/components/shared/ShareActions';
-import { Clock, MapPin, Phone, Mail, Globe } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
 import Pizza from '@/public/pizza.png';
 
 interface MenuItemType {
@@ -56,6 +57,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
   const [restaurant, setRestaurant] = useState<RestaurantType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { addToCart, getCartRestaurantId } = useCart();
+  const { data: profileData } = useProfile();
   const { data: favorites, setMenuItemFavorite, setRestaurantFavorite } = useFavorites();
 
   const imageUrl = item.image || Pizza.src;
@@ -110,6 +112,16 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
 
   const handleAddToCart = () => {
     const cartRestaurantId = getCartRestaurantId();
+
+    if (profileData?.restaurantId && profileData.restaurantId === item.restaurantId) {
+      toast.error('You cannot order from your own restaurant', {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+        },
+      });
+      return;
+    }
 
     if (cartRestaurantId && cartRestaurantId !== item.restaurantId) {
       toast.error('Your cart contains items from another restaurant', {

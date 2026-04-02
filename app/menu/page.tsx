@@ -28,6 +28,8 @@ interface MenuItemType {
   priceMedium: number | null;
   priceLarge: number | null;
   restaurantId: string;
+  restaurantAverageRating?: number;
+  restaurantRatingCount?: number;
 }
 
 interface Category {

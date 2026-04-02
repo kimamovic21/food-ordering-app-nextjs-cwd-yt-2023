@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import useFavorites from '@/contexts/UseFavorites';
+import useProfile from '@/contexts/UseProfile';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -10,6 +11,7 @@ import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
 import MenuItemModal from './MenuItemModal';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
+import HeartRating from '@/components/shared/HeartRating';
 
 interface MenuItemType {
   _id: string;
@@ -21,6 +23,8 @@ interface MenuItemType {
   priceMedium: number | null;
   priceLarge: number | null;
   restaurantId: string;
+  restaurantAverageRating?: number;
+  restaurantRatingCount?: number;
 }
 
 interface MenuItemProps {
@@ -33,6 +37,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userSelectedSize] = useState<Size>('small');
   const { addToCart, getCartRestaurantId } = useCart();
+  const { data: profileData } = useProfile();
   const { data: favoritesData, setMenuItemFavorite } = useFavorites();
 
   const displayItem = item || {
@@ -81,6 +86,16 @@ const MenuItem = ({ item }: MenuItemProps) => {
 
   const handleAddToCart = () => {
     const cartRestaurantId = getCartRestaurantId();
+
+    if (profileData?.restaurantId && profileData.restaurantId === displayItem.restaurantId) {
+      toast.error('You cannot order from your own restaurant', {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+        },
+      });
+      return;
+    }
 
     if (cartRestaurantId && cartRestaurantId !== displayItem.restaurantId) {
       toast.error('Your cart contains items from another restaurant', {
@@ -160,6 +175,12 @@ const MenuItem = ({ item }: MenuItemProps) => {
 
         <div className='p-4 flex flex-col flex-1'>
           <h4 className='font-semibold text-lg text-center'>{displayItem.name}</h4>
+          <div className='mt-2 flex justify-center'>
+            <HeartRating
+              rating={displayItem.restaurantAverageRating ?? 0}
+              ratingCount={displayItem.restaurantRatingCount ?? 0}
+            />
+          </div>
 
           <div className='flex gap-2 mt-4'>
             <Button

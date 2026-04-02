@@ -1,5 +1,6 @@
 import '@/models/category';
 import { Category } from '@/models/category';
+import { attachRestaurantRatings } from '@/libs/reviewSummary';
 import { MenuItem } from '@/models/menuItem';
 import { User } from '@/models/user';
 import { isAdmin } from '../auth/[...nextauth]/route';
@@ -170,13 +171,16 @@ export async function GET(req: Request) {
 
   if (_id) {
     const item = await MenuItem.findById(_id).populate('category');
-    return Response.json(item ? [item] : []);
+    if (!item) return Response.json([]);
+    const withRatings = await attachRestaurantRatings([item]);
+    return Response.json(withRatings);
   }
 
   // If adminId is provided, filter by that admin
   if (adminId) {
     const items = await MenuItem.find({ adminId }).populate('category');
-    return Response.json(items);
+    const withRatings = await attachRestaurantRatings(items);
+    return Response.json(withRatings);
   }
 
   if (groupBy === 'category') {
@@ -188,12 +192,13 @@ export async function GET(req: Request) {
         const items = await MenuItem.find({ category: category._id })
           .sort(summarySort)
           .limit(perCategory);
+        const ratedItems = await attachRestaurantRatings(items);
         const total = await MenuItem.countDocuments({ category: category._id });
 
         return {
           _id: category._id,
           name: category.name,
-          items,
+          items: ratedItems,
           total,
         };
       })
@@ -299,14 +304,15 @@ export async function GET(req: Request) {
     });
 
     const [result] = await MenuItem.aggregate(pipeline);
-    const items = result?.items ?? [];
+    const items = await attachRestaurantRatings(result?.items ?? []);
     const total = result?.totalCount?.[0]?.count ?? 0;
 
     return Response.json({ items, total, page, pageSize: limit });
   }
 
   const items = await MenuItem.find().populate('category');
-  return Response.json(items);
+  const withRatings = await attachRestaurantRatings(items);
+  return Response.json(withRatings);
 }
 
 export async function PUT(req: Request) {

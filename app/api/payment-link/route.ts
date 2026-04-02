@@ -52,6 +52,13 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Order is already paid' }, { status: 400 });
   }
 
+  if (user.restaurantId?.toString() === order.restaurantId?.toString()) {
+    return Response.json(
+      { error: 'You cannot pay for orders from your own restaurant' },
+      { status: 403 }
+    );
+  }
+
   if (!order.stripeSessionId) {
     return Response.json({ error: 'No payment session found for this order' }, { status: 404 });
   }

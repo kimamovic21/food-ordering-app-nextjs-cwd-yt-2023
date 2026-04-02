@@ -5,8 +5,10 @@ import { useCart } from '@/contexts/CartContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import useProfile from '@/contexts/UseProfile';
 import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
+import HeartRating from '@/components/shared/HeartRating';
 
 interface MenuItemType {
   _id: string;
@@ -18,6 +20,8 @@ interface MenuItemType {
   priceMedium: number;
   priceLarge: number;
   restaurantId: string;
+  restaurantAverageRating?: number;
+  restaurantRatingCount?: number;
 }
 
 interface MenuItemProps {
@@ -29,6 +33,7 @@ type PizzaSize = 'small' | 'medium' | 'large';
 const MenuItem = ({ item }: MenuItemProps) => {
   const [selectedSize, setSelectedSize] = useState<PizzaSize>('small');
   const { addToCart, getCartRestaurantId } = useCart();
+  const { data: profileData } = useProfile();
 
   const displayItem = item || {
     _id: 'default',
@@ -61,7 +66,17 @@ const MenuItem = ({ item }: MenuItemProps) => {
 
   const handleAddToCart = () => {
     const cartRestaurantId = getCartRestaurantId();
-    
+
+    if (profileData?.restaurantId && profileData.restaurantId === displayItem.restaurantId) {
+      toast.error('You cannot order from your own restaurant', {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+        },
+      });
+      return;
+    }
+
     // Check if trying to add from a different restaurant
     if (cartRestaurantId && cartRestaurantId !== displayItem.restaurantId) {
       toast.error('Your cart contains items from another restaurant', {
@@ -134,6 +149,12 @@ const MenuItem = ({ item }: MenuItemProps) => {
             Check out
           </h3>
           <h4 className='text-primary font-bold text-2xl italic'>{displayItem.name}</h4>
+          <div className='mt-2 flex justify-center'>
+            <HeartRating
+              rating={displayItem.restaurantAverageRating ?? 0}
+              ratingCount={displayItem.restaurantRatingCount ?? 0}
+            />
+          </div>
         </div>
 
         <p className='mt-4 text-muted-foreground text-sm flex-1 text-center'>

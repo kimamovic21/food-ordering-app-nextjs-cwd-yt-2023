@@ -19,6 +19,7 @@ import OrderInfoCard from './OrderInfoCard';
 import CustomerInfoCard from './CustomerInfoCard';
 import OrderItemsCard from './OrderItemsCard';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
+import HeartRating from '@/components/shared/HeartRating';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to prevent SSR issues with Leaflet
@@ -96,8 +97,15 @@ type CourierType = {
   role: string;
 };
 
+type OrderReviewType = {
+  rating: number;
+  reviewText: string;
+  createdAt?: string;
+};
+
 const OrderDetailPage = () => {
   const [order, setOrder] = useState<OrderDetailsType | null>(null);
+  const [review, setReview] = useState<OrderReviewType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<'placed' | 'processing' | 'ready'>('placed');
@@ -127,6 +135,18 @@ const OrderDetailPage = () => {
         }
         const json = await res.json();
         setOrder(json.order);
+        try {
+          const reviewResponse = await fetch(`/api/reviews?orderId=${orderId}`);
+          if (reviewResponse.ok) {
+            const reviewJson = await reviewResponse.json();
+            setReview(reviewJson.review ?? null);
+          } else {
+            setReview(null);
+          }
+        } catch (reviewErr) {
+          console.error('Failed to load review', reviewErr);
+          setReview(null);
+        }
         setSelectedStatus(
           (json.order.orderStatus === 'completed' || json.order.orderStatus === 'transportation'
             ? 'ready'
@@ -721,6 +741,19 @@ const OrderDetailPage = () => {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {review && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Customer Review and Rating for This Order</CardTitle>
+              <CardDescription>Feedback submitted by the order owner.</CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-3'>
+              <HeartRating rating={review.rating} />
+              <p className='text-sm leading-relaxed text-foreground'>{review.reviewText}</p>
             </CardContent>
           </Card>
         )}

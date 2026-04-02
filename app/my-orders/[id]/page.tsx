@@ -19,8 +19,10 @@ import OrderInfoCard from './OrderInfoCard';
 import CustomerInfoCard from './CustomerInfoCard';
 import OrderItemsCard from './OrderItemsCard';
 import OrderStatusBanner from './OrderStatusBanner';
+import LeaveReviewDialog from './LeaveReviewDialog';
 import Title from '@/components/shared/Title';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
+import HeartRating from '@/components/shared/HeartRating';
 
 type CartProduct = {
   productId: string;
@@ -54,6 +56,12 @@ type OrderDetailsType = {
   restaurantId?: string;
 };
 
+type OrderReviewType = {
+  rating: number;
+  reviewText: string;
+  createdAt?: string;
+};
+
 // Map loads client-side only because Leaflet touches window during module init
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
   ssr: false,
@@ -68,6 +76,7 @@ import { useRef } from 'react';
 
 const MyOrderDetailPage = () => {
   const [order, setOrder] = useState<OrderDetailsType | null>(null);
+  const [review, setReview] = useState<OrderReviewType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { data: profileData, loading: profileLoading } = useProfile();
@@ -96,6 +105,19 @@ const MyOrderDetailPage = () => {
 
         const json = await res.json();
         setOrder(json.order);
+
+        try {
+          const reviewResponse = await fetch(`/api/reviews?orderId=${orderId}`);
+          if (reviewResponse.ok) {
+            const reviewJson = await reviewResponse.json();
+            setReview(reviewJson.review ?? null);
+          } else {
+            setReview(null);
+          }
+        } catch (reviewErr) {
+          console.error('Failed to load review', reviewErr);
+          setReview(null);
+        }
       } catch (err) {
         console.error('Failed to load order', err);
         setError('Failed to load order details');
@@ -263,13 +285,21 @@ const MyOrderDetailPage = () => {
 
         <div className='flex items-center justify-between mb-6'>
           <Title>Order Details</Title>
-          <div className='text-right'>
+          <div className='text-right space-y-3'>
             <p className='text-sm text-muted-foreground mb-1'>Order Time</p>
             <OrderElapsedTime
               createdAt={order.createdAt}
               completedAt={order.completedAt}
               isCompleted={order.orderStatus === 'completed'}
             />
+            {!review && (
+              <LeaveReviewDialog
+                orderId={order._id}
+                orderStatus={order.orderStatus}
+                paymentStatus={order.paymentStatus}
+                onSubmitted={(nextReview) => setReview(nextReview)}
+              />
+            )}
           </div>
         </div>
 
@@ -338,6 +368,19 @@ const MyOrderDetailPage = () => {
                   orderId={order._id}
                 />
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {review && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Review and Rating for This Order</CardTitle>
+              <CardDescription>Thank you for sharing your feedback.</CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-3'>
+              <HeartRating rating={review.rating} />
+              <p className='text-sm leading-relaxed text-foreground'>{review.reviewText}</p>
             </CardContent>
           </Card>
         )}

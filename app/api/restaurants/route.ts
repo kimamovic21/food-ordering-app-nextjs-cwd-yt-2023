@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mongoConnect } from '@/libs/mongoConnect';
+import { getRestaurantRatingSummaries } from '@/libs/reviewSummary';
 import { Restaurant } from '@/models/restaurant';
 
 type WorkingHour = {
@@ -195,11 +196,25 @@ export async function GET(req: NextRequest) {
       ? sortedRestaurants.slice((page - 1) * limit, page * limit)
       : sortedRestaurants;
 
+    const ratingMap = await getRestaurantRatingSummaries(
+      paginatedRestaurants.map((restaurant) => restaurant._id)
+    );
+
+    const ratedRestaurants = paginatedRestaurants.map((restaurant) => {
+      const rating = ratingMap.get(String(restaurant._id));
+
+      return {
+        ...restaurant,
+        averageRating: rating?.averageRating ?? 0,
+        ratingCount: rating?.ratingCount ?? 0,
+      };
+    });
+
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
     return NextResponse.json(
       {
-        restaurants: paginatedRestaurants,
+        restaurants: ratedRestaurants,
         pagination: {
           total,
           page,

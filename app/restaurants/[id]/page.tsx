@@ -11,6 +11,7 @@ import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import ShareActions from '@/components/shared/ShareActions';
+import HeartRating from '@/components/shared/HeartRating';
 import useFavorites from '@/contexts/UseFavorites';
 
 const RestaurantLocation = dynamic(() => import('@/components/shared/RestaurantLocation'), {
@@ -59,6 +60,8 @@ interface RestaurantDetails {
   workingHours: WorkingHour[];
   blockedDates: BlockedDate[];
   isOpen: boolean;
+  averageRating: number;
+  ratingCount: number;
 }
 
 const formatDay = (day: string) => day.charAt(0).toUpperCase() + day.slice(1);
@@ -251,6 +254,7 @@ const RestaurantDetailsPage = () => {
           <MapPin className='h-4 w-4' />
           {restaurant.street}, {restaurant.city}, {restaurant.postalCode}, {restaurant.country}
         </p>
+        <HeartRating rating={restaurant.averageRating} ratingCount={restaurant.ratingCount} />
         <p className='text-sm text-muted-foreground'>
           {locationLoading
             ? 'Detecting your location to calculate distance...'
@@ -258,6 +262,11 @@ const RestaurantDetailsPage = () => {
               ? `${distanceKm.toFixed(1)} km from your current location`
               : locationError || 'Distance unavailable without your location.'}
         </p>
+        <div>
+          <Link href={`/restaurants/${restaurant._id}/reviews`}>
+            <Button variant='outline'>Show all reviews and ratings</Button>
+          </Link>
+        </div>
         <ShareActions url={shareUrl} title={`Check out this restaurant: ${restaurant.name}`} />
       </div>
 

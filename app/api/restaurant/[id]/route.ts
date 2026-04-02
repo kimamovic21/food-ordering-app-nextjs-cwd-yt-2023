@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mongoConnect } from '@/libs/mongoConnect';
+import { getRestaurantRatingSummaries } from '@/libs/reviewSummary';
 import { Restaurant } from '@/models/restaurant';
 
 // Check if restaurant is open at a specific time
@@ -70,6 +71,8 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     // Check if restaurant is currently open
     const now = new Date();
     const isOpen = isRestaurantOpen(restaurant.workingHours, restaurant.blockedDates, now);
+    const ratingMap = await getRestaurantRatingSummaries([restaurant._id]);
+    const rating = ratingMap.get(String(restaurant._id));
 
     return NextResponse.json(
       {
@@ -90,6 +93,8 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
           workingHours: restaurant.workingHours,
           blockedDates: restaurant.blockedDates,
           isOpen,
+          averageRating: rating?.averageRating ?? 0,
+          ratingCount: rating?.ratingCount ?? 0,
         },
       },
       { status: 200 }

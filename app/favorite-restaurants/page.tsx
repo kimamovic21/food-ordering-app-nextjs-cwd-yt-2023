@@ -12,6 +12,7 @@ import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import ShareActions from '@/components/shared/ShareActions';
+import HeartRating from '@/components/shared/HeartRating';
 import useFavorites from '@/contexts/UseFavorites';
 
 interface FavoriteRestaurant {
@@ -23,6 +24,8 @@ interface FavoriteRestaurant {
   description: string;
   image: string | null;
   isOpen: boolean;
+  averageRating: number;
+  ratingCount: number;
 }
 
 const FavoriteRestaurantsPage = () => {
@@ -172,6 +175,10 @@ const FavoriteRestaurantsPage = () => {
                 <Badge variant={restaurant.isOpen ? 'default' : 'secondary'}>
                   {restaurant.isOpen ? 'Open' : 'Closed'}
                 </Badge>
+                <HeartRating
+                  rating={restaurant.averageRating}
+                  ratingCount={restaurant.ratingCount}
+                />
                 <p className='text-sm text-muted-foreground flex items-center gap-1'>
                   <MapPin className='h-4 w-4' />
                   {restaurant.city}, {restaurant.country}

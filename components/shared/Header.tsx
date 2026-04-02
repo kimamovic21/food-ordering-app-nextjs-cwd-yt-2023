@@ -150,19 +150,19 @@ const Header = () => {
                       className={`${pathname?.startsWith('/my-orders') ? 'text-primary font-semibold' : ''}`}
                       href={'/my-orders'}
                     >
-                      My Orders
+                      Orders
                     </Link>
                     <Link
                       className={`${pathname === '/favorite-meals' ? 'text-primary font-semibold' : ''}`}
                       href={'/favorite-meals'}
                     >
-                      Favorite Meals
+                      Fav Meals
                     </Link>
                     <Link
                       className={`${pathname === '/favorite-restaurants' ? 'text-primary font-semibold' : ''}`}
                       href={'/favorite-restaurants'}
                     >
-                      Favorite Restaurants
+                      Fav Restaurants
                     </Link>
                     <Link
                       className={`${pathname === '/loyalty' ? 'text-primary font-semibold' : ''}`}
@@ -176,13 +176,13 @@ const Header = () => {
                           className={`${pathname === '/my-delivery' ? 'text-primary font-semibold' : ''}`}
                           href={'/my-delivery'}
                         >
-                          My Delivery
+                          Delivery
                         </Link>
                         <Link
                           className={`${pathname === '/my-deliveries' ? 'text-primary font-semibold' : ''}`}
                           href={'/my-deliveries'}
                         >
-                          My Deliveries
+                          Deliveries
                         </Link>
                       </>
                     )}
@@ -340,21 +340,21 @@ const Header = () => {
                   onClick={() => setMobileOpen(false)}
                   className='hover:text-primary'
                 >
-                  My Orders
+                  Orders
                 </Link>
                 <Link
                   href='/favorite-meals'
                   onClick={() => setMobileOpen(false)}
                   className='hover:text-primary'
                 >
-                  Favorite Meals
+                  Fav Meals
                 </Link>
                 <Link
                   href='/favorite-restaurants'
                   onClick={() => setMobileOpen(false)}
                   className='hover:text-primary'
                 >
-                  Favorite Restaurants
+                  Fav Restaurants
                 </Link>
                 <Link
                   href='/loyalty'
@@ -377,7 +377,7 @@ const Header = () => {
                       onClick={() => setMobileOpen(false)}
                       className='hover:text-primary'
                     >
-                      My Deliveries
+                      Deliveries
                     </Link>
                   </>
                 )}
