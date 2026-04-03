@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import MenuItem from '@/app/menu/MenuItem';
+import FavoriteMealsLoading from './loading';
 
 interface FavoriteMenuItem {
   _id: string;
@@ -75,6 +75,10 @@ const FavoriteMealsPage = () => {
     );
   }
 
+  if (loading) {
+    return <FavoriteMealsLoading />;
+  }
+
   return (
     <section className='mt-8'>
       <div className='mb-6'>
@@ -84,21 +88,7 @@ const FavoriteMealsPage = () => {
         </p>
       </div>
 
-      {loading ? (
-        <div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Card key={index} className='p-0 overflow-hidden flex flex-col'>
-              <div className='p-4 bg-muted'>
-                <Skeleton className='h-40 w-full rounded-md' />
-              </div>
-              <CardContent className='p-4 space-y-4'>
-                <Skeleton className='h-6 w-2/3 mx-auto rounded-md' />
-                <Skeleton className='h-10 w-full rounded-md' />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : items.length === 0 ? (
+      {items.length === 0 ? (
         <Card>
           <CardContent className='py-10 text-center text-muted-foreground'>
             You have no favorite meals yet.

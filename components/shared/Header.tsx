@@ -12,6 +12,7 @@ import {
   AboutLinkSkeleton,
   ContactLinkSkeleton,
   MyOrdersLinkSkeleton,
+  ReviewsLinkSkeleton,
   MyDeliveryLinkSkeleton,
   ModeToggleSkeleton,
   CartIconSkeleton,
@@ -92,7 +93,8 @@ const Header = () => {
     (session?.data?.user as any)?.role === 'courier' || profileData?.role === 'courier';
   const isAdmin = (session?.data?.user as any)?.role === 'admin' || profileData?.role === 'admin';
   const isPublicRestaurantPage =
-    pathname === '/restaurants' || Boolean(pathname && /^\/restaurants\/[^/]+$/.test(pathname));
+    pathname === '/restaurants' ||
+    Boolean(pathname && /^\/restaurants\/[^/]+(?:\/reviews)?$/.test(pathname));
 
   const handleLogout = async () => {
     toast.success('Successfully logged out', {
@@ -116,6 +118,7 @@ const Header = () => {
                 <AboutLinkSkeleton />
                 <ContactLinkSkeleton />
                 <MyOrdersLinkSkeleton />
+                <ReviewsLinkSkeleton />
                 <MyDeliveryLinkSkeleton />
               </>
             ) : (
@@ -151,6 +154,12 @@ const Header = () => {
                       href={'/my-orders'}
                     >
                       Orders
+                    </Link>
+                    <Link
+                      className={`${pathname === '/reviews' ? 'text-primary font-semibold' : ''}`}
+                      href={'/reviews'}
+                    >
+                      Reviews
                     </Link>
                     <Link
                       className={`${pathname === '/favorite-meals' ? 'text-primary font-semibold' : ''}`}
@@ -341,6 +350,13 @@ const Header = () => {
                   className='hover:text-primary'
                 >
                   Orders
+                </Link>
+                <Link
+                  href='/reviews'
+                  onClick={() => setMobileOpen(false)}
+                  className='hover:text-primary'
+                >
+                  Reviews
                 </Link>
                 <Link
                   href='/favorite-meals'

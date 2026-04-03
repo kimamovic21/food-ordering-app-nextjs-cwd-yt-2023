@@ -16,6 +16,10 @@ export function MyOrdersLinkSkeleton() {
   return <Skeleton className='h-4 w-20' />;
 }
 
+export function ReviewsLinkSkeleton() {
+  return <Skeleton className='h-4 w-16' />;
+}
+
 export function CategoriesLinkSkeleton() {
   return <Skeleton className='h-4 w-20' />;
 }

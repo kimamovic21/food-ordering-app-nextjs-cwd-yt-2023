@@ -13,6 +13,7 @@ import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import ShareActions from '@/components/shared/ShareActions';
 import HeartRating from '@/components/shared/HeartRating';
 import useFavorites from '@/contexts/UseFavorites';
+import RestaurantDetailsLoading from './loading';
 
 const RestaurantLocation = dynamic(() => import('@/components/shared/RestaurantLocation'), {
   ssr: false,
@@ -168,23 +169,7 @@ const RestaurantDetailsPage = () => {
   }, []);
 
   if (loading) {
-    return (
-      <section className='mt-8 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10'>
-        <div className='h-8 w-72 bg-muted animate-pulse rounded-md mb-3' />
-        <div className='h-5 w-52 bg-muted animate-pulse rounded-md mb-8' />
-
-        <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-          <div className='lg:col-span-2 space-y-6'>
-            <div className='h-72 w-full bg-muted animate-pulse rounded-xl' />
-            <div className='h-40 w-full bg-muted animate-pulse rounded-xl' />
-          </div>
-          <div className='space-y-6'>
-            <div className='h-52 w-full bg-muted animate-pulse rounded-xl' />
-            <div className='h-48 w-full bg-muted animate-pulse rounded-xl' />
-          </div>
-        </div>
-      </section>
-    );
+    return <RestaurantDetailsLoading />;
   }
 
   if (error || !restaurant) {

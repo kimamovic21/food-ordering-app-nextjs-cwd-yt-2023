@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Breadcrumb,
@@ -12,9 +12,9 @@ import {
   BreadcrumbPage,
 } from '@/components/ui/breadcrumb';
 import { Package, Calendar, MapPin, DollarSign, Phone, CreditCard, Mail } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import useProfile from '@/contexts/UseProfile';
+import DeliveryDetailsLoading from './loading';
 
 type CartProduct = {
   productId: string;
@@ -45,23 +45,41 @@ type DeliveredOrder = {
 
 const DeliveryDetailsPage = () => {
   const params = useParams()!;
+  const router = useRouter();
   const { data: profileData, loading: profileLoading } = useProfile();
   const [order, setOrder] = useState<DeliveredOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const orderId = Array.isArray(params.id) ? params.id[0] : params.id;
 
   useEffect(() => {
-    if (profileLoading || profileData?.role !== 'courier' || !params.id) return;
+    if (profileLoading || !orderId) return;
 
     const fetchDeliveryDetails = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/my-deliveries/${params.id}`);
-        if (!res.ok) {
-          throw new Error('Failed to fetch delivery details');
+
+        if (profileData?.role === 'courier') {
+          const res = await fetch(`/api/my-deliveries/${orderId}`);
+          if (!res.ok) {
+            throw new Error('Failed to fetch delivery details');
+          }
+
+          const data = await res.json();
+          setOrder(data.order);
+          setError(null);
+          return;
         }
-        const data = await res.json();
-        setOrder(data.order);
+
+        const ownerRes = await fetch(`/api/my-orders?id=${encodeURIComponent(orderId)}`);
+
+        if (!ownerRes.ok) {
+          router.replace('/');
+          return;
+        }
+
+        const ownerData = await ownerRes.json();
+        setOrder(ownerData.order);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -71,64 +89,14 @@ const DeliveryDetailsPage = () => {
     };
 
     fetchDeliveryDetails();
-  }, [params.id, profileData?.role, profileLoading]);
+  }, [orderId, profileData?.role, profileLoading, router]);
 
   if (profileLoading || loading) {
-    return (
-      <div className='container mx-auto px-4 py-8 max-w-7xl'>
-        <Skeleton className='h-6 w-64 mb-6' />
-
-        <div className='mb-6'>
-          <Skeleton className='h-10 w-48 mb-2' />
-          <Skeleton className='h-5 w-32' />
-        </div>
-
-        <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className='h-6 w-40' />
-              </CardHeader>
-              <CardContent className='space-y-4'>
-                <Skeleton className='h-16 w-full' />
-                <Skeleton className='h-16 w-full' />
-                <Skeleton className='h-16 w-full' />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <Card className='mt-6'>
-          <CardHeader>
-            <Skeleton className='h-6 w-48' />
-          </CardHeader>
-          <CardContent className='space-y-4'>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className='flex items-center gap-4 p-4 border rounded-lg'>
-                <Skeleton className='h-20 w-20 rounded-md' />
-                <div className='flex-1 space-y-2'>
-                  <Skeleton className='h-5 w-32' />
-                  <Skeleton className='h-4 w-24' />
-                  <Skeleton className='h-4 w-24' />
-                </div>
-                <div className='space-y-2'>
-                  <Skeleton className='h-5 w-16' />
-                  <Skeleton className='h-4 w-20' />
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <DeliveryDetailsLoading />;
   }
 
-  if (profileData?.role !== 'courier') {
-    return (
-      <div className='container mx-auto px-4 py-8 max-w-7xl'>
-        <div className='text-red-500'>Unauthorized: Only couriers can access this page</div>
-      </div>
-    );
+  if (profileData?.role !== 'courier' && !order) {
+    return null;
   }
 
   if (error || !order) {

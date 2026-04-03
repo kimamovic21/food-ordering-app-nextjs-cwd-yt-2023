@@ -1154,3 +1154,7 @@ Add favorites (meals & restaurants) feature
 
 
 Add reviews/ratings, UI & ordering validations
+
+
+
+Add rating filters and improve reviews API/UI

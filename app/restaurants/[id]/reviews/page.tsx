@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { Filter, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,29 +12,26 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import Link from 'next/link';
-import Image from 'next/image';
-import Title from '@/components/shared/Title';
 import HeartRating from '@/components/shared/HeartRating';
+import Title from '@/components/shared/Title';
+import ReviewCard, { type ReviewCardData } from '@/components/shared/ReviewCard';
 import RestaurantReviewsLoading from './loading';
 
-type ReviewItem = {
-  _id: string;
-  rating: number;
-  reviewText: string;
-  createdAt: string;
-  user: {
-    name: string;
-    image: string | null;
-  };
-};
-
-type ReviewsResponse = {
+type RestaurantReviewsResponse = {
   restaurant: {
     _id: string;
     name: string;
   };
-  reviews: ReviewItem[];
+  reviews: ReviewCardData[];
   meta: {
     totalCount: number;
     offset: number;
@@ -44,117 +41,93 @@ type ReviewsResponse = {
   };
 };
 
-const INITIAL_LIMIT = 10;
+const ratingOptions = [
+  { label: 'All ratings', value: 'all' },
+  { label: '5 stars', value: '5' },
+  { label: '4 stars', value: '4' },
+  { label: '3 stars', value: '3' },
+  { label: '2 stars', value: '2' },
+  { label: '1 star', value: '1' },
+];
 
 const RestaurantReviewsPage = () => {
   const params = useParams();
   const id = params?.id as string;
+  const hasLoadedRef = useRef(false);
 
-  const [restaurantName, setRestaurantName] = useState('Restaurant');
-  const [reviews, setReviews] = useState<ReviewItem[]>([]);
-  const [nextOffset, setNextOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
+  const [restaurantName, setRestaurantName] = useState('Restaurant reviews');
+  const [averageRating, setAverageRating] = useState(0);
+  const [reviews, setReviews] = useState<ReviewCardData[]>([]);
+  const [rating, setRating] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState('');
-
-  const fetchReviews = useCallback(
-    async (offset: number, append: boolean) => {
-      const response = await fetch(
-        `/api/restaurants/${id}/reviews?limit=${INITIAL_LIMIT}&offset=${offset}`
-      );
-      const data = (await response.json()) as ReviewsResponse & { error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch reviews');
-      }
-
-      setRestaurantName(data.restaurant?.name || 'Restaurant');
-      setTotalCount(Number(data.meta?.totalCount) || 0);
-      setHasMore(Boolean(data.meta?.hasMore));
-      setNextOffset(Number(data.meta?.nextOffset) || 0);
-
-      setReviews((prev) => (append ? [...prev, ...data.reviews] : data.reviews));
-    },
-    [id]
-  );
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     if (!id) return;
 
-    const loadInitialReviews = async () => {
+    const controller = new AbortController();
+
+    const loadReviews = async () => {
       try {
-        setLoading(true);
+        if (hasLoadedRef.current) {
+          setIsRefreshing(true);
+        } else {
+          setLoading(true);
+        }
         setError('');
-        await fetchReviews(0, false);
-      } catch (loadError) {
-        console.error(loadError);
-        setError('Failed to load reviews and ratings');
+
+        const params = new URLSearchParams({ limit: '1000' });
+        if (rating !== 'all') params.set('rating', rating);
+
+        const response = await fetch(`/api/restaurants/${id}/reviews?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        const data: RestaurantReviewsResponse | { error?: string } = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            'error' in data && data.error ? data.error : 'Failed to fetch restaurant reviews'
+          );
+        }
+
+        const result = data as RestaurantReviewsResponse;
+        setRestaurantName(result.restaurant?.name || 'Restaurant reviews');
+        setReviews(result.reviews || []);
+        setTotalCount(result.meta?.totalCount ?? result.reviews?.length ?? 0);
+        const totalRating = (result.reviews || []).reduce((sum, review) => sum + review.rating, 0);
+        setAverageRating(result.reviews?.length ? totalRating / result.reviews.length : 0);
+      } catch (fetchError) {
+        if (!(fetchError instanceof DOMException && fetchError.name === 'AbortError')) {
+          const message =
+            fetchError instanceof Error ? fetchError.message : 'Failed to fetch reviews';
+          setError(message);
+          setReviews([]);
+        }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+          setIsRefreshing(false);
+          hasLoadedRef.current = true;
+        }
       }
     };
 
-    loadInitialReviews();
-  }, [id, fetchReviews]);
+    loadReviews();
 
-  const handleLoadMore = async () => {
-    if (!hasMore || loadingMore) return;
+    return () => controller.abort();
+  }, [id, rating]);
 
-    try {
-      setLoadingMore(true);
-      await fetchReviews(nextOffset, true);
-    } catch (loadError) {
-      console.error(loadError);
-      setError('Failed to load more reviews and ratings');
-    } finally {
-      setLoadingMore(false);
-    }
-  };
+  const activeFilters = useMemo(() => (rating !== 'all' ? [`${rating} stars`] : []), [rating]);
 
   if (loading) {
     return <RestaurantReviewsLoading />;
   }
 
-  if (error) {
-    return (
-      <section className='mt-8 w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10'>
-        <Breadcrumb className='mb-6'>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href='/restaurants'>Restaurants</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={`/restaurants/${id}`}>Restaurant details</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Reviews and ratings</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
-        <Card>
-          <CardContent className='py-10 text-center'>
-            <p className='text-muted-foreground mb-4'>{error}</p>
-            <Link href={`/restaurants/${id}`}>
-              <Button variant='outline'>Back to restaurant details</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </section>
-    );
-  }
-
   return (
-    <section className='mt-8 w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10'>
-      <Breadcrumb className='mb-6'>
+    <section className='mt-8 space-y-6 w-full'>
+      <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
@@ -169,77 +142,102 @@ const RestaurantReviewsPage = () => {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>Reviews and ratings</BreadcrumbPage>
+            <BreadcrumbPage>Restaurant reviews</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className='mb-6 space-y-2'>
-        <Title>{restaurantName} Reviews and Ratings</Title>
-        <p className='text-sm text-muted-foreground'>
-          {totalCount} review{totalCount === 1 ? '' : 's'} submitted by customers.
+      <div className='space-y-2'>
+        <Title>{restaurantName}</Title>
+        <p className='max-w-2xl text-sm text-muted-foreground'>
+          Browse all reviews for this restaurant and filter them by star rating.
         </p>
       </div>
 
-      {reviews.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>No reviews yet</CardTitle>
-            <CardDescription>
-              This restaurant has no submitted reviews at the moment.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      ) : (
+      <div className='grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]'>
         <div className='space-y-4'>
-          {reviews.map((review) => (
-            <Card key={review._id}>
-              <CardHeader>
-                <div className='flex items-start justify-between gap-4'>
-                  <div className='flex items-center gap-3'>
-                    {review.user.image ? (
-                      <Image
-                        src={review.user.image}
-                        alt={review.user.name}
-                        width={40}
-                        height={40}
-                        className='h-10 w-10 rounded-full object-cover border border-border'
-                      />
-                    ) : (
-                      <div className='h-10 w-10 rounded-full border border-border bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground'>
-                        {review.user.name.slice(0, 1).toUpperCase()}
-                      </div>
-                    )}
-                    <div>
-                      <p className='text-sm font-semibold'>{review.user.name}</p>
-                      <p className='text-xs text-muted-foreground'>
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <HeartRating rating={review.rating} ratingCount={undefined} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className='text-sm leading-6 text-foreground/90'>{review.reviewText}</p>
+          <Card className='border-border/70 bg-card/80'>
+            <CardHeader>
+              <CardTitle>Review summary</CardTitle>
+            </CardHeader>
+            <CardContent className='flex flex-wrap items-center gap-4 text-sm'>
+              <div className='flex items-center gap-2'>
+                <Sparkles className='h-4 w-4 text-muted-foreground' />
+                {totalCount} review{totalCount === 1 ? '' : 's'}
+              </div>
+              <HeartRating rating={averageRating} ratingCount={totalCount} />
+              {isRefreshing && <span className='text-xs text-muted-foreground'>Updating...</span>}
+            </CardContent>
+          </Card>
+
+          {error ? (
+            <Card>
+              <CardContent className='py-10 text-center'>
+                <p className='text-sm text-muted-foreground'>{error}</p>
               </CardContent>
             </Card>
-          ))}
-
-          {hasMore && (
-            <div className='flex justify-center pt-2'>
-              <Button onClick={handleLoadMore} disabled={loadingMore}>
-                {loadingMore ? 'Loading...' : 'View more reviews and ratings'}
-              </Button>
+          ) : reviews.length === 0 ? (
+            <Card>
+              <CardContent className='space-y-3 py-14 text-center'>
+                <p className='text-base font-medium'>No reviews found</p>
+                <p className='text-sm text-muted-foreground'>
+                  Try a different rating filter or check back later.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className='grid gap-4'>
+              {reviews.map((review) => (
+                <ReviewCard key={review._id} review={review} mode='restaurant' />
+              ))}
             </div>
           )}
         </div>
-      )}
 
-      <div className='mt-8'>
-        <Link href={`/restaurants/${id}`}>
-          <Button variant='outline'>Back to restaurant details</Button>
-        </Link>
+        <Card className='border-border/70 bg-card/80 h-fit lg:sticky lg:top-24'>
+          <CardHeader>
+            <CardTitle>Filter</CardTitle>
+          </CardHeader>
+          <CardContent className='space-y-4'>
+            <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+              <Filter className='h-4 w-4' />
+              Filter by rating only
+            </div>
+
+            <Select value={rating} onValueChange={setRating}>
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder='Filter by rating' />
+              </SelectTrigger>
+              <SelectContent>
+                {ratingOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {activeFilters.length > 0 && (
+              <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+                <span>Active filters:</span>
+                {activeFilters.map((item) => (
+                  <span key={item} className='rounded-full border border-border px-2.5 py-1'>
+                    {item}
+                  </span>
+                ))}
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  className='h-7 px-2 text-xs'
+                  onClick={() => setRating('all')}
+                >
+                  Clear filter
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </section>
   );

@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Calendar, MapPin, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import useProfile from '@/contexts/UseProfile';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
+import MyDeliveriesLoading from './loading';
 
 type CartProduct = {
   productId: string;
@@ -33,14 +35,25 @@ type DeliveredOrder = {
   updatedAt: string;
 };
 
+const INITIAL_VISIBLE_ORDERS = 9;
+const ORDERS_INCREMENT = 9;
+
 const MyDeliveriesPage = () => {
+  const router = useRouter();
   const { data: profileData, loading: profileLoading } = useProfile();
   const [orders, setOrders] = useState<DeliveredOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visibleOrders, setVisibleOrders] = useState(INITIAL_VISIBLE_ORDERS);
 
   useEffect(() => {
-    if (profileLoading || profileData?.role !== 'courier') return;
+    if (profileLoading) return;
+
+    if (profileData?.role !== 'courier') {
+      router.replace('/');
+      setLoading(false);
+      return;
+    }
 
     const fetchDeliveredOrders = async () => {
       try {
@@ -51,6 +64,7 @@ const MyDeliveriesPage = () => {
         }
         const data = await res.json();
         setOrders(data.orders);
+        setVisibleOrders(INITIAL_VISIBLE_ORDERS);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -60,44 +74,22 @@ const MyDeliveriesPage = () => {
     };
 
     fetchDeliveredOrders();
-  }, [profileData?.role, profileLoading]);
+  }, [profileData?.role, profileLoading, router]);
 
   if (profileLoading) {
-    return (
-      <div className='container mx-auto px-4 py-8 max-w-7xl'>
-        <div className='space-y-4'>
-          <Skeleton className='h-8 w-48' />
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {[...Array(6)].map((_, idx) => (
-              <Skeleton key={idx} className='h-64 w-full' />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <MyDeliveriesLoading />;
   }
 
   if (profileData?.role !== 'courier') {
-    return (
-      <div className='container mx-auto px-4 py-8 max-w-7xl'>
-        <div className='text-red-500'>Unauthorized: Only couriers can access this page</div>
-      </div>
-    );
+    return null;
   }
 
   if (loading) {
-    return (
-      <div className='container mx-auto px-4 py-8 max-w-7xl'>
-        <Skeleton className='h-6 w-64 mb-6' />
-        <Skeleton className='h-10 w-48 mb-8' />
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {[...Array(6)].map((_, idx) => (
-            <Skeleton key={idx} className='h-64 w-full' />
-          ))}
-        </div>
-      </div>
-    );
+    return <MyDeliveriesLoading />;
   }
+
+  const hasMoreOrders = orders.length > visibleOrders;
+  const displayedOrders = orders.slice(0, visibleOrders);
 
   return (
     <div className='container mx-auto px-4 py-8 max-w-7xl'>
@@ -115,60 +107,76 @@ const MyDeliveriesPage = () => {
           <p className='text-muted-foreground'>No completed deliveries yet.</p>
         </div>
       ) : (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {orders.map((order) => (
-            <Link
-              key={order._id}
-              href={`/my-deliveries/${order._id}`}
-              className='transition-transform hover:scale-105'
-            >
-              <Card className='cursor-pointer hover:shadow-lg h-full'>
-                <CardHeader>
-                  <CardTitle className='flex items-center justify-between gap-4'>
-                    <span className='text-lg'>Order #{order._id.slice(-6).toUpperCase()}</span>
-                    <span className='text-sm px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'>
-                      Delivered
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className='space-y-3'>
-                  <div className='flex items-start gap-2'>
-                    <MapPin className='h-4 w-4 mt-1 text-muted-foreground shrink-0' />
-                    <div className='text-sm'>
-                      <p className='font-medium'>Delivery Address:</p>
-                      <p className='text-muted-foreground'>
-                        {order.streetAddress}, {order.city}
-                      </p>
+        <>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+            {displayedOrders.map((order) => (
+              <Link
+                key={order._id}
+                href={`/my-deliveries/${order._id}`}
+                className='transition-transform hover:scale-105'
+              >
+                <Card className='cursor-pointer hover:shadow-lg h-full'>
+                  <CardHeader>
+                    <CardTitle className='space-y-3'>
+                      <span className='block text-lg'>
+                        Order #{order._id.slice(-6).toUpperCase()}
+                      </span>
+                      <span className='inline-flex w-fit rounded-full bg-green-100 px-3 py-1 text-sm text-green-800 dark:bg-green-900 dark:text-green-200'>
+                        Delivered
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className='space-y-3'>
+                    <div className='flex items-start gap-2'>
+                      <MapPin className='h-4 w-4 mt-1 text-muted-foreground shrink-0' />
+                      <div className='text-sm'>
+                        <p className='font-medium'>Delivery Address:</p>
+                        <p className='text-muted-foreground'>
+                          {order.streetAddress}, {order.city}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className='flex items-center gap-2'>
-                    <Calendar className='h-4 w-4 text-muted-foreground' />
-                    <div className='text-sm'>
-                      <p className='text-muted-foreground'>
-                        {new Date(order.updatedAt).toLocaleDateString()}
-                      </p>
+                    <div className='flex items-center gap-2'>
+                      <Calendar className='h-4 w-4 text-muted-foreground' />
+                      <div className='text-sm'>
+                        <p className='text-muted-foreground'>
+                          {new Date(order.updatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className='flex items-center gap-2'>
-                    <DollarSign className='h-4 w-4 text-muted-foreground' />
-                    <div className='text-sm'>
-                      <p className='font-medium'>${order.total.toFixed(2)}</p>
+                    <div className='flex items-center gap-2'>
+                      <DollarSign className='h-4 w-4 text-muted-foreground' />
+                      <div className='text-sm'>
+                        <p className='font-medium'>${order.total.toFixed(2)}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className='flex items-center gap-2'>
-                    <Package className='h-4 w-4 text-muted-foreground' />
-                    <div className='text-sm'>
-                      <p className='text-muted-foreground'>{order.cartProducts.length} item(s)</p>
+                    <div className='flex items-center gap-2'>
+                      <Package className='h-4 w-4 text-muted-foreground' />
+                      <div className='text-sm'>
+                        <p className='text-muted-foreground'>{order.cartProducts.length} item(s)</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+
+          {hasMoreOrders && (
+            <div className='mt-8 flex justify-center'>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => setVisibleOrders((current) => current + ORDERS_INCREMENT)}
+              >
+                Show more orders
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

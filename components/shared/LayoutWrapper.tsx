@@ -15,11 +15,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   return (
     <>
       {!isAdminRoute && <Header />}
-      <main
-        className={`flex-1 ${
-          isAdminRoute ? 'w-full' : 'max-w-7xl mx-auto p-4 mt-16'
-        }`}
-      >
+      <main className={`flex-1 ${isAdminRoute ? 'w-full' : 'max-w-7xl mx-auto p-4 mt-16'}`}>
         {children}
       </main>
       {!isAdminRoute && <Footer />}

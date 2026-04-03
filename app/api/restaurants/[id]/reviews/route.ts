@@ -30,10 +30,24 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     const { searchParams } = new URL(req.url);
     const limit = Math.min(parsePositiveInt(searchParams.get('limit'), 10) || 10, 50);
     const offset = parsePositiveInt(searchParams.get('offset'), 0);
+    const ratingParam = searchParams.get('rating');
+    const rating = ratingParam && ratingParam !== 'all' ? Number(ratingParam) : null;
+
+    if (rating !== null && (!Number.isInteger(rating) || rating < 1 || rating > 5)) {
+      return NextResponse.json(
+        { error: 'Rating must be a whole number between 1 and 5' },
+        { status: 400 }
+      );
+    }
+
+    const filter = {
+      restaurantId: id,
+      ...(rating ? { rating } : {}),
+    };
 
     const [totalCount, rawReviews] = await Promise.all([
-      Review.countDocuments({ restaurantId: id }),
-      Review.find({ restaurantId: id })
+      Review.countDocuments(filter),
+      Review.find(filter)
         .sort({ createdAt: -1 })
         .skip(offset)
         .limit(limit)

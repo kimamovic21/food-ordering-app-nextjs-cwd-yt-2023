@@ -1,10 +1,26 @@
 import { getServerSession } from 'next-auth/next';
+import mongoose from 'mongoose';
 import { authOptions } from '@/libs/authOptions';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { Order } from '@/models/order';
 import { Review } from '@/models/review';
 import { User } from '@/models/user';
-import mongoose from 'mongoose';
+
+const parseRatingFilter = (value: string | null) => {
+  if (!value || value === 'all') {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 5) {
+    return undefined;
+  }
+
+  return parsed;
+};
+
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const isValidRating = (rating: number) => rating >= 1 && rating <= 5 && Number.isInteger(rating);
 
@@ -25,28 +41,100 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get('orderId');
 
-    if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
-      return Response.json({ error: 'Valid orderId is required' }, { status: 400 });
+    // If orderId is provided, return a single review for that order.
+    if (orderId) {
+      if (!mongoose.Types.ObjectId.isValid(orderId)) {
+        return Response.json({ error: 'Valid orderId is required' }, { status: 400 });
+      }
+
+      const order = await Order.findById(orderId).lean();
+      if (!order) {
+        return Response.json({ error: 'Order not found' }, { status: 404 });
+      }
+
+      const isOrderOwner = order.userId?.toString() === user._id.toString();
+      const isAdmin = user.role === 'admin';
+
+      if (!isOrderOwner && !isAdmin) {
+        return Response.json({ error: 'Unauthorized' }, { status: 403 });
+      }
+
+      const review = await Review.findOne({ orderId }).lean();
+      return Response.json({ review });
     }
 
-    const order = await Order.findById(orderId).lean();
-    if (!order) {
-      return Response.json({ error: 'Order not found' }, { status: 404 });
+    // Otherwise, return all reviews submitted by the authenticated user.
+    const search = searchParams.get('search')?.trim() || '';
+    const ratingFilter = parseRatingFilter(searchParams.get('rating'));
+
+    if (ratingFilter === undefined) {
+      return Response.json(
+        { error: 'Rating must be a whole number between 1 and 5' },
+        { status: 400 }
+      );
     }
 
-    const isOrderOwner = order.userId?.toString() === user._id.toString();
-    const isAdmin = user.role === 'admin';
+    const pipeline: mongoose.PipelineStage[] = [
+      {
+        $match: {
+          userId: user._id,
+          ...(ratingFilter ? { rating: ratingFilter } : {}),
+        },
+      },
+      {
+        $lookup: {
+          from: 'restaurants',
+          localField: 'restaurantId',
+          foreignField: '_id',
+          as: 'restaurant',
+        },
+      },
+      {
+        $unwind: '$restaurant',
+      },
+    ];
 
-    if (!isOrderOwner && !isAdmin) {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    if (search) {
+      pipeline.push({
+        $match: {
+          'restaurant.name': {
+            $regex: escapeRegex(search),
+            $options: 'i',
+          },
+        },
+      });
     }
 
-    const review = await Review.findOne({ orderId }).lean();
+    pipeline.push(
+      {
+        $sort: { createdAt: -1 },
+      },
+      {
+        $project: {
+          rating: 1,
+          reviewText: 1,
+          createdAt: 1,
+          restaurant: {
+            _id: '$restaurant._id',
+            name: '$restaurant.name',
+          },
+        },
+      }
+    );
 
-    return Response.json({ review });
+    const reviews = await Review.aggregate(pipeline);
+
+    return Response.json({
+      reviews,
+      meta: {
+        totalCount: reviews.length,
+        search,
+        rating: ratingFilter,
+      },
+    });
   } catch (error) {
-    console.error('Error fetching review:', error);
-    return Response.json({ error: 'Failed to fetch review' }, { status: 500 });
+    console.error('Error fetching reviews:', error);
+    return Response.json({ error: 'Failed to fetch reviews' }, { status: 500 });
   }
 }
 
