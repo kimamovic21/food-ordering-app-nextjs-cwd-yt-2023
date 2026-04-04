@@ -1158,3 +1158,18 @@ Add reviews/ratings, UI & ordering validations
 
 
 Add rating filters and improve reviews API/UI
+
+
+
+Add Resend email receipts and UI
+
+-open link: https://resend.com/emails
+-open link: https://www.npmjs.com/package/resend
+-type command: npm i resend
+-in .env file create variables RESEND_API_KEY and SENDER_EMAIL
+-open link: https://react.email
+-open link: https://www.npmjs.com/package/react-email
+-type command: npm i react-email
+-open link: https://www.npmjs.com/package/@react-email/components
+-type command: npm i @react-email/components
+-add logic for Resend from documentation

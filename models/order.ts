@@ -85,6 +85,7 @@ const OrderSchema = new Schema(
     },
     courierId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     stripeSessionId: { type: String },
+    receiptEmailSentAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
   },
   { timestamps: true }

@@ -1,5 +1,7 @@
 import { headers } from 'next/headers';
 import { Order } from '@/models/order';
+import { MenuItem } from '@/models/menuItem';
+import { sendPurchaseReceiptEmail } from '@/libs/sendPurchaseReceiptEmail';
 import mongoose from 'mongoose';
 import Stripe from 'stripe';
 
@@ -43,6 +45,7 @@ export async function POST(req: Request) {
       await mongoose.connect(process.env.MONGODB_URL as string);
       const order = await Order.findById(orderId);
       if (order) {
+        const wasPaid = Boolean((order as any).orderPaid ?? (order as any).paid);
         (order as any).orderPaid = true;
         (order as any).paid = true; // keep legacy flag in sync
         if (!(order as any).orderStatus) {
@@ -50,6 +53,43 @@ export async function POST(req: Request) {
         }
         order.stripeSessionId = session.id;
         await order.save();
+
+        const shouldSendReceipt = !wasPaid || !(order as any).receiptEmailSentAt;
+
+        if (shouldSendReceipt) {
+          const productIds = ((order as any).cartProducts || [])
+            .map((item: any) => String(item.productId))
+            .filter((id: string) => mongoose.Types.ObjectId.isValid(id))
+            .map((id: string) => new mongoose.Types.ObjectId(id));
+
+          const menuItems = await MenuItem.find({ _id: { $in: productIds } })
+            .select('_id image')
+            .lean();
+
+          const imageMap = new Map(menuItems.map((item) => [item._id.toString(), item.image]));
+          const items = ((order as any).cartProducts || []).map((item: any) => ({
+            name: item.name,
+            size: item.size,
+            quantity: Number(item.quantity) || 1,
+            price: Number(item.price) || 0,
+            image: imageMap.get(String(item.productId)) || null,
+          }));
+
+          const emailResult = await sendPurchaseReceiptEmail({
+            orderId: order._id.toString(),
+            customerEmail: order.email,
+            purchasedOn: order.updatedAt,
+            items,
+            taxAmount: Number((order as any).taxAmount) || 0,
+            deliveryFee: Number((order as any).deliveryFee) || 0,
+            total: Number((order as any).total) || 0,
+          });
+
+          if (emailResult.sent) {
+            (order as any).receiptEmailSentAt = new Date();
+            await order.save();
+          }
+        }
       }
     }
   }

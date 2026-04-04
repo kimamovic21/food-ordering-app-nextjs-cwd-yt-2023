@@ -1,214 +1,161 @@
-# Fullstack Food Ordering App with Next.js
+# Fullstack Food Ordering App (Next.js)
 
-**Production:** [https://foacwd.vercel.app/]
+Production: [https://foacwd.vercel.app/](https://foacwd.vercel.app/)
 
-## Project Description
+## Overview
 
-A comprehensive full-stack food ordering platform built with Next.js 16 that delivers complete end-to-end flows: customer authentication, profile management with avatars, menu browsing with customization options, secure Stripe payments, real-time order tracking, and live courier location visualization on interactive maps.
+This is a full-stack food ordering platform built with Next.js App Router and TypeScript.
 
-**For customers:** Browse menus, customize items, manage carts, place orders, and track deliveries in real-time with live courier maps.
+It includes:
 
-**For staff and admins:** Full operational control with role-based permissions—manage menu items and categories with Cloudinary image storage, handle user accounts and courier onboarding, assign deliveries, track courier locations on Leaflet maps in real-time, monitor orders and analytics, and generate exports. Features include loyalty point accumulation, intelligent delivery fee calculations, and comprehensive admin dashboards for orders, couriers, users, and inventory maintenance.
+- customer authentication, profile management, cart, checkout, and order history
+- restaurant browsing with search/filter/sort/pagination and shareable URLs
+- favorites for meals and restaurants
+- loyalty rewards with delivery fee discounts
+- ratings and review flows
+- admin dashboard for users, menu items, categories, restaurants, couriers, orders, and statistics
+- courier workflow with assignment, availability toggle, and live location sharing on maps
+- Stripe checkout/webhook flow
+- Cloudinary media uploads
+- email purchase receipts with Resend + React Email
 
-### Recent Updates (January 2026)
+## Key Features
 
-#### Courier Location Tracking
+### Customer Features
 
-- **Real-time Location Updates**: Couriers can now share their live location while making deliveries
-- **Map Visualization**: Interactive maps powered by Leaflet showing both courier (red marker) and customer (blue marker) locations
-- **Auto-Polling**: Map automatically fetches courier location every 60 seconds for minimal database load
-- **Immediate Refresh**: Location updates appear instantly on the map after sharing
-- **Distance Validation**: Prevents unrealistic location jumps (max 50km between updates) to catch bad GPS data
-- **Permission-Based**: Respects browser geolocation permissions with graceful fallbacks
-- **Location History**: Tracks last update timestamp for verification
+- Authentication with credentials and Google OAuth
+- Profile editing (name, phone, address, avatar)
+- Menu and restaurant discovery with filtering/sorting/search
+- Cart, checkout, and order tracking
+- Favorites for menu items and restaurants
+- Loyalty tiers and automatic delivery-fee discounts
+- Personal review management and restaurant review pages
+- Social sharing actions for restaurant/menu pages
 
-## 🚀 Technologies Used
+### Admin and Staff Features
 
-### **Frontend**
+- Role-based access (user, admin, courier)
+- Super-admin protected management actions
+- CRUD for categories, menu items, restaurants, and users
+- Courier management and order assignment
+- Order lifecycle management and dashboards/statistics
+- Payment link endpoint and Stripe webhook handling
 
-- **Next.js 16** - React framework with App Router
-- **React 19** - UI library
-- **TypeScript 5** - Type-safe development
-- **Tailwind CSS 4** - Utility-first CSS framework
-- **shadcn/ui** - Component system built on Radix
-  [Docs](https://ui.shadcn.com/)
-  [Studio](https://shadcnstudio.com/)
-  [Blocks](https://www.shadcnblocks.com/)
-- **Radix UI** - Headless UI components (Alert Dialog, Avatar, Dropdown Menu, Label, Select, Slot)
-- **Lucide React** - Icon library
-- **React Icons** - Additional icon library
-- **dnd-kit** - Drag-and-drop utilities for sortable images
-- **React Hook Form 7** - Form management
-- **Zod 4** - Schema validation
-- **@hookform/resolvers 5** - Form validation resolver
-- **Next Themes** - Dark mode support
-- **Sonner 2** - Toast notifications
-- **Recharts 2** - Data visualization and charts
+### Courier Features
 
-### **Backend & Database**
+- My-deliveries and my-delivery workflow pages
+- Availability on/off toggle
+- Real-time courier location sharing
+- Leaflet map tracking with polling + manual refresh
 
-- **MongoDB 6** - Database client
-- **Mongoose 9.0.0** - MongoDB ODM
-- **NextAuth.js 4** - Authentication
-- **@auth/mongodb-adapter 3** - NextAuth MongoDB adapter
-- **Bcrypt 6** - Password hashing
+## Packages Used (with Official Websites)
 
-### **Payment Processing**
+This project uses many dependencies; below are the main packages actively used in app features.
 
-- **Stripe 20** - Payment gateway
-- **@stripe/react-stripe-js 5** - React components for Stripe
+### Core
 
-### **Image Storage**
+- Next.js: [https://nextjs.org/](https://nextjs.org/)
+- React: [https://react.dev/](https://react.dev/)
+- TypeScript: [https://www.typescriptlang.org/](https://www.typescriptlang.org/)
 
-- **Cloudinary 2** - Cloud image storage and management
+### UI and UX
 
-### **Maps & Location**
+- Tailwind CSS: [https://tailwindcss.com/](https://tailwindcss.com/)
+- Radix UI: [https://www.radix-ui.com/](https://www.radix-ui.com/)
+- shadcn/ui: [https://ui.shadcn.com/](https://ui.shadcn.com/)
+- Lucide React: [https://lucide.dev/](https://lucide.dev/)
+- React Icons: [https://react-icons.github.io/react-icons/](https://react-icons.github.io/react-icons/)
+- Sonner: [https://sonner.emilkowal.ski/](https://sonner.emilkowal.ski/)
+- Recharts: [https://recharts.org/](https://recharts.org/)
+- Embla Carousel: [https://www.embla-carousel.com/](https://www.embla-carousel.com/)
+- dnd-kit: [https://dndkit.com/](https://dndkit.com/)
 
-- **Leaflet** - Interactive maps
-- **React Leaflet 5** - React components for Leaflet
-- **@types/leaflet** - TypeScript types for Leaflet
-- **leaflet-defaulticon-compatibility** - Icon compatibility
+### Forms and Validation
 
-## 👨‍💼 Courier Features
+- React Hook Form: [https://react-hook-form.com/](https://react-hook-form.com/)
+- Zod: [https://zod.dev/](https://zod.dev/)
+- Hookform Resolvers: [https://github.com/react-hook-form/resolvers](https://github.com/react-hook-form/resolvers)
 
-### Location Tracking System
+### Auth and Database
 
-- **Share Location**: Couriers can share their real-time GPS location while on delivery
-- **Live Map Display**: Dual-marker map showing courier position (red) and delivery destination (blue)
-- **Route Visualization**: Visual route line connecting courier to customer on the map
-- **60-Second Auto-Polling**: Automatically fetches location updates every minute without overwhelming the database
-- **Immediate Updates**: Location appears on map instantly after sharing, not after the 60-second poll
-- **Location Validation**:
-  - Prevents location spoofing by validating coordinate ranges
-  - Rejects jumps > 50km between consecutive updates
-  - Tracks update timestamps for verification
+- NextAuth.js: [https://next-auth.js.org/](https://next-auth.js.org/)
+- Auth.js MongoDB Adapter: [https://authjs.dev/getting-started/adapters/mongodb](https://authjs.dev/getting-started/adapters/mongodb)
+- MongoDB: [https://www.mongodb.com/](https://www.mongodb.com/)
+- Mongoose: [https://mongoosejs.com/](https://mongoosejs.com/)
+- bcrypt: [https://www.npmjs.com/package/bcrypt](https://www.npmjs.com/package/bcrypt)
 
-### API Endpoints for Couriers
+### Payments
 
-```api
-POST /api/courier/location
-- Share or update courier's current location
-- Body: { latitude: number, longitude: number }
-- Returns: Updated location with timestamp
+- Stripe: [https://stripe.com/](https://stripe.com/)
+- Stripe React SDK: [https://docs.stripe.com/sdks/stripejs-react](https://docs.stripe.com/sdks/stripejs-react)
+- Stripe CLI: [https://docs.stripe.com/stripe-cli](https://docs.stripe.com/stripe-cli)
 
-GET /api/courier/location
-- Fetch courier's current location
-- Returns: { location: { latitude, longitude, lastLocationUpdate } }
-```
+### Images and Maps
 
-### Database Schema
+- Cloudinary: [https://cloudinary.com/](https://cloudinary.com/)
+- Leaflet: [https://leafletjs.com/](https://leafletjs.com/)
+- React Leaflet: [https://react-leaflet.js.org/](https://react-leaflet.js.org/)
 
-Couriers have the following location-related fields:
+### Email and Sharing (recent additions)
 
-```typescript
-latitude: Number | null           // Current latitude (null if not shared)
-longitude: Number | null          // Current longitude (null if not shared)
-lastLocationUpdate: Date | null   // Timestamp of last location update
-```
+- Resend: [https://resend.com](https://resend.com)
+- React Email: [https://react.email/](https://react.email/)
+- @react-email/components: [https://react.email/docs/components](https://react.email/docs/components)
+- @react-email/render: [https://react.email/docs/utilities/render](https://react.email/docs/utilities/render)
+- react-share: [https://www.npmjs.com/package/react-share](https://www.npmjs.com/package/react-share)
 
-## 🗺️ Maps & Location
+For the exact complete dependency list and versions, check package.json.
 
-### **Development Tools**
+## Environment Variables
 
-- **ESLint 9** - Code linting
-- **PostCSS** - CSS processing
-- **tw-animate-css** - Tailwind animations
+Copy example.env into .env and set all values.
 
-## 🔗 Third-Party Services Setup
+- NODE_ENV: app environment (development/production)
+- MONGODB_URL: MongoDB connection URI
+- NEXTAUTH_URL: base URL of the app for auth callbacks
+- NEXTAUTH_SECRET: NextAuth session/JWT secret
+- GOOGLE_CLIENT_ID: Google OAuth client ID
+- GOOGLE_CLIENT_SECRET: Google OAuth client secret
+- CLOUDINARY_CLOUD_NAME: Cloudinary cloud name
+- CLOUDINARY_API_KEY: Cloudinary API key
+- CLOUDINARY_API_SECRET: Cloudinary API secret
+- NEXT_PUBLIC_APP_URL: public app URL used by client-side flows
+- STRIPE_PK: Stripe publishable key (client)
+- STRIPE_SK: Stripe secret key (server)
+- STRIPE_WEBHOOK_SECRET: Stripe webhook signing secret
+- NEXT_PUBLIC_SUPER_ADMIN_EMAIL: super admin email used for elevated UI/actions
+- RESEND_API_KEY: Resend API key for transactional emails
+- SENDER_EMAIL: sender identity for outgoing purchase receipt emails
 
-### **Google Cloud Console**
+Note: some flows also support SUPER_ADMIN_EMAIL on server side, while UI checks NEXT_PUBLIC_SUPER_ADMIN_EMAIL.
 
-Create OAuth credentials for Google authentication:
+## Third-Party Setup
 
-- [https://console.cloud.google.com/](https://console.cloud.google.com/)
-- Set up OAuth 2.0 credentials for Google Sign-In
+- Google Cloud Console (OAuth): [https://console.cloud.google.com/](https://console.cloud.google.com/)
+- MongoDB Atlas: [https://www.mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
+- Cloudinary: [https://cloudinary.com/](https://cloudinary.com/)
+- Stripe: [https://stripe.com/](https://stripe.com/)
+- Resend: [https://resend.com](https://resend.com)
+- React Email docs: [https://react.email/](https://react.email/)
 
-### **Cloudinary**
-
-Set up cloud storage for menu item images:
-
-- [https://cloudinary.com/](https://cloudinary.com/)
-- All uploaded images are stored and managed here
-
-### **MongoDB Atlas**
-
-Your database is hosted on MongoDB Atlas:
-
-- [https://www.mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
-- Create a cluster and get your connection string
-
-### **Stripe**
-
-Track all payments and manage subscriptions:
-
-- [https://stripe.com/](https://stripe.com/)
-- Set up your Stripe account and get API keys
-- Install Stripe CLI: [https://docs.stripe.com/stripe-cli](https://docs.stripe.com/stripe-cli)
-
-### **Stripe Webhook Testing**
-
-To test Stripe webhooks locally, install the Stripe CLI, then from your working directory (for example `cd Desktop`) run:
+## Available Scripts
 
 ```bash
-stripe listen --forward-to localhost:3000/api/webhook
+npm run dev                # Start dev server
+npm run build              # Build for production
+npm run start              # Run production server
+npm run lint               # Run ESLint
+npm run commitlint         # Lint commit message
+npm run favorites:backfill # Backfill favorites fields in database
+npm run stripe:listen      # Start Stripe webhook forwarding
+npm run stripe:trigger     # Trigger Stripe test event
 ```
 
-Or use the npm script:
+## Local Development
 
 ```bash
-npm run stripe:listen
-```
-
-## ⚙️ Environment Variables
-
-Create a `.env` file in the root directory with the following variables (see `example.env` for reference):
-
-- MongoDB connection string
-- NextAuth configuration
-- Google OAuth credentials
-- Cloudinary credentials
-- Stripe API keys
-
-## 📋 Available Scripts
-
-```bash
-npm run dev              # Start development server
-npm run build            # Build for production
-npm run start            # Start production server
-npm run lint             # Run ESLint
-npm run stripe:listen    # Listen to Stripe webhooks
-npm run stripe:trigger   # Trigger Stripe test events
-```
-
----
-
-## Getting Started
-
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-First, run the development server:
-
-```bash
+npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Then open [http://localhost:3000](http://localhost:3000).

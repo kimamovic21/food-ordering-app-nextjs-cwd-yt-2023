@@ -1,8 +1,9 @@
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
-import mongoose from 'mongoose';
+import { MenuItem } from '@/models/menuItem';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
+import mongoose from 'mongoose';
 
 const normalizeOrder = (order: any) => ({
   ...order,
@@ -21,12 +22,47 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
+  const sessionId = url.searchParams.get('sessionId');
 
   // Find the current user
   const user = await User.findOne({ email: session.user.email });
 
   if (!user) {
     return Response.json({ error: 'User not found' }, { status: 404 });
+  }
+
+  if (sessionId) {
+    const order = await Order.findOne({ userId: user._id, stripeSessionId: sessionId }).lean();
+
+    if (!order) {
+      return Response.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    const productIds = (order.cartProducts || [])
+      .map((item: any) => String(item.productId))
+      .filter((productId: string) => mongoose.Types.ObjectId.isValid(productId))
+      .map((productId: string) => new mongoose.Types.ObjectId(productId));
+
+    const menuItems = await MenuItem.find({ _id: { $in: productIds } }).select('_id image').lean();
+    const imageMap = new Map(menuItems.map((item) => [item._id.toString(), item.image]));
+
+    const receiptItems = (order.cartProducts || []).map((item: any) => {
+      const quantity = Number(item.quantity) || 1;
+      const price = Number(item.price) || 0;
+
+      return {
+        ...item,
+        quantity,
+        price,
+        image: imageMap.get(String(item.productId)) || null,
+        lineTotal: price * quantity,
+      };
+    });
+
+    return Response.json({
+      order: normalizeOrder(order),
+      receiptItems,
+    });
   }
 
   // If fetching specific order by id
