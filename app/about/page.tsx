@@ -21,8 +21,8 @@ const AboutPage = () => {
           <header className='space-y-3'>
             <h1 className='text-4xl font-bold tracking-tight text-foreground'>About Pizza Hub</h1>
             <p className='text-muted-foreground'>
-              We&apos;re a neighborhood-first pizzeria crafting classic favorites and seasonal specials
-              with honest ingredients, slow-fermented dough, and a whole lot of care.
+              We&apos;re a neighborhood-first pizzeria crafting classic favorites and seasonal
+              specials with honest ingredients, slow-fermented dough, and a whole lot of care.
             </p>
           </header>
 
@@ -30,8 +30,8 @@ const AboutPage = () => {
             <h2 className='text-2xl font-semibold text-foreground'>Our Story</h2>
             <p className='text-foreground'>
               Pizza Hub started with a simple idea: great pizza brings people together. From our
-              first bake to our busiest weekends, we&apos;ve focused on doing the simple things well—
-              thoughtfully sourced ingredients, time-tested methods, and warm hospitality.
+              first bake to our busiest weekends, we&apos;ve focused on doing the simple things
+              well— thoughtfully sourced ingredients, time-tested methods, and warm hospitality.
             </p>
             <p className='text-foreground'>
               Our dough rests for at least 48 hours, developing flavor and texture naturally. Sauces

@@ -77,10 +77,21 @@ export default function PurchaseReceiptEmail({
     <Html>
       <Head />
       <Preview>Your purchase receipt for order {orderId}</Preview>
-      <Body style={{ margin: 0, padding: 0, backgroundColor: '#f7f7f8', fontFamily: 'Arial, sans-serif' }}>
-        <Container style={{ width: '100%', maxWidth: '680px', margin: '0 auto', padding: '24px 16px' }}>
+      <Body
+        style={{
+          margin: 0,
+          padding: 0,
+          backgroundColor: '#f7f7f8',
+          fontFamily: 'Arial, sans-serif',
+        }}
+      >
+        <Container
+          style={{ width: '100%', maxWidth: '680px', margin: '0 auto', padding: '24px 16px' }}
+        >
           <Section style={{ ...receiptCardStyle, padding: '28px' }}>
-            <Heading style={{ margin: '0 0 18px', fontSize: '34px', lineHeight: '40px', color: '#111827' }}>
+            <Heading
+              style={{ margin: '0 0 18px', fontSize: '34px', lineHeight: '40px', color: '#111827' }}
+            >
               Purchase Receipt
             </Heading>
 
@@ -102,7 +113,10 @@ export default function PurchaseReceiptEmail({
                 const lineTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
 
                 return (
-                  <Section key={`${item.name}-${index}`} style={{ paddingBottom: index === items.length - 1 ? 0 : 16 }}>
+                  <Section
+                    key={`${item.name}-${index}`}
+                    style={{ paddingBottom: index === items.length - 1 ? 0 : 16 }}
+                  >
                     <Row>
                       <Column style={{ width: '72px', verticalAlign: 'top' }}>
                         {item.image ? (
@@ -111,7 +125,11 @@ export default function PurchaseReceiptEmail({
                             alt={item.name}
                             width='56'
                             height='56'
-                            style={{ borderRadius: '12px', objectFit: 'cover', border: '1px solid #e5e7eb' }}
+                            style={{
+                              borderRadius: '12px',
+                              objectFit: 'cover',
+                              border: '1px solid #e5e7eb',
+                            }}
                           />
                         ) : (
                           <Section
@@ -127,22 +145,47 @@ export default function PurchaseReceiptEmail({
                       </Column>
 
                       <Column style={{ verticalAlign: 'top' }}>
-                        <Text style={{ margin: '0 0 4px', fontSize: '16px', lineHeight: '24px', fontWeight: 700, color: '#111827' }}>
+                        <Text
+                          style={{
+                            margin: '0 0 4px',
+                            fontSize: '16px',
+                            lineHeight: '24px',
+                            fontWeight: 700,
+                            color: '#111827',
+                          }}
+                        >
                           {item.name}
                         </Text>
-                        <Text style={{ margin: 0, fontSize: '13px', lineHeight: '20px', color: '#6b7280' }}>
+                        <Text
+                          style={{
+                            margin: 0,
+                            fontSize: '13px',
+                            lineHeight: '20px',
+                            color: '#6b7280',
+                          }}
+                        >
                           {item.size} x {item.quantity}
                         </Text>
                       </Column>
 
                       <Column align='right' style={{ verticalAlign: 'top' }}>
-                        <Text style={{ margin: 0, fontSize: '16px', lineHeight: '24px', fontWeight: 700, color: '#111827' }}>
+                        <Text
+                          style={{
+                            margin: 0,
+                            fontSize: '16px',
+                            lineHeight: '24px',
+                            fontWeight: 700,
+                            color: '#111827',
+                          }}
+                        >
                           {formatMoney(lineTotal)}
                         </Text>
                       </Column>
                     </Row>
 
-                    {index < items.length - 1 ? <Hr style={{ borderColor: '#ececec', margin: '16px 0 0' }} /> : null}
+                    {index < items.length - 1 ? (
+                      <Hr style={{ borderColor: '#ececec', margin: '16px 0 0' }} />
+                    ) : null}
                   </Section>
                 );
               })}
@@ -150,41 +193,106 @@ export default function PurchaseReceiptEmail({
               <Section style={{ marginTop: '16px' }}>
                 <Row>
                   <Column style={{ width: '70%' }}>
-                    <Text style={{ margin: 0, fontSize: '14px', lineHeight: '22px', color: '#4b5563', textAlign: 'left' }}>Items:</Text>
+                    <Text
+                      style={{
+                        margin: 0,
+                        fontSize: '14px',
+                        lineHeight: '22px',
+                        color: '#4b5563',
+                        textAlign: 'left',
+                      }}
+                    >
+                      Items:
+                    </Text>
                   </Column>
                   <Column align='right' style={{ width: '30%' }}>
-                    <Text style={{ margin: 0, fontSize: '14px', lineHeight: '22px', color: '#111827' }}>{formatMoney(itemsTotal)}</Text>
+                    <Text
+                      style={{ margin: 0, fontSize: '14px', lineHeight: '22px', color: '#111827' }}
+                    >
+                      {formatMoney(itemsTotal)}
+                    </Text>
                   </Column>
                 </Row>
                 <Row>
                   <Column style={{ width: '70%' }}>
-                    <Text style={{ margin: 0, fontSize: '14px', lineHeight: '22px', color: '#4b5563', textAlign: 'left' }}>Tax:</Text>
+                    <Text
+                      style={{
+                        margin: 0,
+                        fontSize: '14px',
+                        lineHeight: '22px',
+                        color: '#4b5563',
+                        textAlign: 'left',
+                      }}
+                    >
+                      Tax:
+                    </Text>
                   </Column>
                   <Column align='right' style={{ width: '30%' }}>
-                    <Text style={{ margin: 0, fontSize: '14px', lineHeight: '22px', color: '#111827' }}>{formatMoney(taxAmount)}</Text>
+                    <Text
+                      style={{ margin: 0, fontSize: '14px', lineHeight: '22px', color: '#111827' }}
+                    >
+                      {formatMoney(taxAmount)}
+                    </Text>
                   </Column>
                 </Row>
                 <Row>
                   <Column style={{ width: '70%' }}>
-                    <Text style={{ margin: 0, fontSize: '14px', lineHeight: '22px', color: '#4b5563', textAlign: 'left' }}>Delivery Fee:</Text>
+                    <Text
+                      style={{
+                        margin: 0,
+                        fontSize: '14px',
+                        lineHeight: '22px',
+                        color: '#4b5563',
+                        textAlign: 'left',
+                      }}
+                    >
+                      Delivery Fee:
+                    </Text>
                   </Column>
                   <Column align='right' style={{ width: '30%' }}>
-                    <Text style={{ margin: 0, fontSize: '14px', lineHeight: '22px', color: '#111827' }}>{formatMoney(deliveryFee)}</Text>
+                    <Text
+                      style={{ margin: 0, fontSize: '14px', lineHeight: '22px', color: '#111827' }}
+                    >
+                      {formatMoney(deliveryFee)}
+                    </Text>
                   </Column>
                 </Row>
                 <Hr style={{ borderColor: '#e5e7eb', margin: '8px 0' }} />
                 <Row>
                   <Column style={{ width: '70%' }}>
-                    <Text style={{ margin: 0, fontSize: '16px', lineHeight: '24px', fontWeight: 700, color: '#111827', textAlign: 'left' }}>Total:</Text>
+                    <Text
+                      style={{
+                        margin: 0,
+                        fontSize: '16px',
+                        lineHeight: '24px',
+                        fontWeight: 700,
+                        color: '#111827',
+                        textAlign: 'left',
+                      }}
+                    >
+                      Total:
+                    </Text>
                   </Column>
                   <Column align='right' style={{ width: '30%' }}>
-                    <Text style={{ margin: 0, fontSize: '16px', lineHeight: '24px', fontWeight: 700, color: '#111827' }}>{formatMoney(total)}</Text>
+                    <Text
+                      style={{
+                        margin: 0,
+                        fontSize: '16px',
+                        lineHeight: '24px',
+                        fontWeight: 700,
+                        color: '#111827',
+                      }}
+                    >
+                      {formatMoney(total)}
+                    </Text>
                   </Column>
                 </Row>
               </Section>
             </Section>
 
-            <Text style={{ margin: '16px 0 0', fontSize: '12px', lineHeight: '18px', color: '#6b7280' }}>
+            <Text
+              style={{ margin: '16px 0 0', fontSize: '12px', lineHeight: '18px', color: '#6b7280' }}
+            >
               Customer email: {customerEmail}
             </Text>
           </Section>

@@ -1173,3 +1173,9 @@ Add Resend email receipts and UI
 -open link: https://www.npmjs.com/package/@react-email/components
 -type command: npm i @react-email/components
 -add logic for Resend from documentation
+
+
+Add app page layouts and admin client layout
+
+-open link: https://nextjs.org/docs/app/getting-started/proxy
+-add metadata to tsx components

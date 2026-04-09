@@ -4,8 +4,7 @@ const features = [
   {
     icon: <UtensilsCrossed className='w-8 h-8 text-primary' />,
     title: 'Delicious Local Food',
-    description:
-      'Meals prepared with fresh and high-quality ingredients.',
+    description: 'Meals prepared with fresh and high-quality ingredients.',
   },
   {
     icon: <Smartphone className='w-8 h-8 text-primary' />,

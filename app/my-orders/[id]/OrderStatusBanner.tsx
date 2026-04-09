@@ -72,7 +72,8 @@ const statusContent: Record<
   },
   transportation: {
     title: 'Your order is on the way',
-    description: 'Our courier picked up your order and is heading to you. Expect a call from the courier soon.',
+    description:
+      'Our courier picked up your order and is heading to you. Expect a call from the courier soon.',
     subtext: 'Keep this page open to track live progress on the map below.',
     icon: Truck,
     tone: 'blue',

@@ -150,7 +150,10 @@ const CheckoutContent = () => {
           <div className='mt-6 rounded-2xl border border-gray-200 p-4 dark:border-neutral-700 dark:bg-neutral-900'>
             <div className='space-y-4'>
               {(receipt.receiptItems || []).map((item, index) => (
-                <div key={`${item.name}-${index}`} className='flex items-start justify-between gap-4'>
+                <div
+                  key={`${item.name}-${index}`}
+                  className='flex items-start justify-between gap-4'
+                >
                   <div className='flex items-start gap-3'>
                     {item.image ? (
                       // eslint-disable-next-line @next/next/no-img-element

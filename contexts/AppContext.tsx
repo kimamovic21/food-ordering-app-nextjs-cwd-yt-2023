@@ -8,11 +8,7 @@ type AppContextProps = {
 };
 
 const AppContext = ({ children }: AppContextProps) => {
-  return (
-    <SessionProvider>
-      {children}
-    </SessionProvider>
-  );
+  return <SessionProvider>{children}</SessionProvider>;
 };
 
 export default AppContext;
