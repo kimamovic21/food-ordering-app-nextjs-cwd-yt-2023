@@ -1175,7 +1175,16 @@ Add Resend email receipts and UI
 -add logic for Resend from documentation
 
 
+
 Add app page layouts and admin client layout
 
 -open link: https://nextjs.org/docs/app/getting-started/proxy
 -add metadata to tsx components
+
+
+
+Add project conventions and Gemini docs
+
+-create GEMINI.md file
+-create folders .windsurf and rules
+-in folder rules create file project-conventions.md
