@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { Order } from '@/models/order';
 import { MenuItem } from '@/models/menuItem';
-import { sendPurchaseReceiptEmail } from '@/libs/sendPurchaseReceiptEmail';
+import { sendPurchaseReceiptEmail } from './sendPurchaseReceiptEmail';
 import mongoose from 'mongoose';
 import Stripe from 'stripe';
 

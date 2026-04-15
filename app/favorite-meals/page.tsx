@@ -25,6 +25,7 @@ const FavoriteMealsPage = () => {
   const { status } = useSession();
   const [items, setItems] = useState<FavoriteMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'loading') {
@@ -40,8 +41,18 @@ const FavoriteMealsPage = () => {
     const fetchFavorites = async () => {
       try {
         setLoading(true);
+        setErrorMessage(null);
         const response = await fetch('/api/favorites/menu-items', { cache: 'no-store' });
-        const data = await response.json();
+        const raw = await response.text();
+        let data: { items?: FavoriteMenuItem[]; error?: string } = {};
+
+        if (raw) {
+          try {
+            data = JSON.parse(raw) as { items?: FavoriteMenuItem[]; error?: string };
+          } catch {
+            throw new Error('Favorites API returned invalid JSON');
+          }
+        }
 
         if (!response.ok) {
           throw new Error(data?.error || 'Failed to fetch favorite meals');
@@ -51,6 +62,7 @@ const FavoriteMealsPage = () => {
       } catch (error) {
         console.error('Failed to load favorite meals:', error);
         setItems([]);
+        setErrorMessage(error instanceof Error ? error.message : 'Failed to load favorite meals');
       } finally {
         setLoading(false);
       }
@@ -88,7 +100,11 @@ const FavoriteMealsPage = () => {
         </p>
       </div>
 
-      {items.length === 0 ? (
+      {errorMessage ? (
+        <Card>
+          <CardContent className='py-10 text-center text-red-500'>{errorMessage}</CardContent>
+        </Card>
+      ) : items.length === 0 ? (
         <Card>
           <CardContent className='py-10 text-center text-muted-foreground'>
             You have no favorite meals yet.

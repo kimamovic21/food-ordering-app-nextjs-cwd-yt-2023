@@ -57,7 +57,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
   const [restaurant, setRestaurant] = useState<RestaurantType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { addToCart, getCartRestaurantId } = useCart();
-  const { data: profileData } = useProfile();
+  const { data: profileData, loading: profileLoading } = useProfile();
   const { data: favorites, setMenuItemFavorite, setRestaurantFavorite } = useFavorites();
 
   const imageUrl = item.image || Pizza.src;
@@ -89,6 +89,15 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
     return availableSizes[0]?.value ?? null;
   };
 
+  const normalizeId = (value: unknown): string => {
+    if (value == null) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && '_id' in (value as Record<string, unknown>)) {
+      return String((value as Record<string, unknown>)._id || '');
+    }
+    return String(value);
+  };
+
   useEffect(() => {
     if (isOpen && item.restaurantId) {
       const fetchRestaurant = async () => {
@@ -111,9 +120,20 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
   }, [isOpen, item.restaurantId]);
 
   const handleAddToCart = () => {
-    const cartRestaurantId = getCartRestaurantId();
+    if (profileLoading) {
+      return;
+    }
 
-    if (profileData?.restaurantId && profileData.restaurantId === item.restaurantId) {
+    const cartRestaurantId = getCartRestaurantId();
+    const currentUserId = normalizeId(profileData?._id);
+    const currentUserRestaurantId = normalizeId(profileData?.restaurantId);
+    const itemAdminId = normalizeId((item as unknown as { adminId?: string }).adminId);
+    const itemRestaurantId = normalizeId(item.restaurantId);
+
+    if (
+      (currentUserRestaurantId && currentUserRestaurantId === itemRestaurantId) ||
+      (currentUserId && itemAdminId && currentUserId === itemAdminId)
+    ) {
       toast.error('You cannot order from your own restaurant', {
         style: {
           background: '#dc2626',
@@ -123,7 +143,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
       return;
     }
 
-    if (cartRestaurantId && cartRestaurantId !== item.restaurantId) {
+    if (cartRestaurantId && cartRestaurantId !== itemRestaurantId) {
       toast.error('Your cart contains items from another restaurant', {
         description: 'Clear your cart to add items from a different restaurant',
         duration: 4000,
@@ -143,7 +163,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
       image: item.image,
       size: sizeForCart,
       price,
-      restaurantId: item.restaurantId,
+      restaurantId: itemRestaurantId,
     });
 
     toast.success(

@@ -37,7 +37,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userSelectedSize] = useState<Size>('small');
   const { addToCart, getCartRestaurantId } = useCart();
-  const { data: profileData } = useProfile();
+  const { data: profileData, loading: profileLoading } = useProfile();
   const { data: favoritesData, setMenuItemFavorite } = useFavorites();
 
   const displayItem = item || {
@@ -84,10 +84,30 @@ const MenuItem = ({ item }: MenuItemProps) => {
     return availableSizes[0]?.value ?? null;
   };
 
-  const handleAddToCart = () => {
-    const cartRestaurantId = getCartRestaurantId();
+  const normalizeId = (value: unknown): string => {
+    if (value == null) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && '_id' in (value as Record<string, unknown>)) {
+      return String((value as Record<string, unknown>)._id || '');
+    }
+    return String(value);
+  };
 
-    if (profileData?.restaurantId && profileData.restaurantId === displayItem.restaurantId) {
+  const handleAddToCart = () => {
+    if (profileLoading) {
+      return;
+    }
+
+    const cartRestaurantId = getCartRestaurantId();
+    const currentUserId = normalizeId(profileData?._id);
+    const currentUserRestaurantId = normalizeId(profileData?.restaurantId);
+    const itemAdminId = normalizeId((displayItem as unknown as { adminId?: string }).adminId);
+    const itemRestaurantId = normalizeId(displayItem.restaurantId);
+
+    if (
+      (currentUserRestaurantId && currentUserRestaurantId === itemRestaurantId) ||
+      (currentUserId && itemAdminId && currentUserId === itemAdminId)
+    ) {
       toast.error('You cannot order from your own restaurant', {
         style: {
           background: '#dc2626',
@@ -97,7 +117,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
       return;
     }
 
-    if (cartRestaurantId && cartRestaurantId !== displayItem.restaurantId) {
+    if (cartRestaurantId && cartRestaurantId !== itemRestaurantId) {
       toast.error('Your cart contains items from another restaurant', {
         description: 'Clear your cart to add items from a different restaurant',
         duration: 4000,
@@ -117,7 +137,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
       image: displayItem.image,
       size: sizeForCart,
       price,
-      restaurantId: displayItem.restaurantId,
+      restaurantId: itemRestaurantId,
     });
 
     toast.success(

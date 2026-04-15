@@ -1188,3 +1188,7 @@ Add project conventions and Gemini docs
 -create GEMINI.md file
 -create folders .windsurf and rules
 -in folder rules create file project-conventions.md
+
+
+
+Normalize ObjectId handling and harden favorites

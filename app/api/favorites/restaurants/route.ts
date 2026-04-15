@@ -149,10 +149,22 @@ export async function POST(req: Request) {
     );
   }
 
-  const existingFavorites = (user.favoriteRestaurants || []).map((id: mongoose.Types.ObjectId) =>
-    id.toString()
-  );
+  const existingFavorites = Array.isArray(user.favoriteRestaurants)
+    ? user.favoriteRestaurants.map((id: mongoose.Types.ObjectId) => id.toString())
+    : [];
   const alreadyFavorite = existingFavorites.includes(restaurantId);
+
+  await User.updateOne(
+    {
+      _id: user._id,
+      $or: [
+        { favoriteRestaurants: { $exists: false } },
+        { favoriteRestaurants: null },
+        { favoriteRestaurants: { $not: { $type: 'array' } } },
+      ],
+    },
+    { $set: { favoriteRestaurants: [] } }
+  );
 
   if (alreadyFavorite) {
     await User.updateOne({ _id: user._id }, { $pull: { favoriteRestaurants: restaurantId } });
