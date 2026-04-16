@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { Order } from '@/models/order';
 import { MenuItem } from '@/models/menuItem';
+import { notifyRestaurantAdminsAboutPaidOrder } from '@/libs/notifications';
 import { sendPurchaseReceiptEmail } from './sendPurchaseReceiptEmail';
 import mongoose from 'mongoose';
 import Stripe from 'stripe';
@@ -53,6 +54,19 @@ export async function POST(req: Request) {
         }
         order.stripeSessionId = session.id;
         await order.save();
+
+        if (!wasPaid) {
+          try {
+            await notifyRestaurantAdminsAboutPaidOrder({
+              restaurantId: order.restaurantId,
+              orderId: order._id,
+              customerEmail: order.email,
+              total: Number((order as any).total) || 0,
+            });
+          } catch (notificationError) {
+            console.error('Failed to create admin notification for paid order:', notificationError);
+          }
+        }
 
         const shouldSendReceipt = !wasPaid || !(order as any).receiptEmailSentAt;
 

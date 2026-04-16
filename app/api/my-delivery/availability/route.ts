@@ -3,7 +3,7 @@ import { authOptions } from '@/libs/authOptions';
 import { User } from '@/models/user';
 import mongoose from 'mongoose';
 
-export async function PATCH(req: Request) {
+export async function PATCH(_req: Request) {
   try {
     await mongoose.connect(process.env.MONGODB_URL as string);
 

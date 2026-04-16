@@ -1192,3 +1192,9 @@ Add project conventions and Gemini docs
 
 
 Normalize ObjectId handling and harden favorites
+
+
+
+Add notifications system (API, UI, provider)
+
+-add notifications features

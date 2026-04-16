@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import useProfile from '@/contexts/UseProfile';
 import ModeToggle from '../theme/ModeToggle';
+import NotificationBell from './NotificationBell';
 
 const Header = () => {
   const session = useSession();
@@ -200,7 +201,7 @@ const Header = () => {
                         className={`${pathname?.startsWith('/admin-dashboard') ? 'text-primary font-semibold' : ''}`}
                         href={'/admin-dashboard'}
                       >
-                        Admin Dashboard
+                        Admin
                       </Link>
                     )}
                   </>
@@ -221,15 +222,16 @@ const Header = () => {
           ) : (
             <>
               <ModeToggle />
-              <Link href='/cart' className='relative mr-2'>
+              {status === 'authenticated' && <NotificationBell iconSize={26} />}
+              <Link href='/cart' className='relative inline-flex h-9 w-9 items-center justify-center'>
                 <IoCartOutline
-                  size={32}
+                  size={26}
                   className='text-foreground hover:text-primary transition'
                 />
                 {totalItems > 0 && (
                   <span
                     aria-live='polite'
-                    className={`absolute -top-2 -right-2 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold will-change-transform ${
+                    className={`absolute -top-1 -right-1 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold will-change-transform ${
                       bounce ? 'animate-bounce' : ''
                     }`}
                   >
@@ -321,6 +323,13 @@ const Header = () => {
               <IoCartOutline size={24} />
               Cart {totalItems > 0 && `(${totalItems})`}
             </Link>
+
+            {status === 'authenticated' && (
+              <div className='flex items-center justify-start'>
+                <NotificationBell iconSize={20} />
+                <span className='ml-2 text-sm text-muted-foreground'>Notifications</span>
+              </div>
+            )}
             <Link href='/menu' onClick={() => setMobileOpen(false)} className='hover:text-primary'>
               Menu
             </Link>
@@ -403,7 +412,7 @@ const Header = () => {
                     onClick={() => setMobileOpen(false)}
                     className='hover:text-primary'
                   >
-                    Admin Dashboard
+                    Admin
                   </Link>
                 )}
                 <Button

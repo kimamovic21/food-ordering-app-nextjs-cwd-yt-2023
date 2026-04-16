@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
+import { notifyUserAboutOrderCompletion } from '@/libs/notifications';
 import mongoose from 'mongoose';
 
 const normalizeOrder = (order: any) => ({
@@ -88,6 +89,17 @@ export async function PATCH(request: Request) {
 
   await order.save();
   await user.save();
+
+  if (order.userId) {
+    try {
+      await notifyUserAboutOrderCompletion({
+        userId: order.userId,
+        orderId: order._id,
+      });
+    } catch (notificationError) {
+      console.error('Failed to create order completion notification:', notificationError);
+    }
+  }
 
   return Response.json({ order: normalizeOrder(order.toObject()) });
 }

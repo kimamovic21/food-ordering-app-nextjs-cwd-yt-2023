@@ -1,6 +1,7 @@
 import { isAdmin } from '@/app/api/auth/[...nextauth]/route';
 import { User } from '@/models/user';
 import { Order } from '@/models/order';
+import { notifyCourierAboutAssignment, notifyUserAboutOrderStatusChange } from '@/libs/notifications';
 import mongoose from 'mongoose';
 
 export async function GET(request: Request) {
@@ -81,6 +82,23 @@ export async function PATCH(request: Request) {
   order.courierId = courierId;
   order.orderStatus = 'transportation';
   await order.save();
+
+  try {
+    await notifyCourierAboutAssignment({
+      courierId,
+      orderId: order._id,
+    });
+
+    if (order.userId) {
+      await notifyUserAboutOrderStatusChange({
+        userId: order.userId,
+        orderId: order._id,
+        orderStatus: 'transportation',
+      });
+    }
+  } catch (notificationError) {
+    console.error('Failed to create courier assignment notifications:', notificationError);
+  }
 
   return Response.json({ courier, order });
 }

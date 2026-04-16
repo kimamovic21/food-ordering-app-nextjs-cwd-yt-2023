@@ -1,6 +1,7 @@
 import { authOptions } from '@/libs/authOptions';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
+import { notifyUserAboutOrderStatusChange } from '@/libs/notifications';
 import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth/next';
 
@@ -117,6 +118,8 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'Order not found' }, { status: 404 });
   }
 
+  const previousStatus = order.orderStatus;
+
   const hasPaid = Boolean(
     (order as any).orderPaid ?? (order as any).paymentStatus ?? (order as any).paid
   );
@@ -131,6 +134,18 @@ export async function PATCH(request: Request) {
   (order as any).orderPaid = hasPaid;
   order.orderStatus = orderStatus;
   const savedOrder = await order.save();
+
+  if (previousStatus !== orderStatus && order.userId) {
+    try {
+      await notifyUserAboutOrderStatusChange({
+        userId: order.userId,
+        orderId: order._id,
+        orderStatus,
+      });
+    } catch (notificationError) {
+      console.error('Failed to create order status notification:', notificationError);
+    }
+  }
 
   return Response.json({ order: normalizeOrder(savedOrder.toObject()) });
 }

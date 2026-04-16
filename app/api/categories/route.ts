@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
     const categoryDocument = await Category.create({ name });
     return new Response(JSON.stringify(categoryDocument));
-  } catch (err) {
+  } catch (_err) {
     return new Response(JSON.stringify({ error: 'Failed to create category.' }), { status: 500 });
   }
 }

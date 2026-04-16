@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { signOut } from 'next-auth/react';
 import {
   BarChart3,
+  Bell,
   Home,
   List,
   LogOut,
@@ -21,6 +22,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import useProfile from '@/contexts/UseProfile';
+import NotificationBell from '@/components/shared/NotificationBell';
 import Link from 'next/link';
 
 const AdminDashboardLayoutSkeleton = () => {
@@ -174,12 +176,15 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
       {/* Mobile Toggle Button */}
       <div className='md:hidden flex items-center justify-between p-4 border-b border-border bg-card'>
         <h2 className='text-lg font-semibold'>Admin Panel</h2>
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className='p-2 hover:bg-muted rounded-lg'
-        >
-          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className='flex items-center gap-2'>
+          <NotificationBell iconSize={20} />
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className='p-2 hover:bg-muted rounded-lg'
+          >
+            {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar */}
@@ -204,6 +209,19 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
             <Home size={18} />
             <span>Go back to home</span>
           </Link>
+
+          <Link
+            href='/notifications'
+            onClick={() => setIsSidebarOpen(false)}
+            className={`mt-2 flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+              pathname?.startsWith('/notifications')
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'text-foreground hover:bg-muted'
+            }`}
+          >
+            <Bell size={20} />
+            <span>Notifications</span>
+          </Link>
         </div>
 
         {/* Navigation */}
@@ -216,6 +234,20 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
           >
             <Home size={18} />
             <span>Go back to home</span>
+          </Link>
+
+          {/* Notifications Link - Always directly under Home */}
+          <Link
+            href='/notifications'
+            onClick={() => setIsSidebarOpen(false)}
+            className={`md:hidden flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+              pathname?.startsWith('/notifications')
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'text-foreground hover:bg-muted'
+            }`}
+          >
+            <Bell size={20} />
+            <span>Notifications</span>
           </Link>
 
           {/* Separator on Mobile */}
@@ -263,6 +295,11 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
 
         {/* User Section */}
         <div className='border-t border-border p-4 space-y-4'>
+          <div className='flex items-center justify-between px-2'>
+            <p className='text-xs uppercase tracking-wide text-muted-foreground'>Notifications</p>
+            <NotificationBell iconSize={19} />
+          </div>
+
           {/* User Info */}
           <div className='px-2 py-3'>
             <p className='text-xs uppercase tracking-wide text-muted-foreground'>Logged in as</p>
