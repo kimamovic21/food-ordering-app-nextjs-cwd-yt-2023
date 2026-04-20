@@ -1,0 +1,43 @@
+---
+description: Project-wide coding and safety rules for the food ordering app.
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+
+# Food Order App
+
+## Project Conventions
+
+- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend.
+- Prefer small, incremental changes.
+- Follow existing patterns in `app/`, `libs/`, `models/`, `components/`, and `contexts/`.
+- Avoid introducing new dependencies unless explicitly requested.
+
+## API And Data Rules
+
+- Validate request input in route handlers.
+- Keep API response shapes backward compatible unless change is requested.
+- Use existing models in `models/` for data access.
+- Ask before introducing schema migrations or destructive data operations.
+
+## Security And Integrations
+
+- Never expose secrets to client code.
+- Keep Stripe, Cloudinary, and Resend keys in server-only code.
+- Preserve role checks for admin, courier, and user flows.
+- Keep Stripe webhook handling idempotent.
+
+## High-Risk Areas
+
+- Auth: `libs/authOptions.ts`, `app/api/auth/**`
+- Payments: `app/api/checkout/**`, `app/api/payment-link/**`, `app/api/webhook/**`
+- Email: `libs/sendPurchaseReceiptEmail.tsx`, `components/resend/**`
+- Courier tracking: `app/my-delivery/**`, `app/my-deliveries/**`, `app/api/my-delivery/**`, `app/api/my-deliveries/**`
+
+## Validation Checklist
+
+- Run `npm run lint` after meaningful edits.
+- If env usage changes, update `example.env`.
+- For major feature additions, update `README.md` and root AI docs.

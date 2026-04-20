@@ -55,6 +55,13 @@ This file provides project context and coding guidance for Gemini tools.
 - Summarize changes and list any manual steps needed.
 - Ask before making schema or database migration changes.
 
+## AI Config Folder Strategy
+
+- `GEMINI.md` is the canonical Gemini policy file for this repository.
+- `.gemini/project-instructions.md` is a supplemental, task-oriented checklist.
+- `.cursor/rules/project-conventions.mdc` and `.claude/project-instructions.md` should stay aligned on security and workflow-critical rules.
+- If you update auth, payments, webhook behavior, email flow, env vars, or docs process, keep all root AI docs synchronized.
+
 ## Environment Variables Snapshot
 
 Keep these in sync with example.env and code usage:

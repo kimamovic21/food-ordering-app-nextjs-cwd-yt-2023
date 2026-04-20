@@ -55,6 +55,13 @@ This file provides guidance for AI assistance in this repository.
 - Summarize changes and list any manual steps needed.
 - Ask before making schema or database migration changes.
 
+## AI Config Folder Strategy
+
+- `CLAUDE.md` is the canonical Claude policy file for this repository.
+- `.claude/project-instructions.md` is a supplemental, task-oriented checklist.
+- `.cursor/rules/project-conventions.mdc` and `.gemini/project-instructions.md` should stay aligned on security and workflow-critical rules.
+- If you update auth, payments, webhook behavior, email flow, env vars, or docs process, keep all root AI docs synchronized.
+
 ## Environment Variables Snapshot
 
 Keep these in sync with example.env and usage in code:

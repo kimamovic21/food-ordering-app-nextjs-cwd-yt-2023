@@ -64,6 +64,14 @@ See `example.env`. Variables currently used in the project include:
 - Keep secrets in server-side code only (Stripe, Cloudinary, Resend keys).
 - Avoid breaking API response shapes unless explicitly requested.
 
+## AI Configuration Folders
+
+- `.cursor/rules/project-conventions.mdc` contains Cursor auto-applied rules.
+- `.claude/project-instructions.md` contains supplemental Claude workflow guidance.
+- `.gemini/project-instructions.md` contains supplemental Gemini workflow guidance.
+- Root files remain canonical for shared project policy: `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`.
+- Keep these files consistent when changing auth, payments, email, courier, env vars, or docs policy.
+
 ## Common Commands
 
 - npm run dev
