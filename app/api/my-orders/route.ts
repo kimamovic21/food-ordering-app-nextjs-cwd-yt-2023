@@ -9,6 +9,15 @@ const normalizeOrder = (order: any) => ({
   ...order,
   paymentStatus: Boolean(order.orderPaid ?? order.paymentStatus ?? order.paid),
   orderStatus: order.orderStatus || 'pending',
+  courier:
+    order.courierId && typeof order.courierId === 'object'
+      ? {
+          _id: String(order.courierId._id || ''),
+          name: order.courierId.name || '',
+          email: order.courierId.email || '',
+          image: order.courierId.image || null,
+        }
+      : null,
 });
 
 export async function GET(request: Request) {
@@ -32,7 +41,9 @@ export async function GET(request: Request) {
   }
 
   if (sessionId) {
-    const order = await Order.findOne({ userId: user._id, stripeSessionId: sessionId }).lean();
+    const order = await Order.findOne({ userId: user._id, stripeSessionId: sessionId })
+      .populate('courierId', 'name email image')
+      .lean();
 
     if (!order) {
       return Response.json({ error: 'Order not found' }, { status: 404 });
@@ -43,7 +54,9 @@ export async function GET(request: Request) {
       .filter((productId: string) => mongoose.Types.ObjectId.isValid(productId))
       .map((productId: string) => new mongoose.Types.ObjectId(productId));
 
-    const menuItems = await MenuItem.find({ _id: { $in: productIds } }).select('_id image').lean();
+    const menuItems = await MenuItem.find({ _id: { $in: productIds } })
+      .select('_id image')
+      .lean();
     const imageMap = new Map(menuItems.map((item) => [item._id.toString(), item.image]));
 
     const receiptItems = (order.cartProducts || []).map((item: any) => {
@@ -71,7 +84,7 @@ export async function GET(request: Request) {
       return Response.json({ error: 'Invalid order ID' }, { status: 400 });
     }
 
-    const order = await Order.findById(id).lean();
+    const order = await Order.findById(id).populate('courierId', 'name email image').lean();
 
     if (!order) {
       return Response.json({ error: 'Order not found' }, { status: 404 });

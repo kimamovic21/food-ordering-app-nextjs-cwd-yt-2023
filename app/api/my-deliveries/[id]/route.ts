@@ -5,10 +5,7 @@ import { User } from '@/models/user';
 import mongoose from 'mongoose';
 import { NextRequest } from 'next/server';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await mongoose.connect(process.env.MONGODB_URL as string);
 
   const session = await getServerSession(authOptions);

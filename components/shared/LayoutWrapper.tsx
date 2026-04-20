@@ -11,14 +11,16 @@ interface LayoutWrapperProps {
 export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith('/admin-dashboard');
+  const isCourierDashboardRoute = pathname?.startsWith('/courier-dashboard');
+  const isDashboardRoute = isAdminRoute || isCourierDashboardRoute;
 
   return (
     <>
-      {!isAdminRoute && <Header />}
-      <main className={`flex-1 ${isAdminRoute ? 'w-full' : 'max-w-7xl mx-auto p-4 mt-16'}`}>
+      {!isDashboardRoute && <Header />}
+      <main className={`flex-1 ${isDashboardRoute ? 'w-full' : 'max-w-7xl mx-auto p-4 mt-16'}`}>
         {children}
       </main>
-      {!isAdminRoute && <Footer />}
+      {!isDashboardRoute && <Footer />}
     </>
   );
 }

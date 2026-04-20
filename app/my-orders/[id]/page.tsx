@@ -20,9 +20,12 @@ import CustomerInfoCard from './CustomerInfoCard';
 import OrderItemsCard from './OrderItemsCard';
 import OrderStatusBanner from './OrderStatusBanner';
 import LeaveReviewDialog from './LeaveReviewDialog';
+import LeaveCourierReviewDialog from './LeaveCourierReviewDialog';
 import Title from '@/components/shared/Title';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
 import HeartRating from '@/components/shared/HeartRating';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 
 type CartProduct = {
   productId: string;
@@ -54,6 +57,12 @@ type OrderDetailsType = {
   loyaltyDiscountPercentage?: number;
   loyaltyTier?: string;
   restaurantId?: string;
+  courier?: {
+    _id: string;
+    name: string;
+    email: string;
+    image?: string | null;
+  } | null;
 };
 
 type OrderReviewType = {
@@ -76,7 +85,8 @@ import { useRef } from 'react';
 
 const MyOrderDetailPage = () => {
   const [order, setOrder] = useState<OrderDetailsType | null>(null);
-  const [review, setReview] = useState<OrderReviewType | null>(null);
+  const [restaurantReview, setRestaurantReview] = useState<OrderReviewType | null>(null);
+  const [courierReview, setCourierReview] = useState<OrderReviewType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { data: profileData, loading: profileLoading } = useProfile();
@@ -110,13 +120,26 @@ const MyOrderDetailPage = () => {
           const reviewResponse = await fetch(`/api/reviews?orderId=${orderId}`);
           if (reviewResponse.ok) {
             const reviewJson = await reviewResponse.json();
-            setReview(reviewJson.review ?? null);
+            setRestaurantReview(reviewJson.review ?? null);
           } else {
-            setReview(null);
+            setRestaurantReview(null);
           }
         } catch (reviewErr) {
           console.error('Failed to load review', reviewErr);
-          setReview(null);
+          setRestaurantReview(null);
+        }
+
+        try {
+          const reviewResponse = await fetch(`/api/courier-reviews?orderId=${orderId}`);
+          if (reviewResponse.ok) {
+            const reviewJson = await reviewResponse.json();
+            setCourierReview(reviewJson.review ?? null);
+          } else {
+            setCourierReview(null);
+          }
+        } catch (reviewErr) {
+          console.error('Failed to load courier review', reviewErr);
+          setCourierReview(null);
         }
       } catch (err) {
         console.error('Failed to load order', err);
@@ -292,12 +315,21 @@ const MyOrderDetailPage = () => {
               completedAt={order.completedAt}
               isCompleted={order.orderStatus === 'completed'}
             />
-            {!review && (
+            {!restaurantReview && (
               <LeaveReviewDialog
                 orderId={order._id}
                 orderStatus={order.orderStatus}
                 paymentStatus={order.paymentStatus}
-                onSubmitted={(nextReview) => setReview(nextReview)}
+                onSubmitted={(nextReview) => setRestaurantReview(nextReview)}
+              />
+            )}
+            {!courierReview && (
+              <LeaveCourierReviewDialog
+                orderId={order._id}
+                orderStatus={order.orderStatus}
+                paymentStatus={order.paymentStatus}
+                hasCourier={Boolean(order.courier?._id)}
+                onSubmitted={(nextReview) => setCourierReview(nextReview)}
               />
             )}
           </div>
@@ -327,6 +359,48 @@ const MyOrderDetailPage = () => {
               city={order.city}
               country={order.country}
             />
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Courier Information</CardTitle>
+                <CardDescription>
+                  {order.courier?._id
+                    ? 'This courier handled your delivery.'
+                    : 'Courier has not been assigned yet.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className='space-y-4'>
+                {order.courier?._id ? (
+                  <>
+                    <div className='flex items-center gap-3'>
+                      <Avatar className='size-12'>
+                        <AvatarImage
+                          src={order.courier.image || undefined}
+                          alt={order.courier.name}
+                        />
+                        <AvatarFallback>
+                          {order.courier.name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className='font-medium'>{order.courier.name}</p>
+                        <p className='text-sm text-muted-foreground'>{order.courier.email}</p>
+                      </div>
+                    </div>
+
+                    <Button asChild variant='secondary' className='w-full sm:w-auto'>
+                      <Link href={`/my-orders/${order._id}/courier/${order.courier._id}`}>
+                        View courier reviews and ratings
+                      </Link>
+                    </Button>
+                  </>
+                ) : (
+                  <p className='text-sm text-muted-foreground'>
+                    You will see courier details here once a courier accepts your order.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right column: Order Items */}
@@ -372,15 +446,30 @@ const MyOrderDetailPage = () => {
           </Card>
         )}
 
-        {review && (
+        {restaurantReview && (
           <Card>
             <CardHeader>
-              <CardTitle>Your Review and Rating for This Order</CardTitle>
+              <CardTitle>Your Restaurant Review and Rating for This Order</CardTitle>
               <CardDescription>Thank you for sharing your feedback.</CardDescription>
             </CardHeader>
             <CardContent className='space-y-3'>
-              <HeartRating rating={review.rating} />
-              <p className='text-sm leading-relaxed text-foreground'>{review.reviewText}</p>
+              <HeartRating rating={restaurantReview.rating} />
+              <p className='text-sm leading-relaxed text-foreground'>
+                {restaurantReview.reviewText}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {courierReview && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Courier Review and Rating for This Order</CardTitle>
+              <CardDescription>Thank you for rating your delivery experience.</CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-3'>
+              <HeartRating rating={courierReview.rating} />
+              <p className='text-sm leading-relaxed text-foreground'>{courierReview.reviewText}</p>
             </CardContent>
           </Card>
         )}

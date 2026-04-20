@@ -3,7 +3,11 @@ import mongoose from 'mongoose';
 import { Notification } from '@/models/notification';
 import { User } from '@/models/user';
 
-type NotificationType = 'order_paid' | 'order_status_changed' | 'courier_assigned' | 'order_completed';
+type NotificationType =
+  | 'order_paid'
+  | 'order_status_changed'
+  | 'courier_assigned'
+  | 'order_completed';
 
 type CreateNotificationInput = {
   recipientUserIds: Array<string | mongoose.Types.ObjectId>;
@@ -39,9 +43,7 @@ export const createNotifications = async ({
   }
 
   const orderObjectId =
-    orderId && mongoose.Types.ObjectId.isValid(orderId.toString())
-      ? toObjectId(orderId)
-      : null;
+    orderId && mongoose.Types.ObjectId.isValid(orderId.toString()) ? toObjectId(orderId) : null;
 
   await Notification.insertMany(
     uniqueRecipientIds.map((recipientId) => ({

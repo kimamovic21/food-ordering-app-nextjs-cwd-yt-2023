@@ -56,7 +56,7 @@ const ManualLocationSimulator: React.FC<ManualLocationSimulatorProps> = ({
   };
 
   return (
-    <div className='fixed right-4 bottom-4 z-9999 w-[calc(100vw-2rem)] max-w-[340px] rounded-xl border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 shadow-2xl p-4 pointer-events-auto'>
+    <div className='mt-6 w-full rounded-xl border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 shadow-2xl p-4 pointer-events-auto'>
       <div className='mb-3'>
         <p className='font-semibold text-foreground'>Dev Courier Simulator</p>
         <p className='text-xs text-muted-foreground'>

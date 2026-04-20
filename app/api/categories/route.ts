@@ -8,14 +8,18 @@ export async function POST(request: Request) {
   mongoose.connect(process.env.MONGODB_URL as string);
 
   if (!(await isSuperAdmin())) {
-    return new Response(JSON.stringify({ error: 'Only super admin can create categories' }), { status: 401 });
+    return new Response(JSON.stringify({ error: 'Only super admin can create categories' }), {
+      status: 401,
+    });
   }
 
   const { name } = await request.json();
   try {
     const existing = await Category.findOne({ name });
     if (existing) {
-      return new Response(JSON.stringify({ error: 'A category with that name already exists.' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'A category with that name already exists.' }), {
+        status: 400,
+      });
     }
     const categoryDocument = await Category.create({ name });
     return new Response(JSON.stringify(categoryDocument));
@@ -28,7 +32,9 @@ export async function PUT(request: Request) {
   mongoose.connect(process.env.MONGODB_URL as string);
 
   if (!(await isSuperAdmin())) {
-    return new Response(JSON.stringify({ error: 'Only super admin can update categories' }), { status: 401 });
+    return new Response(JSON.stringify({ error: 'Only super admin can update categories' }), {
+      status: 401,
+    });
   }
 
   const { _id, name } = await request.json();
@@ -42,7 +48,9 @@ export async function DELETE(request: Request) {
   mongoose.connect(process.env.MONGODB_URL as string);
 
   if (!(await isSuperAdmin())) {
-    return new Response(JSON.stringify({ error: 'Only super admin can delete categories' }), { status: 401 });
+    return new Response(JSON.stringify({ error: 'Only super admin can delete categories' }), {
+      status: 401,
+    });
   }
 
   const { _id } = await request.json();

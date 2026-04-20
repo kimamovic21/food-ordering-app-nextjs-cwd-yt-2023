@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { Restaurant } from '@/models/restaurant';
-import { Review } from '@/models/review';
+import { RestaurantReview } from '@/models/restaurantReview';
 import mongoose from 'mongoose';
 
 const parsePositiveInt = (value: string | null, fallback: number) => {
@@ -46,8 +46,8 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     };
 
     const [totalCount, rawReviews] = await Promise.all([
-      Review.countDocuments(filter),
-      Review.find(filter)
+      RestaurantReview.countDocuments(filter),
+      RestaurantReview.find(filter)
         .sort({ createdAt: -1 })
         .skip(offset)
         .limit(limit)

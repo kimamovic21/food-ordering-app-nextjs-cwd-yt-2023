@@ -391,7 +391,7 @@ const CourierPage = () => {
   }
 
   return (
-    <div className='w-full lg:w-5xl max-w-5xl mx-auto px-4 py-6'>
+    <div className='w-full lg:w-5xl max-w-5xl mx-auto px-4 py-6 pb-24 xl:pb-6'>
       <div className='mb-6'>
         <Title>My Delivery</Title>
         <p className='text-muted-foreground mt-2'>

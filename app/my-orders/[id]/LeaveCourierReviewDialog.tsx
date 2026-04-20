@@ -17,10 +17,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import HeartRating from '@/components/shared/HeartRating';
 
-type LeaveReviewDialogProps = {
+type LeaveCourierReviewDialogProps = {
   orderId: string;
   orderStatus: 'placed' | 'processing' | 'ready' | 'transportation' | 'completed';
   paymentStatus: boolean;
+  hasCourier: boolean;
   onSubmitted?: (review: { rating: number; reviewText: string }) => void;
 };
 
@@ -32,20 +33,21 @@ const getRatingLabel = (value: number) => {
   return 'Poor';
 };
 
-const LeaveReviewDialog = ({
+const LeaveCourierReviewDialog = ({
   orderId,
   orderStatus,
   paymentStatus,
+  hasCourier,
   onSubmitted,
-}: LeaveReviewDialogProps) => {
+}: LeaveCourierReviewDialogProps) => {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
 
   const canLeaveReview = useMemo(
-    () => orderStatus === 'completed' && paymentStatus,
-    [orderStatus, paymentStatus]
+    () => orderStatus === 'completed' && paymentStatus && hasCourier,
+    [orderStatus, paymentStatus, hasCourier]
   );
 
   const handleStarClick = (index: number) => {
@@ -63,7 +65,7 @@ const LeaveReviewDialog = ({
     try {
       setSubmitting(true);
 
-      const response = await fetch('/api/reviews', {
+      const response = await fetch('/api/courier-reviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,10 +80,10 @@ const LeaveReviewDialog = ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to submit review');
+        throw new Error(data?.error || 'Failed to submit courier review');
       }
 
-      toast.success('Review submitted successfully', {
+      toast.success('Courier review submitted successfully', {
         style: {
           background: '#16a34a',
           color: 'white',
@@ -90,7 +92,7 @@ const LeaveReviewDialog = ({
       onSubmitted?.({ rating, reviewText: trimmedReview });
       setOpen(false);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to submit review';
+      const message = error instanceof Error ? error.message : 'Failed to submit courier review';
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -100,20 +102,23 @@ const LeaveReviewDialog = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button disabled={!canLeaveReview}>Leave review and rating for restaurant</Button>
+        <Button disabled={!canLeaveReview} variant='outline'>
+          Leave review and rating for courier
+        </Button>
       </DialogTrigger>
       <DialogContent showCloseButton={false} className='sm:max-w-2xl p-0 overflow-hidden'>
         <DialogHeader className='border-b border-border px-6 py-5 bg-linear-to-r from-primary/10 via-transparent to-primary/5'>
-          <DialogTitle className='text-2xl'>Leave a review</DialogTitle>
+          <DialogTitle className='text-2xl'>Leave a courier review</DialogTitle>
           <DialogDescription className='text-sm'>
-            Help other users with an honest rating and short comment.
+            Share your delivery experience to help other users.
           </DialogDescription>
         </DialogHeader>
 
         {!canLeaveReview ? (
           <div className='px-6 pb-6 pt-4'>
             <p className='text-sm text-muted-foreground'>
-              Reviews can be submitted only after the order is completed and paid.
+              Courier reviews can be submitted only after the order is completed, paid, and assigned
+              to a courier.
             </p>
           </div>
         ) : (
@@ -160,15 +165,15 @@ const LeaveReviewDialog = ({
             </div>
 
             <div className='space-y-2 rounded-xl border border-border bg-card/60 p-4'>
-              <Label htmlFor='reviewText' className='text-sm font-semibold'>
-                Review
+              <Label htmlFor='courierReviewText' className='text-sm font-semibold'>
+                Courier review
               </Label>
               <Textarea
-                id='reviewText'
+                id='courierReviewText'
                 value={reviewText}
                 onChange={(event) => setReviewText(event.target.value)}
                 maxLength={1000}
-                placeholder='How was the food quality, delivery speed, and overall experience?'
+                placeholder='How was the delivery, communication, and professionalism?'
                 rows={5}
                 className='resize-none'
               />
@@ -185,7 +190,7 @@ const LeaveReviewDialog = ({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!canLeaveReview || submitting}>
-            {submitting ? 'Saving...' : 'Submit review'}
+            {submitting ? 'Saving...' : 'Submit courier review'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -193,4 +198,4 @@ const LeaveReviewDialog = ({
   );
 };
 
-export default LeaveReviewDialog;
+export default LeaveCourierReviewDialog;

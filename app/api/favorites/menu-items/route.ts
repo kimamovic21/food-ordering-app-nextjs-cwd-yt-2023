@@ -8,11 +8,7 @@ import mongoose from 'mongoose';
 
 const normalizeObjectIdString = (value: unknown): string => {
   if (!value) return '';
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    '$oid' in (value as Record<string, unknown>)
-  ) {
+  if (typeof value === 'object' && value !== null && '$oid' in (value as Record<string, unknown>)) {
     return String((value as Record<string, unknown>).$oid || '');
   }
   if (typeof value === 'string') return value;

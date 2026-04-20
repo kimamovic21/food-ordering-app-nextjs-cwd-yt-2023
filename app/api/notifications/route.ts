@@ -34,11 +34,7 @@ export async function GET(request: Request) {
   }
 
   const [notifications, unreadCount] = await Promise.all([
-    Notification.find(baseFilter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
+    Notification.find(baseFilter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
     Notification.countDocuments({ recipientUserId: user._id, isRead: false }),
   ]);
 

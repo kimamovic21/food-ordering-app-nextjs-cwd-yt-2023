@@ -181,20 +181,12 @@ const Header = () => {
                       Loyalty
                     </Link>
                     {isCourier && (
-                      <>
-                        <Link
-                          className={`${pathname === '/my-delivery' ? 'text-primary font-semibold' : ''}`}
-                          href={'/my-delivery'}
-                        >
-                          Delivery
-                        </Link>
-                        <Link
-                          className={`${pathname === '/my-deliveries' ? 'text-primary font-semibold' : ''}`}
-                          href={'/my-deliveries'}
-                        >
-                          Deliveries
-                        </Link>
-                      </>
+                      <Link
+                        className={`${pathname?.startsWith('/courier-dashboard') ? 'text-primary font-semibold' : ''}`}
+                        href={'/courier-dashboard'}
+                      >
+                        Courier Dashboard
+                      </Link>
                     )}
                     {isAdmin && (
                       <Link
@@ -223,7 +215,10 @@ const Header = () => {
             <>
               <ModeToggle />
               {status === 'authenticated' && <NotificationBell iconSize={26} />}
-              <Link href='/cart' className='relative inline-flex h-9 w-9 items-center justify-center'>
+              <Link
+                href='/cart'
+                className='relative inline-flex h-9 w-9 items-center justify-center'
+              >
                 <IoCartOutline
                   size={26}
                   className='text-foreground hover:text-primary transition'
@@ -391,18 +386,11 @@ const Header = () => {
                 {isCourier && (
                   <>
                     <Link
-                      href='/courier'
+                      href='/courier-dashboard'
                       onClick={() => setMobileOpen(false)}
                       className='hover:text-primary'
                     >
-                      Courier
-                    </Link>
-                    <Link
-                      href='/my-deliveries'
-                      onClick={() => setMobileOpen(false)}
-                      className='hover:text-primary'
-                    >
-                      Deliveries
+                      Courier Dashboard
                     </Link>
                   </>
                 )}

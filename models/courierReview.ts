@@ -2,7 +2,7 @@ import { model, models, Schema } from 'mongoose';
 
 const isValidIntegerRating = (value: number) => Number.isInteger(value);
 
-const ReviewSchema = new Schema(
+const CourierReviewSchema = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -14,11 +14,11 @@ const ReviewSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Order',
       required: true,
-      unique: true,
+      index: true,
     },
-    restaurantId: {
+    courierId: {
       type: Schema.Types.ObjectId,
-      ref: 'Restaurant',
+      ref: 'User',
       required: true,
       index: true,
     },
@@ -43,7 +43,8 @@ const ReviewSchema = new Schema(
   { timestamps: true }
 );
 
-ReviewSchema.index({ restaurantId: 1, createdAt: -1 });
-ReviewSchema.index({ userId: 1, restaurantId: 1, createdAt: -1 });
+CourierReviewSchema.index({ orderId: 1, userId: 1, courierId: 1 }, { unique: true });
+CourierReviewSchema.index({ courierId: 1, createdAt: -1 });
+CourierReviewSchema.index({ userId: 1, courierId: 1, createdAt: -1 });
 
-export const Review = models?.Review || model('Review', ReviewSchema);
+export const CourierReview = models?.CourierReview || model('CourierReview', CourierReviewSchema);

@@ -1,4 +1,4 @@
-import { Review } from '@/models/review';
+import { RestaurantReview } from '@/models/restaurantReview';
 import mongoose from 'mongoose';
 
 type RestaurantRatingSummary = {
@@ -33,7 +33,7 @@ export const getRestaurantRatingSummaries = async (restaurantIds: unknown[]) => 
 
   const objectIds = uniqueIds.map((id) => new mongoose.Types.ObjectId(id));
 
-  const grouped = await Review.aggregate<{
+  const grouped = await RestaurantReview.aggregate<{
     _id: mongoose.Types.ObjectId;
     averageRating: number;
     ratingCount: number;

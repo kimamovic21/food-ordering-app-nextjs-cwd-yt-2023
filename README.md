@@ -13,8 +13,10 @@ It includes:
 - favorites for meals and restaurants
 - loyalty rewards with delivery fee discounts
 - ratings and review flows
+- notifications center with unread counts, mark-as-read actions, and role-aware routing
 - admin dashboard for users, menu items, categories, restaurants, couriers, orders, and statistics
-- courier workflow with assignment, availability toggle, and live location sharing on maps
+- courier dashboard with active delivery, delivery history, and courier ratings views
+- courier workflow with assignment, availability toggle, live location sharing on maps, and delivery history
 - Stripe checkout/webhook flow
 - Cloudinary media uploads
 - email purchase receipts with Resend + React Email
@@ -30,6 +32,8 @@ It includes:
 - Favorites for menu items and restaurants
 - Loyalty tiers and automatic delivery-fee discounts
 - Personal review management and restaurant review pages
+- Per-order courier reviews and ratings (optional, one submission per order)
+- Order details with courier information and a public courier review page for customers
 - Social sharing actions for restaurant/menu pages
 
 ### Admin and Staff Features
@@ -39,14 +43,17 @@ It includes:
 - CRUD for categories, menu items, restaurants, and users
 - Courier management and order assignment
 - Order lifecycle management and dashboards/statistics
+- Notifications management with order, delivery, and assignment updates
 - Payment link endpoint and Stripe webhook handling
 
 ### Courier Features
 
-- My-deliveries and my-delivery workflow pages
+- Courier dashboard with active delivery, delivery history, and ratings sections
 - Availability on/off toggle
 - Real-time courier location sharing
 - Leaflet map tracking with polling + manual refresh
+- Courier-facing review and rating list for completed deliveries
+- Customer-facing courier review page from order details
 
 ## Packages Used (with Official Websites)
 

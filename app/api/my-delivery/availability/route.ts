@@ -17,10 +17,7 @@ export async function PATCH(_req: Request) {
     const userRole = (session.user as any).role;
 
     if (userRole !== 'courier') {
-      return Response.json(
-        { error: 'Only couriers can toggle availability' },
-        { status: 403 }
-      );
+      return Response.json({ error: 'Only couriers can toggle availability' }, { status: 403 });
     }
 
     // Fetch current user to get current availability
@@ -41,9 +38,6 @@ export async function PATCH(_req: Request) {
     });
   } catch (error) {
     console.error('Error toggling availability:', error);
-    return Response.json(
-      { error: 'Failed to toggle availability' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Failed to toggle availability' }, { status: 500 });
   }
 }

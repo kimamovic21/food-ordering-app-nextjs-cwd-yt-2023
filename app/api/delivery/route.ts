@@ -13,10 +13,7 @@ export async function POST(request: Request) {
     }
 
     if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-      return Response.json(
-        { error: 'Invalid coordinates: must be numbers' },
-        { status: 400 }
-      );
+      return Response.json({ error: 'Invalid coordinates: must be numbers' }, { status: 400 });
     }
 
     if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
@@ -27,18 +24,12 @@ export async function POST(request: Request) {
     }
 
     // Calculate fee with optional custom base fee
-    const feeBreakdown = await calculateDeliveryFee(
-      { latitude, longitude },
-      baseDeliveryFee || 5
-    );
+    const feeBreakdown = await calculateDeliveryFee({ latitude, longitude }, baseDeliveryFee || 5);
 
     return Response.json(feeBreakdown, { status: 200 });
   } catch (error) {
     console.error('Error calculating delivery fee:', error);
-    return Response.json(
-      { error: 'Failed to calculate delivery fee' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Failed to calculate delivery fee' }, { status: 500 });
   }
 }
 
@@ -58,24 +49,15 @@ export async function GET(request: Request) {
     }
 
     if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-      return Response.json(
-        { error: 'Invalid coordinates range' },
-        { status: 400 }
-      );
+      return Response.json({ error: 'Invalid coordinates range' }, { status: 400 });
     }
 
     // Calculate fee
-    const feeBreakdown = await calculateDeliveryFee(
-      { latitude, longitude },
-      baseDeliveryFee
-    );
+    const feeBreakdown = await calculateDeliveryFee({ latitude, longitude }, baseDeliveryFee);
 
     return Response.json(feeBreakdown, { status: 200 });
   } catch (error) {
     console.error('Error calculating delivery fee:', error);
-    return Response.json(
-      { error: 'Failed to calculate delivery fee' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Failed to calculate delivery fee' }, { status: 500 });
   }
 }

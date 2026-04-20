@@ -30,7 +30,13 @@ const timeAgo = (dateInput: string) => {
   return `${Math.floor(seconds / 86400)}d ago`;
 };
 
-const NotificationsCenter = ({ title, description, backHref, backLabel, role }: NotificationsCenterProps) => {
+const NotificationsCenter = ({
+  title,
+  description,
+  backHref,
+  backLabel,
+  role,
+}: NotificationsCenterProps) => {
   const router = useRouter();
   const { markAsRead } = useNotifications();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -53,7 +59,9 @@ const NotificationsCenter = ({ title, description, backHref, backLabel, role }: 
       }
 
       const skipValue = appendMode ? offset : 0;
-      const response = await fetch(`/api/notifications?limit=${ITEMS_PER_PAGE}&skip=${skipValue}`, { cache: 'no-store' });
+      const response = await fetch(`/api/notifications?limit=${ITEMS_PER_PAGE}&skip=${skipValue}`, {
+        cache: 'no-store',
+      });
       if (!response.ok) {
         throw new Error('Failed to load notifications');
       }
@@ -93,7 +101,9 @@ const NotificationsCenter = ({ title, description, backHref, backLabel, role }: 
       await markAsRead(notification._id);
       setNotifications((prev) =>
         prev.map((item) =>
-          item._id === notification._id ? { ...item, isRead: true, readAt: new Date().toISOString() } : item
+          item._id === notification._id
+            ? { ...item, isRead: true, readAt: new Date().toISOString() }
+            : item
         )
       );
     }
@@ -254,7 +264,9 @@ const NotificationsCenter = ({ title, description, backHref, backLabel, role }: 
                 </CardHeader>
 
                 <CardContent className='space-y-4'>
-                  <p className='text-sm text-muted-foreground leading-relaxed'>{notification.message}</p>
+                  <p className='text-sm text-muted-foreground leading-relaxed'>
+                    {notification.message}
+                  </p>
 
                   <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                     <Button

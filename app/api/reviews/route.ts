@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { authOptions } from '@/libs/authOptions';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { Order } from '@/models/order';
-import { Review } from '@/models/review';
+import { RestaurantReview } from '@/models/restaurantReview';
 import { User } from '@/models/user';
 
 const parseRatingFilter = (value: string | null) => {
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
         return Response.json({ error: 'Unauthorized' }, { status: 403 });
       }
 
-      const review = await Review.findOne({ orderId }).lean();
+      const review = await RestaurantReview.findOne({ orderId }).lean();
       return Response.json({ review });
     }
 
@@ -122,7 +122,7 @@ export async function GET(request: Request) {
       }
     );
 
-    const reviews = await Review.aggregate(pipeline);
+    const reviews = await RestaurantReview.aggregate(pipeline);
 
     return Response.json({
       reviews,
@@ -191,7 +191,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const existingReview = await Review.findOne({
+    const existingReview = await RestaurantReview.findOne({
       orderId: order._id,
       userId: user._id,
     }).lean();
@@ -203,7 +203,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const review = await Review.create({
+    const review = await RestaurantReview.create({
       orderId: order._id,
       userId: user._id,
       restaurantId: order.restaurantId,

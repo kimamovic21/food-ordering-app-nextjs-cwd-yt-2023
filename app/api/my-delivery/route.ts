@@ -1,7 +1,10 @@
 import { isAdmin } from '@/app/api/auth/[...nextauth]/route';
 import { User } from '@/models/user';
 import { Order } from '@/models/order';
-import { notifyCourierAboutAssignment, notifyUserAboutOrderStatusChange } from '@/libs/notifications';
+import {
+  notifyCourierAboutAssignment,
+  notifyUserAboutOrderStatusChange,
+} from '@/libs/notifications';
 import mongoose from 'mongoose';
 
 export async function GET(request: Request) {
@@ -56,9 +59,10 @@ export async function PATCH(request: Request) {
 
   if (courier.takenOrder) {
     return Response.json(
-      { 
-        error: 'This courier is currently delivering another order. Please wait for them to finish the delivery before assigning a new order.' 
-      }, 
+      {
+        error:
+          'This courier is currently delivering another order. Please wait for them to finish the delivery before assigning a new order.',
+      },
       { status: 400 }
     );
   }
