@@ -14,6 +14,15 @@ type SendPurchaseReceiptEmailArgs = {
   orderId: string;
   customerEmail: string;
   purchasedOn?: Date | string | null;
+  restaurant?: {
+    name: string;
+    contact?: string | null;
+    email?: string | null;
+    street?: string | null;
+    city?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+  } | null;
   items: ReceiptItem[];
   taxAmount: number;
   deliveryFee: number;
@@ -26,6 +35,7 @@ export async function sendPurchaseReceiptEmail({
   orderId,
   customerEmail,
   purchasedOn,
+  restaurant,
   items,
   taxAmount,
   deliveryFee,
@@ -47,6 +57,7 @@ export async function sendPurchaseReceiptEmail({
         orderId={orderId}
         customerEmail={customerEmail}
         purchasedOn={purchasedOn}
+        restaurant={restaurant}
         items={items}
         taxAmount={taxAmount}
         deliveryFee={deliveryFee}

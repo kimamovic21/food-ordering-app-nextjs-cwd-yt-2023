@@ -25,6 +25,15 @@ type PurchaseReceiptEmailProps = {
   orderId: string;
   customerEmail: string;
   purchasedOn?: Date | string | null;
+  restaurant?: {
+    name: string;
+    contact?: string | null;
+    email?: string | null;
+    street?: string | null;
+    city?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+  } | null;
   items: ReceiptItem[];
   taxAmount: number;
   deliveryFee: number;
@@ -59,6 +68,7 @@ export default function PurchaseReceiptEmail({
   orderId,
   customerEmail,
   purchasedOn,
+  restaurant,
   items,
   taxAmount,
   deliveryFee,
@@ -72,6 +82,15 @@ export default function PurchaseReceiptEmail({
     (sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0),
     0
   );
+
+  const restaurantAddress = [
+    restaurant?.street,
+    restaurant?.postalCode,
+    restaurant?.city,
+    restaurant?.country,
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   return (
     <Html>
@@ -105,6 +124,40 @@ export default function PurchaseReceiptEmail({
                 <Text style={valueStyle}>{purchasedDate}</Text>
               </Column>
             </Row>
+
+            {restaurant?.name ? (
+              <Section
+                style={{
+                  marginTop: '16px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  padding: '12px 14px',
+                  backgroundColor: '#fafafa',
+                }}
+              >
+                <Text style={{ margin: '0 0 6px', fontSize: '13px', color: '#6b7280' }}>
+                  Restaurant
+                </Text>
+                <Text style={{ margin: 0, fontSize: '16px', lineHeight: '24px', color: '#111827' }}>
+                  {restaurant.name}
+                </Text>
+                {restaurantAddress ? (
+                  <Text style={{ margin: '4px 0 0', fontSize: '13px', color: '#4b5563' }}>
+                    {restaurantAddress}
+                  </Text>
+                ) : null}
+                {restaurant.contact ? (
+                  <Text style={{ margin: '4px 0 0', fontSize: '13px', color: '#4b5563' }}>
+                    Contact: {restaurant.contact}
+                  </Text>
+                ) : null}
+                {restaurant.email ? (
+                  <Text style={{ margin: '4px 0 0', fontSize: '13px', color: '#4b5563' }}>
+                    Email: {restaurant.email}
+                  </Text>
+                ) : null}
+              </Section>
+            ) : null}
 
             <Hr style={{ borderColor: '#e5e7eb', margin: '22px 0' }} />
 

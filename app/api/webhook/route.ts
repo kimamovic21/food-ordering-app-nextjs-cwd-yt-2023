@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { Order } from '@/models/order';
 import { MenuItem } from '@/models/menuItem';
+import { Restaurant } from '@/models/restaurant';
 import { notifyRestaurantAdminsAboutPaidOrder } from '@/libs/notifications';
 import { sendPurchaseReceiptEmail } from './sendPurchaseReceiptEmail';
 import mongoose from 'mongoose';
@@ -71,6 +72,10 @@ export async function POST(req: Request) {
         const shouldSendReceipt = !wasPaid || !(order as any).receiptEmailSentAt;
 
         if (shouldSendReceipt) {
+          const restaurant = await Restaurant.findById(order.restaurantId)
+            .select('name contact email street city postalCode country')
+            .lean();
+
           const productIds = ((order as any).cartProducts || [])
             .map((item: any) => String(item.productId))
             .filter((id: string) => mongoose.Types.ObjectId.isValid(id))
@@ -93,6 +98,17 @@ export async function POST(req: Request) {
             orderId: order._id.toString(),
             customerEmail: order.email,
             purchasedOn: order.updatedAt,
+            restaurant: restaurant
+              ? {
+                  name: restaurant.name,
+                  contact: restaurant.contact || null,
+                  email: restaurant.email || null,
+                  street: restaurant.street || null,
+                  city: restaurant.city || null,
+                  postalCode: restaurant.postalCode || null,
+                  country: restaurant.country || null,
+                }
+              : null,
             items,
             taxAmount: Number((order as any).taxAmount) || 0,
             deliveryFee: Number((order as any).deliveryFee) || 0,

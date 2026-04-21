@@ -26,6 +26,16 @@ type ReceiptOrder = {
 type ReceiptResponse = {
   order: ReceiptOrder;
   receiptItems: ReceiptItem[];
+  restaurant?: {
+    _id: string;
+    name: string;
+    contact?: string | null;
+    email?: string | null;
+    street?: string | null;
+    city?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+  } | null;
 };
 
 type DocumentWithViewTransition = Document & {
@@ -95,6 +105,14 @@ const CheckoutContent = () => {
   const isSuccess = status === 'success';
   const isCancelled = status === 'cancelled';
   const purchasedOn = receipt?.order?.updatedAt || receipt?.order?.createdAt;
+  const restaurantAddress = [
+    receipt?.restaurant?.street,
+    receipt?.restaurant?.postalCode,
+    receipt?.restaurant?.city,
+    receipt?.restaurant?.country,
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   const itemsTotal = useMemo(() => {
     if (!receipt?.receiptItems?.length) {
@@ -146,6 +164,28 @@ const CheckoutContent = () => {
               </p>
             </div>
           </div>
+
+          {receipt?.restaurant?.name ? (
+            <div className='mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-neutral-700 dark:bg-neutral-800/40'>
+              <p className='text-gray-500 text-sm'>Restaurant</p>
+              <p className='font-medium text-gray-900 dark:text-gray-100 mt-1'>
+                {receipt.restaurant.name}
+              </p>
+              {restaurantAddress ? (
+                <p className='text-sm text-gray-600 dark:text-gray-300 mt-1'>{restaurantAddress}</p>
+              ) : null}
+              {receipt.restaurant.contact ? (
+                <p className='text-sm text-gray-600 dark:text-gray-300 mt-1'>
+                  Contact: {receipt.restaurant.contact}
+                </p>
+              ) : null}
+              {receipt.restaurant.email ? (
+                <p className='text-sm text-gray-600 dark:text-gray-300 mt-1'>
+                  Email: {receipt.restaurant.email}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className='mt-6 rounded-2xl border border-gray-200 p-4 dark:border-neutral-700 dark:bg-neutral-900'>
             <div className='space-y-4'>
@@ -200,6 +240,17 @@ const CheckoutContent = () => {
               </div>
             </div>
           </div>
+
+          {sessionId ? (
+            <div className='mt-5'>
+              <a
+                href={`/api/my-orders/invoice?sessionId=${encodeURIComponent(sessionId)}`}
+                className='inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-white font-semibold transition hover:bg-orange-700'
+              >
+                Download PDF invoice
+              </a>
+            </div>
+          ) : null}
         </section>
       )}
 

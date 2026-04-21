@@ -1,6 +1,7 @@
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
 import { MenuItem } from '@/models/menuItem';
+import { Restaurant } from '@/models/restaurant';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import mongoose from 'mongoose';
@@ -72,9 +73,25 @@ export async function GET(request: Request) {
       };
     });
 
+    const restaurant = await Restaurant.findById(order.restaurantId)
+      .select('name contact email street city postalCode country')
+      .lean();
+
     return Response.json({
       order: normalizeOrder(order),
       receiptItems,
+      restaurant: restaurant
+        ? {
+            _id: String(restaurant._id),
+            name: restaurant.name,
+            contact: restaurant.contact || null,
+            email: restaurant.email || null,
+            street: restaurant.street || null,
+            city: restaurant.city || null,
+            postalCode: restaurant.postalCode || null,
+            country: restaurant.country || null,
+          }
+        : null,
     });
   }
 
