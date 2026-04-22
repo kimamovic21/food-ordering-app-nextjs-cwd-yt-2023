@@ -1210,3 +1210,7 @@ Add AI config folders and guidance
 
 
 Add PDF invoice generation and restaurant details
+
+
+
+Add coupons feature with admin UI and checkout

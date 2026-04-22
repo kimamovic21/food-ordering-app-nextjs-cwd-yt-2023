@@ -26,6 +26,9 @@ type PurchaseReceiptPdfDocumentProps = {
   items: ReceiptItem[];
   taxAmount: number;
   deliveryFee: number;
+  couponCode?: string | null;
+  couponDiscountAmount?: number;
+  couponDiscountPercentage?: number;
   total: number;
 };
 
@@ -130,6 +133,9 @@ export default function PurchaseReceiptPdfDocument({
   items,
   taxAmount,
   deliveryFee,
+  couponCode,
+  couponDiscountAmount = 0,
+  couponDiscountPercentage = 0,
   total,
 }: PurchaseReceiptPdfDocumentProps) {
   const purchasedDate = purchasedOn
@@ -215,6 +221,15 @@ export default function PurchaseReceiptPdfDocument({
             <Text style={styles.totalLabel}>Delivery Fee:</Text>
             <Text style={styles.totalValue}>{formatMoney(deliveryFee)}</Text>
           </View>
+          {couponDiscountAmount > 0 ? (
+            <View style={styles.totalsRow}>
+              <Text style={styles.totalLabel}>
+                Coupon{couponCode ? ` (${couponCode})` : ''}
+                {couponDiscountPercentage > 0 ? ` (${couponDiscountPercentage}%)` : ''}:
+              </Text>
+              <Text style={styles.totalValue}>-{formatMoney(couponDiscountAmount)}</Text>
+            </View>
+          ) : null}
           <View style={styles.grandTotalRow}>
             <Text style={styles.grandTotalText}>Total:</Text>
             <Text style={styles.grandTotalText}>{formatMoney(total)}</Text>

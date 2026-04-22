@@ -7,6 +7,12 @@ import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { calculateLoyaltyDiscount } from '@/libs/loyaltyCalculator';
+import {
+  calculateCouponDiscountAmount,
+  getCouponValidationError,
+  normalizeCouponCode,
+  type CouponLike,
+} from '@/libs/coupon';
 import useProfile from '@/contexts/UseProfile';
 import Link from 'next/link';
 import CartItems from './CartItems';
@@ -103,6 +109,11 @@ const CartPage = () => {
   const [restaurants, setRestaurants] = useState<Map<string, any>>(new Map());
   const [loadingRestaurants, setLoadingRestaurants] = useState(false);
   const [loyaltyDiscountPercentage, setLoyaltyDiscountPercentage] = useState(0);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponLike | null>(null);
+  const [couponMessage, setCouponMessage] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -193,6 +204,28 @@ const CartPage = () => {
     }
   }, [profileData]);
 
+  useEffect(() => {
+    if (!cartItems.length) {
+      setCouponCode('');
+      setAppliedCoupon(null);
+      setCouponMessage(null);
+      setCouponError(null);
+      return;
+    }
+
+    const currentRestaurantId = cartItems[0]?.restaurantId || null;
+    if (
+      appliedCoupon &&
+      appliedCoupon.restaurantId &&
+      appliedCoupon.restaurantId !== currentRestaurantId
+    ) {
+      setCouponCode('');
+      setAppliedCoupon(null);
+      setCouponMessage(null);
+      setCouponError(null);
+    }
+  }, [appliedCoupon, cartItems]);
+
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -253,6 +286,80 @@ const CartPage = () => {
     return restaurant?.name || 'The restaurant';
   };
 
+  const subtotal = getTotalPrice();
+  const couponValidationError = appliedCoupon
+    ? getCouponValidationError({ coupon: appliedCoupon, subtotal })
+    : null;
+  const couponDiscount =
+    appliedCoupon && !couponValidationError
+      ? calculateCouponDiscountAmount(subtotal, appliedCoupon)
+      : 0;
+  const loyaltyDiscountBase = Math.max(0, subtotal - couponDiscount);
+  const loyaltyDiscount = calculateLoyaltyDiscount(loyaltyDiscountBase, loyaltyDiscountPercentage);
+
+  const handleCouponCodeChange = (value: string) => {
+    const normalized = normalizeCouponCode(value);
+    setCouponCode(normalized);
+    if (couponError) {
+      setCouponError(null);
+    }
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Enter a coupon code first.');
+      setCouponMessage(null);
+      return;
+    }
+
+    const restaurantId = getCartRestaurantId();
+    if (!restaurantId) {
+      setCouponError('Add items from a restaurant before applying a coupon.');
+      setCouponMessage(null);
+      return;
+    }
+
+    setIsApplyingCoupon(true);
+    try {
+      const response = await fetch(
+        `/api/coupons?code=${encodeURIComponent(couponCode)}&restaurantId=${encodeURIComponent(
+          restaurantId
+        )}&subtotal=${encodeURIComponent(String(subtotal))}`
+      );
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json?.valid) {
+        const message = json?.error || 'Coupon for this restaurant not available';
+        setAppliedCoupon(null);
+        setCouponMessage(null);
+        setCouponError(message);
+        toast.error(message, {
+          style: { background: '#ef4444', color: 'white' },
+        });
+        return;
+      }
+
+      setAppliedCoupon(json.coupon);
+      setCouponCode(json.coupon.code || couponCode);
+      setCouponError(null);
+      setCouponMessage(json.message || 'Coupon applied successfully.');
+      toast.success('Coupon applied!', {
+        style: { background: '#22c55e', color: 'white' },
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Coupon for this restaurant not available';
+      setAppliedCoupon(null);
+      setCouponMessage(null);
+      setCouponError(message);
+      toast.error(message, {
+        style: { background: '#ef4444', color: 'white' },
+      });
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
   const isSubmittingRef = useRef(false);
   const handleCheckout = async () => {
     if (isSubmittingRef.current || isSubmitting) return;
@@ -302,13 +409,10 @@ const CartPage = () => {
       }
 
       const { totalDeliveryFee } = calculateTotals();
+      const couponToSend = couponValidationError ? '' : appliedCoupon?.code || '';
 
       await toast.promise(
         (async () => {
-          const loyaltyDiscount = calculateLoyaltyDiscount(
-            totalDeliveryFee,
-            loyaltyDiscountPercentage
-          );
           const response = await fetch('/api/checkout', {
             method: 'POST',
             headers: {
@@ -319,6 +423,7 @@ const CartPage = () => {
               cartItems,
               loyaltyDiscount,
               loyaltyDiscountPercentage,
+              couponCode: couponToSend,
             }),
           });
           if (!response.ok) {
@@ -368,6 +473,7 @@ const CartPage = () => {
   const multipleRestaurants = hasMultipleRestaurants();
   const restaurantOpen = isRestaurantOpen();
   const restaurantName = getRestaurantName();
+  const displayedCouponMessage = couponValidationError || couponMessage;
 
   return (
     <div className='max-w-7xl mx-auto py-4 sm:py-8 px-2 sm:px-4 min-h-[60vh]'>
@@ -410,12 +516,19 @@ const CartPage = () => {
             handleInputChange={handleInputChange}
           />
           <OrderSummary
-            subtotal={getTotalPrice()}
+            subtotal={subtotal}
             includedTax={includedTax}
             taxPercentage={taxPercentage}
             deliveryFee={totalDeliveryFee}
             loyaltyDiscountPercentage={loyaltyDiscountPercentage}
-            loyaltyDiscount={calculateLoyaltyDiscount(totalDeliveryFee, loyaltyDiscountPercentage)}
+            loyaltyDiscount={loyaltyDiscount}
+            couponCode={couponCode}
+            couponDiscount={couponDiscount}
+            couponMessage={displayedCouponMessage}
+            couponError={couponValidationError || couponError}
+            isApplyingCoupon={isApplyingCoupon}
+            onCouponCodeChange={handleCouponCodeChange}
+            onApplyCoupon={handleApplyCoupon}
             isLoggedIn={isLoggedIn}
             isSubmitting={isSubmitting}
             handleCheckout={handleCheckout}

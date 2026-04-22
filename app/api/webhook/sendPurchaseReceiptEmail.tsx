@@ -26,6 +26,9 @@ type SendPurchaseReceiptEmailArgs = {
   items: ReceiptItem[];
   taxAmount: number;
   deliveryFee: number;
+  couponCode?: string | null;
+  couponDiscountAmount?: number;
+  couponDiscountPercentage?: number;
   total: number;
 };
 
@@ -39,6 +42,9 @@ export async function sendPurchaseReceiptEmail({
   items,
   taxAmount,
   deliveryFee,
+  couponCode,
+  couponDiscountAmount,
+  couponDiscountPercentage,
   total,
 }: SendPurchaseReceiptEmailArgs) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -61,6 +67,9 @@ export async function sendPurchaseReceiptEmail({
         items={items}
         taxAmount={taxAmount}
         deliveryFee={deliveryFee}
+        couponCode={couponCode}
+        couponDiscountAmount={couponDiscountAmount || 0}
+        couponDiscountPercentage={couponDiscountPercentage || 0}
         total={total}
       />
     );

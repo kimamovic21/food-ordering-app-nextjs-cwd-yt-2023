@@ -42,7 +42,7 @@ const OrderItemsCard = ({
   const includedTax = taxAmount ?? subtotal * (taxPercent / 100);
   const discount = loyaltyDiscount || 0;
   const calculatedDeliveryFee = deliveryFee || 5;
-  const discountedDeliveryFee = calculatedDeliveryFee - discount;
+  const discountedSubtotal = Math.max(0, subtotal - discount);
 
   return (
     <Card>
@@ -87,14 +87,12 @@ const OrderItemsCard = ({
             <span>${includedTax.toFixed(2)}</span>
           </div>
 
-          {/* Delivery Fee */}
           <div className='border-t pt-2 space-y-1'>
             <div className='flex justify-between text-muted-foreground'>
               <span>Delivery Fee:</span>
               <span>${calculatedDeliveryFee.toFixed(2)}</span>
             </div>
 
-            {/* Loyalty Discount on Delivery */}
             {discount > 0 && (
               <div className='flex justify-between text-green-600 text-sm pl-2'>
                 <span>
@@ -106,8 +104,8 @@ const OrderItemsCard = ({
             )}
             {discount > 0 && (
               <div className='flex justify-between text-muted-foreground font-semibold border-t border-dashed pt-1'>
-                <span>Final Delivery Fee:</span>
-                <span>${discountedDeliveryFee.toFixed(2)}</span>
+                <span>Food Subtotal After Loyalty:</span>
+                <span>${discountedSubtotal.toFixed(2)}</span>
               </div>
             )}
           </div>

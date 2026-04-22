@@ -37,6 +37,9 @@ type PurchaseReceiptEmailProps = {
   items: ReceiptItem[];
   taxAmount: number;
   deliveryFee: number;
+  couponCode?: string | null;
+  couponDiscountAmount?: number;
+  couponDiscountPercentage?: number;
   total: number;
 };
 
@@ -72,6 +75,9 @@ export default function PurchaseReceiptEmail({
   items,
   taxAmount,
   deliveryFee,
+  couponCode,
+  couponDiscountAmount = 0,
+  couponDiscountPercentage = 0,
   total,
 }: PurchaseReceiptEmailProps) {
   const purchasedDate = purchasedOn
@@ -310,6 +316,36 @@ export default function PurchaseReceiptEmail({
                     </Text>
                   </Column>
                 </Row>
+                {couponDiscountAmount > 0 ? (
+                  <Row>
+                    <Column style={{ width: '70%' }}>
+                      <Text
+                        style={{
+                          margin: 0,
+                          fontSize: '14px',
+                          lineHeight: '22px',
+                          color: '#4b5563',
+                          textAlign: 'left',
+                        }}
+                      >
+                        Coupon{couponCode ? ` (${couponCode})` : ''}
+                        {couponDiscountPercentage > 0 ? ` (${couponDiscountPercentage}%)` : ''}:
+                      </Text>
+                    </Column>
+                    <Column align='right' style={{ width: '30%' }}>
+                      <Text
+                        style={{
+                          margin: 0,
+                          fontSize: '14px',
+                          lineHeight: '22px',
+                          color: '#16a34a',
+                        }}
+                      >
+                        -{formatMoney(couponDiscountAmount)}
+                      </Text>
+                    </Column>
+                  </Row>
+                ) : null}
                 <Hr style={{ borderColor: '#e5e7eb', margin: '8px 0' }} />
                 <Row>
                   <Column style={{ width: '70%' }}>

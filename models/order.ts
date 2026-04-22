@@ -75,6 +75,36 @@ const OrderSchema = new Schema(
       default: null,
     },
 
+    couponId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Coupon',
+      default: null,
+    },
+    couponCode: {
+      type: String,
+      default: null,
+    },
+    couponTitle: {
+      type: String,
+      default: null,
+    },
+    couponDiscountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    couponDiscountPercentage: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 90,
+    },
+    couponMinimumOrderAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     total: { type: Number, required: true },
     orderPaid: { type: Boolean, default: false },
     orderStatus: {

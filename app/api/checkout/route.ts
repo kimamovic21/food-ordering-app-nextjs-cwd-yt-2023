@@ -1,10 +1,16 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
+import { Coupon } from '@/models/coupon';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
 import { Restaurant } from '@/models/restaurant';
 import { MenuItem } from '@/models/menuItem';
 import { calculateLoyaltyStatus } from '@/libs/loyaltyCalculator';
+import {
+  calculateCouponDiscountAmount,
+  getCouponValidationError,
+  normalizeCouponCode,
+} from '@/libs/coupon';
 import mongoose from 'mongoose';
 import Stripe from 'stripe';
 
@@ -44,8 +50,8 @@ export async function POST(req: Request) {
     city,
     country,
     cartItems,
-    loyaltyDiscount,
     loyaltyDiscountPercentage,
+    couponCode,
   } = body as {
     phone?: string;
     streetAddress?: string;
@@ -53,8 +59,8 @@ export async function POST(req: Request) {
     city?: string;
     country?: string;
     cartItems?: CartItemPayload[];
-    loyaltyDiscount?: number;
     loyaltyDiscountPercentage?: number;
+    couponCode?: string;
   };
 
   if (!phone || !streetAddress || !postalCode || !city || !country) {
@@ -171,7 +177,6 @@ export async function POST(req: Request) {
   });
 
   const loyaltyStatus = calculateLoyaltyStatus(completedOrderCount);
-  const verifiedLoyaltyDiscount = loyaltyDiscount || 0;
   const verifiedLoyaltyPercentage = loyaltyDiscountPercentage || 0;
 
   // Security check: ensure discount doesn't exceed what user should have
@@ -182,12 +187,63 @@ export async function POST(req: Request) {
   const subtotal = roundToTwoDecimals(
     sanitizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   );
-  const taxAmount = roundToTwoDecimals(subtotal * (restaurant.tax / 100));
-  const deliveryFee = restaurant.courierFee;
-  const discountedDeliveryFee = roundToTwoDecimals(
-    Math.max(deliveryFee - verifiedLoyaltyDiscount, 0)
+
+  const normalizedCouponCode = couponCode ? normalizeCouponCode(couponCode) : '';
+  const coupon = normalizedCouponCode
+    ? await Coupon.findOne({
+        code: normalizedCouponCode,
+        restaurantId: restaurant._id,
+      })
+    : null;
+
+  let couponDiscountAmount = 0;
+  let couponDiscountPercentage = 0;
+
+  if (normalizedCouponCode) {
+    if (!coupon) {
+      return Response.json({ error: 'Coupon for this restaurant not available' }, { status: 400 });
+    }
+
+    const couponValidationError = getCouponValidationError({ coupon, subtotal });
+    if (couponValidationError) {
+      return Response.json({ error: couponValidationError }, { status: 400 });
+    }
+
+    couponDiscountAmount = calculateCouponDiscountAmount(subtotal, coupon);
+    couponDiscountPercentage = Number(coupon.discountValue) || 0;
+  }
+
+  const loyaltyDiscountBase = roundToTwoDecimals(Math.max(subtotal - couponDiscountAmount, 0));
+  const verifiedLoyaltyDiscount = roundToTwoDecimals(
+    (loyaltyDiscountBase * verifiedLoyaltyPercentage) / 100
   );
-  const total = roundToTwoDecimals(subtotal + discountedDeliveryFee);
+  const taxAmount = roundToTwoDecimals(subtotal * (restaurant.tax / 100));
+  const deliveryFee = roundToTwoDecimals(restaurant.courierFee || 5);
+  const discountedSubtotal = roundToTwoDecimals(
+    Math.max(subtotal - couponDiscountAmount - verifiedLoyaltyDiscount, 0)
+  );
+  const total = roundToTwoDecimals(discountedSubtotal + deliveryFee);
+
+  const couponSnapshot = coupon
+    ? {
+        couponId: coupon._id,
+        couponCode: coupon.code,
+        couponTitle: coupon.title,
+        couponDiscountAmount,
+        couponDiscountPercentage,
+        couponMinimumOrderAmount: Number(coupon.minimumOrderAmount) || 0,
+      }
+    : {
+        couponId: null,
+        couponCode: null,
+        couponTitle: null,
+        couponDiscountAmount: 0,
+        couponDiscountPercentage: 0,
+        couponMinimumOrderAmount: 0,
+      };
+
+  const foodLineDiscountAmount = couponDiscountAmount + verifiedLoyaltyDiscount;
+  const couponLineDiscountRate = subtotal > 0 ? foodLineDiscountAmount / subtotal : 0;
 
   const order = await Order.create({
     userId: user._id,
@@ -212,6 +268,7 @@ export async function POST(req: Request) {
     loyaltyDiscount: verifiedLoyaltyDiscount,
     loyaltyDiscountPercentage: verifiedLoyaltyPercentage,
     loyaltyTier: loyaltyStatus.currentTier?.name || null,
+    ...couponSnapshot,
     total,
     orderPaid: false,
     paid: false,
@@ -220,11 +277,13 @@ export async function POST(req: Request) {
 
   // Add items to Stripe line items
   sanitizedItems.forEach((item) => {
+    const adjustedUnitPrice = roundToTwoDecimals(item.price * (1 - couponLineDiscountRate));
+
     stripeLineItems.push({
       quantity: item.quantity,
       price_data: {
         currency: 'usd',
-        unit_amount: Math.round(item.price * 100),
+        unit_amount: Math.max(0, Math.round(adjustedUnitPrice * 100)),
         product_data: {
           name: `${item.name} (${item.size})`,
         },
@@ -237,12 +296,9 @@ export async function POST(req: Request) {
     quantity: 1,
     price_data: {
       currency: 'usd',
-      unit_amount: Math.round(discountedDeliveryFee * 100),
+      unit_amount: Math.round(deliveryFee * 100),
       product_data: {
-        name:
-          verifiedLoyaltyDiscount > 0
-            ? `Delivery Fee (${verifiedLoyaltyPercentage}% loyalty discount applied)`
-            : `Delivery Fee`,
+        name: 'Delivery Fee',
       },
     },
   });

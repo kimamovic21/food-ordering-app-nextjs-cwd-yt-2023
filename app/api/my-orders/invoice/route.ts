@@ -89,6 +89,9 @@ export async function GET(request: Request) {
     })),
     taxAmount: Number(order.taxAmount) || 0,
     deliveryFee: Number(order.deliveryFee) || 0,
+    couponCode: (order as any).couponCode || null,
+    couponDiscountAmount: Number((order as any).couponDiscountAmount) || 0,
+    couponDiscountPercentage: Number((order as any).couponDiscountPercentage) || 0,
     total: Number(order.total) || 0,
   });
 

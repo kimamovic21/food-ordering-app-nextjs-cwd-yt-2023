@@ -49,10 +49,10 @@ export function calculateLoyaltyStatus(completedOrderCount: number): LoyaltyStat
 }
 
 /**
- * Calculate discount amount based on delivery fee and loyalty percentage
+ * Calculate loyalty discount amount based on the food subtotal and loyalty percentage.
  */
-export function calculateLoyaltyDiscount(deliveryFee: number, discountPercentage: number): number {
-  return Math.round(((deliveryFee * discountPercentage) / 100) * 100) / 100;
+export function calculateLoyaltyDiscount(subtotal: number, discountPercentage: number): number {
+  return Math.round(((subtotal * discountPercentage) / 100) * 100) / 100;
 }
 
 /**

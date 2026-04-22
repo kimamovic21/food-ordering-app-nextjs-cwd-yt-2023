@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import { Coupon } from '@/models/coupon';
 import { Order } from '@/models/order';
 import { MenuItem } from '@/models/menuItem';
 import { Restaurant } from '@/models/restaurant';
@@ -69,6 +70,17 @@ export async function POST(req: Request) {
           }
         }
 
+        if (!wasPaid && order.couponId && Number((order as any).couponDiscountAmount || 0) > 0) {
+          try {
+            await Coupon.findByIdAndUpdate(order.couponId, {
+              $inc: { usageCount: 1 },
+              $set: { lastUsedAt: new Date() },
+            });
+          } catch (couponError) {
+            console.error('Failed to increment coupon usage:', couponError);
+          }
+        }
+
         const shouldSendReceipt = !wasPaid || !(order as any).receiptEmailSentAt;
 
         if (shouldSendReceipt) {
@@ -96,6 +108,9 @@ export async function POST(req: Request) {
 
           const emailResult = await sendPurchaseReceiptEmail({
             orderId: order._id.toString(),
+            couponCode: (order as any).couponCode || null,
+            couponDiscountAmount: Number((order as any).couponDiscountAmount) || 0,
+            couponDiscountPercentage: Number((order as any).couponDiscountPercentage) || 0,
             customerEmail: order.email,
             purchasedOn: order.updatedAt,
             restaurant: restaurant

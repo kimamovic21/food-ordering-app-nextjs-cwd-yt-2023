@@ -20,6 +20,9 @@ type ReceiptOrder = {
   updatedAt?: string;
   taxAmount?: number;
   deliveryFee?: number;
+  couponCode?: string | null;
+  couponDiscountAmount?: number;
+  couponDiscountPercentage?: number;
   total?: number;
 };
 
@@ -126,6 +129,9 @@ const CheckoutContent = () => {
     }, 0);
   }, [receipt]);
 
+  const couponDiscountAmount = Number(receipt?.order?.couponDiscountAmount || 0);
+  const foodTotal = Math.max(0, itemsTotal - couponDiscountAmount);
+
   return (
     <div className='max-w-3xl mx-auto py-10 px-4 space-y-6'>
       <h1 className='text-4xl font-bold tracking-tight text-gray-800 dark:text-gray-100'>
@@ -226,6 +232,20 @@ const CheckoutContent = () => {
                 <span>Items:</span>
                 <span>{formatMoney(itemsTotal)}</span>
               </div>
+              {couponDiscountAmount > 0 ? (
+                <div className='flex justify-between text-green-600 dark:text-green-400'>
+                  <span>
+                    Coupon{receipt.order.couponCode ? ` (${receipt.order.couponCode})` : ''}:
+                  </span>
+                  <span>-{formatMoney(couponDiscountAmount)}</span>
+                </div>
+              ) : null}
+              {couponDiscountAmount > 0 ? (
+                <div className='flex justify-between text-gray-600 dark:text-gray-300'>
+                  <span>Food total after coupon:</span>
+                  <span>{formatMoney(foodTotal)}</span>
+                </div>
+              ) : null}
               <div className='flex justify-between text-gray-600 dark:text-gray-300'>
                 <span>Tax:</span>
                 <span>{formatMoney(Number(receipt.order.taxAmount) || 0)}</span>

@@ -57,7 +57,7 @@ export default async function LoyaltyPage() {
                 <p className='text-sm text-muted-foreground mb-1'>Current Tier</p>
                 {loyaltyStatus.currentTier ? (
                   <Badge className='text-lg px-4 py-1'>
-                    <span className={loyaltyStatus.currentTier.color}>
+                    <span className='text-white font-semibold'>
                       {loyaltyStatus.currentTier.name}
                     </span>
                   </Badge>
