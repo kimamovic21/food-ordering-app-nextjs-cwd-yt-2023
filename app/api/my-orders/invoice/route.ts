@@ -95,7 +95,7 @@ export async function GET(request: Request) {
     total: Number(order.total) || 0,
   });
 
-  const pdfBuffer = await pdf(doc).toBuffer();
+  const pdfBuffer = await pdf(doc as any).toBuffer();
   const fileName = `invoice-${String(order._id)}.pdf`;
 
   return new Response(pdfBuffer as unknown as BodyInit, {

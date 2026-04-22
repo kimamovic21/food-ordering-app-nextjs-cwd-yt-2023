@@ -264,7 +264,7 @@ export async function POST(req: Request) {
     restaurantId: restaurant._id,
     taxPercentage: restaurant.tax,
     taxAmount,
-    deliveryFee: discountedDeliveryFee,
+    deliveryFee,
     loyaltyDiscount: verifiedLoyaltyDiscount,
     loyaltyDiscountPercentage: verifiedLoyaltyPercentage,
     loyaltyTier: loyaltyStatus.currentTier?.name || null,
