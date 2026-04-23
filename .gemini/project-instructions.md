@@ -26,5 +26,13 @@
 ## Validation Workflow
 
 - Execute `npm run lint` for meaningful code edits.
+- Execute `npm run test` for auth and API behavior changes.
 - Update `example.env` if any env contract changes.
 - Update top-level docs when adding major features or integrations.
+
+## Test Workflow
+
+- Test runner: Vitest.
+- Test folders: `__tests__/` for tests, `mocks/` for fixtures.
+- Single-file execution: `npm run test:file -- <path>`.
+- Prefer behavior-focused tests that cover success and failure paths.

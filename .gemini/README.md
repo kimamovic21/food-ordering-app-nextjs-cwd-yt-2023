@@ -10,6 +10,7 @@ This folder holds extended, task-focused guidance that can evolve without bloati
 ## Current Files
 
 - `project-instructions.md`: Detailed project checklist and risk map.
+- `testing.md`: Testing guidance and command workflow for Vitest.
 
 ## Best Practices
 

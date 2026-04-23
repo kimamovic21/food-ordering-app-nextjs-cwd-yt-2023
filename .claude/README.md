@@ -10,6 +10,7 @@ This folder is used for modular, reusable guidance that can be referenced during
 ## Current Files
 
 - `project-instructions.md`: Practical coding and safety checklist for this codebase.
+- `testing.md`: Testing priorities and workflow notes for Vitest usage.
 
 ## Best Practices
 

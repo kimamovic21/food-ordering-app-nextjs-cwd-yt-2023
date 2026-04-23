@@ -45,10 +45,21 @@ This file provides project context and coding guidance for Gemini tools.
 
 ## Testing And Validation
 
-- No automated test suite is defined.
+- Test runner: Vitest.
+- Tests are stored in `__tests__/`.
+- Reusable fixtures are stored in `mocks/`.
+- Initial coverage includes register and credentials login behavior.
 - Run npm run lint after changes.
+- Run npm run test after test-related changes.
 - For API changes, note any new env vars in example.env.
 - For feature additions, also update README.md and AGENTS.md.
+
+## Test Commands
+
+- `npm run test`
+- `npm run test:watch`
+- `npm run test:file -- __tests__/api/register.route.test.ts`
+- `npm run test:auth`
 
 ## Communication
 

@@ -78,9 +78,22 @@ See `example.env`. Variables currently used in the project include:
 - npm run build
 - npm run start
 - npm run lint
+- npm run test
+- npm run test:watch
+- npm run test:file -- __tests__/api/register.route.test.ts
+- npm run test:auth
 - npm run favorites:backfill
 - npm run stripe:listen
 - npm run stripe:trigger
+
+## Testing Conventions
+
+- Test runner: Vitest (`vitest.config.ts`).
+- Test root folders: `__tests__/` and `mocks/`.
+- Start with high-risk logic (auth, payments, webhooks, role checks).
+- Keep runtime code unchanged unless explicitly requested; prefer tests-only changes.
+- For auth tests, cover both success and failure behavior contracts.
+- Use `MONGODB_URL_TESTS` for local test database configuration when needed.
 
 ## When Modifying Auth, Payments, Email, or Courier Logic
 

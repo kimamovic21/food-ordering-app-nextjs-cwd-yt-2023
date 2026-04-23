@@ -7,6 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:file": "vitest run",
+    "test:auth": "vitest run __tests__/auth",
     "commitlint": "commitlint",
     "favorites:backfill": "node scripts/backfill-favorites-fields.js",
     "stripe:listen": "cd .. && stripe listen --forward-to localhost:3000/api/webhook",
@@ -80,6 +84,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.6",
     "eslint-plugin-react": "^7.33.0",
-    "eslint-plugin-react-hooks": "^5.0.0"
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "vitest": "^4.1.5"
   }
 }

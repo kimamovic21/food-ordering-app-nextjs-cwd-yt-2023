@@ -39,5 +39,14 @@ alwaysApply: true
 ## Validation Checklist
 
 - Run `npm run lint` after meaningful edits.
+- Run `npm run test` when changing business logic in auth, checkout, webhook, order, or courier flows.
 - If env usage changes, update `example.env`.
 - For major feature additions, update `README.md` and root AI docs.
+
+## Testing Conventions
+
+- Use Vitest for TypeScript tests.
+- Keep tests in `__tests__/` grouped by domain.
+- Keep reusable fixtures in `mocks/`.
+- Prefer behavior-driven assertions over implementation-coupled assertions.
+- Add both success and failure scenarios for route handlers and auth callbacks.

@@ -27,5 +27,13 @@
 ## Required Validation
 
 - Run `npm run lint` after non-trivial changes.
+- Run `npm run test` when changing auth or API business logic.
 - If environment variables change, update `example.env`.
 - If adding major functionality, update docs in `README.md` and AI guidance files.
+
+## Test Workflow
+
+- Test runner: Vitest.
+- Test folders: `__tests__/` for tests, `mocks/` for fixtures.
+- Use `npm run test:file -- <path>` to run one file during iteration.
+- Keep tests deterministic and focused on route/auth behavior contracts.
