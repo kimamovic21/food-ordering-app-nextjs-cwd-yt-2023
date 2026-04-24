@@ -34,6 +34,7 @@
 ## Test Workflow
 
 - Test runner: Vitest.
-- Test folders: `__tests__/` for tests, `mocks/` for fixtures.
+- Test folders: `__tests__/` for unit tests, `mocks/` for fixtures, `e2e/` for real-flow tests.
 - Use `npm run test:file -- <path>` to run one file during iteration.
 - Keep tests deterministic and focused on route/auth behavior contracts.
+- Use `npm run test:e2e` for database-backed flows and keep cleanup in test code.

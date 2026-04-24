@@ -1222,3 +1222,7 @@ Fix date typing, delivery fee, and PDF typing
 
 
 Add Vitest tests, fixtures, and testing docs
+
+
+
+Add E2E tests and Vitest e2e config

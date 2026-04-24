@@ -1,10 +1,9 @@
 ---
 description: Project-wide coding and safety rules for the food ordering app.
 globs:
-  - "**/*"
+  - '**/*'
 alwaysApply: true
 ---
-
 
 # Food Order App
 
@@ -47,6 +46,8 @@ alwaysApply: true
 
 - Use Vitest for TypeScript tests.
 - Keep tests in `__tests__/` grouped by domain.
+- Keep e2e tests in `e2e/` for real workflow validation.
 - Keep reusable fixtures in `mocks/`.
 - Prefer behavior-driven assertions over implementation-coupled assertions.
 - Add both success and failure scenarios for route handlers and auth callbacks.
+- Ensure e2e tests clean up created records and use `MONGODB_URL_TESTS`.

@@ -48,6 +48,7 @@ This file provides guidance for AI assistance in this repository.
 - Test runner: Vitest.
 - Tests are stored in `__tests__/`.
 - Reusable fixtures are stored in `mocks/`.
+- E2E tests are stored in `e2e/` and use `MONGODB_URL_TESTS`.
 - Auth starter tests exist for register and credentials login behavior.
 - Run npm run lint after changes.
 - Run npm run test after test-related changes.
@@ -60,6 +61,9 @@ This file provides guidance for AI assistance in this repository.
 - `npm run test:watch`
 - `npm run test:file -- __tests__/api/register.route.test.ts`
 - `npm run test:auth`
+- `npm run test:e2e`
+- `npm run test:e2e:file -- e2e/auth/register-login.e2e.test.ts`
+- `npm run test:all`
 
 ## Communication
 

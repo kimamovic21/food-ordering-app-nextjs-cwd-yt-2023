@@ -2,6 +2,11 @@
 
 This project uses Vitest for fast TypeScript tests.
 
+It now has two test layers:
+
+- Unit tests in `__tests__/` (mocked dependencies)
+- E2E tests in `e2e/` (real test database)
+
 ## Why Start With Register/Login
 
 Auth is a high-value and high-risk area. Testing register and login first gives confidence in:
@@ -23,6 +28,7 @@ These tests intentionally avoid changing existing runtime auth code.
 
 - `__tests__/`: all test files by domain
 - `mocks/`: reusable mock fixtures and sample payloads
+- `e2e/`: real-flow tests against the test database
 
 ## Best Practices For This Repository
 
@@ -39,6 +45,10 @@ These tests intentionally avoid changing existing runtime auth code.
 - `npm run test:watch`: run in watch mode
 - `npm run test:file -- <path>`: run only one file
 - `npm run test:auth`: run only auth-focused tests
+- `npm run test:e2e`: run all e2e tests
+- `npm run test:e2e:watch`: run e2e tests in watch mode
+- `npm run test:e2e:file -- <path>`: run one e2e file
+- `npm run test:all`: run unit + e2e tests
 
 ## Environment Variables
 
@@ -50,3 +60,9 @@ Test setup will use:
 
 1. `MONGODB_URL` if already set
 2. otherwise `MONGODB_URL_TESTS` (required; no fallback)
+
+## E2E Notes
+
+- E2E tests use real MongoDB data and perform cleanup of test-created users.
+- Keep e2e coverage focused on high-risk user journeys.
+- Detailed e2e guide: `e2e/README.md`.

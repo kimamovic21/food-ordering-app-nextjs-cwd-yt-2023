@@ -1,5 +1,5 @@
 {
-  "name": "food-ordering-app-nextjs-cwd-yt-2023",
+  "name": "food-ordering-app-nextjs",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,6 +11,10 @@
     "test:watch": "vitest",
     "test:file": "vitest run",
     "test:auth": "vitest run __tests__/auth",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:e2e:watch": "vitest --config vitest.e2e.config.ts",
+    "test:e2e:file": "vitest run --config vitest.e2e.config.ts",
+    "test:all": "npm run test && npm run test:e2e",
     "commitlint": "commitlint",
     "favorites:backfill": "node scripts/backfill-favorites-fields.js",
     "stripe:listen": "cd .. && stripe listen --forward-to localhost:3000/api/webhook",

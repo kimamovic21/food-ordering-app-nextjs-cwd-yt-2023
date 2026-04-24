@@ -20,3 +20,5 @@ Use Vitest to cover business-critical logic with small, maintainable tests.
 - Full run: `npm run test`
 - Single file: `npm run test:file -- __tests__/path/to/file.test.ts`
 - Auth scope: `npm run test:auth`
+- E2E run: `npm run test:e2e`
+- E2E single file: `npm run test:e2e:file -- e2e/path/to/file.e2e.test.ts`

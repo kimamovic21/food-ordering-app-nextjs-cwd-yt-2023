@@ -1,6 +1,6 @@
 # Test Suite Guide
 
-This folder contains app tests grouped by feature area.
+This folder contains unit tests grouped by feature area.
 
 ## Current Coverage
 
@@ -19,6 +19,11 @@ This folder contains app tests grouped by feature area.
 - Run all tests: `npm run test`
 - Watch mode: `npm run test:watch`
 - Run a single test file: `npm run test:file -- __tests__/api/register.route.test.ts`
+
+## E2E Tests
+
+- End-to-end style tests are kept in `e2e/`.
+- See `e2e/README.md` for e2e commands and behavior.
 
 ## Environment
 

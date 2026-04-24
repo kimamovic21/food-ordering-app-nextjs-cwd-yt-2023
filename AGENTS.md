@@ -21,10 +21,10 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 
 ## Local Setup
 
-1) Install dependencies:
+1. Install dependencies:
    npm install
-2) Create `.env` using `example.env` as a template.
-3) Run dev server:
+2. Create `.env` using `example.env` as a template.
+3. Run dev server:
    npm run dev
 
 ## Environment Variables
@@ -80,8 +80,11 @@ See `example.env`. Variables currently used in the project include:
 - npm run lint
 - npm run test
 - npm run test:watch
-- npm run test:file -- __tests__/api/register.route.test.ts
+- npm run test:file -- **tests**/api/register.route.test.ts
 - npm run test:auth
+- npm run test:e2e
+- npm run test:e2e:file -- e2e/auth/register-login.e2e.test.ts
+- npm run test:all
 - npm run favorites:backfill
 - npm run stripe:listen
 - npm run stripe:trigger
@@ -89,11 +92,12 @@ See `example.env`. Variables currently used in the project include:
 ## Testing Conventions
 
 - Test runner: Vitest (`vitest.config.ts`).
-- Test root folders: `__tests__/` and `mocks/`.
+- Test root folders: `__tests__/`, `mocks/`, and `e2e/`.
 - Start with high-risk logic (auth, payments, webhooks, role checks).
 - Keep runtime code unchanged unless explicitly requested; prefer tests-only changes.
 - For auth tests, cover both success and failure behavior contracts.
 - Use `MONGODB_URL_TESTS` for local test database configuration when needed.
+- Keep e2e tests data-safe with explicit cleanup of created records.
 
 ## When Modifying Auth, Payments, Email, or Courier Logic
 
