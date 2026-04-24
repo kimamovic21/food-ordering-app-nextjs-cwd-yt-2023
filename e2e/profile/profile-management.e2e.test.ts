@@ -3,11 +3,13 @@ import {
   GET as GetProfile,
   PUT as PutProfile,
 } from '@/app/api/profile/route';
+import { PUT as PutProfilePassword } from '@/app/api/profile/change-password/route';
 import { DELETE as DeleteUserImage, POST as UploadUserImage } from '@/app/api/upload/users/route';
 import { User } from '@/models/user';
 import { getServerSession } from 'next-auth/next';
 import cloudinary from '@/libs/cloudinary';
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
 
 type MockSession = { user?: { email?: string } } | null;
 
@@ -87,6 +89,48 @@ describe('E2E Profile: info, image, and account deletion', () => {
     expect(profile.phone).toBe('+38761111222');
     expect(profile.city).toBe('Sarajevo');
     expect(profile.role).toBe('user');
+  });
+
+  it('changes password through /api/profile/change-password PUT', async () => {
+    const email = `e2e-profile-${Date.now()}@example.com`;
+    const currentPassword = 'Oldsecret123!';
+    const newPassword = 'Newsecret123!';
+
+    await User.create({
+      name: 'E2E Profile User',
+      email,
+      password: bcrypt.hashSync(currentPassword, 10),
+      provider: 'credentials',
+      phone: '',
+      streetAddress: '',
+      postalCode: '',
+      city: '',
+      country: '',
+      role: 'user',
+    });
+
+    activeSession = { user: { email } };
+
+    const passwordRequest = new Request('http://localhost/api/profile/change-password', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        currentPassword,
+        newPassword,
+        confirmNewPassword: newPassword,
+      }),
+    });
+
+    const passwordResponse = await PutProfilePassword(passwordRequest);
+    const passwordBody = await passwordResponse.json();
+
+    expect(passwordResponse.status).toBe(200);
+    expect(passwordBody.success).toBe(true);
+
+    const updatedUser = await User.findOne({ email });
+    expect(updatedUser?.password).toBeTruthy();
+    expect(bcrypt.compareSync(newPassword, updatedUser?.password as string)).toBe(true);
+    expect(bcrypt.compareSync(currentPassword, updatedUser?.password as string)).toBe(false);
   });
 
   it('updates and removes profile image through /api/upload/users routes', async () => {

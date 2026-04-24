@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -24,6 +25,7 @@ type UserProfileFormProps = {
   postalCode: string;
   city: string;
   country: string;
+  provider?: string | null;
   isSaving?: boolean;
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
   onNameChange: (value: string) => void;
@@ -44,6 +46,7 @@ const UserProfileForm = ({
   postalCode,
   city,
   country,
+  provider,
   isSaving,
   onSubmit,
   onNameChange,
@@ -56,7 +59,7 @@ const UserProfileForm = ({
   isDeleting,
 }: UserProfileFormProps) => {
   return (
-    <form className='grow space-y-4' onSubmit={onSubmit}>
+    <form className='grow min-w-0 max-w-3xl space-y-4' onSubmit={onSubmit}>
       <div className='space-y-2'>
         <Label htmlFor='name'>Full name</Label>
         <Input
@@ -139,6 +142,17 @@ const UserProfileForm = ({
       <Button type='submit' disabled={isSaving} className='w-full'>
         {isSaving ? 'Saving...' : 'Save'}
       </Button>
+
+      {provider === 'oauth' ? (
+        <p className='w-full rounded-md border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground break-words'>
+          You registered with Google, so password updates are not available. Use your Google
+          account to sign in.
+        </p>
+      ) : (
+        <Button asChild className='w-full'>
+          <Link href='/profile/change-password'>Change password</Link>
+        </Button>
+      )}
 
       {/* Delete Account Button Below Save */}
       <AlertDialog>

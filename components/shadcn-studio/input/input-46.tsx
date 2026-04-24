@@ -5,17 +5,7 @@ import { CheckIcon, EyeIcon, EyeOffIcon, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/libs/utils';
-
-const requirements = [
-  { regex: /.{6,}/, text: 'At least 6 characters' },
-  { regex: /[a-z]/, text: 'At least 1 lowercase letter' },
-  { regex: /[A-Z]/, text: 'At least 1 uppercase letter' },
-  { regex: /[0-9]/, text: 'At least 1 number' },
-  {
-    regex: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
-    text: 'At least 1 special character',
-  },
-];
+import { passwordRequirements } from '@/libs/password';
 
 type InputPasswordStrengthDemoProps = {
   value: string;
@@ -29,7 +19,7 @@ const InputPasswordStrengthDemo = ({ value, onChange }: InputPasswordStrengthDem
 
   const toggleVisibility = () => setIsVisible((prevState) => !prevState);
 
-  const strength = requirements.map((req) => ({
+  const strength = passwordRequirements.map((req) => ({
     met: req.regex.test(value),
     text: req.text,
   }));

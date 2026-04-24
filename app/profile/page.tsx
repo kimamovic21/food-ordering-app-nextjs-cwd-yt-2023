@@ -226,9 +226,9 @@ const ProfilePage = () => {
 
   return (
     <section className='mt-8 max-w-5xl mx-auto'>
-      <Title>Profile</Title>
+      <Title className='text-center'>Profile</Title>
 
-      <div className='max-w-4xl mx-auto mt-8'>
+      <div className='max-w-3xl mx-auto mt-8'>
         <div className='flex flex-col md:flex-row gap-4 md:items-start'>
           <UserProfileImage
             imageUrl={imageUrl}
@@ -239,25 +239,28 @@ const ProfilePage = () => {
             isSaving={isSaving}
           />
 
-          <UserProfileForm
-            userName={userName}
-            email={session.data?.user?.email}
-            phone={phone}
-            streetAddress={streetAddress}
-            postalCode={postalCode}
-            city={city}
-            country={country}
-            isSaving={isSaving}
-            onSubmit={handleProfileSave}
-            onNameChange={setUserName}
-            onPhoneChange={setPhone}
-            onStreetAddressChange={setStreetAddress}
-            onPostalCodeChange={setPostalCode}
-            onCityChange={setCity}
-            onCountryChange={setCountry}
-            onDeleteAccount={handleDeleteAccount}
-            isDeleting={isDeleting}
-          />
+          <div className='w-full md:w-[560px]'>
+            <UserProfileForm
+              userName={userName}
+              email={session.data?.user?.email}
+              phone={phone}
+              streetAddress={streetAddress}
+              postalCode={postalCode}
+              city={city}
+              country={country}
+              provider={session.data?.user?.provider}
+              isSaving={isSaving}
+              onSubmit={handleProfileSave}
+              onNameChange={setUserName}
+              onPhoneChange={setPhone}
+              onStreetAddressChange={setStreetAddress}
+              onPostalCodeChange={setPostalCode}
+              onCityChange={setCity}
+              onCountryChange={setCountry}
+              onDeleteAccount={handleDeleteAccount}
+              isDeleting={isDeleting}
+            />
+          </div>
         </div>
       </div>
     </section>

@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "test:file": "vitest run",
     "test:auth": "vitest run __tests__/auth",
-    "test:profile": "vitest run __tests__/api/profile.route.test.ts __tests__/api/upload-users.route.test.ts",
+    "test:profile": "vitest run __tests__/api/profile.route.test.ts __tests__/api/profile-change-password.route.test.ts __tests__/api/upload-users.route.test.ts",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:e2e:watch": "vitest --config vitest.e2e.config.ts",
     "test:e2e:file": "vitest run --config vitest.e2e.config.ts",

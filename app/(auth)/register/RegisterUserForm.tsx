@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import GoogleButton from 'react-google-button';
 import InputPasswordStrengthDemo from '@/components/shadcn-studio/input/input-46';
+import { strongPasswordSchema } from '@/libs/password';
 
 const registerSchema = z.object({
   name: z
@@ -30,51 +31,7 @@ const registerSchema = z.object({
     .string()
     .email({ message: 'Please enter a valid email address.' })
     .max(100, { message: 'Email must be 100 characters or fewer.' }),
-  password: z
-    .string()
-    .max(64, { message: 'Password must be 64 characters or fewer.' })
-    .superRefine((val, ctx) => {
-      if (val.length < 6) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Password must be at least 6 characters.',
-          path: [],
-        });
-        return;
-      }
-      if (!/[a-z]/.test(val)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Password must contain at least 1 lowercase letter.',
-          path: [],
-        });
-        return;
-      }
-      if (!/[A-Z]/.test(val)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Password must contain at least 1 uppercase letter.',
-          path: [],
-        });
-        return;
-      }
-      if (!/[0-9]/.test(val)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Password must contain at least 1 number.',
-          path: [],
-        });
-        return;
-      }
-      if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Password must contain at least 1 special character.',
-          path: [],
-        });
-        return;
-      }
-    }),
+  password: strongPasswordSchema,
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;

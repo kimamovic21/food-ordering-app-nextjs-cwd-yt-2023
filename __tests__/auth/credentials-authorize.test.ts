@@ -122,6 +122,7 @@ describe('Credentials authorize', () => {
       name: 'John Doe',
       email: 'john.doe@example.com',
       image: '',
+      provider: 'credentials',
       phone: '',
       streetAddress: '',
       postalCode: '',

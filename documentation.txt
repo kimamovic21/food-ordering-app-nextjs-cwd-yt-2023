@@ -1230,3 +1230,7 @@ Add E2E tests and Vitest e2e config
 
 
 Add profile management tests and docs
+
+
+
+Add change-password API, form, and validation

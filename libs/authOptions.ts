@@ -53,6 +53,7 @@ export const authOptions = {
           name: user.name,
           email: user.email,
           image: user.image || '',
+          provider: user.provider || 'credentials',
           phone: user.phone || '',
           streetAddress: user.streetAddress || '',
           postalCode: user.postalCode || '',
@@ -85,6 +86,7 @@ export const authOptions = {
         if (userInDb) {
           session.user.name = userInDb.name;
           session.user.image = userInDb.image;
+          session.user.provider = userInDb.provider || 'credentials';
           session.user.phone = userInDb.phone || '';
           session.user.streetAddress = userInDb.streetAddress || '';
           session.user.postalCode = userInDb.postalCode || '';
@@ -119,6 +121,7 @@ export const authOptions = {
             // Mirror data back into session
             session.user.name = userInDb.name;
             session.user.image = userInDb.image;
+            session.user.provider = userInDb.provider || 'oauth';
             session.user.role = userInDb.role || 'user';
           } catch (createErr) {
             console.error('Error creating user on session:', createErr);
@@ -135,6 +138,7 @@ export const authOptions = {
       if (user) {
         token.id = (user as any)._id;
         token.email = (user as any).email;
+        token.provider = (user as any).provider || 'credentials';
         token.phone = (user as any).phone || '';
         token.streetAddress = (user as any).streetAddress || '';
         token.postalCode = (user as any).postalCode || '';
@@ -147,6 +151,7 @@ export const authOptions = {
           await mongoose.connect(process.env.MONGODB_URL as string);
           const userInDb = await User.findOne({ email: token.email });
           if (userInDb) {
+            token.provider = userInDb.provider || 'credentials';
             token.role = userInDb.role || 'user';
             token.phone = userInDb.phone || '';
             token.streetAddress = userInDb.streetAddress || '';

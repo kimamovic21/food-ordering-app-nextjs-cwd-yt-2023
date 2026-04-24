@@ -6,9 +6,13 @@ import { Input } from '@/components/ui/input';
 export default function InputPasswordEyeOnly({
   value,
   onChange,
+  placeholder = 'Password',
+  disabled = false,
 }: {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  disabled?: boolean;
 }) {
   const [isVisible, setIsVisible] = useState(false);
   const id = useId();
@@ -18,9 +22,10 @@ export default function InputPasswordEyeOnly({
       <Input
         id={id}
         type={isVisible ? 'text' : 'password'}
-        placeholder='Password'
+        placeholder={placeholder}
         value={value}
         onChange={onChange}
+        disabled={disabled}
         className='pr-9 w-full rounded-md'
       />
       <Button
@@ -28,6 +33,7 @@ export default function InputPasswordEyeOnly({
         variant='ghost'
         size='icon'
         onClick={() => setIsVisible((v) => !v)}
+        disabled={disabled}
         className='text-muted-foreground focus-visible:ring-ring/50 absolute inset-y-0 right-0 rounded-l-none hover:bg-transparent'
         tabIndex={-1}
       >
