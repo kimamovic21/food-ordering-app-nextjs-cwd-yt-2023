@@ -8,6 +8,10 @@ This folder contains end-to-end style tests for critical user flows using a real
   - register user flow with DB persistence checks
   - credentials login flow through NextAuth authorize handler
   - duplicate email registration protection
+- `profile/profile-management.e2e.test.ts`
+  - profile info update flow
+  - profile image upload/remove flow
+  - account deletion flow
 
 ## Environment
 
@@ -23,6 +27,7 @@ Example:
 
 - Run all e2e tests: `npm run test:e2e`
 - Run one e2e file: `npm run test:e2e:file -- e2e/auth/register-login.e2e.test.ts`
+- Run profile e2e tests: `npm run test:e2e:profile`
 - Run full test pipeline (unit + e2e): `npm run test:all`
 
 ## Best Practices

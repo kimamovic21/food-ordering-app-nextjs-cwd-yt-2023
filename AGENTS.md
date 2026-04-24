@@ -82,8 +82,10 @@ See `example.env`. Variables currently used in the project include:
 - npm run test:watch
 - npm run test:file -- **tests**/api/register.route.test.ts
 - npm run test:auth
+- npm run test:profile
 - npm run test:e2e
 - npm run test:e2e:file -- e2e/auth/register-login.e2e.test.ts
+- npm run test:e2e:profile
 - npm run test:all
 - npm run favorites:backfill
 - npm run stripe:listen
@@ -96,6 +98,7 @@ See `example.env`. Variables currently used in the project include:
 - Start with high-risk logic (auth, payments, webhooks, role checks).
 - Keep runtime code unchanged unless explicitly requested; prefer tests-only changes.
 - For auth tests, cover both success and failure behavior contracts.
+- For profile tests, cover info updates, image upload/remove, and account deletion flows.
 - Use `MONGODB_URL_TESTS` for local test database configuration when needed.
 - Keep e2e tests data-safe with explicit cleanup of created records.
 

@@ -5,6 +5,8 @@ This folder contains unit tests grouped by feature area.
 ## Current Coverage
 
 - `api/register.route.test.ts`: validates register API behavior.
+- `api/profile.route.test.ts`: validates profile info update and account deletion route behavior.
+- `api/upload-users.route.test.ts`: validates profile image upload/remove route behavior.
 - `auth/credentials-authorize.test.ts`: validates login credential authorization behavior.
 
 ## Structure Rules
@@ -19,6 +21,7 @@ This folder contains unit tests grouped by feature area.
 - Run all tests: `npm run test`
 - Watch mode: `npm run test:watch`
 - Run a single test file: `npm run test:file -- __tests__/api/register.route.test.ts`
+- Run profile unit tests: `npm run test:profile`
 
 ## E2E Tests
 

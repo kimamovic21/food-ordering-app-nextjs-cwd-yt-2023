@@ -61,8 +61,10 @@ This file provides project context and coding guidance for Gemini tools.
 - `npm run test:watch`
 - `npm run test:file -- __tests__/api/register.route.test.ts`
 - `npm run test:auth`
+- `npm run test:profile`
 - `npm run test:e2e`
 - `npm run test:e2e:file -- e2e/auth/register-login.e2e.test.ts`
+- `npm run test:e2e:profile`
 - `npm run test:all`
 
 ## Communication

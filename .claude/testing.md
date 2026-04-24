@@ -7,9 +7,10 @@ Write tests that verify production behavior without changing stable runtime logi
 ## Test Priorities
 
 1. Auth (register/login)
-2. Payment and webhook safety
-3. Order state transitions
-4. Courier assignment and status updates
+2. Profile management (update info, image, account deletion)
+3. Payment and webhook safety
+4. Order state transitions
+5. Courier assignment and status updates
 
 ## Workflow
 
