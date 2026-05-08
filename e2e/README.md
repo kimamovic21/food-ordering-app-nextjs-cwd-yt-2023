@@ -12,6 +12,12 @@ This folder contains end-to-end style tests for critical user flows using a real
   - profile info update flow
   - profile image upload/remove flow
   - account deletion flow
+- `checkout/checkout-payment.e2e.test.ts`
+  - order creation with valid cart data
+  - coupon discount application
+  - payment status updates (order marked as paid after webhook)
+  - multi-restaurant validation
+  - user cannot order from own restaurant
 
 ## Environment
 

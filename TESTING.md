@@ -22,10 +22,13 @@ Auth is a high-value and high-risk area. Testing register and login first gives 
   - `app/api/register/route.ts`
   - `app/api/profile/route.ts`
   - `app/api/upload/users/route.ts`
+  - `app/api/checkout/route.ts`
+  - `app/api/webhook/route.ts`
   - credentials `authorize` handler in `libs/authOptions.ts`
 - E2E tests for:
   - register + login flow
   - profile management flow (info update, image upload/remove, account deletion)
+  - checkout & payment flow (order creation, coupon application, payment webhook)
 
 These tests intentionally avoid changing existing runtime auth code.
 
@@ -51,10 +54,12 @@ These tests intentionally avoid changing existing runtime auth code.
 - `npm run test:file -- <path>`: run only one file
 - `npm run test:auth`: run only auth-focused tests
 - `npm run test:profile`: run only profile-focused unit tests
+- `npm run test:payment`: run only payment & webhook unit tests (checkout + webhook)
 - `npm run test:e2e`: run all e2e tests
 - `npm run test:e2e:watch`: run e2e tests in watch mode
 - `npm run test:e2e:file -- <path>`: run one e2e file
 - `npm run test:e2e:profile`: run only profile-focused e2e tests
+- `npm run test:e2e:checkout`: run only checkout & payment e2e tests
 - `npm run test:all`: run unit + e2e tests
 
 ## Environment Variables

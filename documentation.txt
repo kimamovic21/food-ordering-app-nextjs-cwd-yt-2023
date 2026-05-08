@@ -1234,3 +1234,7 @@ Add profile management tests and docs
 
 
 Add change-password API, form, and validation
+
+
+
+Add payment & checkout tests and mocks

@@ -4,10 +4,8 @@ This folder contains unit tests grouped by feature area.
 
 ## Current Coverage
 
-- `api/register.route.test.ts`: validates register API behavior.
-- `api/profile.route.test.ts`: validates profile info update and account deletion route behavior.
-- `api/upload-users.route.test.ts`: validates profile image upload/remove route behavior.
-- `auth/credentials-authorize.test.ts`: validates login credential authorization behavior.
+ `api/payment.test.ts`: validates payment business logic including coupon validation, loyalty calculation, webhook processing, and order validation rules.
+ `api/profile-change-password.route.test.ts`: validates password change API behavior.
 
 ## Structure Rules
 
