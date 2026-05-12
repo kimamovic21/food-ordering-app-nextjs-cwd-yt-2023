@@ -248,7 +248,7 @@ const ProfilePage = () => {
               postalCode={postalCode}
               city={city}
               country={country}
-              provider={session.data?.user?.provider}
+              provider={(session.data?.user as any)?.provider}
               isSaving={isSaving}
               onSubmit={handleProfileSave}
               onNameChange={setUserName}

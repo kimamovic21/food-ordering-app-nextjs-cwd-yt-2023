@@ -81,6 +81,9 @@ describe('E2E Auth: register and login', () => {
     expect(persistedUser?.password).toBeTruthy();
     expect(bcrypt.compareSync(password, persistedUser?.password || '')).toBe(true);
 
+    // Verify the user's email since email verification is now required
+    await User.updateOne({ email }, { $set: { emailVerifiedAt: new Date() } });
+
     const authorize = getAuthorize();
     const authResult = await authorize({ email, password });
 

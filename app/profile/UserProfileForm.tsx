@@ -145,8 +145,8 @@ const UserProfileForm = ({
 
       {provider === 'oauth' ? (
         <p className='w-full rounded-md border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground break-words'>
-          You registered with Google, so password updates are not available. Use your Google
-          account to sign in.
+          You registered with Google, so password updates are not available. Use your Google account
+          to sign in.
         </p>
       ) : (
         <Button asChild className='w-full'>

@@ -57,6 +57,41 @@ const LoginUserForm = () => {
       });
 
       if (result?.error) {
+        if (result.error === 'EMAIL_NOT_VERIFIED') {
+          toast.error('Please verify your email address before signing in.', {
+            style: { backgroundColor: '#ef4444', color: 'white' },
+          });
+          router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
+          return;
+        }
+
+        const accountStatusResponse = await fetch('/api/account-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: values.email }),
+        });
+
+        const accountStatus = await accountStatusResponse.json().catch(() => null);
+
+        if (accountStatus?.found && accountStatus?.provider === 'oauth') {
+          toast.error('This account uses Google sign-in. Use the Google button instead.', {
+            style: { backgroundColor: '#ef4444', color: 'white' },
+          });
+          return;
+        }
+
+        if (
+          accountStatus?.found &&
+          accountStatus?.provider === 'credentials' &&
+          !accountStatus?.emailVerified
+        ) {
+          toast.error('Please verify your email address before signing in.', {
+            style: { backgroundColor: '#ef4444', color: 'white' },
+          });
+          router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
+          return;
+        }
+
         toast.error('Invalid email or password.', {
           style: { backgroundColor: '#ef4444', color: 'white' },
         });
@@ -161,6 +196,13 @@ const LoginUserForm = () => {
         <span className='text-sm text-muted-foreground mr-2'>Don&apos;t have an account?</span>
         <Link href='/register' className='text-sm font-medium text-primary hover:underline'>
           Register here
+        </Link>
+      </div>
+
+      <div className='text-center text-sm text-muted-foreground'>
+        Forgot your password?{' '}
+        <Link href='/forgot-password' className='font-medium text-primary hover:underline'>
+          Reset it here
         </Link>
       </div>
     </div>

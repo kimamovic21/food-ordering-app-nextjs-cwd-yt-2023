@@ -1238,3 +1238,7 @@ Add change-password API, form, and validation
 
 
 Add payment & checkout tests and mocks
+
+
+
+Add email verification & password reset flows

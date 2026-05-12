@@ -41,9 +41,9 @@ const setupUploadStreamSuccess = (url: string) => {
 
 describe('/api/upload/users route handlers', () => {
   beforeEach(() => {
-    vi.mocked(getServerSession).mockResolvedValue(
-      { user: { email: profileMockUsers.sessionEmail } } as never
-    );
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: { email: profileMockUsers.sessionEmail },
+    } as never);
   });
 
   it('returns 401 when POST is called without session email', async () => {
@@ -69,11 +69,11 @@ describe('/api/upload/users route handlers', () => {
   });
 
   it('uploads image, removes previous one, and stores new image url', async () => {
-    setupUploadStreamSuccess(
-      profileMockUsers.uploadUpdatedImageUser.image
-    );
+    setupUploadStreamSuccess(profileMockUsers.uploadUpdatedImageUser.image);
 
-    vi.mocked(User.findOne).mockResolvedValueOnce(profileMockUsers.uploadExistingImageUser as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(
+      profileMockUsers.uploadExistingImageUser as never
+    );
 
     vi.mocked(User.findOneAndUpdate).mockResolvedValueOnce(
       profileMockUsers.uploadUpdatedImageUser as never
@@ -103,8 +103,12 @@ describe('/api/upload/users route handlers', () => {
   });
 
   it('deletes image reference from user on DELETE', async () => {
-    vi.mocked(User.findOne).mockResolvedValueOnce({ email: profileMockUsers.sessionEmail } as never);
-    vi.mocked(User.findOneAndUpdate).mockResolvedValueOnce(profileMockUsers.removeImageUser as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce({
+      email: profileMockUsers.sessionEmail,
+    } as never);
+    vi.mocked(User.findOneAndUpdate).mockResolvedValueOnce(
+      profileMockUsers.removeImageUser as never
+    );
 
     const request = new Request('http://localhost/api/upload/users', {
       method: 'DELETE',

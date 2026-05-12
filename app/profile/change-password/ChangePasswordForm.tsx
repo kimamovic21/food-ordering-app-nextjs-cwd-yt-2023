@@ -118,11 +118,7 @@ const ChangePasswordForm = () => {
               <FormItem>
                 <FormLabel>New password</FormLabel>
                 <FormControl>
-                  <InputPasswordStrengthDemo
-                    value={field.value}
-                    onChange={field.onChange}
-                    disabled={isSaving}
-                  />
+                  <InputPasswordStrengthDemo value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage className='text-destructive' />
               </FormItem>

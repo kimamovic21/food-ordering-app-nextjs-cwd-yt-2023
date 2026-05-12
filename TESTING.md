@@ -78,3 +78,21 @@ Test setup will use:
 - E2E tests use real MongoDB data and perform cleanup of test-created users.
 - Keep e2e coverage focused on high-risk user journeys.
 - Detailed e2e guide: `e2e/README.md`.
+
+### New Auth E2E Coverage
+
+- We added comprehensive e2e coverage for the email verification and password reset flows under `e2e/auth/`:
+  - `e2e/auth/register-login.e2e.test.ts` — register + login (now verifies email before allowing credentials login in tests).
+  - `e2e/auth/verify-email.e2e.test.ts` — covers registration with verification required, prevent login when unverified, verify flow, resend verification, invalid/expired token cases.
+  - `e2e/auth/forgot-password.e2e.test.ts` — covers forgot-password, reset-password, OAuth-excluded behavior, token expiry, confirmation matching, and full flow (register → verify → forgot → reset → login).
+
+Run these tests with:
+
+```bash
+npm run test:e2e -- e2e/auth/
+```
+
+Notes:
+
+- Ensure `MONGODB_URL_TESTS` is set in `.env.local` before running e2e tests.
+- The tests perform direct DB updates in places where tokens are hashed and cannot be retrieved from email in the test environment (this keeps tests stable without relying on third-party email capture).

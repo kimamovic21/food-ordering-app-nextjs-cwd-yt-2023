@@ -1,5 +1,7 @@
 import { DELETE, GET, PUT } from '@/app/api/profile/route';
 import { User } from '@/models/user';
+import { Restaurant } from '@/models/restaurant';
+import { MenuItem } from '@/models/menuItem';
 import { profileMockUsers } from '@/mocks/profile/users';
 import { getServerSession } from 'next-auth/next';
 import cloudinary from '@/libs/cloudinary';
@@ -28,14 +30,29 @@ vi.mock('@/models/user', () => ({
     updateOne: vi.fn(),
     findOne: vi.fn(),
     deleteOne: vi.fn(),
+    updateMany: vi.fn(),
+  },
+}));
+
+vi.mock('@/models/restaurant', () => ({
+  Restaurant: {
+    findOne: vi.fn(),
+    deleteOne: vi.fn(),
+  },
+}));
+
+vi.mock('@/models/menuItem', () => ({
+  MenuItem: {
+    find: vi.fn(),
+    deleteMany: vi.fn(),
   },
 }));
 
 describe('/api/profile route handlers', () => {
   beforeEach(() => {
-    vi.mocked(getServerSession).mockResolvedValue(
-      { user: { email: profileMockUsers.sessionEmail } } as never
-    );
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: { email: profileMockUsers.sessionEmail },
+    } as never);
   });
 
   it('returns 401 when GET is called without session user email', async () => {
@@ -96,6 +113,7 @@ describe('/api/profile route handlers', () => {
     vi.mocked(User.findOne).mockResolvedValueOnce(
       profileMockUsers.profileDeleteUserWithImage as never
     );
+    vi.mocked(Restaurant.findOne).mockResolvedValueOnce(null as never);
 
     const response = await DELETE();
     const body = await response.json();
@@ -104,5 +122,36 @@ describe('/api/profile route handlers', () => {
     expect(User.deleteOne).toHaveBeenCalledWith({ email: profileMockUsers.sessionEmail });
     expect(response.status).toBe(200);
     expect(body).toEqual({ success: true, message: 'Account deleted successfully' });
+  });
+
+  it('deletes owned restaurant, menu items, and their images on DELETE', async () => {
+    vi.mocked(User.findOne).mockResolvedValueOnce({
+      email: profileMockUsers.sessionEmail,
+      image: 'https://res.cloudinary.com/demo/image/upload/v1/users/profile-image-1.jpg',
+      _id: 'user-id-1',
+      restaurantId: 'restaurant-id-1',
+    } as never);
+    vi.mocked(Restaurant.findOne).mockResolvedValueOnce({
+      _id: 'restaurant-id-1',
+      images: [
+        'https://res.cloudinary.com/demo/image/upload/v1/restaurants/restaurant-image-1.jpg',
+      ],
+    } as never);
+    vi.mocked(MenuItem.find).mockResolvedValueOnce([
+      {
+        _id: 'menu-item-id-1',
+        image: 'https://res.cloudinary.com/demo/image/upload/v1/menu-items/menu-item-image-1.jpg',
+      },
+    ] as never);
+
+    const response = await DELETE();
+
+    expect(response.status).toBe(200);
+    expect(Restaurant.deleteOne).toHaveBeenCalledWith({ _id: 'restaurant-id-1' });
+    expect(MenuItem.deleteMany).toHaveBeenCalledWith({ restaurantId: 'restaurant-id-1' });
+    expect(User.updateMany).toHaveBeenCalled();
+    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith('users/profile-image-1');
+    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith('restaurants/restaurant-image-1');
+    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith('menu-items/menu-item-image-1');
   });
 });

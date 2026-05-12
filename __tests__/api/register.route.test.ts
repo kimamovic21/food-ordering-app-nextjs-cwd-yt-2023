@@ -76,7 +76,8 @@ describe('POST /api/register', () => {
     const body = await response.json();
 
     expect(response.status).toBe(201);
-    expect(body).toEqual(authMockUsers.createdAdmin);
+    expect(body).toEqual(expect.objectContaining(authMockUsers.createdAdmin));
+    expect(body.verificationRequired).toBe(true);
     expect(mongoose.connect).toHaveBeenCalledWith(process.env.MONGODB_URL);
     expect(bcrypt.genSaltSync).toHaveBeenCalledWith(10);
     expect(bcrypt.hashSync).toHaveBeenCalledWith(
@@ -108,6 +109,9 @@ describe('POST /api/register', () => {
 
     const response = await POST(request);
     expect(response.status).toBe(201);
+
+    const body = await response.json();
+    expect(body.verificationRequired).toBe(true);
 
     expect(User.create).toHaveBeenCalledWith(
       expect.objectContaining({

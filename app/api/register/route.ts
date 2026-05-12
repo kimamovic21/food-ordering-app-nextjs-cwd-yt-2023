@@ -1,6 +1,12 @@
 import { User } from '@/models/user';
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
+import {
+  generateAuthToken,
+  hashAuthToken,
+  isSkipVerifyEmail,
+  sendVerificationEmail,
+} from '@/libs/authEmails';
 
 export async function POST(req: Request) {
   try {
@@ -25,6 +31,8 @@ export async function POST(req: Request) {
 
     const salt = bcrypt.genSaltSync(10);
     const hashedPassword = bcrypt.hashSync(pass, salt);
+    const skipVerification = isSkipVerifyEmail();
+    const verificationToken = skipVerification ? null : generateAuthToken();
 
     const userCount = await User.countDocuments();
     const role = userCount === 0 ? 'admin' : 'user';
@@ -40,12 +48,31 @@ export async function POST(req: Request) {
       city: '',
       country: '',
       role,
+      emailVerifiedAt: skipVerification ? new Date() : null,
+      emailVerificationTokenHash: verificationToken ? hashAuthToken(verificationToken) : null,
+      emailVerificationTokenExpiresAt: verificationToken
+        ? new Date(Date.now() + 24 * 60 * 60 * 1000)
+        : null,
       availability: false,
       takenOrder: null,
       restaurantId: null,
     });
 
-    return Response.json(createdUser, { status: 201 });
+    if (verificationToken && process.env.RESEND_API_KEY) {
+      await sendVerificationEmail({
+        name: body.name,
+        email: body.email,
+        token: verificationToken,
+      });
+    }
+
+    return Response.json(
+      {
+        ...createdUser,
+        verificationRequired: !skipVerification,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('REGISTER ERROR:', error);
 

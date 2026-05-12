@@ -111,6 +111,24 @@ This project uses many dependencies; below are the main packages actively used i
 - @react-email/render: [https://react.email/docs/utilities/render](https://react.email/docs/utilities/render)
 - react-share: [https://www.npmjs.com/package/react-share](https://www.npmjs.com/package/react-share)
 
+## Auth: Email Verification & Password Reset
+
+- Overview: Credentials-based accounts now require email verification when `SKIP_VERIFY_EMAIL` is `false` (recommended for local development). In production you can set `SKIP_VERIFY_EMAIL=true` to skip verification for legacy or migration scenarios.
+- Scope: This applies only to `provider: 'credentials'` users. OAuth users (Google) are automatically marked verified and are not subject to verification or password reset flows.
+- Env vars used: `RESEND_API_KEY`, `SENDER_EMAIL`, and `SKIP_VERIFY_EMAIL`.
+- Endpoints (server):
+  - `POST /api/register` — creates a credentials user and (when required) issues a verification token and sends an email.
+  - `POST /api/verify-email` — accepts `{ token }` and marks the user verified when token is valid.
+  - `POST /api/resend-verification` — issues a new verification token and emails it.
+  - `POST /api/forgot-password` — issues a password-reset token for credentials users and emails it.
+  - `POST /api/reset-password` — accepts `{ token, newPassword, confirmNewPassword }` to update password when token is valid.
+- Public pages (client):
+  - `/verify-email` — page to accept token via query and to request resend.
+  - `/forgot-password` — form to request password reset email.
+  - `/reset-password/[token]` — page to set a new password using the token in the URL.
+
+See `libs/authEmails.tsx` for token generation, hashing, and sending logic (Resend + React Email templates are under `components/resend/`).
+
 For the exact complete dependency list and versions, check package.json.
 
 ## Environment Variables
@@ -133,6 +151,7 @@ Copy example.env into .env and set all values.
 - NEXT_PUBLIC_SUPER_ADMIN_EMAIL: super admin email used for elevated UI/actions
 - RESEND_API_KEY: Resend API key for transactional emails
 - SENDER_EMAIL: sender identity for outgoing purchase receipt emails
+- SKIP_VERIFY_EMAIL: when true, skips email verification for credential sign-ups and legacy accounts
 
 Note: some flows also support SUPER_ADMIN_EMAIL on server side, while UI checks NEXT_PUBLIC_SUPER_ADMIN_EMAIL.
 

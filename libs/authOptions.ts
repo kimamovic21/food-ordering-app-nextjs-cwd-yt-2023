@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import mongoClientPromise from '@/libs/mongodbClient';
+import { isSkipVerifyEmail } from '@/libs/authEmails';
 
 // Use a dedicated database for NextAuth to avoid collection conflicts
 const mongoAdapter = MongoDBAdapter(mongoClientPromise, { databaseName: 'next-auth' });
@@ -43,6 +44,10 @@ export const authOptions = {
         const user = await User.findOne({ email });
 
         if (!user?.password) return null;
+
+        if (user.provider === 'credentials' && !user.emailVerifiedAt && !isSkipVerifyEmail()) {
+          throw new Error('EMAIL_NOT_VERIFIED');
+        }
 
         const passwordOk = bcrypt.compareSync(password, user.password);
 
@@ -116,6 +121,7 @@ export const authOptions = {
               longitude: null,
               lastLocationUpdate: null,
               restaurantId: null,
+              emailVerifiedAt: new Date(),
             });
 
             // Mirror data back into session
@@ -192,6 +198,7 @@ export const authOptions = {
             availability: false,
             takenOrder: null,
             restaurantId: null,
+            emailVerifiedAt: new Date(),
           });
         }
       } catch (err) {

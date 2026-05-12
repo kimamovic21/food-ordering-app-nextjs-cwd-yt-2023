@@ -61,14 +61,27 @@ const RegisterUserForm = () => {
         },
       });
 
+      const responseBody = await response.json().catch(() => null);
+
       if (!response.ok) {
-        throw new Error('Registration failed');
+        throw new Error(responseBody?.error || 'Registration failed');
+      }
+
+      form.reset();
+
+      if (responseBody?.verificationRequired) {
+        toast.success('Check your inbox to verify your email address.', {
+          style: { backgroundColor: '#22c55e', color: 'white' },
+        });
+        setTimeout(() => {
+          router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        }, 1500);
+        return;
       }
 
       toast.success('User created successfully! Please login.', {
         style: { backgroundColor: '#22c55e', color: 'white' },
       });
-      form.reset();
 
       setTimeout(() => {
         router.push('/login');

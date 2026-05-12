@@ -1,6 +1,8 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import { User } from '@/models/user';
+import { MenuItem } from '@/models/menuItem';
+import { Restaurant } from '@/models/restaurant';
 import cloudinary from '@/libs/cloudinary';
 import mongoose from 'mongoose';
 
@@ -83,17 +85,69 @@ export async function DELETE() {
   // Delete user's image from Cloudinary if it exists
   if (user.image && user.image !== '/user-default-image.webp') {
     try {
-      const matches = user.image.match(/users(?:-production)?\/([^\.]+)/);
-      const folder = process.env.NODE_ENV === 'production' ? 'users-production' : 'users';
-      const publicId = matches ? `${folder}/${matches[1]}` : null;
+      const match = user.image.match(
+        /\/(users(?:-production)?|restaurants(?:-production)?|menu-items(?:-production)?)\/([^/.]+)(?:\.[a-zA-Z0-9]+)?$/
+      );
 
-      if (publicId) {
-        await cloudinary.uploader.destroy(publicId);
+      if (match) {
+        await cloudinary.uploader.destroy(`${match[1]}/${match[2]}`);
       }
     } catch (cloudinaryErr) {
       console.error('Cloudinary delete error:', cloudinaryErr);
       // Continue with user deletion even if image deletion fails
     }
+  }
+
+  const restaurant = await Restaurant.findOne({
+    $or: [{ ownerId: user._id }, { _id: user.restaurantId }],
+  });
+
+  if (restaurant) {
+    const restaurantImages = Array.isArray(restaurant.images) ? restaurant.images : [];
+    for (const imageUrl of restaurantImages) {
+      const match =
+        typeof imageUrl === 'string'
+          ? imageUrl.match(/\/(restaurants(?:-production)?)\/([^/.]+)(?:\.[a-zA-Z0-9]+)?$/)
+          : null;
+
+      if (match) {
+        try {
+          await cloudinary.uploader.destroy(`${match[1]}/${match[2]}`);
+        } catch (cloudinaryErr) {
+          console.error('Cloudinary restaurant image delete error:', cloudinaryErr);
+        }
+      }
+    }
+
+    const menuItems = await MenuItem.find({ restaurantId: restaurant._id });
+    for (const menuItem of menuItems) {
+      const imageUrl = menuItem.image as string | undefined;
+      const match =
+        typeof imageUrl === 'string'
+          ? imageUrl.match(/\/(menu-items(?:-production)?)\/([^/.]+)(?:\.[a-zA-Z0-9]+)?$/)
+          : null;
+
+      if (match) {
+        try {
+          await cloudinary.uploader.destroy(`${match[1]}/${match[2]}`);
+        } catch (cloudinaryErr) {
+          console.error('Cloudinary menu item image delete error:', cloudinaryErr);
+        }
+      }
+    }
+
+    await MenuItem.deleteMany({ restaurantId: restaurant._id });
+    await Restaurant.deleteOne({ _id: restaurant._id });
+
+    await User.updateMany(
+      {},
+      {
+        $pull: {
+          favoriteRestaurants: restaurant._id,
+          favoriteMenuItems: { $in: menuItems.map((menuItem: any) => menuItem._id) },
+        },
+      }
+    );
   }
 
   // Delete the user from the database

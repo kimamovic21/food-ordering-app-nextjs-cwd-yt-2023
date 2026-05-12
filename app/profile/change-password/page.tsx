@@ -51,8 +51,8 @@ const ChangePasswordPage = () => {
       <section className='mt-8 w-full sm:w-xl md:w-2xl max-w-2xl mx-auto px-4'>
         {pageHeader}
         <p className='rounded-md border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground'>
-          You registered with Google, so password updates are not available. Use your Google
-          account to sign in.
+          You registered with Google, so password updates are not available. Use your Google account
+          to sign in.
         </p>
       </section>
     );

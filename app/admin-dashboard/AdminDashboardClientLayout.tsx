@@ -148,7 +148,12 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
       superAdminOnly: false,
       icon: SquareMenu,
     },
-    { href: '/admin-dashboard/coupons', label: 'Coupons', superAdminOnly: false, icon: TicketPercent },
+    {
+      href: '/admin-dashboard/coupons',
+      label: 'Coupons',
+      superAdminOnly: false,
+      icon: TicketPercent,
+    },
     { href: '/admin-dashboard/orders', label: 'Orders', superAdminOnly: false, icon: ShoppingCart },
     { href: '/admin-dashboard/categories', label: 'Categories', superAdminOnly: true, icon: List },
     { href: '/admin-dashboard/users', label: 'Users', superAdminOnly: true, icon: Users },
