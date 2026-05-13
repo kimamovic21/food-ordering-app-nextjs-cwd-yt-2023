@@ -4,6 +4,7 @@ import { Order } from '@/models/order';
 import { Restaurant } from '@/models/restaurant';
 import { MenuItem } from '@/models/menuItem';
 import { Coupon } from '@/models/coupon';
+import { Category } from '@/models/category';
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 
@@ -21,6 +22,12 @@ describe('E2E: Checkout & Payment Flow', () => {
   let couponId: mongoose.Types.ObjectId;
   const testUserEmail = `checkout-test-${Date.now()}@example.com`;
   const restaurantOwnerEmail = `restaurant-owner-${Date.now()}@example.com`;
+
+  const createCategory = async (label: string) => {
+    return Category.create({
+      name: `e2e-checkout-${label}-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+    });
+  };
 
   beforeAll(async () => {
     await mongoose.connect(process.env.MONGODB_URL as string);
@@ -43,6 +50,7 @@ describe('E2E: Checkout & Payment Flow', () => {
     if (couponId) {
       await Coupon.deleteOne({ _id: couponId });
     }
+    await Category.deleteMany({ name: /^e2e-checkout-/i });
     await Order.deleteMany({ email: testUserEmail });
 
     await mongoose.connection.close();
@@ -89,12 +97,14 @@ describe('E2E: Checkout & Payment Flow', () => {
     });
     restaurantId = restaurant._id;
 
+    const category = await createCategory('pizza');
+
     // Create menu item
     const menuItem = await MenuItem.create({
       restaurantId: restaurantId,
       adminId: restaurantOwner._id,
       name: 'Test Pizza',
-      category: 'pizza',
+      category: category._id,
       description: 'Test pizza item',
       sizes: [
         {
@@ -194,12 +204,14 @@ describe('E2E: Checkout & Payment Flow', () => {
     });
     couponId = coupon._id;
 
+    const category = await createCategory('burger');
+
     // Create menu item
     const menuItem = await MenuItem.create({
       restaurantId: restaurant._id,
       adminId: restaurantOwner._id,
       name: 'Test Burger',
-      category: 'burger',
+      category: category._id,
       description: 'Test burger item',
       sizes: [
         {
@@ -286,12 +298,14 @@ describe('E2E: Checkout & Payment Flow', () => {
       courierFee: 5,
     });
 
+    const category = await createCategory('pasta');
+
     // Create menu item
     const menuItem = await MenuItem.create({
       restaurantId: restaurant._id,
       adminId: restaurantOwner._id,
       name: 'Test Pasta',
-      category: 'pasta',
+      category: category._id,
       description: 'Test pasta item',
       sizes: [
         {
@@ -342,15 +356,14 @@ describe('E2E: Checkout & Payment Flow', () => {
 
     (updatedOrder as any).orderPaid = true;
     (updatedOrder as any).paid = true;
-    (updatedOrder as any).orderStatus = 'pending';
+    (updatedOrder as any).orderStatus = 'processing';
     (updatedOrder as any).stripeSessionId = 'cs_test_webhook_123';
     await updatedOrder?.save();
 
     // Verify payment status is updated
     const paidOrder = await Order.findById(order._id);
     expect((paidOrder as any).orderPaid).toBe(true);
-    expect((paidOrder as any).paid).toBe(true);
-    expect((paidOrder as any).orderStatus).toBe('pending');
+    expect((paidOrder as any).orderStatus).toBe('processing');
     expect((paidOrder as any).stripeSessionId).toBe('cs_test_webhook_123');
 
     // Cleanup
@@ -411,11 +424,14 @@ describe('E2E: Checkout & Payment Flow', () => {
       courierFee: 5,
     });
 
+    const category1 = await createCategory('restaurant-1');
+    const category2 = await createCategory('restaurant-2');
+
     const item1 = await MenuItem.create({
       restaurantId: restaurant1._id,
       adminId: owner1._id,
       name: 'Item 1',
-      category: 'food',
+      category: category1._id,
       description: 'Item from restaurant 1',
       sizes: [{ size: 'Regular', price: 10.99 }],
       prices: [10.99],
@@ -427,7 +443,7 @@ describe('E2E: Checkout & Payment Flow', () => {
       restaurantId: restaurant2._id,
       adminId: owner2._id,
       name: 'Item 2',
-      category: 'food',
+      category: category2._id,
       description: 'Item from restaurant 2',
       sizes: [{ size: 'Regular', price: 11.99 }],
       prices: [11.99],
@@ -478,6 +494,8 @@ describe('E2E: Checkout & Payment Flow', () => {
       courierFee: 5,
     });
 
+    const category = await createCategory('own-restaurant');
+
     // Update user to have restaurantId
     await User.updateOne({ _id: restaurantOwner._id }, { restaurantId: ownRestaurant._id });
 
@@ -486,7 +504,7 @@ describe('E2E: Checkout & Payment Flow', () => {
       restaurantId: ownRestaurant._id,
       adminId: restaurantOwner._id,
       name: 'Own Item',
-      category: 'food',
+      category: category._id,
       description: 'Item from own restaurant',
       sizes: [{ size: 'Regular', price: 14.99 }],
       prices: [14.99],

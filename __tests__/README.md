@@ -4,8 +4,17 @@ This folder contains unit tests grouped by feature area.
 
 ## Current Coverage
 
- `api/payment.test.ts`: validates payment business logic including coupon validation, loyalty calculation, webhook processing, and order validation rules.
- `api/profile-change-password.route.test.ts`: validates password change API behavior.
+- `auth/credentials-authorize.test.ts`: validates credentials authorization behavior.
+- `api/register.route.test.ts`: validates registration rules and role assignment.
+- `api/verify-email.route.test.ts`: validates verification-token route behavior.
+- `api/forgot-password.route.test.ts`: validates forgot-password route behavior.
+- `api/reset-password.route.test.ts`: validates reset-password route behavior.
+- `api/profile.route.test.ts`: validates profile fetch/update/delete behavior.
+- `api/profile-change-password.route.test.ts`: validates password change API behavior.
+- `api/upload-users.route.test.ts`: validates profile image upload/remove behavior.
+- `api/checkout.route.test.ts`: validates checkout guardrails and failure handling.
+- `api/webhook.route.test.ts`: validates webhook signature/idempotency behavior.
+- `api/payment.test.ts`: validates payment-related helper logic and utility contracts.
 
 ## Structure Rules
 
@@ -20,6 +29,7 @@ This folder contains unit tests grouped by feature area.
 - Watch mode: `npm run test:watch`
 - Run a single test file: `npm run test:file -- __tests__/api/register.route.test.ts`
 - Run profile unit tests: `npm run test:profile`
+- Run payment/webhook-focused unit tests: `npm run test:payment`
 
 ## E2E Tests
 

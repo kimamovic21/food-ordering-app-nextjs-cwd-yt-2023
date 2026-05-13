@@ -52,7 +52,7 @@ export async function POST(req: Request) {
         (order as any).orderPaid = true;
         (order as any).paid = true; // keep legacy flag in sync
         if (!(order as any).orderStatus) {
-          (order as any).orderStatus = 'pending';
+          (order as any).orderStatus = 'processing';
         }
         order.stripeSessionId = session.id;
         await order.save();

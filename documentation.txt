@@ -1242,3 +1242,7 @@ Add payment & checkout tests and mocks
 
 
 Add email verification & password reset flows
+
+
+
+Add API unit tests, e2e updates, set orderStatus
