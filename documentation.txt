@@ -1246,3 +1246,7 @@ Add email verification & password reset flows
 
 
 Add API unit tests, e2e updates, set orderStatus
+
+
+
+Add webhook and e2e tests for checkout/favorites
