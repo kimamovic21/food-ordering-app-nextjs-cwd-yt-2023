@@ -61,7 +61,9 @@ describe('/api/my-orders/invoice route', () => {
     vi.mocked(getServerSession).mockResolvedValueOnce(null as never);
 
     const { GET } = await loadRoute();
-    const res = await GET(new Request('http://localhost/api/my-orders/invoice?sessionId=cs_test_123'));
+    const res = await GET(
+      new Request('http://localhost/api/my-orders/invoice?sessionId=cs_test_123')
+    );
     const body = await res.json();
 
     expect(res.status).toBe(401);
@@ -69,16 +71,55 @@ describe('/api/my-orders/invoice route', () => {
   });
 
   it('returns pdf response for a valid order', async () => {
-    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: 'customer@example.com' } } as never);
-    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce({ _id: 'user-1', email: 'customer@example.com' } as never);
-    vi.mocked((await import('@/models/order')).Order.findOne).mockReturnValueOnce({
-      lean: vi.fn().mockResolvedValue({ _id: 'order-1', userId: 'user-1', stripeSessionId: 'cs_test_123', email: 'customer@example.com', restaurantId: 'rest-1', cartProducts: [], updatedAt: new Date(), createdAt: new Date(), taxAmount: 0, deliveryFee: 0, total: 0 }),
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'customer@example.com' },
     } as never);
-    vi.mocked((await import('@/models/restaurant')).Restaurant.findById).mockReturnValueOnce({ select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue({ name: 'Rest', contact: '', email: '', street: '', city: '', postalCode: '', country: '' }) }) } as never);
-    vi.mocked((await import('@/models/menuItem')).MenuItem.find).mockReturnValueOnce({ select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue([]) }) } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce({
+      _id: 'user-1',
+      email: 'customer@example.com',
+    } as never);
+    vi.mocked((await import('@/models/order')).Order.findOne).mockReturnValueOnce({
+      lean: vi
+        .fn()
+        .mockResolvedValue({
+          _id: 'order-1',
+          userId: 'user-1',
+          stripeSessionId: 'cs_test_123',
+          email: 'customer@example.com',
+          restaurantId: 'rest-1',
+          cartProducts: [],
+          updatedAt: new Date(),
+          createdAt: new Date(),
+          taxAmount: 0,
+          deliveryFee: 0,
+          total: 0,
+        }),
+    } as never);
+    vi.mocked((await import('@/models/restaurant')).Restaurant.findById).mockReturnValueOnce({
+      select: vi
+        .fn()
+        .mockReturnValue({
+          lean: vi
+            .fn()
+            .mockResolvedValue({
+              name: 'Rest',
+              contact: '',
+              email: '',
+              street: '',
+              city: '',
+              postalCode: '',
+              country: '',
+            }),
+        }),
+    } as never);
+    vi.mocked((await import('@/models/menuItem')).MenuItem.find).mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue([]) }),
+    } as never);
 
     const { GET } = await loadRoute();
-    const res = await GET(new Request('http://localhost/api/my-orders/invoice?sessionId=cs_test_123'));
+    const res = await GET(
+      new Request('http://localhost/api/my-orders/invoice?sessionId=cs_test_123')
+    );
 
     expect(res.status).toBe(200);
     expect(res.headers.get('Content-Type')).toBe('application/pdf');

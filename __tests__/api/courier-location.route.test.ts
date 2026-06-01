@@ -39,7 +39,9 @@ describe('/api/orders/courier-location route', () => {
     vi.mocked(getServerSession).mockResolvedValueOnce(null as never);
 
     const { GET } = await loadRoute();
-    const res = await GET(new Request('http://localhost/api/orders/courier-location?orderId=507f1f77bcf86cd799439011'));
+    const res = await GET(
+      new Request('http://localhost/api/orders/courier-location?orderId=507f1f77bcf86cd799439011')
+    );
     const body = await res.json();
 
     expect(res.status).toBe(401);
@@ -47,12 +49,38 @@ describe('/api/orders/courier-location route', () => {
   });
 
   it('returns courier location for order owner', async () => {
-    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: 'customer@example.com' } } as never);
-    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce({ _id: 'user-1', email: 'customer@example.com', role: 'user' } as never);
-    vi.mocked((await import('@/models/order')).Order.findById).mockReturnValueOnce({ populate: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue({ _id: 'order-1', email: 'customer@example.com', courierId: { latitude: 10, longitude: 20, lastLocationUpdate: new Date(), name: 'Courier', email: 'courier@example.com' } }) }) } as never);
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'customer@example.com' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce({
+      _id: 'user-1',
+      email: 'customer@example.com',
+      role: 'user',
+    } as never);
+    vi.mocked((await import('@/models/order')).Order.findById).mockReturnValueOnce({
+      populate: vi
+        .fn()
+        .mockReturnValue({
+          lean: vi
+            .fn()
+            .mockResolvedValue({
+              _id: 'order-1',
+              email: 'customer@example.com',
+              courierId: {
+                latitude: 10,
+                longitude: 20,
+                lastLocationUpdate: new Date(),
+                name: 'Courier',
+                email: 'courier@example.com',
+              },
+            }),
+        }),
+    } as never);
 
     const { GET } = await loadRoute();
-    const res = await GET(new Request('http://localhost/api/orders/courier-location?orderId=507f1f77bcf86cd799439011'));
+    const res = await GET(
+      new Request('http://localhost/api/orders/courier-location?orderId=507f1f77bcf86cd799439011')
+    );
     const body = await res.json();
 
     expect(res.status).toBe(200);

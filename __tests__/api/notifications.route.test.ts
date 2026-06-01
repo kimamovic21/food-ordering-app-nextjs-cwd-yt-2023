@@ -50,14 +50,34 @@ describe('/api/notifications route', () => {
   });
 
   it('returns notifications and unread count for the current user', async () => {
-    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: 'user@example.com' } } as never);
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'user@example.com' },
+    } as never);
 
     const userFindOne = vi.mocked((await import('@/models/user')).User.findOne);
-    userFindOne.mockReturnValueOnce({ select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue({ _id: 'user-1', role: 'user' }) }) } as never);
+    userFindOne.mockReturnValueOnce({
+      select: vi
+        .fn()
+        .mockReturnValue({ lean: vi.fn().mockResolvedValue({ _id: 'user-1', role: 'user' }) }),
+    } as never);
 
     const notificationFind = vi.mocked((await import('@/models/notification')).Notification.find);
-    notificationFind.mockReturnValueOnce({ sort: vi.fn().mockReturnValue({ skip: vi.fn().mockReturnValue({ limit: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue([{ _id: 'n1', title: 'A' }]) }) }) }) } as never);
-    vi.mocked((await import('@/models/notification')).Notification.countDocuments).mockResolvedValueOnce(2 as never);
+    notificationFind.mockReturnValueOnce({
+      sort: vi
+        .fn()
+        .mockReturnValue({
+          skip: vi
+            .fn()
+            .mockReturnValue({
+              limit: vi
+                .fn()
+                .mockReturnValue({ lean: vi.fn().mockResolvedValue([{ _id: 'n1', title: 'A' }]) }),
+            }),
+        }),
+    } as never);
+    vi.mocked(
+      (await import('@/models/notification')).Notification.countDocuments
+    ).mockResolvedValueOnce(2 as never);
 
     const { GET } = await loadRoute();
     const res = await GET(new Request('http://localhost/api/notifications?limit=5&skip=0'));
@@ -69,20 +89,32 @@ describe('/api/notifications route', () => {
   });
 
   it('marks notification as read for current user', async () => {
-    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: 'user@example.com' } } as never);
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'user@example.com' },
+    } as never);
 
     const userFindOne = vi.mocked((await import('@/models/user')).User.findOne);
-    userFindOne.mockReturnValueOnce({ select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue({ _id: 'user-1', role: 'user' }) }) } as never);
+    userFindOne.mockReturnValueOnce({
+      select: vi
+        .fn()
+        .mockReturnValue({ lean: vi.fn().mockResolvedValue({ _id: 'user-1', role: 'user' }) }),
+    } as never);
 
-    vi.mocked((await import('@/models/notification')).Notification.findOneAndUpdate).mockReturnValueOnce({ lean: vi.fn().mockResolvedValue({ _id: 'n1' }) } as never);
-    vi.mocked((await import('@/models/notification')).Notification.countDocuments).mockResolvedValueOnce(0 as never);
+    vi.mocked(
+      (await import('@/models/notification')).Notification.findOneAndUpdate
+    ).mockReturnValueOnce({ lean: vi.fn().mockResolvedValue({ _id: 'n1' }) } as never);
+    vi.mocked(
+      (await import('@/models/notification')).Notification.countDocuments
+    ).mockResolvedValueOnce(0 as never);
 
     const { PATCH } = await loadRoute();
-    const res = await PATCH(new Request('http://localhost/api/notifications', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'mark-read', notificationId: '507f1f77bcf86cd799439011' }),
-    }));
+    const res = await PATCH(
+      new Request('http://localhost/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mark-read', notificationId: '507f1f77bcf86cd799439011' }),
+      })
+    );
     const body = await res.json();
 
     expect(res.status).toBe(200);

@@ -68,10 +68,14 @@ describe('/api/favorites routes', () => {
     const userModel = await import('@/models/user');
     const restaurantModel = await import('@/models/restaurant');
 
-    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: 'user@example.com' } } as never);
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'user@example.com' },
+    } as never);
     vi.mocked(userModel.User.findOne).mockReturnValueOnce({
       select: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue({ _id: 'user-1', restaurantId: null, favoriteRestaurants: [] }),
+        lean: vi
+          .fn()
+          .mockResolvedValue({ _id: 'user-1', restaurantId: null, favoriteRestaurants: [] }),
       }),
     } as never);
     vi.mocked(restaurantModel.Restaurant.findById).mockReturnValueOnce({
@@ -79,31 +83,43 @@ describe('/api/favorites routes', () => {
     } as never);
 
     const { POST } = await loadFavoriteRestaurants();
-    let res = await POST(new Request('http://localhost/api/favorites/restaurants', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ restaurantId: '507f1f77bcf86cd799439011' }),
-    }));
+    let res = await POST(
+      new Request('http://localhost/api/favorites/restaurants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurantId: '507f1f77bcf86cd799439011' }),
+      })
+    );
     let body = await res.json();
 
     expect(res.status).toBe(200);
     expect(body.action).toBe('added');
 
-    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: 'user@example.com' } } as never);
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'user@example.com' },
+    } as never);
     vi.mocked(userModel.User.findOne).mockReturnValueOnce({
       select: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue({ _id: 'user-1', restaurantId: null, favoriteRestaurants: ['507f1f77bcf86cd799439011'] }),
+        lean: vi
+          .fn()
+          .mockResolvedValue({
+            _id: 'user-1',
+            restaurantId: null,
+            favoriteRestaurants: ['507f1f77bcf86cd799439011'],
+          }),
       }),
     } as never);
     vi.mocked(restaurantModel.Restaurant.findById).mockReturnValueOnce({
       select: vi.fn().mockResolvedValue({ _id: 'rest-1', ownerId: 'owner-2' }),
     } as never);
 
-    res = await POST(new Request('http://localhost/api/favorites/restaurants', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ restaurantId: '507f1f77bcf86cd799439011' }),
-    }));
+    res = await POST(
+      new Request('http://localhost/api/favorites/restaurants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurantId: '507f1f77bcf86cd799439011' }),
+      })
+    );
     body = await res.json();
 
     expect(res.status).toBe(200);
@@ -114,42 +130,62 @@ describe('/api/favorites routes', () => {
     const userModel = await import('@/models/user');
     const menuItemModel = await import('@/models/menuItem');
 
-    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: 'user@example.com' } } as never);
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'user@example.com' },
+    } as never);
     vi.mocked(userModel.User.findOne).mockReturnValueOnce({
       select: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue({ _id: 'user-1', restaurantId: null, favoriteMenuItems: [] }),
+        lean: vi
+          .fn()
+          .mockResolvedValue({ _id: 'user-1', restaurantId: null, favoriteMenuItems: [] }),
       }),
     } as never);
     vi.mocked(menuItemModel.MenuItem.findById).mockReturnValueOnce({
-      select: vi.fn().mockResolvedValue({ _id: 'item-1', adminId: 'owner-2', restaurantId: 'rest-2' }),
+      select: vi
+        .fn()
+        .mockResolvedValue({ _id: 'item-1', adminId: 'owner-2', restaurantId: 'rest-2' }),
     } as never);
 
     const { POST } = await loadFavoriteMenuItems();
-    let res = await POST(new Request('http://localhost/api/favorites/menu-items', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ menuItemId: '507f1f77bcf86cd799439012' }),
-    }));
+    let res = await POST(
+      new Request('http://localhost/api/favorites/menu-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ menuItemId: '507f1f77bcf86cd799439012' }),
+      })
+    );
     let body = await res.json();
 
     expect(res.status).toBe(200);
     expect(body.action).toBe('added');
 
-    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: 'user@example.com' } } as never);
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'user@example.com' },
+    } as never);
     vi.mocked(userModel.User.findOne).mockReturnValueOnce({
       select: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue({ _id: 'user-1', restaurantId: null, favoriteMenuItems: ['507f1f77bcf86cd799439012'] }),
+        lean: vi
+          .fn()
+          .mockResolvedValue({
+            _id: 'user-1',
+            restaurantId: null,
+            favoriteMenuItems: ['507f1f77bcf86cd799439012'],
+          }),
       }),
     } as never);
     vi.mocked(menuItemModel.MenuItem.findById).mockReturnValueOnce({
-      select: vi.fn().mockResolvedValue({ _id: 'item-1', adminId: 'owner-2', restaurantId: 'rest-2' }),
+      select: vi
+        .fn()
+        .mockResolvedValue({ _id: 'item-1', adminId: 'owner-2', restaurantId: 'rest-2' }),
     } as never);
 
-    res = await POST(new Request('http://localhost/api/favorites/menu-items', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ menuItemId: '507f1f77bcf86cd799439012' }),
-    }));
+    res = await POST(
+      new Request('http://localhost/api/favorites/menu-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ menuItemId: '507f1f77bcf86cd799439012' }),
+      })
+    );
     body = await res.json();
 
     expect(res.status).toBe(200);

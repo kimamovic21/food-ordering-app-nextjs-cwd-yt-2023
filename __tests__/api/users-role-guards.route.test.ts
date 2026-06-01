@@ -92,10 +92,14 @@ describe('User role mutation route guards', () => {
       role: 'user',
       availability: false,
       takenOrder: null,
-      save: vi.fn(async function save() { return this; }),
+      save: vi.fn(async function save() {
+        return this;
+      }),
     };
 
-    vi.mocked((await import('@/models/user')).User.findById).mockResolvedValueOnce(userDoc as never);
+    vi.mocked((await import('@/models/user')).User.findById).mockResolvedValueOnce(
+      userDoc as never
+    );
 
     const PATCH = await loadMakeCourier();
     const req = new Request('http://localhost/api/users/make-courier', {

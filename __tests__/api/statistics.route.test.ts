@@ -49,7 +49,9 @@ describe('/api/statistics routes', () => {
     vi.mocked((await import('@/models/order')).Order.find).mockReturnValueOnce({
       sort: vi.fn().mockResolvedValue([]),
     } as never);
-    vi.mocked((await import('@/models/user')).User.countDocuments).mockResolvedValueOnce(0 as never);
+    vi.mocked((await import('@/models/user')).User.countDocuments).mockResolvedValueOnce(
+      0 as never
+    );
 
     const { GET } = await loadStats();
     const res = await GET();
