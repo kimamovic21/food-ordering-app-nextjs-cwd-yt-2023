@@ -18,7 +18,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import OrdersStatisticsLoading from './loading';

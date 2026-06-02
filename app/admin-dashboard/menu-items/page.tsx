@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import MenuItems from './MenuItems';
 import SearchInput from './SearchInput';

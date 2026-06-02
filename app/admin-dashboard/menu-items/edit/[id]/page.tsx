@@ -12,7 +12,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import MenuItemImage from '../../MenuItemImage';
 import MenuItemForm from '../../MenuItemForm';

@@ -13,7 +13,7 @@ import Title from '@/components/shared/Title';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import ShareActions from '@/components/shared/ShareActions';
 import HeartRating from '@/components/shared/HeartRating';
-import useFavorites from '@/contexts/UseFavorites';
+import useFavorites from '@/hooks/useFavorites';
 
 interface FavoriteRestaurant {
   _id: string;

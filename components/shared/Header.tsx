@@ -21,7 +21,7 @@ import {
 } from './HeaderSkeletons';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import ModeToggle from '../theme/ModeToggle';
 import NotificationBell from './NotificationBell';
 

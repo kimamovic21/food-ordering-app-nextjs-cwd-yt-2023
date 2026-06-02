@@ -13,7 +13,7 @@ import {
   normalizeCouponCode,
   type CouponLike,
 } from '@/libs/coupon';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import Link from 'next/link';
 import CartItems from './CartItems';
 import DeliveryInformation from './DeliveryInformation';

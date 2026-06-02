@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import OrderInfoCard from './OrderInfoCard';
 import CustomerInfoCard from './CustomerInfoCard';
 import OrderItemsCard from './OrderItemsCard';

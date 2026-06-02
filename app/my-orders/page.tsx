@@ -19,7 +19,7 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from '@/components/ui/pagination';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import MyOrdersTable from './MyOrdersTable';
 

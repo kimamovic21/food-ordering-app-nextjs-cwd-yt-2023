@@ -9,7 +9,7 @@ import { Edit3, Plus, TicketPercent, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import CouponsLoading from './loading';
 
 type Coupon = {

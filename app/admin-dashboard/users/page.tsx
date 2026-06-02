@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/pagination';
 import { Card } from '@/components/ui/card';
 import Title from '@/components/shared/Title';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import UsersTable from './UsersTable';
 import UsersLoading from './loading';
 

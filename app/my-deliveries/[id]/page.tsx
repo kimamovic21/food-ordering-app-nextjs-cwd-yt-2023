@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Package, Calendar, MapPin, DollarSign, Phone, CreditCard, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import DeliveryDetailsLoading from './loading';
 
 type CartProduct = {

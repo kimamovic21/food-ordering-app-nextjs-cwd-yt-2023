@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import CouponForm, { type CouponFormSubmitValues } from '../CouponForm';
 import CreateCouponLoading from './loading';

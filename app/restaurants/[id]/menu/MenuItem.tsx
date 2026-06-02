@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';

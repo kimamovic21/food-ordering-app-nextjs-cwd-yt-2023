@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { toast } from 'sonner';
 import Title from '@/components/shared/Title';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import MenuItemImage from '../MenuItemImage';
 import MenuItemForm from '../MenuItemForm';
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Calendar, MapPin, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import MyDeliveriesLoading from './loading';

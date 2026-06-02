@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 
 const timeAgo = (dateInput: string) => {
   const date = new Date(dateInput);

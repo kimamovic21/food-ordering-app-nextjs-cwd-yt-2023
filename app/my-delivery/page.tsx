@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import type { OrderMapHandle } from '@/components/shared/OrderMap';
 import dynamic from 'next/dynamic';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import AvailabilityToggle from './AvailabilityToggle';
 import LocationShareButton from './LocationShareButton';

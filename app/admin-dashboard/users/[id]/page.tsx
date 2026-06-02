@@ -27,7 +27,7 @@ import {
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import UserLoading from './loading';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 
 type UserType = {
   _id: string;

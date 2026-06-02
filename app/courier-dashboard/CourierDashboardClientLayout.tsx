@@ -7,7 +7,7 @@ import { signOut } from 'next-auth/react';
 import { Bike, ClipboardCheck, Home, LogOut, Menu, Star, Truck, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import { cn } from '@/libs/utils';
 
 const CourierDashboardLayoutSkeleton = () => {

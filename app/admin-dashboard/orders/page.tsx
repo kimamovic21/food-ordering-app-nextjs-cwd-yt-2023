@@ -20,7 +20,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import Title from '@/components/shared/Title';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import OrdersTable from './OrdersTable';
 
 type OrderType = {

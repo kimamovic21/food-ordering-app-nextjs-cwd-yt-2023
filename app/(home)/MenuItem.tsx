@@ -5,7 +5,7 @@ import { useCart } from '@/contexts/CartContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
 import HeartRating from '@/components/shared/HeartRating';

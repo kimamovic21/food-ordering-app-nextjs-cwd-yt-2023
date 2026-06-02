@@ -17,7 +17,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
-import useFavorites from '@/contexts/UseFavorites';
+import useFavorites from '@/hooks/useFavorites';
 import ShareActions from '@/components/shared/ShareActions';
 import HeartRating from '@/components/shared/HeartRating';
 import SearchInput from './SearchInput';

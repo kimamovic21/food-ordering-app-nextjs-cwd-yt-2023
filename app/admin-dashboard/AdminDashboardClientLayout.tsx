@@ -22,7 +22,7 @@ import {
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import useProfile from '@/contexts/UseProfile';
+import useProfile from '@/hooks/useProfile';
 import NotificationBell from '@/components/shared/NotificationBell';
 import Link from 'next/link';
 
