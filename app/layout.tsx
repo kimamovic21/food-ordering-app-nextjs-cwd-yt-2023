@@ -9,6 +9,7 @@ import 'leaflet/dist/leaflet.css';
 import LayoutWrapper from '../components/shared/LayoutWrapper';
 import AppContext from '@/contexts/AppContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
+import { MessagesProvider } from '@/contexts/MessagesContext';
 
 const roboto = Roboto({
   variable: '--font-roboto',
@@ -60,14 +61,16 @@ const RootLayout = ({
         >
           <div className='min-h-screen flex flex-col w-full'>
             <AppContext>
-              <NotificationsProvider>
-                <CartProvider>
-                  <LayoutWrapper>
-                    {children}
-                    <Toaster position='top-center' />
-                  </LayoutWrapper>
-                </CartProvider>
-              </NotificationsProvider>
+              <MessagesProvider>
+                <NotificationsProvider>
+                  <CartProvider>
+                    <LayoutWrapper>
+                      {children}
+                      <Toaster position='top-center' />
+                    </LayoutWrapper>
+                  </CartProvider>
+                </NotificationsProvider>
+              </MessagesProvider>
             </AppContext>
           </div>
         </ThemeProvider>

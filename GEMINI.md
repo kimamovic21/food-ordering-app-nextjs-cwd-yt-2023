@@ -13,6 +13,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Maps: Leaflet
 - Email: Resend + React Email
 - Sharing: react-share
+- Messaging: approved app-native threads with SSE-backed unread badges and per-user visibility
 
 ## Goals For AI Assistance
 
@@ -29,6 +30,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Use existing utility helpers when possible (libs/).
 - Avoid breaking API response shapes.
 - Preserve role-based access checks (admin/courier/user).
+- Preserve messaging restrictions: no customer-to-customer chat, and order conversations must match the assigned courier or restaurant owner.
 - Keep payment and webhook flows idempotent.
 - Keep receipt email generation in server code.
 

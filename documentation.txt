@@ -1,13 +1,11 @@
 Fullstack Food Ordering App with Next.js
 
-
 Next.js app installation
 
 -open link: https://nextjs.org
 -type command: npx create-next-app@latest
 -type command: npm run dev
 -open route: http://localhost:3000
-
 
 Building Homepage
 
@@ -32,7 +30,6 @@ Building Homepage
 -in component page.tsx import components AboutUs and ContactUs
 -in component layout.tsx import component Footer
 
-
 Authentication - first part
 
 -in component Header.tsx, in tsx more Link components
@@ -51,7 +48,6 @@ Authentication - first part
 -in folder api create folder register and route.ts file
 -in route.ts file create and export function POST()
 -open route: http://localhost:3000/register and click button Register
-
 
 Authentication - second part
 
@@ -81,7 +77,6 @@ Authentication - second part
 -in route.ts file update MongoDB adapter logic
 -open route: http://localhost:3000 to see user data after login
 
-
 Profile editing page - first part
 
 -update component Header.tsx to display logged in user name
@@ -98,7 +93,6 @@ Profile editing page - first part
 -open route: http://localhost:3000/profile and update user name
 -open MongoDB to see updated user info
 
-
 Profile editing page - second part
 
 -open link: https://cloudinary.com
@@ -113,7 +107,6 @@ Profile editing page - second part
 -open route: http://localhost:3000/profile and upload a new image
 -open Cloudinary to see saved user image
 
-
 Profile editing page - third part
 
 -open link: https://react-hot-toast.com
@@ -125,12 +118,11 @@ Profile editing page - third part
 -open route: http://localhost:3000/profile, upload a new image and change user name to see toast messages
 -open Cloudinary to see saved user image
 -in component profile/page.tsx create new input elements
--in model/user.ts file update model User 
+-in model/user.ts file update model User
 -in profile/route.ts file create and export async function GET()
 -update authOptions.ts file for new fields
 -open route: http://localhost:3000/profile and update user info
 -open MongoDB to see saved info
-
 
 Admin panel & categories - first part
 
@@ -143,7 +135,6 @@ Admin panel & categories - first part
 -in folder shared create component UserTabs.tsx
 -in component profile/page.tsx import component UserTabs
 -in tsx add component UserTabs with prop isAdmin
-
 
 Admin panel & categories - second part
 
@@ -164,7 +155,6 @@ Admin panel & categories - second part
 -add logic for displaying and editing existing categories
 -open MongoDB to saved categories
 
-
 Admin menu items - first part
 
 -update api/upload/route.ts file
@@ -175,7 +165,6 @@ Admin menu items - first part
 -in folder models create menuItems.ts file
 -in folder api create menu-items and route.ts file
 -open route: http://localhost:3000/menu-items
-
 
 Admin menu items - second part
 
@@ -188,7 +177,6 @@ Admin menu items - second part
 -type command: npm i mongodb@^6
 -open route: http://localhost:3000/menu-items
 
-
 Admin menu items - third part
 
 -in folder menu-items create components MenuItemForm.tsx, MenuItemImage.tsx and MenuItems.tsx
@@ -196,9 +184,7 @@ Admin menu items - third part
 -in tsx add components with props
 -open route: http://localhost:3000/menu-items
 
-
 Admin menu items - fourth part
-
 
 Menu page enhancements
 
@@ -211,8 +197,7 @@ Menu page enhancements
 -update menuItem.ts file and model MenuItem
 -update price info in route.ts file
 -in folder menu-items update tsx components
--open route: http://localhost:3000/menu-items 
-
+-open route: http://localhost:3000/menu-items
 
 Admin menu items - fifth part
 
@@ -222,7 +207,6 @@ Admin menu items - fifth part
 -in menu-items/route.ts file update logic for categories
 -open route: http://localhost:3000/menu-items
 
-
 Admin menu users - first part
 
 -update authOptions.ts file
@@ -231,30 +215,25 @@ Admin menu users - first part
 -add logic for displaying all users
 -open route: http://localhost:3000/users
 
-
-Auth with credentials fixed 
+Auth with credentials fixed
 
 -update authOptions.ts file
 -open route: http://localhost:3000/register
 -open route: http://localhost:3000/login
 
-
 Admin menu users - second part
 
--update ui for displaying users in component users/page.tsx 
--open route: http://localhost:3000/users 
-
+-update ui for displaying users in component users/page.tsx
+-open route: http://localhost:3000/users
 
 Admin menu users - third part
 
 -add pagination logic in component users/page.tsx and users/route.t
 -open route: http://localhost:3000/users
 
-
 Rule for type any fix
 
 -update files eslint.config.mjs and authOptions.ts
-
 
 Deployment fix for users page
 
@@ -263,12 +242,10 @@ Deployment fix for users page
 -open route: http://localhost:3000/users
 -type command: npm run build
 
-
 Home menu items update
 
 -update components HomeMenu.tsx and MenuItem.tsx to display all menu items from pizza category
 -open route: http://localhost:3000
-
 
 Menu page - first part
 
@@ -278,12 +255,10 @@ Menu page - first part
 -add logic for displaying menu items to user
 -open route: http://localhost:3000/menu
 
-
 Admin menu items displaying UI fix
 
 -in component menu-items update component MenuItems.tsx do display categories
 -open route: http://localhost:3000/menu-items
-
 
 About and Contact components
 
@@ -293,11 +268,9 @@ About and Contact components
 -open route: http://localhost:3000/about
 -open route: http://localhost:3000/contact
 
-
-Header component - Hamburger button 
+Header component - Hamburger button
 
 -in component Header.tsx add hamburger button logic
-
 
 Cart global state - first part
 
@@ -307,7 +280,6 @@ Cart global state - first part
 -update component Header.tsx to display total number of menu items in the cart
 -open route: http://localhost:3000/cart
 
-
 Cart global state - second part
 
 -update component (home)/MenuItem.tsx to use global cart state
@@ -316,13 +288,11 @@ Cart global state - second part
 -update component layout.tsx
 -open route: http://localhost:3000/cart
 
-
 Cart global state - third part
 
 -in api/menu-items.ts file import model category
 -update UI for user form in component cart/page.tsx
 -open route: http://localhost:3000/cart
-
 
 Stripe payment - first part
 
@@ -350,11 +320,9 @@ Stripe payment - first part
 -add your payment information and click button Pay
 -open MongoDB to see saved order with property paid: true
 
-
 Vercel deployment error - Checkout component
 
 -update component checkout/page.tsx
-
 
 Orders page - first part
 
@@ -368,7 +336,6 @@ Orders page - first part
 -open route: http://localhost:3000/orders
 -open route: http://localhost:3000/orders/[id]
 
-
 Orders page - second part
 
 -update component UserTabs
@@ -376,7 +343,6 @@ Orders page - second part
 -import created components in order/[id]/page.tsx component
 -open route: http://localhost:3000/orders
 -open route: http://localhost:3000/orders/[id]
-
 
 My orders page - first part
 
@@ -390,7 +356,6 @@ My orders page - first part
 -open route: http://localhost:3000/my-orders
 -open route: http://localhost:3000/my-orders/[id]
 
-
 My orders page - second part
 
 -create folder payment-link and route.ts file
@@ -398,7 +363,6 @@ My orders page - second part
 -open route: http://localhost:3000/my-orders and click Finish Payment button
 -open route: http://localhost:3000/my-orders/[id]
 -open Stripe dashboard to see payments
-
 
 User profile update
 
@@ -409,14 +373,12 @@ User profile update
 -update upload/users/route.ts file
 -open route: http://localhost:3000/profile and update image and user info
 
-
 Header component update
 
 -update component Header.tsx
 -in folder shared create component Title.tsx
 -remove component UserTabs.tsx
 -update page.tsx components
-
 
 Statistics charts
 
@@ -435,13 +397,11 @@ Statistics charts
 -update globals.css file
 -open route: http://localhost:3000/statistics
 
-
 Users table update
 
 -in folder users create component UsersTable.tsx
 -in component page.tsx import component UsersTable.tsx
 -open route: http://localhost:3000/users
-
 
 Users table - Shadcn components
 
@@ -465,20 +425,17 @@ Users table - Shadcn components
 -in component users/page.tsx import pagination components from component pagination.tsx
 -open route: http://localhost:3000/users
 
-
 Orders table - Shadcn components
 
 -in component OrdersTable.tsx import table components from component table.tsx
 -in component orders/page.tsx import pagination components form component pagination.tsx
 -open route: http://localhost:3000/orders
 
-
 My orders table - Shadcn components
 
 -in component MyOrdersTable.tsx import table components from component table.tsx
 -in component my-orders/page.tsx import pagination components form component pagination.tsx
 -open route: http://localhost:3000/my-orders
-
 
 Dark mode - Shadcn components
 
@@ -488,7 +445,7 @@ Dark mode - Shadcn components
 -open link: https://ui.shadcn.com/docs/components/dropdown-menu
 -type command: npx shadcn@latest add dropdown-menu
 -open folder ui and component dropdown-menu.tsx
--in folder components create folder theme 
+-in folder components create folder theme
 -in folder theme create components ModeToggle.tsx and component ThemeProvider.tsx
 -in components ModeToggle.tsx and ThemeProvider.tsx add code from official documentation
 -in component layout.tsx import component ThemeProvider
@@ -498,7 +455,6 @@ Dark mode - Shadcn components
 Tables dark mode fix
 
 -update Tailwind CSS classes in components UsersTable.tsx, OrdersTable.tsx and MyOrdersTable.tsx
-
 
 Menu items - Shadcn components update
 
@@ -524,14 +480,12 @@ Menu items - Shadcn components update
 -in tsx components import shadcn components from folder ui
 -open route: http://localhost:3000/menu-items
 
-
 Home menu items - Shadcn components
 
 -in folder (home) update tsx components with Shadcn components
 -update Tailwind CSS classes
 -update component layout.tsx and globals.css file
 -open route: http://localhost:3000
-
 
 Home page skeleton component
 
@@ -540,13 +494,11 @@ Home page skeleton component
 -create components skeleton.tsx
 -open route: http://localhost:3000
 
-
 Menu skeleton component
 
 -create component loading.tsx
 -update components page.tsx and MenuItem.tsx
 -open route: http://localhost:3000/menu
-
 
 My orders and order by id skeleton components
 
@@ -557,7 +509,6 @@ My orders and order by id skeleton components
 -open route: http://localhost:3000/my-orders
 -open route: http://localhost:3000/my-orders/[id]
 
-
 Users and user by id skeleton components
 
 -in folder api/users update route.ts file for fetching user data
@@ -566,7 +517,6 @@ Users and user by id skeleton components
 -in tsx component update shadcn components form folder ui
 -open route: http://localhost:3000/users
 -open route: http://localhost:3000/users/[id]
-
 
 Menu items components update
 
@@ -579,7 +529,6 @@ Menu items components update
 -open route: http://localhost:3000/menu-items/new
 -open route: http://localhost:3000/menu-items/edit/[id]
 
-
 Categories - delete category & shadcn components
 
 -update route.ts file with function DELETE()
@@ -590,7 +539,6 @@ Categories - delete category & shadcn components
 -delete category test
 -open Cloudinary service to see if menu item image is deleted
 
-
 Menu & Menu items - displaying all categories from db
 
 -update menu-items/route.ts file
@@ -599,25 +547,21 @@ Menu & Menu items - displaying all categories from db
 -open route: http://localhost:3000/menu
 -open route: http://localhost:3000/menu-items
 
-
 Shadcn and (home) components update
 
 -in folders ui and (home) refactor existing code
 
-
 Categories - delete image from Cloudinary & skeleton components
 
 -in api/categories/route.ts file update function DELETE()
--update ui in component categories/page.tsx 
+-update ui in component categories/page.tsx
 -open route: http://localhost:3000/categories
-
 
 Header component skeleton components
 
 -in folder shared create component HeaderSkeletons.tsx
 -in component Header.tsx import component HeaderSkeletons.tsx
 -open route: http://localhost:3000
-
 
 Cart skeleton components
 
@@ -626,7 +570,6 @@ Cart skeleton components
 -update component Header.tsx
 -open route: http://localhost:3000/cart
 
-
 Orders - skeleton component
 
 -create component loading.tsx
@@ -634,13 +577,11 @@ Orders - skeleton component
 -update component OrdersTable.tsx
 -open route: http://localhost:3000/orders
 
-
 Order by id - shadcn components
 
 -in folder order/[id] create component loading.tsx
 -update tsx components with shadcn components
 -open route: http://localhost:3000/orders/[id]
-
 
 Users and orders tables UI update
 
@@ -648,19 +589,16 @@ Users and orders tables UI update
 -open route: http://localhost:3000/users
 -open route: http://localhost:3000/orders
 
-
 Profile page shadcn components
 
 -in folder profile, update tsx components with shadcn components
 -add skeleton components
 -open route: http://localhost:3000/profile
 
-
 Profile page - skeleton components
 
 -in folder profile update tsx components with skeleton components
 -open route: http://localhost:3000/profile
-
 
 About and contact pages UI update
 
@@ -668,18 +606,16 @@ About and contact pages UI update
 -open route: http://localhost:3000/about
 -open route: http://localhost:3000/contact
 
-
 Folder (auth)
 
 -in folder app create folder (auth)
 -move folders register and login with tsx components in folder (auth)
 
-
 Register shadcn components
 
 -open link: https://www.npmjs.com/package/react-google-button
 -type command: npm i react-google-button
--in folder register create component RegisterUserForm.tsx 
+-in folder register create component RegisterUserForm.tsx
 -create loading.tsx component
 -in component RegisterUserForm.tsx import shadcn components
 -add zod validation
@@ -687,14 +623,12 @@ Register shadcn components
 -open route: http://localhost:3000/register
 -open MongoDB to see saved user
 
-
 Login shadcn components
 
 -in folder login create component LoginUserForm.tsx
 -create component loading.tsx
 -in component login/page.tsx import component LoginUserForm
 -open route: http://localhost:3000/login
-
 
 Statistics for orders and users update
 
@@ -706,7 +640,6 @@ Statistics for orders and users update
 -open route: http://localhost:3000/statistics/users
 -open route: http://localhost:3000/statistics/orders
 
-
 Statistics skeleton components
 
 -in folder statistics create component loading.tsx
@@ -716,7 +649,6 @@ Statistics skeleton components
 -open route: http://localhost:3000/statistics
 -open route: http://localhost:3000/statistics/orders
 -open route: http://localhost:3000/statistics/users
-
 
 Mongo DB Atlas setup
 
@@ -728,12 +660,10 @@ Mongo DB Atlas setup
 -update settings Network access to be from everywhere
 -update folder name in upload/menu-items.ts file
 
-
-Favicon update 
+Favicon update
 
 -create folder favicon with images and site.webmanifest file
 -update favicon.ico image
-
 
 Orders logic update
 
@@ -741,30 +671,25 @@ Orders logic update
 -add new field orderStatus
 -update route.ts files tsx components to match changes made in model.ts file
 
-
 Login with Google and logout logic update
 
 -update component profile/page.tsx to display toast message message after logging in
 -update component Header.tsx to redirect to home page after logging out
-
 
 Folder update for cn function
 
 -move utils.ts file from folder lib to folder libs
 -in folder ui update imports for function cn()
 
-
 Register with Google account update
 
 -update authOptions.ts file
-
 
 Refactor user admin to role-based access control
 
 -in models/user.ts file add field role instead of admin
 -create folder types and .ts files
 -update existing route.ts files and tsx components to match role field from user.ts
-
 
 Add user location map with Leaflet to user details
 
@@ -775,12 +700,11 @@ Add user location map with Leaflet to user details
 -open link: https://www.npmjs.com/package/react-leaflet
 -type command: npm i react-leaflet
 -open link: https://www.npmjs.com/package/@types/leaflet
--type command: npm i @types/leaflet 
+-type command: npm i @types/leaflet
 -open link: https://www.npmjs.com/package/leaflet-defaulticon-compatibility
 -type command: npm i leaflet-defaulticon-compatibility
 -in folder users create component UserLocationMap.tsx
 -in component users/map.tsx import component UserLocationMap.tsx
-
 
 Add courier management and delivery assignment features
 
@@ -788,30 +712,25 @@ Add courier management and delivery assignment features
 -create folders courier, couriers and tsx components to display ui for courier logic
 -update register with Google logic in authOptions.ts file
 
-
 Add courier delivery history and update courier UI
 
 -add logic for tracking deliveries for courier
 -update existing ui
 
-
 Update README with detailed project overview
 
 -add app description in README.md file
-
 
 Add order delivery map and courier assignment confirmation
 
 -in folder courier create component OrderMap.tsx
 -update ui in component orders/[id]/page.tsx
 
-
 Add real-time courier location tracking
 
 -create folder location and route.ts file
--update model user.ts 
+-update model user.ts
 -update component OrderMap.tsx to see courier current location
-
 
 Refactor order map and add admin courier location API
 
@@ -819,23 +738,19 @@ Refactor order map and add admin courier location API
 -create folder courier-location and route.ts file
 -update ui in existing tsx components
 
-
 Add delivery fee and loyalty discount system
 
 -add logic for delivery fee based on weather conditions
 -add loyalty discount logic for users who have ordered more orders
-
 
 Add skeleton loaders to Hero and HomeMenu
 
 -create component HeroWrapper.tsx
 -update ui in landing page
 
-
 Improve order page layout and update UI styles
 
 -update ui in tsx components
-
 
 Add manager role support and management actions
 
@@ -843,17 +758,14 @@ Add manager role support and management actions
 -in folder api/users create make-manager and remove-manager folders and route.ts files
 -update ui in existing tsx components
 
-
 Improve order status handling and courier assignment
 
 -update ui in existing tsx components
-
 
 Refactor order status workflow and add 'ready' stage
 
 -update enum in model order.ts
 -update logic for ordering in tsx components and route.ts files
-
 
 Refactor and enhance courier deliveries feature
 
@@ -861,24 +773,20 @@ Refactor and enhance courier deliveries feature
 -in folder api create folders my-deliveries, [id] and route.ts files
 -update ui in my-deliveries/page.tsx component
 
-
 Add search functionality to menu page
 
 -in folder menu create component SearchInput.tsx
 -update component menu/page.tsx
 -update breadcrumb Link logic
 
-
 Update README with expanded features and setup info
 
 -update README.md file with recent changes in project
-
 
 Add search functionality to menu items page
 
 -in folder menu-items create component SearchInput.tsx
 -update component menu-items/page.tsx
-
 
 Add super admin controls for admin role management
 
@@ -888,22 +796,18 @@ Add super admin controls for admin role management
 -in folder api/users create folder make-admin, remove-admin and route.ts files
 -in folder app/users update ui
 
-
 Add user account deletion with Cloudinary image cleanup
 
 -update route.ts file and component tsx so that user can delete his account
-
 
 Handle duplicate category names and improve error feedback
 
 -improve ui in categories page
 
-
 Enhance auth forms with validation and password strength
 
 -open link: https://flyonui.com/docs/advanced-forms/strong-password/#indicator-and-hints
 -update registration and login form ui
-
 
 Refactor Hero section and add new UI components
 
@@ -914,25 +818,21 @@ Refactor Hero section and add new UI components
 -install new shadcn components
 -update UI in homepage
 
-
 Add CallToAction component to home page
 
 -create component CallToAction.tsx
 -in component page.tsx import component CallToAction
-
 
 Add FeaturesSection and update menu item layout
 
 -create component FeaturesSection.tsx
 -in component page.tsx import component FeaturesSection
 
-
 Add testimonials section with carousel to homepage
 
 -create component Testimonials.tsx
 -in component page.tsx import component Testimonials
 -update ui in existing components
-
 
 Refactor cart page and switch to Sonner for toasts
 
@@ -945,12 +845,10 @@ Refactor cart page and switch to Sonner for toasts
 -update ui in existing components
 -create component InputPasswordEyeOnly.tsx
 
-
 Assign admin role to first registered user
 
 -update authOptions.ts file and register/route.ts file
--update ui in folders courier and 
-
+-update ui in folders courier and
 
 Refactor courier API and UI to my-delivery namespace
 
@@ -958,12 +856,10 @@ Refactor courier API and UI to my-delivery namespace
 -in folder app rename folder courier with my-delivery
 -update component Header.tsx
 
-
 Refactor my-delivery page with modular components
 
 -in folder my-delivery create four tsx component
 -in component my-delivery/page.tsx import created components
-
 
 Implement Stripe PaymentIntent checkout flow
 
@@ -973,19 +869,16 @@ Implement Stripe PaymentIntent checkout flow
 -in folder api/checkout create folders [id], intent and route.ts files
 -update UI in Stripe components
 
-
 Refactor tables to use icon buttons and update UI
 
 -deployment errors fix
 -update ui in existing components
 -update UseProfile.tsx file
 
-
 Improve Stripe payment flow and refactor order links
 
--update components StripeCheckoutForm.tsx and page.tsx 
+-update components StripeCheckoutForm.tsx and page.tsx
 -update ui in existing tsx components
-
 
 Refactor checkout flow and remove Stripe Elements integration
 
@@ -994,31 +887,24 @@ Refactor checkout flow and remove Stripe Elements integration
 -type command: npm i micro
 -fix type errors in tsx components
 
-
 Use MongoDB client promise and clean up auth forms
 
 -create mongodbClient.ts file
 -in authOptions.ts file import variable mongoClientPromise from mongodbClient.ts
 -update ui in form components
 
-
 Add restaurant CRUD, UI, API and model
 
 -add CRUD logic for restaurant
-
 
 Remove manager role and related functionality
 
 -remove all manager related logic from route.ts files and tsx components
 
-
-
 Add foodType, optional prices and admin scoping
 
--update MenuItem model in menuItem.ts file 
+-update MenuItem model in menuItem.ts file
 -update menu items ui logic
-
-
 
 Validate images, fix uploads, refine menu UI
 
@@ -1026,36 +912,27 @@ Validate images, fix uploads, refine menu UI
 -update testimonial text
 -in folder app/menu update component MenuItem.jsx
 
-
 Enforce single-restaurant cart & restaurant fees
 
 -open link: https://www.npmjs.com/package/baseline-browser-mapping
 -type command: npm i -D baseline-browser-mapping@latest
 -update route.ts file and order model
 
-
-
 Restrict admin access to super admin
 
 -update route.ts files
 -update component Header.tsx
-
-
 
 Enforce owner auth and improve menu-items UI
 
 -in folder menu-items update CRUD logic for menu items
 -update route.ts file
 
-
-
 Add loading skeletons and clean imports
 
 -create components loading.tsx
 -remove unused imports form tsx components
 -update imports in route.ts files
-
-
 
 Add project config and tooling files
 
@@ -1064,23 +941,13 @@ Add project config and tooling files
 -update package.json file
 -create new config folder and files
 
-
-
 Add advanced menu filtering, sorting & pagination
-
-
 
 Handle drink pricing, auth fixes, and UI tweaks
 
-
-
 Add MenuItem modal and restaurant details
 
-
-
 Restrict admin pages and delete menu images
-
-
 
 Add restaurant image upload and handling
 
@@ -1088,78 +955,42 @@ Add restaurant image upload and handling
 -create component RestaurantImageUpload.tsx
 -add a logic for image upload to Cloudinary service
 
-
-
 Add multi-image support and restaurant stats
 
 -add a logic for uploading more images to restaurant
 -add statistics for restaurant
 
-
-
 Refactor hooks, map, menu and cart logic
-
-
 
 Add pending filters UI and Apply action
 
-
-
 Include restaurant images & UI cleanup
-
-
 
 Use ProfilePageLoading for profile loading
 
-
-
 Migrate menu items to priceType
-
-
 
 Add restaurants pages and API endpoints
 
-
-
 Add location-based sorting & distance display
-
-
 
 Add restaurant menu API and frontend
 
-
-
 Add MenuPageSkeleton and reuse in menu pages
-
-
 
 Add admin-dashboard area and layout
 
-
-
 Add active orders badge and manual simulator
-
-
 
 Store and display included tax amount
 
-
-
 Add order elapsed time display and completedAt
-
-
 
 Add favorites (meals & restaurants) feature
 
-
-
 Add reviews/ratings, UI & ordering validations
 
-
-
 Add rating filters and improve reviews API/UI
-
-
 
 Add Resend email receipts and UI
 
@@ -1174,14 +1005,10 @@ Add Resend email receipts and UI
 -type command: npm i @react-email/components
 -add logic for Resend from documentation
 
-
-
 Add app page layouts and admin client layout
 
 -open link: https://nextjs.org/docs/app/getting-started/proxy
 -add metadata to tsx components
-
-
 
 Add project conventions and Gemini docs
 
@@ -1189,72 +1016,38 @@ Add project conventions and Gemini docs
 -create folders .windsurf and rules
 -in folder rules create file project-conventions.md
 
-
-
 Normalize ObjectId handling and harden favorites
-
-
 
 Add notifications system (API, UI, provider)
 
 -add notifications features
 
-
-
 Add courier dashboard & courier review APIs
-
-
 
 Add AI config folders and guidance
 
-
-
 Add PDF invoice generation and restaurant details
-
-
 
 Add coupons feature with admin UI and checkout
 
-
-
 Fix date typing, delivery fee, and PDF typing
-
-
 
 Add Vitest tests, fixtures, and testing docs
 
-
-
 Add E2E tests and Vitest e2e config
-
-
 
 Add profile management tests and docs
 
-
-
 Add change-password API, form, and validation
-
-
 
 Add payment & checkout tests and mocks
 
-
-
 Add email verification & password reset flows
-
-
 
 Add API unit tests, e2e updates, set orderStatus
 
-
-
 Add webhook and e2e tests for checkout/favorites
 
-
-
 Add extensive unit tests and test tweaks
-
-
 
 Move UseProfile/UseFavorites to hooks

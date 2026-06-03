@@ -15,7 +15,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 
 ## High-Level Features
 
-- Customer flows: auth, profile, menu browsing, cart/checkout, favorites, loyalty, reviews.
+- Customer flows: auth, profile, menu browsing, cart/checkout, favorites, loyalty, reviews, approved messaging.
 - Admin dashboard: users, categories, menu items, restaurants, orders, couriers, statistics.
 - Courier flows: assignment, availability toggle, live location sharing, and tracked delivery maps.
 
@@ -63,6 +63,7 @@ See `example.env`. Variables currently used in the project include:
 - API route handlers should validate inputs and use models/ for data access.
 - Keep secrets in server-side code only (Stripe, Cloudinary, Resend keys).
 - Avoid breaking API response shapes unless explicitly requested.
+- Messaging should remain role-restricted: no customer-to-customer chat, and order threads must match the assigned courier or restaurant owner.
 
 ## AI Configuration Folders
 

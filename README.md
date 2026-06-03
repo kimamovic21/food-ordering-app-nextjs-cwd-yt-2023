@@ -13,6 +13,7 @@ It includes:
 - favorites for meals and restaurants
 - loyalty rewards with delivery fee discounts
 - ratings and review flows
+- approved in-app messaging between customers, restaurant owners, admins, and couriers
 - notifications center with unread counts, mark-as-read actions, and role-aware routing
 - admin dashboard for users, menu items, categories, restaurants, couriers, orders, and statistics
 - courier dashboard with active delivery, delivery history, and courier ratings views
@@ -35,6 +36,7 @@ It includes:
 - Per-order courier reviews and ratings (optional, one submission per order)
 - Order details with courier information and a public courier review page for customers
 - Social sharing actions for restaurant/menu pages
+- Message inbox at `/messages` and direct thread view at `/messages/[participantId]`
 
 ### Admin and Staff Features
 
@@ -44,6 +46,7 @@ It includes:
 - Courier management and order assignment
 - Order lifecycle management and dashboards/statistics
 - Notifications management with order, delivery, and assignment updates
+- Messaging center with delivery/seen states, inline editing, and per-user delete behavior
 - Payment link endpoint and Stripe webhook handling
 
 ### Courier Features
@@ -110,6 +113,13 @@ This project uses many dependencies; below are the main packages actively used i
 - @react-email/components: [https://react.email/docs/components](https://react.email/docs/components)
 - @react-email/render: [https://react.email/docs/utilities/render](https://react.email/docs/utilities/render)
 - react-share: [https://www.npmjs.com/package/react-share](https://www.npmjs.com/package/react-share)
+
+### Messaging
+
+- Routes: `/messages` is the inbox, and `/messages/[participantId]` opens a specific approved thread.
+- Access rules: customers can only chat with their assigned courier or restaurant owner for an order; admins can chat with other admins and couriers; customer-to-customer chat stays blocked.
+- Realtime: the implementation uses server-sent events plus polling so unread badges and open threads update quickly without a third-party chat service.
+- Security: messages are stored in MongoDB with app-level authorization and transport/session security. End-to-end encryption is intentionally not enabled here because the app needs role-based operational visibility and moderation; if strict E2E is required later, treat it as a separate product decision.
 
 ## Auth: Email Verification & Password Reset
 

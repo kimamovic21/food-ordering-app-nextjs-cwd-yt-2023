@@ -24,6 +24,7 @@ import Link from 'next/link';
 import useProfile from '@/hooks/useProfile';
 import ModeToggle from '../theme/ModeToggle';
 import NotificationBell from './NotificationBell';
+import MessageBell from './MessageBell';
 
 const Header = () => {
   const session = useSession();
@@ -214,6 +215,7 @@ const Header = () => {
           ) : (
             <>
               <ModeToggle />
+              {status === 'authenticated' && <MessageBell iconSize={26} />}
               {status === 'authenticated' && <NotificationBell iconSize={26} />}
               <Link
                 href='/cart'
@@ -318,6 +320,20 @@ const Header = () => {
               <IoCartOutline size={24} />
               Cart {totalItems > 0 && `(${totalItems})`}
             </Link>
+
+            {status === 'authenticated' && (
+              <div className='flex items-center justify-start'>
+                <MessageBell iconSize={20} />
+                <span className='ml-2 text-sm text-muted-foreground'>Messages</span>
+              </div>
+            )}
+
+            {status === 'authenticated' && (
+              <div className='flex items-center justify-start'>
+                <MessageBell iconSize={20} />
+                <span className='ml-2 text-sm text-muted-foreground'>Messages</span>
+              </div>
+            )}
 
             {status === 'authenticated' && (
               <div className='flex items-center justify-start'>

@@ -13,6 +13,7 @@ This file provides guidance for AI assistance in this repository.
 - Maps: Leaflet
 - Email: Resend + React Email
 - Sharing: react-share
+- Messaging: approved app-native threads with realtime unread badges and per-user message visibility
 
 ## Goals for AI Assistance
 
@@ -29,6 +30,7 @@ This file provides guidance for AI assistance in this repository.
 - Use existing utility helpers when possible (libs/).
 - Avoid breaking changes to API response shapes.
 - Preserve role-based access checks (admin/courier/user).
+- Preserve message access rules: no customer-to-customer chat, and order conversations must match the assigned courier or restaurant owner.
 - Keep payment and webhook flows idempotent.
 - Keep receipt email generation in server code.
 
