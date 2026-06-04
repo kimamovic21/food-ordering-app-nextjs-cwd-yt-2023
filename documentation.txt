@@ -1051,3 +1051,5 @@ Add webhook and e2e tests for checkout/favorites
 Add extensive unit tests and test tweaks
 
 Move UseProfile/UseFavorites to hooks
+
+Add messages API and e2e coverage
