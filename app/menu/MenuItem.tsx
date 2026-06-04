@@ -8,8 +8,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import Link from 'next/link';
 import Pizza from '@/public/pizza.png';
-import MenuItemModal from './MenuItemModal';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import HeartRating from '@/components/shared/HeartRating';
 
@@ -29,12 +29,12 @@ interface MenuItemType {
 
 interface MenuItemProps {
   item?: MenuItemType;
+  href?: string;
 }
 
 type Size = 'small' | 'medium' | 'large' | 'single';
 
-const MenuItem = ({ item }: MenuItemProps) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+const MenuItem = ({ item, href }: MenuItemProps) => {
   const [userSelectedSize] = useState<Size>('small');
   const { addToCart, getCartRestaurantId } = useCart();
   const { data: profileData, loading: profileLoading } = useProfile();
@@ -156,9 +156,9 @@ const MenuItem = ({ item }: MenuItemProps) => {
   return (
     <>
       <Card className='p-0 overflow-hidden hover:shadow-lg transition-shadow flex flex-col'>
-        <div
-          className='text-center relative h-40 p-4 bg-muted hover:bg-muted/80 transition-colors flex items-center justify-center cursor-pointer'
-          onClick={() => setIsModalOpen(true)}
+        <Link
+          href={href || `/menu/${displayItem._id}`}
+          className='relative flex h-40 items-center justify-center bg-muted p-4 text-center transition-colors hover:bg-muted/80'
         >
           {displayItem.image &&
           typeof displayItem.image === 'string' &&
@@ -191,10 +191,14 @@ const MenuItem = ({ item }: MenuItemProps) => {
               No image available
             </div>
           )}
-        </div>
+        </Link>
 
         <div className='p-4 flex flex-col flex-1'>
-          <h4 className='font-semibold text-lg text-center'>{displayItem.name}</h4>
+          <Link href={href || `/menu/${displayItem._id}`} className='group'>
+            <h4 className='text-center text-lg font-semibold transition-colors group-hover:text-primary'>
+              {displayItem.name}
+            </h4>
+          </Link>
           <div className='mt-2 flex justify-center'>
             <HeartRating
               rating={displayItem.restaurantAverageRating ?? 0}
@@ -221,10 +225,6 @@ const MenuItem = ({ item }: MenuItemProps) => {
           </div>
         </div>
       </Card>
-
-      {item && (
-        <MenuItemModal item={item} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-      )}
     </>
   );
 };

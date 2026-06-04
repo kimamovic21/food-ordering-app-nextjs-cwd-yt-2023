@@ -135,7 +135,11 @@ const getContactId = (contact?: ConversationContact | null) =>
   contact?._id || contact?.userId || '';
 
 const conversationCanvasClass =
-  'mx-auto w-full lg:w-[calc(100vw-8rem)] lg:max-w-[1440px] xl:w-[calc(100vw-10rem)] 2xl:w-[1440px]';
+  'mx-auto w-full max-w-full lg:w-[calc(100vw-5rem)] lg:max-w-[1840px] 2xl:w-[calc(100vw-6rem)] 2xl:max-w-[1920px]';
+const messagesGridHeightClass =
+  'min-h-[72vh] lg:h-[calc(100dvh-11rem)] lg:min-h-[560px] lg:max-h-[760px]';
+const conversationGridHeightClass =
+  'min-h-[68vh] lg:h-[calc(100dvh-15rem)] lg:min-h-[500px] lg:max-h-[720px]';
 
 const MessagesLoadingSkeleton = ({ conversationOnly }: { conversationOnly: boolean }) => (
   <section className='relative mx-auto mt-8 min-h-[calc(100vh-8rem)] w-full max-w-[1920px] px-3 sm:px-5 lg:px-6 2xl:px-8'>
@@ -146,10 +150,10 @@ const MessagesLoadingSkeleton = ({ conversationOnly }: { conversationOnly: boole
     )}
 
     <div
-      className={`grid min-h-[72vh] w-full items-stretch gap-5 lg:h-[calc(100vh-9rem)] lg:min-h-[720px] xl:gap-6 ${
+      className={`grid w-full items-stretch gap-5 xl:gap-6 ${
         conversationOnly
-          ? `${conversationCanvasClass} lg:grid-cols-[minmax(0,1fr)]`
-          : 'lg:grid-cols-[minmax(400px,520px)_minmax(520px,1fr)] 2xl:grid-cols-[560px_minmax(720px,1fr)]'
+          ? `${conversationCanvasClass} ${conversationGridHeightClass} lg:grid-cols-[minmax(0,1fr)]`
+          : `${messagesGridHeightClass} lg:grid-cols-[minmax(400px,520px)_minmax(520px,1fr)] 2xl:grid-cols-[560px_minmax(720px,1fr)]`
       }`}
     >
       {!conversationOnly && (
@@ -169,7 +173,7 @@ const MessagesLoadingSkeleton = ({ conversationOnly }: { conversationOnly: boole
               <Skeleton className='h-24 rounded-2xl' />
             </div>
           </CardHeader>
-          <CardContent className='space-y-5 p-4'>
+          <CardContent className='flex min-h-0 flex-1 flex-col gap-5 p-4'>
             <div className='space-y-3'>
               <Skeleton className='h-4 w-32' />
               <Skeleton className='h-20 rounded-2xl' />
@@ -190,7 +194,11 @@ const MessagesLoadingSkeleton = ({ conversationOnly }: { conversationOnly: boole
       )}
 
       <Card className='w-full min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur'>
-        <div className='flex h-full min-h-[72vh] min-w-0 flex-col lg:min-h-0'>
+        <div
+          className={`flex h-full min-w-0 flex-col lg:min-h-0 ${
+            conversationOnly ? 'min-h-[68vh]' : 'min-h-[72vh]'
+          }`}
+        >
           <CardHeader className='border-b border-border/60 pb-4'>
             <div className='flex items-center justify-between gap-4'>
               <div className='flex items-center gap-3'>
@@ -674,19 +682,19 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
       )}
 
       <div
-        className={`grid min-h-[72vh] w-full items-stretch gap-5 lg:h-[calc(100vh-9rem)] lg:min-h-[720px] xl:gap-6 ${
+        className={`grid w-full items-stretch gap-5 xl:gap-6 ${
           isConversationRoute
-            ? `${conversationCanvasClass} lg:grid-cols-[minmax(0,1fr)]`
-            : 'lg:grid-cols-[minmax(400px,520px)_minmax(520px,1fr)] 2xl:grid-cols-[560px_minmax(720px,1fr)]'
+            ? `${conversationCanvasClass} ${conversationGridHeightClass} lg:grid-cols-[minmax(0,1fr)]`
+            : `${messagesGridHeightClass} lg:grid-cols-[minmax(400px,520px)_minmax(520px,1fr)] 2xl:grid-cols-[560px_minmax(720px,1fr)]`
         }`}
       >
         {!isConversationRoute && (
-          <Card className='min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur'>
-            <CardHeader className='space-y-4 border-b border-border/60 bg-linear-to-br from-foreground/5 to-transparent pb-4'>
+          <Card className='flex h-full min-h-0 min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur'>
+            <CardHeader className='space-y-3 border-b border-border/60 bg-linear-to-br from-foreground/5 to-transparent pb-3'>
               <div className='flex items-start justify-between gap-4'>
                 <div>
-                  <CardTitle className='text-2xl font-semibold tracking-tight'>{title}</CardTitle>
-                  <p className='mt-2 text-sm text-muted-foreground'>{description}</p>
+                  <CardTitle className='text-xl font-semibold tracking-tight'>{title}</CardTitle>
+                  <p className='mt-1 text-sm leading-snug text-muted-foreground'>{description}</p>
                 </div>
                 <Button
                   variant='outline'
@@ -701,27 +709,27 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                 </Button>
               </div>
 
-              <div className='grid grid-cols-3 gap-3 text-sm'>
-                <div className='rounded-2xl border border-border/60 bg-background p-3'>
+              <div className='grid grid-cols-3 gap-2 text-sm'>
+                <div className='rounded-2xl border border-border/60 bg-background px-3 py-2'>
                   <p className='text-muted-foreground text-xs uppercase tracking-[0.2em]'>Unread</p>
-                  <p className='mt-2 text-2xl font-bold'>{data?.unreadCount || 0}</p>
+                  <p className='mt-1 text-2xl font-bold'>{data?.unreadCount || 0}</p>
                 </div>
-                <div className='rounded-2xl border border-border/60 bg-background p-3'>
+                <div className='rounded-2xl border border-border/60 bg-background px-3 py-2'>
                   <p className='text-muted-foreground text-xs uppercase tracking-[0.2em]'>
                     Threads
                   </p>
-                  <p className='mt-2 text-2xl font-bold'>{totalConversations}</p>
+                  <p className='mt-1 text-2xl font-bold'>{totalConversations}</p>
                 </div>
-                <div className='rounded-2xl border border-border/60 bg-background p-3'>
+                <div className='rounded-2xl border border-border/60 bg-background px-3 py-2'>
                   <p className='text-muted-foreground text-xs uppercase tracking-[0.2em]'>Open</p>
-                  <p className='mt-2 text-2xl font-bold'>{activeUnread}</p>
+                  <p className='mt-1 text-2xl font-bold'>{activeUnread}</p>
                 </div>
               </div>
             </CardHeader>
 
-            <CardContent className='space-y-5 p-4'>
-              <div>
-                <div className='mb-3 flex items-center justify-between'>
+            <CardContent className='flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto p-4'>
+              <div className='shrink-0'>
+                <div className='mb-2 flex items-center justify-between'>
                   <h2 className='text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground'>
                     {isAdminSearchEnabled ? 'Search users' : 'Quick contacts'}
                   </h2>
@@ -739,7 +747,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                         className='h-11 rounded-2xl pl-10'
                       />
                     </div>
-                    <p className='mt-2 px-1 text-xs text-muted-foreground'>
+                    <p className='mt-1 px-1 text-xs text-muted-foreground'>
                       Search all users, then load more results in pages of 10.
                     </p>
                   </div>
@@ -782,13 +790,13 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                 </div>
               </div>
 
-              <Separator />
+              <Separator className='shrink-0' />
 
-              <div className='space-y-2'>
+              <div className='flex min-h-[220px] flex-1 flex-col space-y-2 overflow-hidden'>
                 <h2 className='text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground'>
                   Inbox
                 </h2>
-                <div className='max-h-[45vh] space-y-2 overflow-x-hidden overflow-y-auto pr-1'>
+                <div className='min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto pr-1'>
                   {(data?.conversations || []).length === 0 ? (
                     <div className='rounded-2xl border border-dashed border-border/70 px-4 py-8 text-center text-sm text-muted-foreground'>
                       No conversations yet. Pick a contact to start the first thread.
@@ -842,7 +850,11 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
         )}
 
         <Card className='w-full min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur'>
-          <div className='flex h-full min-h-[72vh] min-w-0 flex-col lg:min-h-0'>
+          <div
+            className={`flex h-full min-w-0 flex-col lg:min-h-0 ${
+              isConversationRoute ? 'min-h-[68vh]' : 'min-h-[72vh]'
+            }`}
+          >
             {hasSelectedContact ? (
               <>
                 <CardHeader className='border-b border-border/60 bg-linear-to-br from-foreground/5 to-transparent pb-4'>
@@ -1047,7 +1059,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                     </div>
                   )}
 
-                  <div className='relative min-w-0 overflow-hidden rounded-3xl border border-border/70 bg-background transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20'>
+                  <div className='relative max-w-full min-w-0 overflow-hidden rounded-3xl border border-border/70 bg-background transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20'>
                     <Textarea
                       value={draft}
                       onChange={(event) => setDraft(event.target.value)}
@@ -1057,7 +1069,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                           : `Message ${activeContact?.name || 'this person'}...`
                       }
                       wrap='soft'
-                      className='block max-h-40 min-h-16 w-full min-w-0 resize-none overflow-x-hidden overflow-y-auto wrap-anywhere border-0 bg-transparent py-4 pl-4 pr-20 shadow-none focus-visible:ring-0'
+                      className='block field-sizing-fixed max-h-40 min-h-16 w-full max-w-full min-w-0 resize-none overflow-x-hidden overflow-y-auto wrap-anywhere border-0 bg-transparent py-4 pl-4 pr-20 shadow-none [overflow-wrap:anywhere] [word-break:break-word] focus-visible:ring-0'
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' && !event.shiftKey) {
                           event.preventDefault();

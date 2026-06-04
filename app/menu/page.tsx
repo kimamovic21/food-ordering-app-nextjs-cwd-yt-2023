@@ -131,6 +131,14 @@ const MenuPage = () => {
     [searchParams, router]
   );
 
+  const getMenuItemPath = useCallback(
+    (itemId: string) => {
+      const queryString = searchParams?.toString();
+      return queryString ? `/menu/${itemId}?${queryString}` : `/menu/${itemId}`;
+    },
+    [searchParams]
+  );
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -464,7 +472,7 @@ const MenuPage = () => {
                     {results.length > 0 ? (
                       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                         {results.map((item) => (
-                          <MenuItem key={item._id} item={item} />
+                          <MenuItem key={item._id} item={item} href={getMenuItemPath(item._id)} />
                         ))}
                       </div>
                     ) : (
@@ -504,7 +512,7 @@ const MenuPage = () => {
 
                           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                             {summary.items.map((item) => (
-                              <MenuItem key={item._id} item={item} />
+                              <MenuItem key={item._id} item={item} href={getMenuItemPath(item._id)} />
                             ))}
                           </div>
 

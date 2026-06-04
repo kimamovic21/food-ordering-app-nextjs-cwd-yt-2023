@@ -150,7 +150,7 @@ const CouponsPage = () => {
         <div>
           <Title>Coupons</Title>
           <p className='mt-2 text-sm text-muted-foreground'>
-            Restaurant-only coupons with lazy loading.
+            Manage restaurant-only discounts for your customers.
           </p>
         </div>
         <Button asChild className='rounded-full gap-2'>

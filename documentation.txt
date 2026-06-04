@@ -1053,3 +1053,5 @@ Add extensive unit tests and test tweaks
 Move UseProfile/UseFavorites to hooks
 
 Add messages API and e2e coverage
+
+Message and menu item layout fix

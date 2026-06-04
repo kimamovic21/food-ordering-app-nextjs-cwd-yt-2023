@@ -28,8 +28,8 @@ import Link from 'next/link';
 
 const AdminDashboardLayoutSkeleton = () => {
   return (
-    <section className='w-full min-h-screen md:h-screen flex flex-col md:flex-row md:overflow-hidden'>
-      <aside className='hidden md:flex md:flex-col w-72 md:h-full bg-card border-r border-border overflow-y-auto'>
+    <section className='flex h-full min-h-0 w-full flex-col overflow-x-hidden md:flex-row md:overflow-hidden'>
+      <aside className='hidden w-72 shrink-0 overflow-y-auto border-r border-border bg-card md:flex md:h-full md:min-h-0 md:flex-col'>
         <div className='p-6 border-b border-border space-y-3'>
           <Skeleton className='h-3 w-24' />
           <Skeleton className='h-7 w-40' />
@@ -59,8 +59,8 @@ const AdminDashboardLayoutSkeleton = () => {
         <Skeleton className='h-10 w-full rounded-lg' />
       </div>
 
-      <div className='flex-1 md:h-full md:overflow-y-auto'>
-        <div className='p-4 md:p-6 space-y-8'>
+      <div className='h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto'>
+        <div className='space-y-8 p-4 md:p-6'>
           <Skeleton className='h-56 w-full rounded-2xl' />
           <div className='space-y-4'>
             <Skeleton className='h-8 w-44' />
@@ -179,7 +179,7 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
   }
 
   return (
-    <section className='w-full min-h-screen md:h-screen flex flex-col md:flex-row md:overflow-hidden'>
+    <section className='flex h-full min-h-0 w-full flex-col overflow-x-hidden md:flex-row md:overflow-hidden'>
       {/* Mobile Toggle Button */}
       <div className='md:hidden flex items-center justify-between p-4 border-b border-border bg-card'>
         <h2 className='text-lg font-semibold'>Admin Panel</h2>
@@ -198,7 +198,7 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
       <aside
         className={`${
           isSidebarOpen ? 'block' : 'hidden'
-        } md:flex md:flex-col w-full md:w-72 md:h-full bg-card border-r border-border flex-col overflow-y-auto`}
+        } w-full flex-col overflow-y-auto border-r border-border bg-card md:flex md:h-full md:min-h-0 md:w-72 md:shrink-0 md:flex-col`}
       >
         {/* Logo Section - Hidden on Mobile */}
         <div className='hidden md:block p-6 border-b border-border'>
@@ -333,7 +333,7 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <div className='flex-1 md:h-full md:overflow-y-auto'>
+      <div className='h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto'>
         <div className='p-4 md:p-6'>{children}</div>
       </div>
     </section>

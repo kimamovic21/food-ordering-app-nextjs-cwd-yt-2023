@@ -503,9 +503,9 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
   };
 
   return (
-    <form onSubmit={handleSubmit} className='space-y-6'>
+    <form onSubmit={handleSubmit} className='min-w-0 space-y-6'>
       {/* Row 1: Basic Information & Contact Information */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+      <div className='grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2'>
         {/* Basic Information */}
         <Card>
           <CardHeader>
@@ -749,7 +749,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
       </Card>
 
       {/* Row 3: Pricing & Fees & Staff */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+      <div className='grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2'>
         {/* Pricing & Fees */}
         <Card>
           <CardHeader>
@@ -854,7 +854,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
       </div>
 
       {/* Row 4: Working Hours & Blocked Dates */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+      <div className='grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2'>
         {/* Working Hours */}
         <Card>
           <CardHeader>
@@ -863,7 +863,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
           </CardHeader>
           <CardContent className='space-y-3'>
             {/* Header Row */}
-            <div className='flex items-center gap-2 pb-2 border-b-2'>
+            <div className='hidden items-center gap-2 border-b-2 pb-2 sm:flex'>
               <div className='w-20 text-xs font-semibold text-muted-foreground shrink-0'>Day</div>
               <div className='flex items-center gap-2 flex-1 min-w-0'>
                 <div className='w-24 text-xs font-semibold text-muted-foreground shrink-0'>
@@ -880,15 +880,18 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
             </div>
 
             {formData.workingHours.map((hours, index) => (
-              <div key={index} className='flex items-center gap-2 py-2 border-b last:border-0'>
-                <div className='w-20 font-medium text-sm shrink-0'>{getDayLabel(hours.day)}</div>
-                <div className='flex items-center gap-2 flex-1 min-w-0'>
+              <div
+                key={index}
+                className='flex flex-col gap-3 border-b py-3 last:border-0 sm:flex-row sm:items-center sm:gap-2 sm:py-2'
+              >
+                <div className='w-20 shrink-0 text-sm font-medium'>{getDayLabel(hours.day)}</div>
+                <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
                   <Input
                     type='time'
                     value={hours.openTime}
                     onChange={(e) => handleWorkingHoursChange(index, 'openTime', e.target.value)}
                     disabled={hours.isClosed}
-                    className='w-24 text-sm h-9 shrink-0'
+                    className='h-9 w-24 shrink-0 text-sm'
                   />
                   <span className='text-xs text-muted-foreground shrink-0'>-</span>
                   <Input
@@ -896,10 +899,13 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
                     value={hours.closeTime}
                     onChange={(e) => handleWorkingHoursChange(index, 'closeTime', e.target.value)}
                     disabled={hours.isClosed}
-                    className='w-24 text-sm h-9 shrink-0'
+                    className='h-9 w-24 shrink-0 text-sm'
                   />
                 </div>
-                <div className='mt-5 w-10 h-10'>
+                <label
+                  htmlFor={`closed-${index}`}
+                  className='flex h-10 w-fit items-center gap-2 text-xs text-muted-foreground sm:mt-5 sm:w-10 sm:justify-center'
+                >
                   <Checkbox
                     id={`closed-${index}`}
                     checked={hours.isClosed}
@@ -908,7 +914,8 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
                     }
                     className='shrink-0'
                   />
-                </div>
+                  <span className='sm:hidden'>Closed</span>
+                </label>
               </div>
             ))}
           </CardContent>
@@ -921,7 +928,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
             <CardDescription>Mark days when your restaurant will be closed</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex gap-2'>
+            <div className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
               <Input
                 type='date'
                 value={newBlockedDate.date}
