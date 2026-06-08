@@ -10,7 +10,13 @@ const NotificationSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ['order_paid', 'order_status_changed', 'courier_assigned', 'order_completed'],
+      enum: [
+        'order_placed',
+        'order_paid',
+        'order_status_changed',
+        'courier_assigned',
+        'order_completed',
+      ],
       required: true,
     },
     title: { type: String, required: true, trim: true, maxlength: 120 },

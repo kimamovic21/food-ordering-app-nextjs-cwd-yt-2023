@@ -1055,3 +1055,5 @@ Move UseProfile/UseFavorites to hooks
 Add messages API and e2e coverage
 
 Message and menu item layout fix
+
+Improve admin alerts and menu item details

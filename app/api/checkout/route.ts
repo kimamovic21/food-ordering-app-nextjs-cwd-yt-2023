@@ -6,6 +6,7 @@ import { User } from '@/models/user';
 import { Restaurant } from '@/models/restaurant';
 import { MenuItem } from '@/models/menuItem';
 import { calculateLoyaltyStatus } from '@/libs/loyaltyCalculator';
+import { notifyOrderPlaced } from '@/libs/notifications';
 import {
   calculateCouponDiscountAmount,
   getCouponValidationError,
@@ -274,6 +275,18 @@ export async function POST(req: Request) {
     paid: false,
     orderStatus: 'placed',
   });
+
+  try {
+    await notifyOrderPlaced({
+      restaurantId: restaurant._id,
+      orderId: order._id,
+      customerUserId: user._id,
+      customerEmail: session.user.email,
+      total,
+    });
+  } catch (notificationError) {
+    console.error('Failed to create order placed notifications:', notificationError);
+  }
 
   // Add items to Stripe line items
   sanitizedItems.forEach((item) => {

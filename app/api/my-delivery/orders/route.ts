@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
-import { notifyUserAboutOrderCompletion } from '@/libs/notifications';
+import { notifyOrderDelivered } from '@/libs/notifications';
 import mongoose from 'mongoose';
 
 const normalizeOrder = (order: any) => ({
@@ -90,10 +90,12 @@ export async function PATCH(request: Request) {
   await order.save();
   await user.save();
 
-  if (order.userId) {
+  if (order.userId && order.restaurantId) {
     try {
-      await notifyUserAboutOrderCompletion({
+      await notifyOrderDelivered({
         userId: order.userId,
+        courierId: user._id,
+        restaurantId: order.restaurantId,
         orderId: order._id,
       });
     } catch (notificationError) {

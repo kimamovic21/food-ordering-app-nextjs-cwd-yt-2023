@@ -16,10 +16,16 @@ import { toast } from 'sonner';
 interface ShareActionsProps {
   url: string;
   title: string;
+  label?: string;
   className?: string;
 }
 
-const ShareActions = ({ url, title, className }: ShareActionsProps) => {
+const ShareActions = ({
+  url,
+  title,
+  label = 'Share with friends',
+  className,
+}: ShareActionsProps) => {
   const handleCopyLink = async () => {
     try {
       if (navigator.clipboard?.writeText) {
@@ -44,7 +50,7 @@ const ShareActions = ({ url, title, className }: ShareActionsProps) => {
 
   return (
     <div className={className}>
-      <p className='text-sm font-medium text-muted-foreground mb-2'>Share with friends</p>
+      <p className='text-sm font-medium text-muted-foreground mb-2'>{label}</p>
       <div className='grid w-fit grid-flow-col auto-cols-max items-center gap-2'>
         <WhatsappShareButton className='shrink-0 leading-none' url={url} title={title}>
           <WhatsappIcon size={32} round />
@@ -62,7 +68,7 @@ const ShareActions = ({ url, title, className }: ShareActionsProps) => {
           type='button'
           data-slot='button'
           onClick={handleCopyLink}
-          className='inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
+          className='inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground leading-none shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
           aria-label='Copy link'
           title='Copy link'
         >

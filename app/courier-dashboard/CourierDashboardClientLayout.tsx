@@ -166,7 +166,7 @@ const CourierDashboardClientLayout = ({ children }: { children: React.ReactNode 
                 onClick={() => setIsSidebarOpen(false)}
                 className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/30'
+                    ? 'bg-primary text-primary-foreground'
                     : 'text-foreground hover:bg-muted/80 hover:translate-x-0.5'
                 }`}
               >

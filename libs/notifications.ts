@@ -4,6 +4,7 @@ import { Notification } from '@/models/notification';
 import { User } from '@/models/user';
 
 type NotificationType =
+  | 'order_placed'
   | 'order_paid'
   | 'order_status_changed'
   | 'courier_assigned'
@@ -69,25 +70,62 @@ const humanStatusMap: Record<string, string> = {
 
 export const formatOrderStatusLabel = (status: string) => humanStatusMap[status] || status;
 
+const findRestaurantAdminIds = async (restaurantId: string | mongoose.Types.ObjectId) => {
+  const admins = await User.find({
+    role: 'admin',
+    restaurantId,
+  })
+    .select('_id')
+    .lean();
+
+  return admins.map((admin) => admin._id);
+};
+
+export const notifyOrderPlaced = async (params: {
+  restaurantId: string | mongoose.Types.ObjectId;
+  orderId: string | mongoose.Types.ObjectId;
+  customerUserId: string | mongoose.Types.ObjectId;
+  customerEmail: string;
+  total: number;
+}) => {
+  const adminIds = await findRestaurantAdminIds(params.restaurantId);
+  const orderNumber = params.orderId.toString().slice(-6);
+  const total = Number(params.total || 0).toFixed(2);
+
+  await Promise.all([
+    createNotifications({
+      recipientUserIds: [params.customerUserId],
+      type: 'order_placed',
+      title: 'Order placed',
+      message: `Your order #${orderNumber} has been placed and is waiting for payment confirmation.`,
+      orderId: params.orderId,
+      metadata: { restaurantId: params.restaurantId.toString() },
+    }),
+    createNotifications({
+      recipientUserIds: adminIds,
+      type: 'order_placed',
+      title: 'New order placed',
+      message: `Order #${orderNumber} was placed by ${params.customerEmail} (total: $${total}).`,
+      orderId: params.orderId,
+      metadata: { restaurantId: params.restaurantId.toString() },
+    }),
+  ]);
+};
+
 export const notifyRestaurantAdminsAboutPaidOrder = async (params: {
   restaurantId: string | mongoose.Types.ObjectId;
   orderId: string | mongoose.Types.ObjectId;
   customerEmail: string;
   total: number;
 }) => {
-  const admins = await User.find({
-    role: 'admin',
-    restaurantId: params.restaurantId,
-  })
-    .select('_id')
-    .lean();
+  const adminIds = await findRestaurantAdminIds(params.restaurantId);
 
-  if (admins.length === 0) {
+  if (adminIds.length === 0) {
     return;
   }
 
   await createNotifications({
-    recipientUserIds: admins.map((admin) => admin._id),
+    recipientUserIds: adminIds,
     type: 'order_paid',
     title: 'New paid order received',
     message: `Order #${params.orderId.toString().slice(-6)} was paid by ${params.customerEmail} (total: $${Number(params.total || 0).toFixed(2)}).`,
@@ -135,4 +173,39 @@ export const notifyUserAboutOrderCompletion = async (params: {
     message: `Your order #${params.orderId.toString().slice(-6)} has been marked as delivered.`,
     orderId: params.orderId,
   });
+};
+
+export const notifyOrderDelivered = async (params: {
+  userId: string | mongoose.Types.ObjectId;
+  courierId: string | mongoose.Types.ObjectId;
+  restaurantId: string | mongoose.Types.ObjectId;
+  orderId: string | mongoose.Types.ObjectId;
+}) => {
+  const adminIds = await findRestaurantAdminIds(params.restaurantId);
+  const orderNumber = params.orderId.toString().slice(-6);
+
+  await Promise.all([
+    createNotifications({
+      recipientUserIds: [params.userId],
+      type: 'order_completed',
+      title: 'Order delivered',
+      message: `Your order #${orderNumber} has been marked as delivered.`,
+      orderId: params.orderId,
+    }),
+    createNotifications({
+      recipientUserIds: [params.courierId],
+      type: 'order_completed',
+      title: 'Delivery completed',
+      message: `Order #${orderNumber} has been marked as delivered.`,
+      orderId: params.orderId,
+    }),
+    createNotifications({
+      recipientUserIds: adminIds,
+      type: 'order_completed',
+      title: 'Order delivered',
+      message: `Order #${orderNumber} has been delivered by the assigned courier.`,
+      orderId: params.orderId,
+      metadata: { restaurantId: params.restaurantId.toString() },
+    }),
+  ]);
 };

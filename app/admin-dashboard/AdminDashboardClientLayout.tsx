@@ -10,6 +10,7 @@ import {
   List,
   LogOut,
   Menu,
+  MessageSquareText,
   PieChart,
   TicketPercent,
   ShoppingCart,
@@ -23,6 +24,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import useProfile from '@/hooks/useProfile';
+import { useMessages } from '@/contexts/MessagesContext';
+import { useNotifications } from '@/contexts/NotificationsContext';
 import NotificationBell from '@/components/shared/NotificationBell';
 import Link from 'next/link';
 
@@ -81,6 +84,8 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const { data: profileData, loading } = useProfile();
+  const { unreadCount: unreadMessagesCount } = useMessages();
+  const { unreadCount: unreadNotificationsCount } = useNotifications();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
 
@@ -170,6 +175,24 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
     await signOut({ redirect: true, callbackUrl: '/' });
   };
 
+  const renderNewBadge = (count: number, isActive: boolean) => {
+    if (count <= 0) {
+      return null;
+    }
+
+    return (
+      <span
+        className={`ml-auto inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+          isActive
+            ? 'bg-primary-foreground/20 text-primary-foreground'
+            : 'bg-primary text-primary-foreground'
+        }`}
+      >
+        New {count > 99 ? '99+' : count}
+      </span>
+    );
+  };
+
   if (loading) {
     return <AdminDashboardLayoutSkeleton />;
   }
@@ -228,6 +251,24 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
           >
             <Bell size={20} />
             <span>Notifications</span>
+            {renderNewBadge(
+              unreadNotificationsCount,
+              Boolean(pathname?.startsWith('/notifications'))
+            )}
+          </Link>
+
+          <Link
+            href='/messages'
+            onClick={() => setIsSidebarOpen(false)}
+            className={`mt-2 flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+              pathname?.startsWith('/messages')
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'text-foreground hover:bg-muted'
+            }`}
+          >
+            <MessageSquareText size={20} />
+            <span>Messages</span>
+            {renderNewBadge(unreadMessagesCount, Boolean(pathname?.startsWith('/messages')))}
           </Link>
         </div>
 
@@ -255,6 +296,24 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
           >
             <Bell size={20} />
             <span>Notifications</span>
+            {renderNewBadge(
+              unreadNotificationsCount,
+              Boolean(pathname?.startsWith('/notifications'))
+            )}
+          </Link>
+
+          <Link
+            href='/messages'
+            onClick={() => setIsSidebarOpen(false)}
+            className={`md:hidden flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+              pathname?.startsWith('/messages')
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'text-foreground hover:bg-muted'
+            }`}
+          >
+            <MessageSquareText size={20} />
+            <span>Messages</span>
+            {renderNewBadge(unreadMessagesCount, Boolean(pathname?.startsWith('/messages')))}
           </Link>
 
           {/* Separator on Mobile */}
@@ -284,17 +343,7 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
                 >
                   <Icon size={20} />
                   <span>{link.label}</span>
-                  {isOrdersLink && activeOrdersCount > 0 && (
-                    <span
-                      className={`ml-auto inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        isActive
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
-                          : 'bg-amber-100 text-amber-900'
-                      }`}
-                    >
-                      New {activeOrdersCount}
-                    </span>
-                  )}
+                  {isOrdersLink && renderNewBadge(activeOrdersCount, Boolean(isActive))}
                 </Link>
               );
             })}
@@ -302,11 +351,6 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
 
         {/* User Section */}
         <div className='border-t border-border p-4 space-y-4'>
-          <div className='flex items-center justify-between px-2'>
-            <p className='text-xs uppercase tracking-wide text-muted-foreground'>Notifications</p>
-            <NotificationBell iconSize={19} />
-          </div>
-
           {/* User Info */}
           <div className='px-2 py-3'>
             <p className='text-xs uppercase tracking-wide text-muted-foreground'>Logged in as</p>

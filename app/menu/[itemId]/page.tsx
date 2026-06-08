@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Clock, Globe, Mail, MapPin, Phone, ShoppingCart } from 'lucide-react';
+import { Clock, Globe, Mail, MapPin, Phone, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Breadcrumb,
@@ -165,7 +165,11 @@ const MenuItemDetailPage = () => {
     return (['small', 'medium', 'large'] as Size[])
       .map((size) => {
         const value =
-          size === 'small' ? item.priceSmall : size === 'medium' ? item.priceMedium : item.priceLarge;
+          size === 'small'
+            ? item.priceSmall
+            : size === 'medium'
+              ? item.priceMedium
+              : item.priceLarge;
         return { size, value };
       })
       .filter((entry) => typeof entry.value === 'number' && Number.isFinite(entry.value));
@@ -311,18 +315,9 @@ const MenuItemDetailPage = () => {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className='mb-6'>
-        <Button asChild variant='ghost' className='-ml-3'>
-          <Link href='/menu'>
-            <ArrowLeft className='h-4 w-4' />
-            Back to menu
-          </Link>
-        </Button>
-      </div>
-
       <section className='grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_28rem]'>
         <Card className='overflow-hidden p-0'>
-          <div className='relative flex min-h-[22rem] items-center justify-center bg-muted p-6 sm:min-h-[30rem] lg:min-h-[36rem]'>
+          <div className='relative flex aspect-[4/3] min-h-[18rem] items-center justify-center overflow-hidden bg-muted sm:min-h-[24rem] lg:min-h-[30rem]'>
             {item.image ? (
               <Image
                 src={imageUrl}
@@ -330,7 +325,7 @@ const MenuItemDetailPage = () => {
                 width={760}
                 height={760}
                 priority
-                className='max-h-[34rem] w-auto max-w-full object-contain'
+                className='h-full w-full scale-125 object-contain p-2'
                 onError={() => {
                   console.warn(`Failed to load image: ${item.image}`);
                 }}
@@ -418,6 +413,7 @@ const MenuItemDetailPage = () => {
             <ShareActions
               url={itemShareUrl}
               title={`Check out this meal: ${item.name}`}
+              label='Share this menu item with friends'
               className='space-y-0'
             />
           </Card>
@@ -491,7 +487,12 @@ const MenuItemDetailPage = () => {
                     <div className='flex items-start gap-2'>
                       <MapPin className='mt-0.5 h-4 w-4 shrink-0 text-muted-foreground' />
                       <span>
-                        {[restaurant.street, restaurant.city, restaurant.postalCode, restaurant.country]
+                        {[
+                          restaurant.street,
+                          restaurant.city,
+                          restaurant.postalCode,
+                          restaurant.country,
+                        ]
                           .filter(Boolean)
                           .join(', ')}
                       </span>
@@ -527,7 +528,7 @@ const MenuItemDetailPage = () => {
                 </div>
 
                 <div className='flex flex-wrap gap-3'>
-                  <Button asChild variant='outline'>
+                  <Button asChild>
                     <Link href={`/restaurants/${restaurant._id}`}>See restaurant details</Link>
                   </Button>
                 </div>
@@ -563,6 +564,7 @@ const MenuItemDetailPage = () => {
             <ShareActions
               url={restaurantShareUrl}
               title={`Check out this restaurant: ${restaurant?.name}`}
+              label='Share this restaurant with friends'
               className='mt-6 border-t pt-5'
             />
           )}

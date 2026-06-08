@@ -5,7 +5,12 @@ import { useSession } from 'next-auth/react';
 
 export type AppNotification = {
   _id: string;
-  type: 'order_paid' | 'order_status_changed' | 'courier_assigned' | 'order_completed';
+  type:
+    | 'order_placed'
+    | 'order_paid'
+    | 'order_status_changed'
+    | 'courier_assigned'
+    | 'order_completed';
   title: string;
   message: string;
   orderId?: string | null;
