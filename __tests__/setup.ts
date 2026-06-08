@@ -1,5 +1,7 @@
 import { beforeEach, vi } from 'vitest';
 
+vi.mock('server-only', () => ({}));
+
 // Set MONGODB_URL for tests (uses env var if available, otherwise dummy URL for mocking)
 if (!process.env.MONGODB_URL) {
   process.env.MONGODB_URL =

@@ -105,6 +105,10 @@ vi.mock('@/libs/coupon', () => ({
   calculateCouponDiscountAmount: vi.fn(() => 0),
 }));
 
+vi.mock('@/libs/notifications', () => ({
+  notifyRestaurantAdminsAboutPaidOrder: vi.fn(),
+}));
+
 const loadCheckoutRoute = async () => {
   const mod = await import('@/app/api/checkout/route');
   return mod.POST;

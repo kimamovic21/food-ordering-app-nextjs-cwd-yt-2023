@@ -1057,3 +1057,5 @@ Add messages API and e2e coverage
 Message and menu item layout fix
 
 Improve admin alerts and menu item details
+
+Add missing coverage for restaurant, menu, coupon, order, and review flows
