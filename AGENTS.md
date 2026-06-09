@@ -11,12 +11,13 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - Images: Cloudinary uploads for user and menu media.
 - Maps: Leaflet and React Leaflet for courier and delivery tracking.
 - Email: Resend + React Email (`react-email`, `@react-email/components`, `@react-email/render`) for purchase receipts.
+- AI: OpenAI SDK is used server-side for admin menu item description generation.
 - Sharing: `react-share` is used for social share actions.
 
 ## High-Level Features
 
 - Customer flows: auth, profile, menu browsing, cart/checkout, favorites, loyalty, reviews, approved messaging.
-- Admin dashboard: users, categories, menu items, restaurants, orders, couriers, statistics.
+- Admin dashboard: users, categories, menu items, restaurants, orders, couriers, statistics, and AI-assisted menu descriptions.
 - Courier flows: assignment, availability toggle, live location sharing, and tracked delivery maps.
 
 ## Local Setup
@@ -41,6 +42,7 @@ See `example.env`. Variables currently used in the project include:
 - `NEXT_PUBLIC_SUPER_ADMIN_EMAIL` (UI checks)
 - `SUPER_ADMIN_EMAIL` (optional server-side override)
 - `RESEND_API_KEY`, `SENDER_EMAIL`
+- `OPEN_AI_API_KEY` (server-side OpenAI key for AI menu descriptions)
 
 ## Code Layout
 
@@ -61,7 +63,7 @@ See `example.env`. Variables currently used in the project include:
 - Use TypeScript for new code.
 - Keep components small and focused; prefer composition from shared components.
 - API route handlers should validate inputs and use models/ for data access.
-- Keep secrets in server-side code only (Stripe, Cloudinary, Resend keys).
+- Keep secrets in server-side code only (Stripe, Cloudinary, Resend, OpenAI keys).
 - Avoid breaking API response shapes unless explicitly requested.
 - Messaging should remain role-restricted: no customer-to-customer chat, and order threads must match the assigned courier or restaurant owner.
 

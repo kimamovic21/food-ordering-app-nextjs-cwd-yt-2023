@@ -16,6 +16,7 @@ import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import MenuItemImage from '../../MenuItemImage';
 import MenuItemForm from '../../MenuItemForm';
+import { AI_MENU_DESCRIPTION_MAX_CHARS } from '@/libs/menuItemDescription';
 
 interface Category {
   _id: string;
@@ -41,6 +42,7 @@ const EditMenuItemPage = () => {
   const [imagePreview, setImagePreview] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDescriptionGenerating, setIsDescriptionGenerating] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);
 
   const fetchCategoriesAndItem = useCallback(async () => {
@@ -139,6 +141,48 @@ const EditMenuItemPage = () => {
       throw new Error(`Invalid image URL returned from upload: ${JSON.stringify(json)}`);
     }
     return json.url;
+  };
+
+  const handleGenerateDescription = async () => {
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      toast.error('Add a menu item name first');
+      return;
+    }
+
+    setIsDescriptionGenerating(true);
+
+    try {
+      const response = await fetch('/api/ai/menu-item-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmedName }),
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.error || 'Failed to generate description');
+      }
+
+      if (typeof json.description !== 'string' || json.description.trim() === '') {
+        throw new Error('AI returned an empty description');
+      }
+
+      setDescription(json.description.slice(0, AI_MENU_DESCRIPTION_MAX_CHARS));
+      toast.success('Description generated', {
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
+    } catch (error) {
+      console.error('Error generating description:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to generate description');
+    } finally {
+      setIsDescriptionGenerating(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -342,9 +386,11 @@ const EditMenuItemPage = () => {
                   priceLarge={priceLarge}
                   editingItem={id}
                   isSaving={isSaving}
+                  isDescriptionGenerating={isDescriptionGenerating}
                   onNameChange={setName}
                   onCategoryChange={setCategoryId}
                   onDescriptionChange={setDescription}
+                  onGenerateDescription={handleGenerateDescription}
                   onPriceTypeChange={handlePriceTypeChange}
                   onPriceSmallChange={setPriceSmall}
                   onPriceMediumChange={setPriceMedium}

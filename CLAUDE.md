@@ -12,6 +12,7 @@ This file provides guidance for AI assistance in this repository.
 - Images: Cloudinary
 - Maps: Leaflet
 - Email: Resend + React Email
+- AI: OpenAI SDK for server-side menu description generation
 - Sharing: react-share
 - Messaging: approved app-native threads with realtime unread badges and per-user message visibility
 
@@ -25,7 +26,7 @@ This file provides guidance for AI assistance in this repository.
 
 ## Coding Guidelines
 
-- Keep server secrets in server-only code (route handlers, libs).
+- Keep server secrets in server-only code (route handlers, libs), including OpenAI keys.
 - Validate API inputs and return clear error responses.
 - Use existing utility helpers when possible (libs/).
 - Avoid breaking changes to API response shapes.
@@ -101,6 +102,7 @@ Keep these in sync with example.env and usage in code:
 - NEXT_PUBLIC_SUPER_ADMIN_EMAIL
 - RESEND_API_KEY
 - SENDER_EMAIL
+- OPEN_AI_API_KEY
 
 Optional server-side override used in auth flow:
 

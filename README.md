@@ -21,6 +21,7 @@ It includes:
 - Stripe checkout/webhook flow
 - Cloudinary media uploads
 - email purchase receipts with Resend + React Email
+- AI-assisted menu item descriptions for admin create/edit flows
 
 ## Key Features
 
@@ -113,6 +114,13 @@ This project uses many dependencies; below are the main packages actively used i
 - @react-email/components: [https://react.email/docs/components](https://react.email/docs/components)
 - @react-email/render: [https://react.email/docs/utilities/render](https://react.email/docs/utilities/render)
 - react-share: [https://www.npmjs.com/package/react-share](https://www.npmjs.com/package/react-share)
+- OpenAI SDK: [https://platform.openai.com/docs/libraries](https://platform.openai.com/docs/libraries)
+
+### AI Menu Description Assistant
+
+- Admin menu item create and edit forms include a sparkles action on the description field.
+- The action calls `POST /api/ai/menu-item-description` from the server, so the OpenAI key is never exposed to the browser.
+- The route uses `gpt-5-mini` and caps generated descriptions at 700 characters.
 
 ### Messaging
 
@@ -162,6 +170,7 @@ Copy example.env into .env and set all values.
 - RESEND_API_KEY: Resend API key for transactional emails
 - SENDER_EMAIL: sender identity for outgoing purchase receipt emails
 - SKIP_VERIFY_EMAIL: when true, skips email verification for credential sign-ups and legacy accounts
+- OPEN_AI_API_KEY: OpenAI API key for server-side AI menu description generation
 
 Note: some flows also support SUPER_ADMIN_EMAIL on server side, while UI checks NEXT_PUBLIC_SUPER_ADMIN_EMAIL.
 
@@ -173,6 +182,7 @@ Note: some flows also support SUPER_ADMIN_EMAIL on server side, while UI checks 
 - Stripe: [https://stripe.com/](https://stripe.com/)
 - Resend: [https://resend.com](https://resend.com)
 - React Email docs: [https://react.email/](https://react.email/)
+- OpenAI API: [https://platform.openai.com/docs](https://platform.openai.com/docs)
 
 ## Available Scripts
 

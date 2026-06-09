@@ -12,6 +12,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { AI_MENU_DESCRIPTION_MAX_CHARS } from '@/libs/menuItemDescription';
+import { Loader2, Sparkles } from 'lucide-react';
 
 interface MenuItemFormProps {
   name: string;
@@ -24,9 +27,11 @@ interface MenuItemFormProps {
   priceLarge: string;
   editingItem: string | null;
   isSaving: boolean;
+  isDescriptionGenerating?: boolean;
   onNameChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
+  onGenerateDescription?: () => void;
   onPriceTypeChange: (value: string) => void;
   onPriceSmallChange: (value: string) => void;
   onPriceMediumChange: (value: string) => void;
@@ -45,15 +50,30 @@ const MenuItemForm = ({
   priceLarge,
   editingItem,
   isSaving,
+  isDescriptionGenerating = false,
   onNameChange,
   onCategoryChange,
   onDescriptionChange,
+  onGenerateDescription,
   onPriceTypeChange,
   onPriceSmallChange,
   onPriceMediumChange,
   onPriceLargeChange,
   onCancel,
 }: MenuItemFormProps) => {
+  const canGenerateDescription = Boolean(
+    onGenerateDescription && !isSaving && !isDescriptionGenerating && name.trim()
+  );
+
+  const handleDescriptionIconKeyDown = (event: React.KeyboardEvent<SVGSVGElement>) => {
+    if (!canGenerateDescription) return;
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onGenerateDescription?.();
+    }
+  };
+
   return (
     <Card className='grow'>
       <CardContent className='space-y-4'>
@@ -93,13 +113,55 @@ const MenuItemForm = ({
           <Label htmlFor='description' className='mb-2 block'>
             Description
           </Label>
-          <Textarea
-            id='description'
-            value={description}
-            onChange={(e) => onDescriptionChange(e.target.value)}
-            placeholder='Classic tomato and mozzarella'
-            disabled={isSaving}
-          />
+          <div className='relative'>
+            <Textarea
+              id='description'
+              value={description}
+              onChange={(e) => onDescriptionChange(e.target.value)}
+              placeholder='Classic tomato and mozzarella'
+              disabled={isSaving}
+              maxLength={AI_MENU_DESCRIPTION_MAX_CHARS}
+              className='min-h-32 max-h-48 resize-y overflow-auto pr-12 pb-10 [field-sizing:fixed]'
+            />
+            {onGenerateDescription && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {isDescriptionGenerating ? (
+                    <Loader2
+                      className='absolute bottom-3 right-3 size-5 animate-spin text-primary'
+                      aria-label='Generating description'
+                    />
+                  ) : (
+                    <Sparkles
+                      className={`absolute bottom-3 right-3 size-5 transition-colors ${
+                        canGenerateDescription
+                          ? 'cursor-pointer text-primary hover:text-primary/75'
+                          : 'cursor-not-allowed text-muted-foreground/50'
+                      }`}
+                      onClick={() => {
+                        if (canGenerateDescription) onGenerateDescription();
+                      }}
+                      onKeyDown={handleDescriptionIconKeyDown}
+                      role='button'
+                      tabIndex={canGenerateDescription ? 0 : -1}
+                      aria-disabled={!canGenerateDescription}
+                      aria-label='Generate description'
+                    />
+                  )}
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isDescriptionGenerating
+                    ? 'Generating description'
+                    : canGenerateDescription
+                      ? 'Generate description'
+                      : 'Add a menu item name first'}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+          <p className='mt-1 text-xs text-muted-foreground'>
+            {description.length}/{AI_MENU_DESCRIPTION_MAX_CHARS}
+          </p>
         </div>
 
         <div>
