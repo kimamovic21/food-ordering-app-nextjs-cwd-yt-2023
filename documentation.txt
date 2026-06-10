@@ -1061,3 +1061,5 @@ Improve admin alerts and menu item details
 Add missing coverage for restaurant, menu, coupon, order, and review flows
 
 Add AI menu item description assistant
+
+Improve admin menu item scroll restoration

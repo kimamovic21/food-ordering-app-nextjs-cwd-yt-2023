@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -25,9 +25,18 @@ interface Category {
   name: string;
 }
 
+const MENU_ITEMS_SCROLL_STATE_KEY = 'admin-dashboard-menu-items-scroll-state';
+
+const getAdminDashboardScrollContainer = () => {
+  if (typeof document === 'undefined') return null;
+
+  return document.querySelector<HTMLElement>('[data-admin-dashboard-scroll-container="true"]');
+};
+
 const MenuItemsListPage = () => {
   const router = useRouter();
   const { data, loading } = useProfile();
+  const hasRestoredScrollRef = useRef(false);
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -91,6 +100,20 @@ const MenuItemsListPage = () => {
   }, [fetchData, data?._id]);
 
   const handleEdit = (id: string) => {
+    try {
+      const scrollContainer = getAdminDashboardScrollContainer();
+
+      sessionStorage.setItem(
+        MENU_ITEMS_SCROLL_STATE_KEY,
+        JSON.stringify({
+          top: scrollContainer?.scrollTop ?? window.scrollY,
+          savedAt: Date.now(),
+        })
+      );
+    } catch {
+      // Navigation should still work if browser storage is unavailable.
+    }
+
     router.push(`/admin-dashboard/menu-items/edit/${id}`);
   };
 
@@ -159,6 +182,50 @@ const MenuItemsListPage = () => {
 
   // Show skeleton when loading OR when user has changed but data hasn't loaded yet
   const showSkeleton = loading || isLoading || data?._id !== currentUserId;
+
+  useEffect(() => {
+    if (showSkeleton || hasRestoredScrollRef.current) {
+      return;
+    }
+
+    const savedScrollState = sessionStorage.getItem(MENU_ITEMS_SCROLL_STATE_KEY);
+    if (!savedScrollState) {
+      return;
+    }
+
+    hasRestoredScrollRef.current = true;
+
+    try {
+      const { top, savedAt } = JSON.parse(savedScrollState) as {
+        top?: number;
+        savedAt?: number;
+      };
+
+      sessionStorage.removeItem(MENU_ITEMS_SCROLL_STATE_KEY);
+
+      if (typeof top !== 'number' || Number.isNaN(top)) {
+        return;
+      }
+
+      const isFresh = typeof savedAt === 'number' && Date.now() - savedAt < 30 * 60 * 1000;
+      if (!isFresh) {
+        return;
+      }
+
+      requestAnimationFrame(() => {
+        const scrollContainer = getAdminDashboardScrollContainer();
+
+        if (scrollContainer) {
+          scrollContainer.scrollTop = top;
+          return;
+        }
+
+        window.scrollTo({ top });
+      });
+    } catch {
+      sessionStorage.removeItem(MENU_ITEMS_SCROLL_STATE_KEY);
+    }
+  }, [showSkeleton]);
 
   if (!loading && data?.role !== 'admin') return 'Not an admin.';
 

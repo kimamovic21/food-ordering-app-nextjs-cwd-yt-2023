@@ -377,7 +377,10 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <div className='h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto'>
+      <div
+        data-admin-dashboard-scroll-container='true'
+        className='h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto'
+      >
         <div className='p-4 md:p-6'>{children}</div>
       </div>
     </section>
