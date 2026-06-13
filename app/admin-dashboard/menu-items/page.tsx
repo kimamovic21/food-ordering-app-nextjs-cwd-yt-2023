@@ -18,6 +18,7 @@ interface MenuItem {
   priceSmall: number;
   priceMedium: number;
   priceLarge: number;
+  isAvailable?: boolean;
 }
 
 interface Category {
@@ -135,6 +136,43 @@ const MenuItemsListPage = () => {
     } catch (err) {
       console.error(err);
       toast.error('Failed to delete menu item', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+    }
+  };
+
+  const handleToggleAvailability = async (id: string, isAvailable: boolean) => {
+    const previousItems = menuItems;
+
+    setMenuItems((items) =>
+      items.map((item) => (item._id === id ? { ...item, isAvailable } : item))
+    );
+
+    try {
+      const res = await fetch('/api/menu-items', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _id: id, isAvailable }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.error || 'Failed to update availability');
+      }
+
+      toast.success(isAvailable ? 'Menu item is available' : 'Menu item marked unavailable', {
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
+    } catch (err) {
+      console.error(err);
+      setMenuItems(previousItems);
+      toast.error(err instanceof Error ? err.message : 'Failed to update availability', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -329,6 +367,7 @@ const MenuItemsListPage = () => {
                     categories={categories}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onToggleAvailability={handleToggleAvailability}
                     isAdmin={data?.role === 'admin'}
                   />
                 ) : (
@@ -352,6 +391,7 @@ const MenuItemsListPage = () => {
               categories={categories}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onToggleAvailability={handleToggleAvailability}
               isAdmin={data?.role === 'admin'}
             />
           )}

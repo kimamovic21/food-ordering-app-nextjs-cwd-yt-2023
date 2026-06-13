@@ -1065,3 +1065,5 @@ Add AI menu item description assistant
 Improve admin menu item scroll restoration
 
 Add category cleanup coverage
+
+Add menu item availability controls

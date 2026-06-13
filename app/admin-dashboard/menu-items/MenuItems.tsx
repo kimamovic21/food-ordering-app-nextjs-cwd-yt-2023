@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +26,7 @@ interface MenuItem {
   priceSmall: number | null;
   priceMedium: number | null;
   priceLarge: number | null;
+  isAvailable?: boolean;
 }
 
 interface Category {
@@ -36,6 +39,7 @@ interface MenuItemsProps {
   categories: Category[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onToggleAvailability: (id: string, isAvailable: boolean) => void;
   isAdmin?: boolean;
 }
 
@@ -48,14 +52,17 @@ const AdminItemCard = ({
   item,
   onEdit,
   onDelete,
+  onToggleAvailability,
   isAdmin = true,
 }: {
   item: MenuItem;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onToggleAvailability: (id: string, isAvailable: boolean) => void;
   isAdmin?: boolean;
 }) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const isAvailable = item.isAvailable !== false;
 
   const handleDeleteClick = () => {
     setIsDeleteDialogOpen(true);
@@ -85,10 +92,29 @@ const AdminItemCard = ({
               No image
             </div>
           )}
+          {!isAvailable && (
+            <div className='absolute inset-0 flex items-center justify-center bg-black/65 text-white'>
+              <span className='rounded-full border border-white/40 bg-black/40 px-4 py-2 text-sm font-semibold'>
+                Unavailable
+              </span>
+            </div>
+          )}
         </div>
 
         <CardContent className='flex flex-col grow pt-4'>
-          <h3 className='font-semibold text-lg leading-tight'>{item.name}</h3>
+          <div className='flex items-start justify-between gap-3'>
+            <h3 className='font-semibold text-lg leading-tight'>{item.name}</h3>
+            <Badge
+              variant={isAvailable ? 'outline' : 'destructive'}
+              className={
+                isAvailable
+                  ? 'border-transparent bg-green-600 text-white hover:bg-green-700 dark:bg-green-600'
+                  : undefined
+              }
+            >
+              {isAvailable ? 'Available' : 'Unavailable'}
+            </Badge>
+          </div>
           {item.category && (
             <p className='text-xs text-muted-foreground mt-1'>
               {typeof item.category === 'string' ? item.category : item.category?.name}
@@ -124,24 +150,34 @@ const AdminItemCard = ({
 
         <CardFooter className='flex gap-2 pt-2'>
           {isAdmin && (
-            <>
-              <Button
-                className='flex-1'
-                variant='outline'
-                size='sm'
-                onClick={() => onEdit(item._id)}
-              >
-                Edit
-              </Button>
-              <Button
-                className='flex-1 hover:bg-red-700'
-                size='sm'
-                onClick={handleDeleteClick}
-                style={{ backgroundColor: '#dc2626', color: 'white' }}
-              >
-                Delete
-              </Button>
-            </>
+            <div className='w-full space-y-3'>
+              <label className='flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm'>
+                <Checkbox
+                  checked={isAvailable}
+                  onCheckedChange={(checked) => onToggleAvailability(item._id, checked === true)}
+                  className='h-4 w-4 shrink-0'
+                />
+                <span className='font-medium'>Available for ordering</span>
+              </label>
+              <div className='flex gap-2'>
+                <Button
+                  className='flex-1'
+                  variant='outline'
+                  size='sm'
+                  onClick={() => onEdit(item._id)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  className='flex-1 hover:bg-red-700'
+                  size='sm'
+                  onClick={handleDeleteClick}
+                  style={{ backgroundColor: '#dc2626', color: 'white' }}
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
           )}
         </CardFooter>
       </Card>
@@ -164,7 +200,14 @@ const AdminItemCard = ({
   );
 };
 
-const MenuItems = ({ menuItems, categories, onEdit, onDelete, isAdmin = true }: MenuItemsProps) => {
+const MenuItems = ({
+  menuItems,
+  categories,
+  onEdit,
+  onDelete,
+  onToggleAvailability,
+  isAdmin = true,
+}: MenuItemsProps) => {
   if (menuItems.length === 0) {
     return (
       <div className='mt-12'>
@@ -190,6 +233,7 @@ const MenuItems = ({ menuItems, categories, onEdit, onDelete, isAdmin = true }: 
                     item={item}
                     onEdit={onEdit}
                     onDelete={onDelete}
+                    onToggleAvailability={onToggleAvailability}
                     isAdmin={isAdmin}
                   />
                 ))}

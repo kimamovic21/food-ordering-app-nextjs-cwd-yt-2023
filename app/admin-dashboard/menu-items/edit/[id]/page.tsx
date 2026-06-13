@@ -37,6 +37,7 @@ const EditMenuItemPage = () => {
   const [priceSmall, setPriceSmall] = useState('');
   const [priceMedium, setPriceMedium] = useState('');
   const [priceLarge, setPriceLarge] = useState('');
+  const [isAvailable, setIsAvailable] = useState(true);
   const [image, setImage] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -89,6 +90,7 @@ const EditMenuItemPage = () => {
         setPriceSmall(item.priceSmall ? item.priceSmall.toString() : '');
         setPriceMedium(item.priceMedium ? item.priceMedium.toString() : '');
         setPriceLarge(item.priceLarge ? item.priceLarge.toString() : '');
+        setIsAvailable(item.isAvailable !== false);
         setImage(item.image || '');
         setImagePreview(item.image || '');
       }
@@ -258,6 +260,7 @@ const EditMenuItemPage = () => {
         priceSmall: s,
         priceMedium: priceType === 'single' ? null : m,
         priceLarge: priceType === 'triple' ? l : null,
+        isAvailable,
         image: imageUrl || '',
       };
 
@@ -384,6 +387,7 @@ const EditMenuItemPage = () => {
                   priceSmall={priceSmall}
                   priceMedium={priceMedium}
                   priceLarge={priceLarge}
+                  isAvailable={isAvailable}
                   editingItem={id}
                   isSaving={isSaving}
                   isDescriptionGenerating={isDescriptionGenerating}
@@ -395,6 +399,7 @@ const EditMenuItemPage = () => {
                   onPriceSmallChange={setPriceSmall}
                   onPriceMediumChange={setPriceMedium}
                   onPriceLargeChange={setPriceLarge}
+                  onAvailabilityChange={setIsAvailable}
                   onCancel={() => router.push('/admin-dashboard/menu-items')}
                 />
               </div>

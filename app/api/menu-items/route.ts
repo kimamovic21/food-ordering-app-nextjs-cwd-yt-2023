@@ -140,6 +140,7 @@ export async function POST(req: Request) {
         priceType === 'single' ? null : data.priceMedium ? Number(data.priceMedium) : null,
       priceLarge:
         priceType === 'triple' ? (data.priceLarge ? Number(data.priceLarge) : null) : null,
+      isAvailable: data.isAvailable !== false,
       adminId: currentUser._id,
       restaurantId: currentUser.restaurantId,
     };
@@ -380,6 +381,7 @@ export async function PUT(req: Request) {
         priceType === 'single' ? null : data.priceMedium ? Number(data.priceMedium) : null,
       priceLarge:
         priceType === 'triple' ? (data.priceLarge ? Number(data.priceLarge) : null) : null,
+      isAvailable: data.isAvailable !== false,
     };
 
     const updated = await MenuItem.findByIdAndUpdate(_id, updateData, { new: true });
@@ -388,6 +390,58 @@ export async function PUT(req: Request) {
   } catch (error) {
     console.error('Error updating menu item:', error);
     return Response.json({ error: 'Failed to update menu item', details: error }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    await mongoose.connect(process.env.MONGODB_URL as string);
+
+    if (!(await isAdmin())) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return Response.json({ error: 'User session not found' }, { status: 401 });
+    }
+
+    const currentUser = await User.findOne({ email: session.user.email });
+    if (!currentUser) {
+      return Response.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const { _id, isAvailable } = await req.json();
+
+    if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
+      return Response.json({ error: 'Invalid menu item ID' }, { status: 400 });
+    }
+
+    if (typeof isAvailable !== 'boolean') {
+      return Response.json({ error: 'Availability must be true or false' }, { status: 400 });
+    }
+
+    const existingItem = await MenuItem.findById(_id);
+    if (!existingItem) {
+      return Response.json({ error: 'Menu item not found' }, { status: 404 });
+    }
+
+    if (existingItem.adminId.toString() !== currentUser._id.toString()) {
+      return Response.json(
+        { error: 'You are not authorized to edit this menu item' },
+        { status: 403 }
+      );
+    }
+
+    const updated = await MenuItem.findByIdAndUpdate(_id, { isAvailable }, { new: true });
+
+    return Response.json(updated);
+  } catch (error) {
+    console.error('Error updating menu item availability:', error);
+    return Response.json(
+      { error: 'Failed to update menu item availability', details: error },
+      { status: 500 }
+    );
   }
 }
 

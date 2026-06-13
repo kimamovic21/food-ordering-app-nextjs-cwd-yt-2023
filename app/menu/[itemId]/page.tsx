@@ -39,6 +39,7 @@ interface MenuItemType {
   restaurantAverageRating?: number;
   restaurantRatingCount?: number;
   adminId?: string;
+  isAvailable?: boolean;
 }
 
 interface RestaurantType {
@@ -195,9 +196,15 @@ const MenuItemDetailPage = () => {
   const restaurantShareUrl =
     restaurant && shareBaseUrl ? `${shareBaseUrl}/restaurants/${restaurant._id}` : '';
   const categoryName = getCategoryName(item?.category);
+  const isAvailable = item?.isAvailable !== false;
 
   const handleAddToCart = () => {
     if (!item || profileLoading) {
+      return;
+    }
+
+    if (!isAvailable) {
+      toast.error(`${item.name} is currently unavailable`);
       return;
     }
 
@@ -333,6 +340,13 @@ const MenuItemDetailPage = () => {
             ) : (
               <div className='text-sm text-muted-foreground'>No image available</div>
             )}
+            {!isAvailable && (
+              <div className='absolute inset-0 flex items-center justify-center bg-black/65 text-white'>
+                <span className='rounded-full border border-white/40 bg-black/40 px-5 py-2 text-sm font-semibold'>
+                  Currently unavailable
+                </span>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -341,6 +355,16 @@ const MenuItemDetailPage = () => {
             <div className='flex flex-wrap items-start justify-between gap-3'>
               <Badge variant='secondary' className='capitalize'>
                 {categoryName}
+              </Badge>
+              <Badge
+                variant={isAvailable ? 'outline' : 'destructive'}
+                className={
+                  isAvailable
+                    ? 'border-transparent bg-green-600 text-white hover:bg-green-700 dark:bg-green-600'
+                    : undefined
+                }
+              >
+                {isAvailable ? 'Available' : 'Unavailable'}
               </Badge>
               <FavoriteToggleButton
                 type='menu-item'
@@ -400,12 +424,12 @@ const MenuItemDetailPage = () => {
 
             <Button
               onClick={handleAddToCart}
-              disabled={selectedPrice == null}
+              disabled={!isAvailable || selectedPrice == null}
               className='mt-6 w-full'
               size='lg'
             >
               <ShoppingCart className='h-4 w-4' />
-              Add to cart
+              {isAvailable ? 'Add to cart' : 'Unavailable'}
             </Button>
           </Card>
 

@@ -143,7 +143,7 @@ export async function POST(req: Request) {
   }
 
   const menuItems = await MenuItem.find({ _id: { $in: itemIds } })
-    .select('_id restaurantId adminId')
+    .select('_id name restaurantId adminId isAvailable')
     .lean();
 
   if (menuItems.length !== itemIds.length) {
@@ -157,6 +157,13 @@ export async function POST(req: Request) {
 
     if (!menuItem) {
       return Response.json({ error: 'Some menu items are no longer available' }, { status: 400 });
+    }
+
+    if (menuItem.isAvailable === false) {
+      return Response.json(
+        { error: `${cartItem.name || menuItem.name || 'This menu item'} is currently unavailable` },
+        { status: 400 }
+      );
     }
 
     if (menuItem.restaurantId?.toString() !== restaurant._id.toString()) {

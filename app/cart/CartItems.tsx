@@ -19,6 +19,7 @@ interface CartItemsProps {
   updateQuantity: (id: string, size: string, quantity: number) => void;
   removeFromCart: (id: string, size: string) => void;
   clearCart: () => void;
+  unavailableItemIds?: string[];
 }
 
 const CartItems: React.FC<CartItemsProps> = ({
@@ -26,7 +27,10 @@ const CartItems: React.FC<CartItemsProps> = ({
   updateQuantity,
   removeFromCart,
   clearCart,
+  unavailableItemIds = [],
 }) => {
+  const unavailableItemIdSet = new Set(unavailableItemIds);
+
   // Helper to show toast
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     toast(message, {
@@ -84,6 +88,7 @@ const CartItems: React.FC<CartItemsProps> = ({
     <>
       <div className='space-y-4 mb-6 sm:mb-8'>
         {cartItems.map((item) => {
+          const isUnavailable = unavailableItemIdSet.has(item._id);
           const safeImageSrc = item.image || Pizza;
           const isRemoteImage =
             typeof safeImageSrc === 'string' &&
@@ -97,7 +102,7 @@ const CartItems: React.FC<CartItemsProps> = ({
               className='bg-card border rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4'
             >
               <div className='flex items-start gap-3 w-full sm:w-auto'>
-                <div className='w-16 h-16 sm:w-20 sm:h-20 shrink-0'>
+                <div className='relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 overflow-hidden rounded'>
                   {isValidImageUrl ? (
                     isRemoteImage ? (
                       <Image
@@ -131,6 +136,11 @@ const CartItems: React.FC<CartItemsProps> = ({
                       className='w-full h-full object-contain rounded'
                     />
                   )}
+                  {isUnavailable && (
+                    <div className='absolute inset-0 flex items-center justify-center bg-black/65 text-[10px] font-semibold uppercase text-white'>
+                      Unavailable
+                    </div>
+                  )}
                 </div>
                 <div className='grow min-w-0'>
                   <h3 className='text-base sm:text-lg font-semibold text-foreground truncate'>
@@ -144,6 +154,11 @@ const CartItems: React.FC<CartItemsProps> = ({
                   <p className='text-xs sm:text-sm font-semibold text-primary mt-1'>
                     ${itemPrice.toFixed(2)} each
                   </p>
+                  {isUnavailable && (
+                    <p className='mt-1 text-xs font-medium text-red-600'>
+                      This item cannot be ordered right now.
+                    </p>
+                  )}
                 </div>
               </div>
               <div className='flex items-center gap-2 sm:gap-3 ml-auto'>
@@ -162,13 +177,20 @@ const CartItems: React.FC<CartItemsProps> = ({
                 </span>
                 <FaPlus
                   size={20}
-                  onClick={() =>
-                    handleUpdateQuantity(item._id, item.size, item.quantity + 1, 'add')
-                  }
-                  className='bg-accent hover:bg-accent/80 rounded-full p-1.5 sm:p-2 lg:p-1.5 transition cursor-pointer text-foreground w-8 h-8 sm:w-8 sm:h-8 lg:w-6 lg:h-6 inline-flex items-center justify-center'
+                  onClick={() => {
+                    if (!isUnavailable) {
+                      handleUpdateQuantity(item._id, item.size, item.quantity + 1, 'add');
+                    }
+                  }}
+                  className={`bg-accent rounded-full p-1.5 sm:p-2 lg:p-1.5 transition text-foreground w-8 h-8 sm:w-8 sm:h-8 lg:w-6 lg:h-6 inline-flex items-center justify-center ${
+                    isUnavailable
+                      ? 'cursor-not-allowed opacity-50'
+                      : 'cursor-pointer hover:bg-accent/80'
+                  }`}
                   role='button'
                   tabIndex={0}
                   aria-label='Increase quantity'
+                  aria-disabled={isUnavailable}
                 />
                 <div className='text-right ml-2 sm:ml-3'>
                   <p className='font-bold text-base sm:text-lg text-foreground whitespace-nowrap'>

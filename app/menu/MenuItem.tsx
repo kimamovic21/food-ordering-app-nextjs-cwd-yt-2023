@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import useFavorites from '@/hooks/useFavorites';
 import useProfile from '@/hooks/useProfile';
+import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -23,6 +24,7 @@ interface MenuItemType {
   priceMedium: number | null;
   priceLarge: number | null;
   restaurantId: string;
+  isAvailable?: boolean;
   restaurantAverageRating?: number;
   restaurantRatingCount?: number;
 }
@@ -49,7 +51,9 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
     priceMedium: 13,
     priceLarge: 16,
     restaurantId: 'default',
+    isAvailable: true,
   };
+  const isAvailable = displayItem.isAvailable !== false;
 
   const imageUrl = displayItem.image || Pizza.src;
   const isRemoteImage =
@@ -95,6 +99,11 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
 
   const handleAddToCart = () => {
     if (profileLoading) {
+      return;
+    }
+
+    if (!isAvailable) {
+      toast.error(`${displayItem.name} is currently unavailable`);
       return;
     }
 
@@ -191,9 +200,28 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
               No image available
             </div>
           )}
+          {!isAvailable && (
+            <div className='absolute inset-0 flex items-center justify-center bg-black/65 text-white'>
+              <span className='rounded-full border border-white/40 bg-black/40 px-4 py-2 text-sm font-semibold'>
+                Currently unavailable
+              </span>
+            </div>
+          )}
         </Link>
 
         <div className='p-4 flex flex-col flex-1'>
+          <div className='mb-2 flex justify-center'>
+            <Badge
+              variant={isAvailable ? 'outline' : 'destructive'}
+              className={
+                isAvailable
+                  ? 'border-transparent bg-green-600 text-white hover:bg-green-700 dark:bg-green-600'
+                  : undefined
+              }
+            >
+              {isAvailable ? 'Available' : 'Unavailable'}
+            </Badge>
+          </div>
           <Link href={href || `/menu/${displayItem._id}`} className='group'>
             <h4 className='text-center text-lg font-semibold transition-colors group-hover:text-primary'>
               {displayItem.name}
@@ -211,9 +239,9 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
               onClick={handleAddToCart}
               className='flex-1'
               size='lg'
-              disabled={getPrice() == null}
+              disabled={!isAvailable || getPrice() == null}
             >
-              Add to cart ${getPrice()?.toFixed(2) || '0.00'}
+              {isAvailable ? `Add to cart $${getPrice()?.toFixed(2) || '0.00'}` : 'Unavailable'}
             </Button>
             <FavoriteToggleButton
               type='menu-item'

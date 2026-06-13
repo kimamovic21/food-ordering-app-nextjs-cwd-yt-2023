@@ -23,6 +23,8 @@ interface OrderSummaryProps {
   handleCheckout: () => void;
   restaurantsOpen: boolean;
   loadingRestaurants: boolean;
+  hasUnavailableItems?: boolean;
+  loadingMenuAvailability?: boolean;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -44,6 +46,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   handleCheckout,
   restaurantsOpen,
   loadingRestaurants,
+  hasUnavailableItems = false,
+  loadingMenuAvailability = false,
 }) => {
   const subtotalAfterCoupon = Math.max(0, subtotal - couponDiscount);
   const subtotalAfterLoyalty = Math.max(0, subtotalAfterCoupon - loyaltyDiscount);
@@ -148,7 +152,13 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       {isLoggedIn ? (
         <Button
           onClick={handleCheckout}
-          disabled={isSubmitting || !restaurantsOpen || loadingRestaurants}
+          disabled={
+            isSubmitting ||
+            !restaurantsOpen ||
+            loadingRestaurants ||
+            loadingMenuAvailability ||
+            hasUnavailableItems
+          }
           aria-busy={isSubmitting}
           size='lg'
           className='w-full rounded-full flex items-center justify-center'
@@ -160,6 +170,10 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             </>
           ) : !restaurantsOpen ? (
             'Restaurant Closed'
+          ) : loadingMenuAvailability ? (
+            'Checking Menu'
+          ) : hasUnavailableItems ? (
+            'Unavailable Items'
           ) : (
             'Proceed to Checkout'
           )}

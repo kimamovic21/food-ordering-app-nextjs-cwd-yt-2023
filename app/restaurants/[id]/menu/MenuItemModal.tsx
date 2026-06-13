@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import useProfile from '@/hooks/useProfile';
@@ -23,6 +24,7 @@ interface MenuItemType {
   priceMedium: number | null;
   priceLarge: number | null;
   restaurantId: string;
+  isAvailable?: boolean;
 }
 
 interface RestaurantType {
@@ -59,6 +61,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
   const { addToCart, getCartRestaurantId } = useCart();
   const { data: profileData } = useProfile();
   const { data: favorites, setMenuItemFavorite, setRestaurantFavorite } = useFavorites();
+  const isAvailable = item.isAvailable !== false;
 
   const imageUrl = item.image || Pizza.src;
   const isRemoteImage =
@@ -112,6 +115,11 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
 
   const handleAddToCart = () => {
     const cartRestaurantId = getCartRestaurantId();
+
+    if (!isAvailable) {
+      toast.error(`${item.name} is currently unavailable`);
+      return;
+    }
 
     if (profileData?.restaurantId && profileData.restaurantId === item.restaurantId) {
       toast.error('You cannot order from your own restaurant', {
@@ -210,12 +218,31 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
               No image available
             </div>
           )}
+          {!isAvailable && (
+            <div className='absolute inset-0 flex items-center justify-center bg-black/65 text-white'>
+              <span className='rounded-full border border-white/40 bg-black/40 px-4 py-2 text-sm font-semibold'>
+                Currently unavailable
+              </span>
+            </div>
+          )}
         </div>
 
         <div className='flex-1 overflow-y-auto p-6 dark:bg-muted'>
           <div className='space-y-6'>
             <div>
-              <h2 className='text-3xl font-bold mb-3 text-gray-900 dark:text-white'>{item.name}</h2>
+              <div className='mb-3 flex flex-wrap items-center gap-2'>
+                <h2 className='text-3xl font-bold text-gray-900 dark:text-white'>{item.name}</h2>
+                <Badge
+                  variant={isAvailable ? 'outline' : 'destructive'}
+                  className={
+                    isAvailable
+                      ? 'border-transparent bg-green-600 text-white hover:bg-green-700 dark:bg-green-600'
+                      : undefined
+                  }
+                >
+                  {isAvailable ? 'Available' : 'Unavailable'}
+                </Badge>
+              </div>
               <p className='text-gray-600 dark:text-gray-300 text-base leading-relaxed'>
                 {item.description}
               </p>
@@ -262,9 +289,9 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
               onClick={handleAddToCart}
               className='w-full'
               size='lg'
-              disabled={getPrice() == null}
+              disabled={!isAvailable || getPrice() == null}
             >
-              Add to cart ${getPrice()?.toFixed(2) || '0.00'}
+              {isAvailable ? `Add to cart $${getPrice()?.toFixed(2) || '0.00'}` : 'Unavailable'}
             </Button>
 
             {isLoading ? (

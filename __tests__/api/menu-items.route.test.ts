@@ -168,7 +168,40 @@ describe('/api/menu-items route', () => {
         priceSmall: 5.5,
         priceMedium: null,
         priceLarge: null,
+        isAvailable: true,
       })
+    );
+  });
+
+  it('updates only menu item availability for the owning admin', async () => {
+    vi.mocked(MenuItem.findById).mockResolvedValueOnce({
+      _id: 'menu-1',
+      adminId: { toString: () => 'admin-1' },
+    } as never);
+    vi.mocked(MenuItem.findByIdAndUpdate).mockResolvedValueOnce({
+      _id: 'menu-1',
+      isAvailable: false,
+    } as never);
+
+    const { PATCH } = await loadMenuItemsRoute();
+    const res = await PATCH(
+      new Request('http://localhost/api/menu-items', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          _id: 'menu-1',
+          isAvailable: false,
+        }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ _id: 'menu-1', isAvailable: false });
+    expect(MenuItem.findByIdAndUpdate).toHaveBeenCalledWith(
+      'menu-1',
+      { isAvailable: false },
+      { new: true }
     );
   });
 

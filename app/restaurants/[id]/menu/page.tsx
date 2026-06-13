@@ -38,6 +38,7 @@ interface MenuItemType {
   priceMedium: number | null;
   priceLarge: number | null;
   restaurantId: string;
+  isAvailable?: boolean;
   restaurantAverageRating?: number;
   restaurantRatingCount?: number;
 }

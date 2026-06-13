@@ -114,6 +114,8 @@ const CartPage = () => {
   const [couponMessage, setCouponMessage] = useState<string | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [unavailableItemIds, setUnavailableItemIds] = useState<string[]>([]);
+  const [loadingMenuAvailability, setLoadingMenuAvailability] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -203,6 +205,58 @@ const CartPage = () => {
       });
     }
   }, [profileData]);
+
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      setUnavailableItemIds([]);
+      setLoadingMenuAvailability(false);
+      return;
+    }
+
+    let cancelled = false;
+    const uniqueItemIds = Array.from(new Set(cartItems.map((item) => item._id).filter(Boolean)));
+
+    const fetchMenuAvailability = async () => {
+      setLoadingMenuAvailability(true);
+
+      try {
+        const unavailableIds = await Promise.all(
+          uniqueItemIds.map(async (id) => {
+            try {
+              const response = await fetch(`/api/menu-items?_id=${encodeURIComponent(id)}`);
+              const data = await response.json().catch(() => []);
+              const menuItem = Array.isArray(data) ? data[0] : data?.item;
+
+              if (!response.ok || !menuItem || menuItem.isAvailable === false) {
+                return id;
+              }
+            } catch (error) {
+              console.error(`Failed to check menu item availability for ${id}:`, error);
+              return id;
+            }
+
+            return null;
+          })
+        );
+
+        if (!cancelled) {
+          setUnavailableItemIds(
+            unavailableIds.filter((id): id is string => typeof id === 'string' && id.length > 0)
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingMenuAvailability(false);
+        }
+      }
+    };
+
+    fetchMenuAvailability();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cartItems]);
 
   useEffect(() => {
     if (!cartItems.length) {
@@ -377,6 +431,21 @@ const CartPage = () => {
         return;
       }
 
+      if (loadingMenuAvailability) {
+        toast.error('Please wait while we check menu availability.');
+        return;
+      }
+
+      if (unavailableItemIds.length > 0) {
+        toast.error('Remove unavailable items before checkout.', {
+          style: {
+            background: '#ef4444',
+            color: 'white',
+          },
+        });
+        return;
+      }
+
       // Check if cart has items from multiple restaurants
       if (hasMultipleRestaurants()) {
         toast.error('You must have items only from one restaurant.');
@@ -408,7 +477,6 @@ const CartPage = () => {
         return;
       }
 
-      const { totalDeliveryFee } = calculateTotals();
       const couponToSend = couponValidationError ? '' : appliedCoupon?.code || '';
 
       await toast.promise(
@@ -474,6 +542,7 @@ const CartPage = () => {
   const restaurantOpen = isRestaurantOpen();
   const restaurantName = getRestaurantName();
   const displayedCouponMessage = couponValidationError || couponMessage;
+  const unavailableCartItems = cartItems.filter((item) => unavailableItemIds.includes(item._id));
 
   return (
     <div className='max-w-7xl mx-auto py-4 sm:py-8 px-2 sm:px-4 min-h-[60vh]'>
@@ -499,6 +568,17 @@ const CartPage = () => {
         </div>
       )}
 
+      {unavailableCartItems.length > 0 && (
+        <div className='mb-4 rounded-lg border border-red-300 bg-red-100 p-4 dark:border-red-700 dark:bg-red-900/20'>
+          <p className='font-semibold text-red-800 dark:text-red-200'>
+            Some items in your cart are currently unavailable. Remove them before checkout.
+          </p>
+          <p className='mt-1 text-sm text-red-700 dark:text-red-200'>
+            {unavailableCartItems.map((item) => item.name).join(', ')}
+          </p>
+        </div>
+      )}
+
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
         <div className='lg:col-span-2'>
           <CartItems
@@ -506,6 +586,7 @@ const CartPage = () => {
             updateQuantity={updateQuantity}
             removeFromCart={removeFromCart}
             clearCart={clearCart}
+            unavailableItemIds={unavailableItemIds}
           />
         </div>
 
@@ -534,6 +615,8 @@ const CartPage = () => {
             handleCheckout={handleCheckout}
             restaurantsOpen={restaurantOpen && !multipleRestaurants}
             loadingRestaurants={loadingRestaurants}
+            hasUnavailableItems={unavailableItemIds.length > 0}
+            loadingMenuAvailability={loadingMenuAvailability}
           />
         </div>
       </div>

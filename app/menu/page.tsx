@@ -28,6 +28,7 @@ interface MenuItemType {
   priceMedium: number | null;
   priceLarge: number | null;
   restaurantId: string;
+  isAvailable?: boolean;
   restaurantAverageRating?: number;
   restaurantRatingCount?: number;
 }
@@ -512,7 +513,11 @@ const MenuPage = () => {
 
                           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                             {summary.items.map((item) => (
-                              <MenuItem key={item._id} item={item} href={getMenuItemPath(item._id)} />
+                              <MenuItem
+                                key={item._id}
+                                item={item}
+                                href={getMenuItemPath(item._id)}
+                              />
                             ))}
                           </div>
 

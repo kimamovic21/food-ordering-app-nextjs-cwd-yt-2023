@@ -16,6 +16,7 @@ interface MenuItemType {
   priceMedium: number;
   priceLarge: number;
   restaurantId: string;
+  isAvailable?: boolean;
 }
 
 const MenuSkeleton = () => (

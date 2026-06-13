@@ -30,6 +30,7 @@ It includes:
 - Authentication with credentials and Google OAuth
 - Profile editing (name, phone, address, avatar)
 - Menu and restaurant discovery with filtering/sorting/search
+- Menu item availability indicators with disabled ordering for sold-out items
 - Cart, checkout, and order tracking
 - Favorites for menu items and restaurants
 - Loyalty tiers and automatic delivery-fee discounts
@@ -44,6 +45,7 @@ It includes:
 - Role-based access (user, admin, courier)
 - Super-admin protected management actions
 - CRUD for categories, menu items, restaurants, and users
+- Menu item availability controls for temporarily unavailable or sold-out items
 - Courier management and order assignment
 - Order lifecycle management and dashboards/statistics
 - Notifications management with order, delivery, and assignment updates

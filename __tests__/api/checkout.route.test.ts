@@ -170,8 +170,10 @@ describe('POST /api/checkout', () => {
         lean: vi.fn().mockResolvedValue([
           {
             _id: { toString: () => 'menu-item-1' },
+            name: 'Pizza',
             restaurantId: { toString: () => 'restaurant-1' },
             adminId: { toString: () => 'someone-else' },
+            isAvailable: true,
           },
         ]),
       }),
@@ -277,6 +279,30 @@ describe('POST /api/checkout', () => {
 
     expect(response.status).toBe(400);
     expect(body).toEqual({ error: 'Minimum order amount is not met' });
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
+  it('rejects checkout when a cart item is unavailable', async () => {
+    vi.mocked(MenuItem.find).mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          {
+            _id: { toString: () => 'menu-item-1' },
+            name: 'Pizza',
+            restaurantId: { toString: () => 'restaurant-1' },
+            adminId: { toString: () => 'someone-else' },
+            isAvailable: false,
+          },
+        ]),
+      }),
+    } as never);
+
+    const POST = await loadCheckoutRoute();
+    const response = await POST(createCheckoutRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ error: 'Pizza is currently unavailable' });
     expect(stripeCreateSession).not.toHaveBeenCalled();
   });
 

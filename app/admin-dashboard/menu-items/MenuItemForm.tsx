@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AI_MENU_DESCRIPTION_MAX_CHARS } from '@/libs/menuItemDescription';
@@ -25,6 +26,7 @@ interface MenuItemFormProps {
   priceSmall: string;
   priceMedium: string;
   priceLarge: string;
+  isAvailable: boolean;
   editingItem: string | null;
   isSaving: boolean;
   isDescriptionGenerating?: boolean;
@@ -36,6 +38,7 @@ interface MenuItemFormProps {
   onPriceSmallChange: (value: string) => void;
   onPriceMediumChange: (value: string) => void;
   onPriceLargeChange: (value: string) => void;
+  onAvailabilityChange: (value: boolean) => void;
   onCancel: () => void;
 }
 
@@ -48,6 +51,7 @@ const MenuItemForm = ({
   priceSmall,
   priceMedium,
   priceLarge,
+  isAvailable,
   editingItem,
   isSaving,
   isDescriptionGenerating = false,
@@ -59,6 +63,7 @@ const MenuItemForm = ({
   onPriceSmallChange,
   onPriceMediumChange,
   onPriceLargeChange,
+  onAvailabilityChange,
   onCancel,
 }: MenuItemFormProps) => {
   const canGenerateDescription = Boolean(
@@ -351,6 +356,21 @@ const MenuItemForm = ({
             )}
           </div>
         </div>
+
+        <label className='flex items-start gap-3 rounded-lg border bg-muted/30 p-3'>
+          <Checkbox
+            checked={isAvailable}
+            onCheckedChange={(checked) => onAvailabilityChange(checked === true)}
+            disabled={isSaving}
+            className='mt-0.5'
+          />
+          <span className='space-y-1'>
+            <span className='block text-sm font-semibold'>Available for ordering</span>
+            <span className='block text-xs text-muted-foreground'>
+              Turn this off when ingredients run out or the item cannot be prepared right now.
+            </span>
+          </span>
+        </label>
 
         <div className='flex gap-2 pt-2'>
           <Button type='submit' className='grow' disabled={isSaving}>

@@ -35,6 +35,7 @@ const NewMenuItemPage = () => {
   const [priceSmall, setPriceSmall] = useState('');
   const [priceMedium, setPriceMedium] = useState('');
   const [priceLarge, setPriceLarge] = useState('');
+  const [isAvailable, setIsAvailable] = useState(true);
   const [image, setImage] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -206,6 +207,7 @@ const NewMenuItemPage = () => {
         priceSmall: s,
         priceMedium: priceType === 'single' ? null : m,
         priceLarge: priceType === 'triple' ? l : null,
+        isAvailable,
         image: imageUrl || '',
       };
 
@@ -245,6 +247,7 @@ const NewMenuItemPage = () => {
     setPriceSmall('');
     setPriceMedium('');
     setPriceLarge('');
+    setIsAvailable(true);
     setImage('');
     setImageFile(null);
     setImagePreview('');
@@ -359,6 +362,7 @@ const NewMenuItemPage = () => {
                   priceSmall={priceSmall}
                   priceMedium={priceMedium}
                   priceLarge={priceLarge}
+                  isAvailable={isAvailable}
                   editingItem={null}
                   isSaving={isSaving}
                   isDescriptionGenerating={isDescriptionGenerating}
@@ -370,6 +374,7 @@ const NewMenuItemPage = () => {
                   onPriceSmallChange={setPriceSmall}
                   onPriceMediumChange={setPriceMedium}
                   onPriceLargeChange={setPriceLarge}
+                  onAvailabilityChange={setIsAvailable}
                   onCancel={resetForm}
                 />
               </div>
