@@ -81,6 +81,7 @@ vi.mock('@/models/menuItem', () => ({
 
 vi.mock('@/models/order', () => ({
   Order: {
+    findOne: vi.fn(),
     countDocuments: vi.fn(),
     create: vi.fn(),
   },
@@ -180,6 +181,11 @@ describe('POST /api/checkout', () => {
     } as never);
 
     vi.mocked(Order.countDocuments).mockResolvedValue(0 as never);
+    vi.mocked(Order.findOne).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue(null),
+      }),
+    } as never);
 
     vi.mocked(Order.create).mockResolvedValue({
       _id: { toString: () => 'order-1' },
@@ -303,6 +309,24 @@ describe('POST /api/checkout', () => {
 
     expect(response.status).toBe(400);
     expect(body).toEqual({ error: 'Pizza is currently unavailable' });
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
+  it('rejects checkout when previous delivered order still needs confirmation', async () => {
+    vi.mocked(Order.findOne).mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({ _id: 'previous-order' }),
+      }),
+    } as never);
+
+    const POST = await loadCheckoutRoute();
+    const response = await POST(createCheckoutRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      error: 'Please confirm your previous delivered order before starting a new checkout.',
+    });
     expect(stripeCreateSession).not.toHaveBeenCalled();
   });
 

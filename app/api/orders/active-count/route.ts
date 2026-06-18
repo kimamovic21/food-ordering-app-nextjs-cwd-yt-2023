@@ -26,7 +26,7 @@ export async function GET() {
 
   const activeOrdersCount = await Order.countDocuments({
     restaurantId: user.restaurantId,
-    orderStatus: { $ne: 'completed' },
+    orderStatus: { $nin: ['completed', 'canceled'] },
   });
 
   return Response.json({ activeOrdersCount });

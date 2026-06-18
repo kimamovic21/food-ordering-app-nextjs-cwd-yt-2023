@@ -19,6 +19,7 @@ import OrderInfoCard from './OrderInfoCard';
 import CustomerInfoCard from './CustomerInfoCard';
 import OrderItemsCard from './OrderItemsCard';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
+import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
 import HeartRating from '@/components/shared/HeartRating';
 import dynamic from 'next/dynamic';
 
@@ -72,10 +73,26 @@ type OrderDetailsType = {
   cartProducts: CartProduct[];
   total: number;
   paymentStatus: boolean;
-  orderStatus: 'placed' | 'processing' | 'ready' | 'transportation' | 'completed';
+  orderStatus:
+    | 'placed'
+    | 'processing'
+    | 'ready'
+    | 'transportation'
+    | 'delivered'
+    | 'completed'
+    | 'canceled';
   courierId?: { _id: string; name: string; email: string; image?: string };
   createdAt: string;
   updatedAt: string;
+  processingAt?: string | null;
+  readyAt?: string | null;
+  transportationAt?: string | null;
+  courierDeliveredAt?: string | null;
+  customerConfirmedDeliveryAt?: string | null;
+  adminConfirmedDeliveryAt?: string | null;
+  deliveryCompletedBy?: 'customer' | 'admin' | null;
+  deliveryPin?: string | null;
+  canceledAt?: string | null;
   completedAt?: string | null;
   stripeSessionId?: string;
   taxPercentage?: number;
@@ -114,12 +131,21 @@ const OrderDetailPage = () => {
   const [couriers, setCouriers] = useState<CourierType[]>([]);
   const [selectedCourier, setSelectedCourier] = useState<string>('');
   const [assigningCourier, setAssigningCourier] = useState(false);
+  const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [showCourierSelect, setShowCourierSelect] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const mapRef = useRef<OrderMapHandle>(null);
   const { data: profileData, loading: profileLoading } = useProfile();
   const params = useParams();
   const orderId = params?.id as string;
+
+  const getEditableStatus = (status: OrderDetailsType['orderStatus']) =>
+    status === 'completed' ||
+    status === 'transportation' ||
+    status === 'delivered' ||
+    status === 'canceled'
+      ? 'ready'
+      : status;
 
   useEffect(() => {
     if (profileLoading || profileData?.role !== 'admin') return;
@@ -147,11 +173,7 @@ const OrderDetailPage = () => {
           console.error('Failed to load review', reviewErr);
           setReview(null);
         }
-        setSelectedStatus(
-          (json.order.orderStatus === 'completed' || json.order.orderStatus === 'transportation'
-            ? 'ready'
-            : json.order.orderStatus) || 'placed'
-        );
+        setSelectedStatus(getEditableStatus(json.order.orderStatus) || 'placed');
         setStatusError('');
       } catch (err) {
         console.error('Failed to load order', err);
@@ -329,6 +351,43 @@ const OrderDetailPage = () => {
     setShowConfirmModal(true);
   };
 
+  const handleAdminConfirmDelivery = async () => {
+    if (!order) return;
+
+    setConfirmingDelivery(true);
+
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order._id, orderStatus: 'completed' }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to confirm delivery');
+      }
+
+      setOrder(data.order);
+      toast.success('Delivery confirmed and order completed', {
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to confirm delivery', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+    } finally {
+      setConfirmingDelivery(false);
+    }
+  };
+
   if (profileLoading || (loading && !order)) {
     return (
       <section className='mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10'>
@@ -478,8 +537,8 @@ const OrderDetailPage = () => {
           <p className='text-sm text-muted-foreground mb-1'>Order Time</p>
           <OrderElapsedTime
             createdAt={order.createdAt}
-            completedAt={order.completedAt}
-            isCompleted={order.orderStatus === 'completed'}
+            completedAt={order.completedAt || order.canceledAt}
+            isCompleted={order.orderStatus === 'completed' || order.orderStatus === 'canceled'}
           />
         </div>
       </div>
@@ -494,6 +553,7 @@ const OrderDetailPage = () => {
             createdAt={order.createdAt}
             updatedAt={order.updatedAt}
             stripeSessionId={order.stripeSessionId}
+            deliveryPin={order.deliveryPin}
             deliveryFee={order.deliveryFee}
             taxPercentage={order.taxPercentage}
             taxAmount={order.taxAmount}
@@ -526,13 +586,17 @@ const OrderDetailPage = () => {
             <CardHeader>
               <CardTitle>Update Order Status</CardTitle>
               <CardDescription>
-                {order.orderStatus === 'completed'
-                  ? 'Order delivered successfully. You are not able to update order delivery status.'
-                  : order.orderStatus === 'transportation'
-                    ? 'Order is being delivered. Status cannot be changed.'
-                    : order.orderStatus === 'ready'
-                      ? 'Order is ready. Please assign a courier to start delivery.'
-                      : 'Move the order forward through stages: placed → processing → ready.'}
+                {order.orderStatus === 'canceled'
+                  ? 'This order was canceled by the customer before payment. No preparation is needed.'
+                  : order.orderStatus === 'completed'
+                    ? 'Order delivered successfully. You are not able to update order delivery status.'
+                    : order.orderStatus === 'delivered'
+                      ? 'Courier marked this order as delivered. Confirm completion below if the customer does not confirm.'
+                      : order.orderStatus === 'transportation'
+                        ? 'Order is being delivered. Status cannot be changed.'
+                        : order.orderStatus === 'ready'
+                          ? 'Order is ready. Please assign a courier to start delivery.'
+                          : 'Move the order forward through stages: placed → processing → ready.'}
               </CardDescription>
             </CardHeader>
             <CardContent className='flex flex-col h-full'>
@@ -546,7 +610,9 @@ const OrderDetailPage = () => {
                     statusUpdating ||
                     order.orderStatus === 'ready' ||
                     order.orderStatus === 'transportation' ||
-                    order.orderStatus === 'completed'
+                    order.orderStatus === 'delivered' ||
+                    order.orderStatus === 'completed' ||
+                    order.orderStatus === 'canceled'
                   }
                 >
                   <SelectTrigger className='w-full'>
@@ -564,9 +630,13 @@ const OrderDetailPage = () => {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                {!order.paymentStatus && (
+                {order.orderStatus === 'canceled' ? (
+                  <p className='text-xs text-red-600'>
+                    Customer canceled this order before payment.
+                  </p>
+                ) : !order.paymentStatus ? (
                   <p className='text-xs text-amber-600'>Payment required before changing status.</p>
-                )}
+                ) : null}
                 {order.orderStatus === 'ready' && (
                   <p className='text-xs text-green-600'>
                     Order is ready! Assign a courier below to start delivery.
@@ -581,7 +651,9 @@ const OrderDetailPage = () => {
                   !order.paymentStatus ||
                   order.orderStatus === 'ready' ||
                   order.orderStatus === 'transportation' ||
-                  order.orderStatus === 'completed'
+                  order.orderStatus === 'delivered' ||
+                  order.orderStatus === 'completed' ||
+                  order.orderStatus === 'canceled'
                 }
                 className='w-full mt-4'
               >
@@ -620,6 +692,35 @@ const OrderDetailPage = () => {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {order.orderStatus === 'delivered' && order.courierId && (
+          <Card>
+            <CardHeader>
+              <CardTitle className='flex items-center gap-2'>
+                Delivery Awaiting Confirmation
+              </CardTitle>
+              <CardDescription>
+                The courier entered the delivery PIN and recorded the handoff. The customer can
+                confirm from their order page, or you can finalize it if needed.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className='rounded-lg border bg-amber-50 p-4 dark:bg-amber-950'>
+                <p className='text-sm text-muted-foreground'>Delivery PIN visible to admin</p>
+                <p className='font-mono text-3xl font-bold tracking-widest'>
+                  {order.deliveryPin || 'No PIN'}
+                </p>
+              </div>
+              <Button
+                onClick={handleAdminConfirmDelivery}
+                disabled={confirmingDelivery}
+                className='w-full sm:w-auto'
+              >
+                {confirmingDelivery ? 'Confirming...' : 'Finalize Delivery'}
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -756,6 +857,17 @@ const OrderDetailPage = () => {
               <p className='text-sm leading-relaxed text-foreground'>{review.reviewText}</p>
             </CardContent>
           </Card>
+        )}
+
+        {order.orderStatus !== 'canceled' && (
+          <OrderPhaseTimeline
+            createdAt={order.createdAt}
+            processingAt={order.processingAt}
+            readyAt={order.readyAt}
+            transportationAt={order.transportationAt}
+            courierDeliveredAt={order.courierDeliveredAt}
+            completedAt={order.completedAt}
+          />
         )}
 
         <AlertDialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import {
   Table,
   TableHeader,
@@ -10,10 +10,21 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, CreditCard } from 'lucide-react';
+import { Eye, CreditCard, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 import Link from 'next/link';
 
 type OrderType = {
@@ -21,17 +32,27 @@ type OrderType = {
   email: string;
   total: number;
   paymentStatus: boolean;
-  orderStatus: 'placed' | 'processing' | 'ready' | 'completed';
+  orderStatus:
+    | 'placed'
+    | 'processing'
+    | 'ready'
+    | 'transportation'
+    | 'delivered'
+    | 'completed'
+    | 'canceled';
   createdAt: string;
 };
 
 type MyOrdersTableProps = {
   orders: OrderType[];
   loading: boolean;
+  onOrderUpdated?: (order: OrderType) => void;
 };
 
-const MyOrdersTable = ({ orders, loading }: MyOrdersTableProps) => {
+const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) => {
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
+  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+  const [cancelingOrder, setCancelingOrder] = useState<string | null>(null);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -64,6 +85,49 @@ const MyOrdersTable = ({ orders, loading }: MyOrdersTableProps) => {
       alert('Failed to get payment link');
     } finally {
       setProcessingPayment(null);
+    }
+  };
+
+  const handleIconKeyDown = (event: KeyboardEvent<SVGSVGElement>, action: () => void) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      action();
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!cancelOrderId) return;
+
+    try {
+      setCancelingOrder(cancelOrderId);
+      const res = await fetch('/api/my-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: cancelOrderId, action: 'cancel-order' }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to cancel order');
+      }
+
+      onOrderUpdated?.(data.order);
+      setCancelOrderId(null);
+      toast.success('Order canceled', {
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to cancel order', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+    } finally {
+      setCancelingOrder(null);
     }
   };
 
@@ -156,11 +220,15 @@ const MyOrdersTable = ({ orders, loading }: MyOrdersTableProps) => {
                   <Badge
                     variant='secondary'
                     className={
-                      order.orderStatus === 'completed'
-                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100 capitalize'
-                        : order.orderStatus === 'processing'
-                          ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 capitalize'
-                          : 'bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize'
+                      order.orderStatus === 'canceled'
+                        ? 'bg-red-100 text-red-800 hover:bg-red-100 capitalize'
+                        : order.orderStatus === 'completed'
+                          ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100 capitalize'
+                          : order.orderStatus === 'delivered'
+                            ? 'bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize'
+                            : order.orderStatus === 'processing'
+                              ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 capitalize'
+                              : 'bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize'
                     }
                   >
                     {order.orderStatus}
@@ -180,19 +248,40 @@ const MyOrdersTable = ({ orders, loading }: MyOrdersTableProps) => {
                       </TooltipTrigger>
                       <TooltipContent>Order details</TooltipContent>
                     </Tooltip>
-                    {!order.paymentStatus && (
+                    {!order.paymentStatus && order.orderStatus !== 'canceled' && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <CreditCard
                             aria-label='Finish Payment'
                             onClick={() => handleFinishPayment(order._id)}
-                            className={`size-5 text-primary align-middle cursor-pointer hover:opacity-80 ${processingPayment === order._id ? 'opacity-50 pointer-events-none' : ''}`}
+                            onKeyDown={(event) =>
+                              handleIconKeyDown(event, () => handleFinishPayment(order._id))
+                            }
+                            className={`size-6 cursor-pointer align-middle text-primary transition-opacity hover:opacity-80 ${processingPayment === order._id ? 'pointer-events-none opacity-50' : ''}`}
                             style={{ verticalAlign: 'middle' }}
                             tabIndex={0}
                             role='button'
                           />
                         </TooltipTrigger>
                         <TooltipContent>Finish payment</TooltipContent>
+                      </Tooltip>
+                    )}
+                    {!order.paymentStatus && order.orderStatus === 'placed' && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <X
+                            aria-label='Cancel order'
+                            onClick={() => setCancelOrderId(order._id)}
+                            onKeyDown={(event) =>
+                              handleIconKeyDown(event, () => setCancelOrderId(order._id))
+                            }
+                            aria-disabled={cancelingOrder === order._id}
+                            className={`size-6 cursor-pointer align-middle text-red-600 transition-colors hover:text-red-700 ${cancelingOrder === order._id ? 'pointer-events-none opacity-50' : ''}`}
+                            tabIndex={cancelingOrder === order._id ? -1 : 0}
+                            role='button'
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>Cancel order</TooltipContent>
                       </Tooltip>
                     )}
                   </div>
@@ -202,6 +291,27 @@ const MyOrdersTable = ({ orders, loading }: MyOrdersTableProps) => {
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog
+        open={Boolean(cancelOrderId)}
+        onOpenChange={(open) => !open && setCancelOrderId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This cancels the unpaid order before the restaurant starts preparing it. You can place
+              a new order afterward.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={Boolean(cancelingOrder)}>Keep order</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelOrder} disabled={Boolean(cancelingOrder)}>
+              {cancelingOrder ? 'Canceling...' : 'Cancel order'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

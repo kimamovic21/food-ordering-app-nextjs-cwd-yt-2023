@@ -1,5 +1,6 @@
 import { model, models, Schema } from 'mongoose';
 import mongoose from 'mongoose';
+import { createDeliveryPin } from '@/libs/deliveryPin';
 
 const CartProductSchema = new Schema(
   {
@@ -109,13 +110,34 @@ const OrderSchema = new Schema(
     orderPaid: { type: Boolean, default: false },
     orderStatus: {
       type: String,
-      enum: ['placed', 'processing', 'ready', 'transportation', 'completed'],
+      enum: [
+        'placed',
+        'processing',
+        'ready',
+        'transportation',
+        'delivered',
+        'completed',
+        'canceled',
+      ],
       default: 'placed',
       required: true,
     },
     courierId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     stripeSessionId: { type: String },
     receiptEmailSentAt: { type: Date, default: null },
+    deliveryPin: { type: String, default: createDeliveryPin },
+    processingAt: { type: Date, default: null },
+    readyAt: { type: Date, default: null },
+    transportationAt: { type: Date, default: null },
+    courierDeliveredAt: { type: Date, default: null },
+    customerConfirmedDeliveryAt: { type: Date, default: null },
+    adminConfirmedDeliveryAt: { type: Date, default: null },
+    deliveryCompletedBy: {
+      type: String,
+      enum: ['customer', 'admin', null],
+      default: null,
+    },
+    canceledAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
   },
   { timestamps: true }

@@ -25,6 +25,7 @@ import { useCart } from '@/contexts/CartContext';
 import useFavorites from '@/hooks/useFavorites';
 import useProfile from '@/hooks/useProfile';
 import Pizza from '@/public/pizza.png';
+import MenuItemDetailLoading from './loading';
 
 interface MenuItemType {
   _id: string;
@@ -261,19 +262,7 @@ const MenuItemDetailPage = () => {
   };
 
   if (isItemLoading) {
-    return (
-      <main className='mx-auto max-w-7xl px-4 py-8 sm:py-10 lg:py-12'>
-        <Skeleton className='mb-6 h-5 w-48' />
-        <div className='grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_28rem]'>
-          <Skeleton className='h-[22rem] rounded-xl sm:h-[30rem]' />
-          <div className='space-y-4'>
-            <Skeleton className='h-14 rounded-xl' />
-            <Skeleton className='h-40 rounded-xl' />
-            <Skeleton className='h-56 rounded-xl' />
-          </div>
-        </div>
-      </main>
-    );
+    return <MenuItemDetailLoading />;
   }
 
   if (!item) {
@@ -322,9 +311,9 @@ const MenuItemDetailPage = () => {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <section className='grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_28rem]'>
-        <Card className='overflow-hidden p-0'>
-          <div className='relative flex aspect-[4/3] min-h-[18rem] items-center justify-center overflow-hidden bg-muted sm:min-h-[24rem] lg:min-h-[30rem]'>
+      <section className='grid gap-6 md:grid-cols-[minmax(0,1fr)_22rem] lg:grid-cols-[minmax(0,1.25fr)_24rem] xl:grid-cols-[minmax(0,1.35fr)_27rem]'>
+        <Card className='self-start overflow-hidden p-0'>
+          <div className='relative flex aspect-[4/3] min-h-[17rem] items-center justify-center overflow-hidden bg-muted sm:min-h-[21rem] md:aspect-auto md:h-[32rem] lg:h-[35rem] xl:h-[36rem]'>
             {item.image ? (
               <Image
                 src={imageUrl}
@@ -332,7 +321,7 @@ const MenuItemDetailPage = () => {
                 width={760}
                 height={760}
                 priority
-                className='h-full w-full scale-125 object-contain p-2'
+                className='h-full w-full object-cover'
                 onError={() => {
                   console.warn(`Failed to load image: ${item.image}`);
                 }}
@@ -444,7 +433,7 @@ const MenuItemDetailPage = () => {
         </div>
       </section>
 
-      <section className='mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_28rem]'>
+      <section className='mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_22rem] lg:grid-cols-[minmax(0,1.25fr)_24rem] xl:grid-cols-[minmax(0,1.35fr)_27rem]'>
         <Card className='p-5 sm:p-6'>
           {isRestaurantLoading ? (
             <div className='space-y-4'>

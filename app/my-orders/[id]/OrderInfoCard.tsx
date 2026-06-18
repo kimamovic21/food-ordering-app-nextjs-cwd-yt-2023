@@ -4,7 +4,14 @@ import { Badge } from '@/components/ui/badge';
 type OrderInfoCardProps = {
   orderId: string;
   paymentStatus: boolean;
-  orderStatus: 'placed' | 'processing' | 'ready' | 'transportation' | 'completed';
+  orderStatus:
+    | 'placed'
+    | 'processing'
+    | 'ready'
+    | 'transportation'
+    | 'delivered'
+    | 'completed'
+    | 'canceled';
   createdAt: string;
   taxPercentage?: number;
   taxAmount?: number;
@@ -55,11 +62,13 @@ const OrderInfoCard = ({
           <Badge
             variant='secondary'
             className={
-              orderStatus === 'completed'
-                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100 capitalize'
-                : orderStatus === 'processing'
-                  ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 capitalize'
-                  : 'bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize'
+              orderStatus === 'canceled'
+                ? 'bg-red-100 text-red-800 hover:bg-red-100 capitalize'
+                : orderStatus === 'completed'
+                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100 capitalize'
+                  : orderStatus === 'processing'
+                    ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 capitalize'
+                    : 'bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize'
             }
           >
             {orderStatus}

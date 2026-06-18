@@ -7,6 +7,7 @@ import { Restaurant } from '@/models/restaurant';
 import { MenuItem } from '@/models/menuItem';
 import { calculateLoyaltyStatus } from '@/libs/loyaltyCalculator';
 import { notifyOrderPlaced } from '@/libs/notifications';
+import { createDeliveryPin } from '@/libs/deliveryPin';
 import {
   calculateCouponDiscountAmount,
   getCouponValidationError,
@@ -101,6 +102,23 @@ export async function POST(req: Request) {
   const user = await User.findOne({ email: session.user.email });
   if (!user) {
     return Response.json({ error: 'User not found' }, { status: 404 });
+  }
+
+  const pendingDeliveryConfirmation = await Order.findOne({
+    userId: user._id,
+    orderPaid: true,
+    orderStatus: 'delivered',
+  })
+    .select('_id')
+    .lean();
+
+  if (pendingDeliveryConfirmation) {
+    return Response.json(
+      {
+        error: 'Please confirm your previous delivered order before starting a new checkout.',
+      },
+      { status: 400 }
+    );
   }
 
   const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
@@ -281,6 +299,7 @@ export async function POST(req: Request) {
     orderPaid: false,
     paid: false,
     orderStatus: 'placed',
+    deliveryPin: createDeliveryPin(),
   });
 
   try {

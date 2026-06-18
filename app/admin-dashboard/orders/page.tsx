@@ -28,7 +28,14 @@ type OrderType = {
   email: string;
   total: number;
   paymentStatus: boolean;
-  orderStatus: 'placed' | 'processing' | 'ready' | 'completed';
+  orderStatus:
+    | 'placed'
+    | 'processing'
+    | 'ready'
+    | 'transportation'
+    | 'delivered'
+    | 'completed'
+    | 'canceled';
   createdAt: string;
 };
 

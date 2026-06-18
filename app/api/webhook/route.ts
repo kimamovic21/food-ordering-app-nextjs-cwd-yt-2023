@@ -48,6 +48,10 @@ export async function POST(req: Request) {
       await mongoose.connect(process.env.MONGODB_URL as string);
       const order = await Order.findById(orderId);
       if (order) {
+        if ((order as any).orderStatus === 'canceled') {
+          return new Response(JSON.stringify({ received: true }), { status: 200 });
+        }
+
         const wasPaid = Boolean((order as any).orderPaid ?? (order as any).paid);
         (order as any).orderPaid = true;
         (order as any).paid = true; // keep legacy flag in sync

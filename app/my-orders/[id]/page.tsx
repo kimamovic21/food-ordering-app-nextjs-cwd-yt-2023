@@ -26,6 +26,18 @@ import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
 import HeartRating from '@/components/shared/HeartRating';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
+import { toast } from 'sonner';
 
 type CartProduct = {
   productId: string;
@@ -47,8 +59,24 @@ type OrderDetailsType = {
   cartProducts: CartProduct[];
   total: number;
   paymentStatus: boolean;
-  orderStatus: 'placed' | 'processing' | 'ready' | 'transportation' | 'completed';
+  orderStatus:
+    | 'placed'
+    | 'processing'
+    | 'ready'
+    | 'transportation'
+    | 'delivered'
+    | 'completed'
+    | 'canceled';
   createdAt: string;
+  processingAt?: string | null;
+  readyAt?: string | null;
+  transportationAt?: string | null;
+  courierDeliveredAt?: string | null;
+  customerConfirmedDeliveryAt?: string | null;
+  adminConfirmedDeliveryAt?: string | null;
+  deliveryCompletedBy?: 'customer' | 'admin' | null;
+  deliveryPin?: string | null;
+  canceledAt?: string | null;
   completedAt?: string | null;
   taxPercentage?: number;
   taxAmount?: number;
@@ -87,6 +115,10 @@ const MyOrderDetailPage = () => {
   const [order, setOrder] = useState<OrderDetailsType | null>(null);
   const [restaurantReview, setRestaurantReview] = useState<OrderReviewType | null>(null);
   const [courierReview, setCourierReview] = useState<OrderReviewType | null>(null);
+  const [confirmingDelivery, setConfirmingDelivery] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [cancelingOrder, setCancelingOrder] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { data: profileData, loading: profileLoading } = useProfile();
@@ -289,6 +321,80 @@ const MyOrderDetailPage = () => {
 
   if (!order) return <div className='mt-8'>Order not found</div>;
 
+  const handleConfirmDelivery = async () => {
+    if (!order) return;
+
+    setConfirmingDelivery(true);
+
+    try {
+      const response = await fetch('/api/my-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order._id, action: 'confirm-delivery' }),
+      });
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.error || 'Failed to confirm delivery');
+      }
+
+      setOrder(json.order);
+      setConfirmDialogOpen(false);
+      toast.success('Delivery confirmed. Thank you!', {
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to confirm delivery', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+    } finally {
+      setConfirmingDelivery(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!order) return;
+
+    setCancelingOrder(true);
+
+    try {
+      const response = await fetch('/api/my-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order._id, action: 'cancel-order' }),
+      });
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.error || 'Failed to cancel order');
+      }
+
+      setOrder(json.order);
+      setCancelDialogOpen(false);
+      toast.success('Order canceled', {
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to cancel order', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+    } finally {
+      setCancelingOrder(false);
+    }
+  };
+
   return (
     <section className='mt-8'>
       <div className='mt-8 max-w-[1600px] mx-auto px-4'>
@@ -312,8 +418,8 @@ const MyOrderDetailPage = () => {
             <p className='text-sm text-muted-foreground mb-1'>Order Time</p>
             <OrderElapsedTime
               createdAt={order.createdAt}
-              completedAt={order.completedAt}
-              isCompleted={order.orderStatus === 'completed'}
+              completedAt={order.completedAt || order.canceledAt}
+              isCompleted={order.orderStatus === 'completed' || order.orderStatus === 'canceled'}
             />
             {!restaurantReview && (
               <LeaveReviewDialog
@@ -336,6 +442,87 @@ const MyOrderDetailPage = () => {
         </div>
 
         <OrderStatusBanner status={order.orderStatus} />
+
+        {!order.paymentStatus && order.orderStatus === 'placed' && (
+          <Card className='mb-6 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'>
+            <CardHeader>
+              <CardTitle>Cancel Order</CardTitle>
+              <CardDescription>
+                You can cancel this unpaid order before the restaurant starts preparing it.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant='destructive' onClick={() => setCancelDialogOpen(true)}>
+                Cancel order
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This cancels the unpaid order before the restaurant starts preparing it. You can
+                place a new order afterward.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={cancelingOrder}>Keep order</AlertDialogCancel>
+              <AlertDialogAction onClick={handleCancelOrder} disabled={cancelingOrder}>
+                {cancelingOrder ? 'Canceling...' : 'Cancel order'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {(order.orderStatus === 'transportation' || order.orderStatus === 'delivered') && (
+          <Card className='mb-6 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950'>
+            <CardHeader>
+              <CardTitle>
+                {order.orderStatus === 'delivered' ? 'Confirm Delivery' : 'Delivery PIN'}
+              </CardTitle>
+              <CardDescription>
+                {order.orderStatus === 'delivered'
+                  ? 'The courier entered your delivery PIN and marked this order as delivered. Confirm once you have received your food.'
+                  : 'Share this PIN with the courier only when your food arrives.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              {order.deliveryPin && (
+                <div className='rounded-lg border border-amber-200 bg-white p-4 dark:border-amber-800 dark:bg-black/20'>
+                  <p className='text-sm text-muted-foreground'>Your delivery PIN</p>
+                  <p className='font-mono text-3xl font-bold tracking-widest'>
+                    {order.deliveryPin}
+                  </p>
+                </div>
+              )}
+              {order.orderStatus === 'delivered' && (
+                <Button onClick={() => setConfirmDialogOpen(true)} className='w-full sm:w-auto'>
+                  I received this order
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm delivery?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Confirm only if you received order #{order._id.slice(-8).toUpperCase()}.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={confirmingDelivery}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelivery} disabled={confirmingDelivery}>
+                {confirmingDelivery ? 'Confirming...' : 'Confirm delivery'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Grid layout: On large screens, left column has Order Info + Delivery Info, right column has Order Items */}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6'>
@@ -419,31 +606,48 @@ const MyOrderDetailPage = () => {
         </div>
 
         {/* Map section in a Card, styled like /orders/[id] */}
-        {order.orderStatus !== 'completed' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {order.orderStatus === 'transportation' ? 'Delivery Tracking' : 'Delivery Location'}
-              </CardTitle>
-              <CardDescription>
-                {order.orderStatus === 'transportation'
-                  ? 'Track the real-time location of the delivery.'
-                  : "Customer's delivery address location."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className='h-[400px] rounded-lg overflow-hidden'>
-                <OrderMap
-                  address={order.streetAddress}
-                  city={order.city}
-                  postalCode={order.postalCode}
-                  country={order.country}
-                  customerEmail={order.email}
-                  orderId={order._id}
-                />
-              </div>
-            </CardContent>
-          </Card>
+        {order.orderStatus !== 'completed' &&
+          order.orderStatus !== 'delivered' &&
+          order.orderStatus !== 'canceled' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {order.orderStatus === 'transportation'
+                    ? 'Delivery Tracking'
+                    : 'Delivery Location'}
+                </CardTitle>
+                <CardDescription>
+                  {order.orderStatus === 'transportation'
+                    ? 'Track the real-time location of the delivery.'
+                    : "Customer's delivery address location."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className='h-[400px] rounded-lg overflow-hidden'>
+                  <OrderMap
+                    address={order.streetAddress}
+                    city={order.city}
+                    postalCode={order.postalCode}
+                    country={order.country}
+                    customerEmail={order.email}
+                    orderId={order._id}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+        {order.orderStatus !== 'canceled' && (
+          <div className='mt-6'>
+            <OrderPhaseTimeline
+              createdAt={order.createdAt}
+              processingAt={order.processingAt}
+              readyAt={order.readyAt}
+              transportationAt={order.transportationAt}
+              courierDeliveredAt={order.courierDeliveredAt}
+              completedAt={order.completedAt}
+            />
+          </div>
         )}
 
         {restaurantReview && (

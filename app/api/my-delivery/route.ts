@@ -5,6 +5,7 @@ import {
   notifyCourierAboutAssignment,
   notifyUserAboutOrderStatusChange,
 } from '@/libs/notifications';
+import { createDeliveryPin } from '@/libs/deliveryPin';
 import mongoose from 'mongoose';
 
 export async function GET(request: Request) {
@@ -85,6 +86,10 @@ export async function PATCH(request: Request) {
 
   order.courierId = courierId;
   order.orderStatus = 'transportation';
+  order.transportationAt = new Date();
+  if (!order.deliveryPin) {
+    order.deliveryPin = createDeliveryPin();
+  }
   await order.save();
 
   try {

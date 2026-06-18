@@ -1,4 +1,4 @@
-import { model, models, Schema } from 'mongoose';
+import mongoose, { model, models, Schema } from 'mongoose';
 
 const isValidIntegerRating = (value: number) => Number.isInteger(value);
 
@@ -46,5 +46,13 @@ const RestaurantReviewSchema = new Schema(
 RestaurantReviewSchema.index({ restaurantId: 1, createdAt: -1 });
 RestaurantReviewSchema.index({ userId: 1, restaurantId: 1, createdAt: -1 });
 
-// Keep the underlying mongoose model name as "Review" to avoid data migration.
-export const RestaurantReview = models?.Review || model('Review', RestaurantReviewSchema);
+// In dev, Next.js hot-reloads can retain old models with stale collection names.
+try {
+  if (mongoose.models.RestaurantReview) {
+    mongoose.deleteModel('RestaurantReview');
+  }
+} catch {}
+
+export const RestaurantReview =
+  models?.RestaurantReview ||
+  model('RestaurantReview', RestaurantReviewSchema, 'restaurant_reviews');

@@ -28,7 +28,14 @@ type OrderType = {
   email: string;
   total: number;
   paymentStatus: boolean;
-  orderStatus: 'placed' | 'processing' | 'ready' | 'completed';
+  orderStatus:
+    | 'placed'
+    | 'processing'
+    | 'ready'
+    | 'transportation'
+    | 'delivered'
+    | 'completed'
+    | 'canceled';
   createdAt: string;
 };
 
@@ -153,7 +160,17 @@ const MyOrdersPage = () => {
           {!loadingOrders && orders.length === 0 && <p>No orders found.</p>}
 
           {!loadingOrders && orders.length > 0 && (
-            <MyOrdersTable orders={orders} loading={loadingOrders} />
+            <MyOrdersTable
+              orders={orders}
+              loading={loadingOrders}
+              onOrderUpdated={(updatedOrder) =>
+                setOrders((currentOrders) =>
+                  currentOrders.map((order) =>
+                    order._id === updatedOrder._id ? { ...order, ...updatedOrder } : order
+                  )
+                )
+              }
+            />
           )}
         </div>
 

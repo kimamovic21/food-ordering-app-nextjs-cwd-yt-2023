@@ -52,6 +52,10 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Order is already paid' }, { status: 400 });
   }
 
+  if (order.orderStatus === 'canceled') {
+    return Response.json({ error: 'Canceled orders cannot be paid' }, { status: 400 });
+  }
+
   if (user.restaurantId?.toString() === order.restaurantId?.toString()) {
     return Response.json(
       { error: 'You cannot pay for orders from your own restaurant' },

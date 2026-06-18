@@ -95,14 +95,23 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'Invalid order ID' }, { status: 400 });
   }
 
-  const allowedStatuses = ['placed', 'processing', 'ready', 'transportation', 'completed'];
+  const allowedStatuses = [
+    'placed',
+    'processing',
+    'ready',
+    'transportation',
+    'delivered',
+    'completed',
+  ];
   if (!allowedStatuses.includes(orderStatus)) {
     return Response.json({ error: 'Invalid order status' }, { status: 400 });
   }
 
-  // Admin cannot mark order as completed or transportation
-  if (orderStatus === 'completed') {
-    return Response.json({ error: 'Only courier can mark order as completed' }, { status: 400 });
+  if (orderStatus === 'delivered') {
+    return Response.json(
+      { error: 'Courier must mark the order as delivered with the delivery PIN' },
+      { status: 400 }
+    );
   }
 
   if (orderStatus === 'transportation') {
@@ -124,6 +133,10 @@ export async function PATCH(request: Request) {
     (order as any).orderPaid ?? (order as any).paymentStatus ?? (order as any).paid
   );
 
+  if (previousStatus === 'canceled') {
+    return Response.json({ error: 'Canceled orders cannot be updated' }, { status: 400 });
+  }
+
   if (!hasPaid) {
     return Response.json(
       { error: 'Cannot update status before payment is completed' },
@@ -131,8 +144,30 @@ export async function PATCH(request: Request) {
     );
   }
 
+  if (orderStatus === 'completed' && previousStatus !== 'delivered') {
+    return Response.json(
+      { error: 'Order can be completed only after courier marks it as delivered' },
+      { status: 400 }
+    );
+  }
+
+  const now = new Date();
+
   (order as any).orderPaid = hasPaid;
   order.orderStatus = orderStatus;
+
+  if (orderStatus === 'processing' && !order.processingAt) {
+    order.processingAt = now;
+  }
+  if (orderStatus === 'ready' && !order.readyAt) {
+    order.readyAt = now;
+  }
+  if (orderStatus === 'completed') {
+    order.adminConfirmedDeliveryAt = now;
+    order.deliveryCompletedBy = 'admin';
+    order.completedAt = now;
+  }
+
   const savedOrder = await order.save();
 
   if (previousStatus !== orderStatus && order.userId) {

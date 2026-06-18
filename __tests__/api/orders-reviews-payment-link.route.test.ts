@@ -4,7 +4,10 @@ import { Order } from '@/models/order';
 import { User } from '@/models/user';
 import { RestaurantReview } from '@/models/restaurantReview';
 import { CourierReview } from '@/models/courierReview';
-import { notifyUserAboutOrderStatusChange } from '@/libs/notifications';
+import {
+  notifyRestaurantAdminsAboutCanceledOrder,
+  notifyUserAboutOrderStatusChange,
+} from '@/libs/notifications';
 
 const stripeRetrieveSession = vi.fn();
 
@@ -43,6 +46,7 @@ vi.mock('@/libs/mongoConnect', () => ({
 }));
 
 vi.mock('@/libs/notifications', () => ({
+  notifyRestaurantAdminsAboutCanceledOrder: vi.fn(),
   notifyUserAboutOrderStatusChange: vi.fn(),
 }));
 
@@ -59,6 +63,18 @@ vi.mock('@/models/order', () => ({
     findById: vi.fn(),
     countDocuments: vi.fn(),
     find: vi.fn(),
+  },
+}));
+
+vi.mock('@/models/menuItem', () => ({
+  MenuItem: {
+    find: vi.fn(),
+  },
+}));
+
+vi.mock('@/models/restaurant', () => ({
+  Restaurant: {
+    findById: vi.fn(),
   },
 }));
 
@@ -97,6 +113,8 @@ const paidOrderDoc = {
   userId: { toString: () => 'user-1' },
   restaurantId: { toString: () => 'restaurant-1' },
   courierId: { toString: () => 'courier-1' },
+  email: 'customer@example.com',
+  total: 29.99,
   orderPaid: true,
   orderStatus: 'processing',
   save: vi.fn(async function save(this: any) {
@@ -127,19 +145,21 @@ describe('high-priority order, review, and payment-link routes', () => {
     vi.resetModules();
   });
 
-  it('blocks restaurant admins from marking orders completed', async () => {
+  it('blocks restaurant admins from marking orders completed before courier delivery', async () => {
     vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: admin.email } } as never);
     vi.mocked(User.findOne).mockReturnValueOnce({
       lean: vi.fn().mockResolvedValue(admin),
     } as never);
+    vi.mocked(Order.findOne).mockResolvedValueOnce({ ...paidOrderDoc } as never);
 
     const { PATCH } = await import('@/app/api/orders/route');
     const res = await PATCH(jsonRequest({ id: 'order-1', orderStatus: 'completed' }));
     const body = await res.json();
 
     expect(res.status).toBe(400);
-    expect(body).toEqual({ error: 'Only courier can mark order as completed' });
-    expect(Order.findOne).not.toHaveBeenCalled();
+    expect(body).toEqual({
+      error: 'Order can be completed only after courier marks it as delivered',
+    });
   });
 
   it('updates paid restaurant orders and emits a status notification', async () => {
@@ -165,6 +185,94 @@ describe('high-priority order, review, and payment-link routes', () => {
         orderStatus: 'ready',
       })
     );
+  });
+
+  it('blocks restaurant admins from updating canceled orders', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: admin.email } } as never);
+    vi.mocked(User.findOne).mockReturnValueOnce({
+      lean: vi.fn().mockResolvedValue(admin),
+    } as never);
+    vi.mocked(Order.findOne).mockResolvedValueOnce({
+      ...paidOrderDoc,
+      orderStatus: 'canceled',
+    } as never);
+
+    const { PATCH } = await import('@/app/api/orders/route');
+    const res = await PATCH(jsonRequest({ id: 'order-1', orderStatus: 'processing' }));
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body).toEqual({ error: 'Canceled orders cannot be updated' });
+    expect(notifyUserAboutOrderStatusChange).not.toHaveBeenCalled();
+  });
+
+  it('allows customers to cancel their unpaid placed orders and notifies restaurant admins', async () => {
+    const unpaidOrderDoc = {
+      ...paidOrderDoc,
+      orderPaid: false,
+      orderStatus: 'placed',
+      save: vi.fn(async function save(this: any) {
+        return this;
+      }),
+      toObject() {
+        return {
+          _id: this._id,
+          userId: this.userId,
+          restaurantId: this.restaurantId,
+          orderPaid: this.orderPaid,
+          orderStatus: this.orderStatus,
+          canceledAt: this.canceledAt,
+        };
+      },
+    };
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: customer.email } } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(unpaidOrderDoc as never);
+
+    const { PATCH } = await import('@/app/api/my-orders/route');
+    const res = await PATCH(
+      new Request('http://localhost/api/my-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', action: 'cancel-order' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.order.orderStatus).toBe('canceled');
+    expect(unpaidOrderDoc.save).toHaveBeenCalled();
+    expect(notifyRestaurantAdminsAboutCanceledOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        restaurantId: unpaidOrderDoc.restaurantId,
+        orderId: unpaidOrderDoc._id,
+        customerEmail: customer.email,
+      })
+    );
+  });
+
+  it('blocks canceling a paid order', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: customer.email } } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce({
+      ...paidOrderDoc,
+      orderStatus: 'placed',
+    } as never);
+
+    const { PATCH } = await import('@/app/api/my-orders/route');
+    const res = await PATCH(
+      new Request('http://localhost/api/my-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', action: 'cancel-order' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body).toEqual({ error: 'Paid orders cannot be canceled here' });
+    expect(notifyRestaurantAdminsAboutCanceledOrder).not.toHaveBeenCalled();
   });
 
   it('allows restaurant review only for a paid completed order owned by the user', async () => {
@@ -271,5 +379,30 @@ describe('high-priority order, review, and payment-link routes', () => {
     expect(body).toEqual({ url: 'https://checkout.stripe.test/session' });
     expect(stripeRetrieveSession).toHaveBeenCalledWith('cs_test_123');
     expect(mongoose.connect).toHaveBeenCalledWith(process.env.MONGODB_URL);
+  });
+
+  it('blocks payment links for canceled orders', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: customer.email },
+    } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    vi.mocked(Order.findById).mockReturnValueOnce({
+      lean: vi.fn().mockResolvedValue({
+        _id: 'order-1',
+        userId: customer._id,
+        restaurantId: { toString: () => 'restaurant-1' },
+        orderPaid: false,
+        orderStatus: 'canceled',
+        stripeSessionId: 'cs_test_123',
+      }),
+    } as never);
+
+    const { GET } = await import('@/app/api/payment-link/route');
+    const res = await GET(new Request('http://localhost/api/payment-link?orderId=order-1'));
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body).toEqual({ error: 'Canceled orders cannot be paid' });
+    expect(stripeRetrieveSession).not.toHaveBeenCalled();
   });
 });

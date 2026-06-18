@@ -43,7 +43,14 @@ type OrderDetailsType = {
   cartProducts: CartProduct[];
   total: number;
   paymentStatus: boolean;
-  orderStatus: 'placed' | 'processing' | 'ready' | 'transportation' | 'completed';
+  orderStatus:
+    | 'placed'
+    | 'processing'
+    | 'ready'
+    | 'transportation'
+    | 'delivered'
+    | 'completed'
+    | 'canceled';
   courierId?: { _id: string; name: string; email: string; image?: string };
   createdAt: string;
   updatedAt: string;
@@ -105,13 +112,13 @@ const CourierPage = () => {
     return () => clearInterval(interval);
   }, [profileData?.role, profileLoading, profileData?.availability]);
 
-  const handleCompleteOrder = async (orderId: string) => {
+  const handleCompleteOrder = async (orderId: string, deliveryPin: string) => {
     try {
       setCompleting(orderId);
       const res = await fetch('/api/my-delivery/orders', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId }),
+        body: JSON.stringify({ orderId, deliveryPin }),
       });
 
       const data = await res.json();
@@ -127,7 +134,7 @@ const CourierPage = () => {
       }
 
       setOrders(orders.filter((o) => o._id !== orderId));
-      toast.success('Order delivered successfully', {
+      toast.success('Delivery handoff recorded. Awaiting confirmation.', {
         style: {
           background: '#22c55e',
           color: 'white',

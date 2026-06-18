@@ -1,4 +1,4 @@
-import { model, models, Schema } from 'mongoose';
+import mongoose, { model, models, Schema } from 'mongoose';
 
 const MenuItemSchema = new Schema(
   {
@@ -18,4 +18,11 @@ const MenuItemSchema = new Schema(
   { timestamps: true }
 );
 
-export const MenuItem = models?.MenuItem || model('MenuItem', MenuItemSchema);
+// In dev, Next.js hot-reloads can retain old models with stale collection names.
+try {
+  if (mongoose.models.MenuItem) {
+    mongoose.deleteModel('MenuItem');
+  }
+} catch {}
+
+export const MenuItem = models?.MenuItem || model('MenuItem', MenuItemSchema, 'menu_items');

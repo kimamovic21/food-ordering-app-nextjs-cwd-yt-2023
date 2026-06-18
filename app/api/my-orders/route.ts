@@ -4,6 +4,7 @@ import { MenuItem } from '@/models/menuItem';
 import { Restaurant } from '@/models/restaurant';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
+import { notifyRestaurantAdminsAboutCanceledOrder } from '@/libs/notifications';
 import mongoose from 'mongoose';
 
 const normalizeOrder = (order: any) => ({
@@ -135,4 +136,93 @@ export async function GET(request: Request) {
   const totalPages = Math.ceil(totalOrders / limit) || 1;
 
   return Response.json({ orders: normalizedOrders, page, totalPages, totalOrders });
+}
+
+export async function PATCH(request: Request) {
+  await mongoose.connect(process.env.MONGODB_URL as string);
+
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user?.email) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const user = await User.findOne({ email: session.user.email });
+
+  if (!user) {
+    return Response.json({ error: 'User not found' }, { status: 404 });
+  }
+
+  const { orderId, action } = await request.json();
+
+  if (action !== 'confirm-delivery' && action !== 'cancel-order') {
+    return Response.json({ error: 'Invalid action' }, { status: 400 });
+  }
+
+  if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
+    return Response.json({ error: 'Invalid order ID' }, { status: 400 });
+  }
+
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return Response.json({ error: 'Order not found' }, { status: 404 });
+  }
+
+  if (order.userId?.toString() !== user._id.toString()) {
+    return Response.json({ error: 'Unauthorized - Order does not belong to you' }, { status: 403 });
+  }
+
+  if (action === 'cancel-order') {
+    const isPaid = Boolean(
+      (order as any).orderPaid ?? (order as any).paymentStatus ?? (order as any).paid
+    );
+
+    if (isPaid) {
+      return Response.json({ error: 'Paid orders cannot be canceled here' }, { status: 400 });
+    }
+
+    if (order.orderStatus !== 'placed') {
+      return Response.json(
+        { error: 'Order can be canceled only before the restaurant starts processing it' },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date();
+    order.orderStatus = 'canceled';
+    order.canceledAt = now;
+
+    await order.save();
+
+    try {
+      await notifyRestaurantAdminsAboutCanceledOrder({
+        restaurantId: order.restaurantId,
+        orderId: order._id,
+        customerEmail: order.email,
+        total: Number((order as any).total) || 0,
+      });
+    } catch (notificationError) {
+      console.error('Failed to create admin notification for canceled order:', notificationError);
+    }
+
+    return Response.json({ order: normalizeOrder(order.toObject()) });
+  }
+
+  if (order.orderStatus !== 'delivered') {
+    return Response.json(
+      { error: 'Order can be confirmed only after courier marks it as delivered' },
+      { status: 400 }
+    );
+  }
+
+  const now = new Date();
+  order.orderStatus = 'completed';
+  order.customerConfirmedDeliveryAt = now;
+  order.deliveryCompletedBy = 'customer';
+  order.completedAt = now;
+
+  await order.save();
+
+  return Response.json({ order: normalizeOrder(order.toObject()) });
 }

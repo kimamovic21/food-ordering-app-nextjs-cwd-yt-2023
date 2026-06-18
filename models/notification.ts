@@ -16,6 +16,7 @@ const NotificationSchema = new Schema(
         'order_status_changed',
         'courier_assigned',
         'order_completed',
+        'order_canceled',
       ],
       required: true,
     },

@@ -1,4 +1,4 @@
-import { model, models, Schema } from 'mongoose';
+import mongoose, { model, models, Schema } from 'mongoose';
 
 const isValidIntegerRating = (value: number) => Number.isInteger(value);
 
@@ -47,4 +47,12 @@ CourierReviewSchema.index({ orderId: 1, userId: 1, courierId: 1 }, { unique: tru
 CourierReviewSchema.index({ courierId: 1, createdAt: -1 });
 CourierReviewSchema.index({ userId: 1, courierId: 1, createdAt: -1 });
 
-export const CourierReview = models?.CourierReview || model('CourierReview', CourierReviewSchema);
+// In dev, Next.js hot-reloads can retain old models with stale collection names.
+try {
+  if (mongoose.models.CourierReview) {
+    mongoose.deleteModel('CourierReview');
+  }
+} catch {}
+
+export const CourierReview =
+  models?.CourierReview || model('CourierReview', CourierReviewSchema, 'courier_reviews');

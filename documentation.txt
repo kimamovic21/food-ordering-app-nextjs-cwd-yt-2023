@@ -1067,3 +1067,5 @@ Improve admin menu item scroll restoration
 Add category cleanup coverage
 
 Add menu item availability controls
+
+User delivery improvements

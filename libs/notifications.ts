@@ -8,7 +8,8 @@ type NotificationType =
   | 'order_paid'
   | 'order_status_changed'
   | 'courier_assigned'
-  | 'order_completed';
+  | 'order_completed'
+  | 'order_canceled';
 
 type CreateNotificationInput = {
   recipientUserIds: Array<string | mongoose.Types.ObjectId>;
@@ -65,7 +66,9 @@ const humanStatusMap: Record<string, string> = {
   processing: 'Processing',
   ready: 'Ready for Pickup',
   transportation: 'Out for Delivery',
-  completed: 'Delivered',
+  delivered: 'Delivered - awaiting confirmation',
+  completed: 'Completed',
+  canceled: 'Canceled',
 };
 
 export const formatOrderStatusLabel = (status: string) => humanStatusMap[status] || status;
@@ -134,6 +137,31 @@ export const notifyRestaurantAdminsAboutPaidOrder = async (params: {
   });
 };
 
+export const notifyRestaurantAdminsAboutCanceledOrder = async (params: {
+  restaurantId: string | mongoose.Types.ObjectId;
+  orderId: string | mongoose.Types.ObjectId;
+  customerEmail: string;
+  total: number;
+}) => {
+  const adminIds = await findRestaurantAdminIds(params.restaurantId);
+
+  if (adminIds.length === 0) {
+    return;
+  }
+
+  await createNotifications({
+    recipientUserIds: adminIds,
+    type: 'order_canceled',
+    title: 'Order canceled',
+    message: `Order #${params.orderId.toString().slice(-6)} was canceled by ${params.customerEmail} (total: $${Number(params.total || 0).toFixed(2)}).`,
+    orderId: params.orderId,
+    metadata: {
+      restaurantId: params.restaurantId.toString(),
+      orderStatus: 'canceled',
+    },
+  });
+};
+
 export const notifyUserAboutOrderStatusChange = async (params: {
   userId: string | mongoose.Types.ObjectId;
   orderId: string | mongoose.Types.ObjectId;
@@ -188,22 +216,22 @@ export const notifyOrderDelivered = async (params: {
     createNotifications({
       recipientUserIds: [params.userId],
       type: 'order_completed',
-      title: 'Order delivered',
-      message: `Your order #${orderNumber} has been marked as delivered.`,
+      title: 'Confirm your delivery',
+      message: `Courier marked order #${orderNumber} as delivered. Please confirm it when you receive your food.`,
       orderId: params.orderId,
     }),
     createNotifications({
       recipientUserIds: [params.courierId],
       type: 'order_completed',
-      title: 'Delivery completed',
-      message: `Order #${orderNumber} has been marked as delivered.`,
+      title: 'Delivery handoff recorded',
+      message: `Order #${orderNumber} is awaiting customer or restaurant confirmation.`,
       orderId: params.orderId,
     }),
     createNotifications({
       recipientUserIds: adminIds,
       type: 'order_completed',
-      title: 'Order delivered',
-      message: `Order #${orderNumber} has been delivered by the assigned courier.`,
+      title: 'Delivery awaiting confirmation',
+      message: `Order #${orderNumber} was marked as delivered by the assigned courier.`,
       orderId: params.orderId,
       metadata: { restaurantId: params.restaurantId.toString() },
     }),

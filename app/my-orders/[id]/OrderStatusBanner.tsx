@@ -1,9 +1,16 @@
 import type { ComponentType } from 'react';
-import { ChefHat, CheckCircle2, Clock, Truck, PackageCheck } from 'lucide-react';
+import { ChefHat, CheckCircle2, Clock, Truck, PackageCheck, XCircle } from 'lucide-react';
 
-export type OrderStatus = 'placed' | 'processing' | 'ready' | 'transportation' | 'completed';
+export type OrderStatus =
+  | 'placed'
+  | 'processing'
+  | 'ready'
+  | 'transportation'
+  | 'delivered'
+  | 'completed'
+  | 'canceled';
 
-type StatusTone = 'amber' | 'sky' | 'blue' | 'green';
+type StatusTone = 'amber' | 'sky' | 'blue' | 'green' | 'red';
 
 type ToneStyles = {
   wrapper: string;
@@ -36,6 +43,12 @@ const statusToneStyles: Record<StatusTone, ToneStyles> = {
     icon: 'text-green-600 dark:text-green-300',
     title: 'text-green-900 dark:text-green-100',
     body: 'text-green-800 dark:text-green-200',
+  },
+  red: {
+    wrapper: 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800',
+    icon: 'text-red-600 dark:text-red-300',
+    title: 'text-red-900 dark:text-red-100',
+    body: 'text-red-800 dark:text-red-200',
   },
 };
 
@@ -78,12 +91,26 @@ const statusContent: Record<
     icon: Truck,
     tone: 'blue',
   },
+  delivered: {
+    title: 'Delivery needs your confirmation',
+    description: 'The courier marked this order as delivered.',
+    subtext: 'Please confirm the delivery if you received your food.',
+    icon: PackageCheck,
+    tone: 'amber',
+  },
   completed: {
     title: 'Order delivered successfully',
     description: 'Thanks for your purchase! Enjoy your meal.',
     subtext: 'If anything looks off, reach out and we will make it right.',
     icon: CheckCircle2,
     tone: 'green',
+  },
+  canceled: {
+    title: 'Order canceled',
+    description: 'This order was canceled before payment and will not be prepared.',
+    subtext: 'You can place a new order whenever you are ready.',
+    icon: XCircle,
+    tone: 'red',
   },
 };
 

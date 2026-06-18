@@ -136,11 +136,16 @@ const AdminItemCard = ({
             }
 
             return (
-              <div className='flex flex-wrap gap-2 mt-3 text-xs'>
+              <div className='mt-4 flex flex-wrap gap-2.5'>
                 {prices.map((price) => (
-                  <span key={price.label}>
-                    <span className='text-muted-foreground'>{price.label}:</span>{' '}
-                    <span className='font-semibold text-primary'>${price.value!.toFixed(2)}</span>
+                  <span
+                    key={price.label}
+                    className='inline-flex items-baseline gap-1 rounded-md border bg-primary/10 px-3 py-2 text-base shadow-sm'
+                  >
+                    <span className='text-sm font-semibold text-muted-foreground'>
+                      {price.label}:
+                    </span>
+                    <span className='font-bold text-primary'>${price.value!.toFixed(2)}</span>
                   </span>
                 ))}
               </div>

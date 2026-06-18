@@ -19,7 +19,14 @@ import HeartRating from '@/components/shared/HeartRating';
 
 type LeaveCourierReviewDialogProps = {
   orderId: string;
-  orderStatus: 'placed' | 'processing' | 'ready' | 'transportation' | 'completed';
+  orderStatus:
+    | 'placed'
+    | 'processing'
+    | 'ready'
+    | 'transportation'
+    | 'delivered'
+    | 'completed'
+    | 'canceled';
   paymentStatus: boolean;
   hasCourier: boolean;
   onSubmitted?: (review: { rating: number; reviewText: string }) => void;
