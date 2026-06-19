@@ -1,8 +1,16 @@
 import { getServerSession } from 'next-auth/next';
-import mongoose from 'mongoose';
+import { Order } from '@/models/order';
+import { notifyOrderDelivered } from '@/libs/notifications';
 
 vi.mock('mongoose', () => ({
-  default: { connect: vi.fn() },
+  default: {
+    connect: vi.fn(),
+    Types: {
+      ObjectId: {
+        isValid: vi.fn(() => true),
+      },
+    },
+  },
 }));
 
 vi.mock('next-auth/next', () => ({
@@ -16,10 +24,59 @@ vi.mock('@/models/user', () => ({
   },
 }));
 
+vi.mock('@/models/order', () => ({
+  Order: {
+    findById: vi.fn(),
+    find: vi.fn(),
+  },
+}));
+
+vi.mock('@/libs/notifications', () => ({
+  notifyOrderDelivered: vi.fn(),
+}));
+
 const loadAvailability = async () =>
   (await import('@/app/api/my-delivery/availability/route')).PATCH;
 const loadLocation = async () => (await import('@/app/api/my-delivery/location/route')).POST;
 const loadGetLocation = async () => (await import('@/app/api/my-delivery/location/route')).GET;
+const loadDeliveryOrdersPatch = async () =>
+  (await import('@/app/api/my-delivery/orders/route')).PATCH;
+
+const courierUser = () => ({
+  _id: { toString: () => 'courier-1' },
+  email: 'c@courier.com',
+  role: 'courier',
+  takenOrder: 'order-1',
+  save: vi.fn(async function save(this: any) {
+    return this;
+  }),
+});
+
+const assignedOrder = (overrides: Record<string, unknown> = {}) => ({
+  _id: 'order-1',
+  userId: 'user-1',
+  restaurantId: 'restaurant-1',
+  courierId: { toString: () => 'courier-1' },
+  orderStatus: 'transportation',
+  orderPaid: true,
+  deliveryPin: '123456',
+  save: vi.fn(async function save(this: any) {
+    return this;
+  }),
+  toObject() {
+    return {
+      _id: this._id,
+      userId: this.userId,
+      restaurantId: this.restaurantId,
+      courierId: this.courierId,
+      orderStatus: this.orderStatus,
+      orderPaid: this.orderPaid,
+      deliveryPin: this.deliveryPin,
+      courierDeliveredAt: this.courierDeliveredAt,
+    };
+  },
+  ...overrides,
+});
 
 describe('Courier availability and location routes', () => {
   beforeEach(() => {
@@ -132,5 +189,101 @@ describe('Courier availability and location routes', () => {
     const body = await res.json();
     expect(res.status).toBe(403);
     expect(body).toEqual({ error: 'Only courier can fetch their location' });
+  });
+
+  it.each([
+    ['missing', undefined],
+    ['wrong', '999999'],
+  ])('rejects %s delivery PIN when marking an order delivered', async (_label, deliveryPin) => {
+    const userDoc = courierUser();
+    const orderDoc = assignedOrder();
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: userDoc.email, role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce(userDoc as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(orderDoc as never);
+
+    const PATCH = await loadDeliveryOrdersPatch();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', deliveryPin }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body).toEqual({ error: 'Invalid delivery PIN' });
+    expect(orderDoc.save).not.toHaveBeenCalled();
+    expect(userDoc.save).not.toHaveBeenCalled();
+    expect(notifyOrderDelivered).not.toHaveBeenCalled();
+  });
+
+  it('blocks couriers from marking another courier order delivered', async () => {
+    const userDoc = courierUser();
+    const orderDoc = assignedOrder({
+      courierId: { toString: () => 'other-courier' },
+    });
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: userDoc.email, role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce(userDoc as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(orderDoc as never);
+
+    const PATCH = await loadDeliveryOrdersPatch();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', deliveryPin: '123456' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(body).toEqual({ error: 'You are not assigned to this order' });
+    expect(orderDoc.save).not.toHaveBeenCalled();
+    expect(userDoc.save).not.toHaveBeenCalled();
+  });
+
+  it('marks assigned orders delivered with the correct PIN without exposing the PIN', async () => {
+    const userDoc = courierUser();
+    const orderDoc = assignedOrder();
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: userDoc.email, role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce(userDoc as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(orderDoc as never);
+
+    const PATCH = await loadDeliveryOrdersPatch();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', deliveryPin: '123456' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.order.orderStatus).toBe('delivered');
+    expect(body.order.deliveryPin).toBeUndefined();
+    expect(orderDoc.orderStatus).toBe('delivered');
+    expect(orderDoc.courierDeliveredAt).toEqual(expect.any(Date));
+    expect(userDoc.takenOrder).toBeNull();
+    expect(orderDoc.save).toHaveBeenCalled();
+    expect(userDoc.save).toHaveBeenCalled();
+    expect(notifyOrderDelivered).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: orderDoc.userId,
+        courierId: userDoc._id,
+        restaurantId: orderDoc.restaurantId,
+        orderId: orderDoc._id,
+      })
+    );
   });
 });

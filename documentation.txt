@@ -1069,3 +1069,5 @@ Add category cleanup coverage
 Add menu item availability controls
 
 User delivery improvements
+
+Add delivery and menu availability test coverage

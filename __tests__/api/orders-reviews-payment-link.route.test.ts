@@ -275,6 +275,114 @@ describe('high-priority order, review, and payment-link routes', () => {
     expect(notifyRestaurantAdminsAboutCanceledOrder).not.toHaveBeenCalled();
   });
 
+  it('allows customers to confirm their delivered order', async () => {
+    const deliveredOrderDoc = {
+      ...paidOrderDoc,
+      orderStatus: 'delivered',
+      save: vi.fn(async function save(this: any) {
+        return this;
+      }),
+      toObject() {
+        return {
+          _id: this._id,
+          userId: this.userId,
+          restaurantId: this.restaurantId,
+          orderPaid: this.orderPaid,
+          orderStatus: this.orderStatus,
+          customerConfirmedDeliveryAt: this.customerConfirmedDeliveryAt,
+          deliveryCompletedBy: this.deliveryCompletedBy,
+          completedAt: this.completedAt,
+        };
+      },
+    };
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: customer.email } } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(deliveredOrderDoc as never);
+
+    const { PATCH } = await import('@/app/api/my-orders/route');
+    const res = await PATCH(
+      new Request('http://localhost/api/my-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', action: 'confirm-delivery' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.order.orderStatus).toBe('completed');
+    expect(body.order.deliveryCompletedBy).toBe('customer');
+    expect(body.order.customerConfirmedDeliveryAt).toEqual(expect.any(String));
+    expect(body.order.completedAt).toEqual(expect.any(String));
+    expect(deliveredOrderDoc.save).toHaveBeenCalled();
+  });
+
+  it.each(['placed', 'processing', 'ready', 'transportation', 'completed', 'canceled'])(
+    'blocks customer confirmation while order is %s',
+    async (orderStatus) => {
+      const orderDoc = {
+        ...paidOrderDoc,
+        orderStatus,
+        save: vi.fn(),
+      };
+
+      vi.mocked(getServerSession).mockResolvedValueOnce({
+        user: { email: customer.email },
+      } as never);
+      vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+      vi.mocked(Order.findById).mockResolvedValueOnce(orderDoc as never);
+
+      const { PATCH } = await import('@/app/api/my-orders/route');
+      const res = await PATCH(
+        new Request('http://localhost/api/my-orders', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: 'order-1', action: 'confirm-delivery' }),
+        })
+      );
+      const body = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(body).toEqual({
+        error: 'Order can be confirmed only after courier marks it as delivered',
+      });
+      expect(orderDoc.save).not.toHaveBeenCalled();
+    }
+  );
+
+  it('blocks customers from confirming another user order', async () => {
+    const otherCustomer = {
+      ...customer,
+      _id: { toString: () => 'user-2' },
+    };
+    const deliveredOrderDoc = {
+      ...paidOrderDoc,
+      orderStatus: 'delivered',
+      save: vi.fn(),
+    };
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: otherCustomer.email },
+    } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(otherCustomer as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(deliveredOrderDoc as never);
+
+    const { PATCH } = await import('@/app/api/my-orders/route');
+    const res = await PATCH(
+      new Request('http://localhost/api/my-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', action: 'confirm-delivery' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(body).toEqual({ error: 'Unauthorized - Order does not belong to you' });
+    expect(deliveredOrderDoc.save).not.toHaveBeenCalled();
+  });
+
   it('allows restaurant review only for a paid completed order owned by the user', async () => {
     vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: customer.email } } as never);
     vi.mocked(User.findOne).mockReturnValueOnce({
