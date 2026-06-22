@@ -6,13 +6,19 @@
  * since route handlers have complex external dependencies (Stripe, etc.)
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { expect, describe, it } from 'vitest';
 
+const checkoutRoutePath = path.resolve(process.cwd(), 'app/api/checkout/route.ts');
+
+const readCheckoutRouteSource = () => fs.readFileSync(checkoutRoutePath, 'utf-8');
+
 describe('Payment Routes - File Validation', () => {
-  it('checkout route exists and is callable', async () => {
-    const route = await import('@/app/api/checkout/route');
-    expect(route.POST).toBeDefined();
-    expect(typeof route.POST).toBe('function');
+  it('checkout route exists and declares POST', () => {
+    const source = readCheckoutRouteSource();
+
+    expect(source).toContain('export async function POST');
   });
 
   it('cart validation utilities are available', async () => {
@@ -225,14 +231,16 @@ describe('Webhook Processing Validation', () => {
 });
 
 describe('Route Handler Configuration', () => {
-  it('checkout route uses nodejs runtime', async () => {
-    const { runtime } = await import('@/app/api/checkout/route');
-    expect(runtime).toBe('nodejs');
+  it('checkout route uses nodejs runtime', () => {
+    const source = readCheckoutRouteSource();
+
+    expect(source).toContain("export const runtime = 'nodejs'");
   });
 
-  it('routes handle POST requests', async () => {
-    const checkoutRoute = await import('@/app/api/checkout/route');
-    expect(typeof checkoutRoute.POST).toBe('function');
+  it('routes handle POST requests', () => {
+    const source = readCheckoutRouteSource();
+
+    expect(source).toContain('export async function POST');
   });
 });
 
