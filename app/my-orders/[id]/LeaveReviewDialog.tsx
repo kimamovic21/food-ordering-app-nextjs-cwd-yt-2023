@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Star } from 'lucide-react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -63,7 +63,7 @@ const LeaveReviewDialog = ({
     const trimmedReview = reviewText.trim();
 
     if (trimmedReview.length < 5) {
-      toast.error('Review must contain at least 5 characters');
+      sonnerToast.error('Review must contain at least 5 characters');
       return;
     }
 
@@ -88,7 +88,7 @@ const LeaveReviewDialog = ({
         throw new Error(data?.error || 'Failed to submit review');
       }
 
-      toast.success('Review submitted successfully', {
+      sonnerToast.success('Review submitted successfully', {
         style: {
           background: '#16a34a',
           color: 'white',
@@ -98,7 +98,7 @@ const LeaveReviewDialog = ({
       setOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to submit review';
-      toast.error(message);
+      sonnerToast.error(message);
     } finally {
       setSubmitting(false);
     }

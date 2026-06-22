@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useState } from 'react';
 import { useNotifications } from '@/contexts/NotificationsContext';
 import { getNotificationsRoute, resolveNotificationTargetPath } from '@/libs/notificationClient';
 import {
@@ -32,7 +33,8 @@ const NotificationBell = ({ iconSize = 22 }: NotificationBellProps) => {
   const router = useRouter();
   const session = useSession();
   const { data: profile } = useProfile();
-  const { notifications, unreadCount, markAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
 
   if (session.status !== 'authenticated') {
     return null;
@@ -61,6 +63,19 @@ const NotificationBell = ({ iconSize = 22 }: NotificationBellProps) => {
     const path = resolveNotificationTargetPath(notification, role);
     if (path) {
       router.push(path);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    if (unreadCount === 0 || isMarkingAllRead) {
+      return;
+    }
+
+    try {
+      setIsMarkingAllRead(true);
+      await markAllAsRead();
+    } finally {
+      setIsMarkingAllRead(false);
     }
   };
 
@@ -142,6 +157,15 @@ const NotificationBell = ({ iconSize = 22 }: NotificationBellProps) => {
           {visibleNotifications.length > 0 && <DropdownMenuSeparator />}
 
           <div className='px-3 py-3'>
+            <button
+              data-slot='button'
+              onClick={handleMarkAllAsRead}
+              disabled={unreadCount === 0 || isMarkingAllRead}
+              className='mb-2 w-full rounded-lg border border-border px-3 py-2 text-sm font-medium text-center text-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-60'
+            >
+              {isMarkingAllRead ? 'Marking all as read...' : 'Mark all as read'}
+            </button>
+
             <Link
               href={notificationsRoute}
               className='block rounded-lg border border-border px-3 py-2 text-sm font-medium text-center text-primary hover:bg-muted transition-colors'

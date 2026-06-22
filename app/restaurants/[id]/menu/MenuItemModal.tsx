@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
 import useProfile from '@/hooks/useProfile';
 import useFavorites from '@/hooks/useFavorites';
@@ -117,12 +117,12 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
     const cartRestaurantId = getCartRestaurantId();
 
     if (!isAvailable) {
-      toast.error(`${item.name} is currently unavailable`);
+      sonnerToast.error(`${item.name} is currently unavailable`);
       return;
     }
 
     if (profileData?.restaurantId && profileData.restaurantId === item.restaurantId) {
-      toast.error('You cannot order from your own restaurant', {
+      sonnerToast.error('You cannot order from your own restaurant', {
         style: {
           background: '#dc2626',
           color: 'white',
@@ -132,7 +132,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
     }
 
     if (cartRestaurantId && cartRestaurantId !== item.restaurantId) {
-      toast.error('Your cart contains items from another restaurant', {
+      sonnerToast.error('Your cart contains items from another restaurant', {
         description: 'Clear your cart to add items from a different restaurant',
         duration: 4000,
       });
@@ -154,7 +154,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
       restaurantId: item.restaurantId,
     });
 
-    toast.success(
+    sonnerToast.success(
       availableSizes.length === 1
         ? `${item.name} added to cart!`
         : `${item.name} (${effectiveSelectedSize}) added to cart!`,

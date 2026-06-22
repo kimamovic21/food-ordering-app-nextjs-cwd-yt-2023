@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import type { ExtendedUser } from '@/types/user';
 import Title from '@/components/shared/Title';
 import UserProfileForm from './UserProfileForm';
@@ -169,7 +169,7 @@ const ProfilePage = () => {
       return updatedUser;
     })();
 
-    toast.promise(savePromise, {
+    sonnerToast.promise(savePromise, {
       loading: 'Saving profile...',
       success: 'Profile updated!',
       error: (err) => (err instanceof Error ? err.message : 'Failed to update profile.'),
@@ -206,7 +206,7 @@ const ProfilePage = () => {
       return deleteRes.json();
     })();
 
-    toast.promise(deletePromise, {
+    sonnerToast.promise(deletePromise, {
       loading: 'Deleting account...',
       success: 'Account deleted successfully!',
       error: (err) => (err instanceof Error ? err.message : 'Failed to delete account.'),

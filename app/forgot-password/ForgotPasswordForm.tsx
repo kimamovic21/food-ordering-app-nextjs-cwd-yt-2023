@@ -4,7 +4,7 @@ import * as z from 'zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -50,20 +50,26 @@ const ForgotPasswordForm = () => {
       }
 
       if (responseBody?.canResetPassword === false) {
-        toast.error(responseBody?.message || 'Google sign-in accounts cannot reset passwords.', {
-          style: { backgroundColor: '#ef4444', color: 'white' },
-        });
+        sonnerToast.error(
+          responseBody?.message || 'Google sign-in accounts cannot reset passwords.',
+          {
+            style: { backgroundColor: '#ef4444', color: 'white' },
+          }
+        );
         return;
       }
 
-      toast.success(responseBody?.message || 'Password reset email sent.', {
+      sonnerToast.success(responseBody?.message || 'Password reset email sent.', {
         style: { backgroundColor: '#22c55e', color: 'white' },
       });
       form.reset();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to request password reset.', {
-        style: { backgroundColor: '#ef4444', color: 'white' },
-      });
+      sonnerToast.error(
+        error instanceof Error ? error.message : 'Failed to request password reset.',
+        {
+          style: { backgroundColor: '#ef4444', color: 'white' },
+        }
+      );
     } finally {
       setIsLoading(false);
     }

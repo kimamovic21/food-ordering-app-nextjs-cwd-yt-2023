@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import Title from '@/components/shared/Title';
 import ResendVerificationForm from './ResendVerificationForm';
 import { Button } from '@/components/ui/button';
@@ -42,13 +42,13 @@ const VerifyEmailClient = ({ defaultEmail = '' }: VerifyEmailClientProps) => {
 
         setStatus('success');
         setMessage(responseBody?.message || 'Your email has been verified successfully.');
-        toast.success('Your email has been verified successfully.', {
+        sonnerToast.success('Your email has been verified successfully.', {
           style: { backgroundColor: '#22c55e', color: 'white' },
         });
       } catch (error) {
         setStatus('error');
         setMessage(error instanceof Error ? error.message : 'Email verification failed.');
-        toast.error(error instanceof Error ? error.message : 'Email verification failed.', {
+        sonnerToast.error(error instanceof Error ? error.message : 'Email verification failed.', {
           style: { backgroundColor: '#ef4444', color: 'white' },
         });
       }

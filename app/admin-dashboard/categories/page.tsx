@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { redirect } from 'next/navigation';
 import { Trash2, Pencil } from 'lucide-react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,7 +43,7 @@ const CategoriesPage = () => {
       setCategories(categories);
     } catch (error) {
       console.error('Error fetching categories', error);
-      toast.error('Failed to load categories');
+      sonnerToast.error('Failed to load categories');
     } finally {
       setIsLoadingCategories(false);
     }
@@ -85,10 +85,10 @@ const CategoriesPage = () => {
         }
       }
     });
-    toast.promise(creationPromise, {
+    sonnerToast.promise(creationPromise, {
       loading: editingCategory ? 'Updating your category...' : 'Creating your new category...',
       success: () => {
-        toast.success(editingCategory ? 'Category updated!' : 'Category created!', {
+        sonnerToast.success(editingCategory ? 'Category updated!' : 'Category created!', {
           style: {
             background: '#22c55e',
             color: 'white',
@@ -98,7 +98,7 @@ const CategoriesPage = () => {
       },
       error: (err) => {
         if (err instanceof Error && err.message.includes('already exists')) {
-          toast.error(
+          sonnerToast.error(
             'A category with that name already exists. Try creating a category with a new name.',
             {
               style: {
@@ -109,12 +109,15 @@ const CategoriesPage = () => {
           );
           return null;
         }
-        toast.error(editingCategory ? 'Failed to update category.' : 'Failed to create category.', {
-          style: {
-            background: '#ef4444',
-            color: 'white',
-          },
-        });
+        sonnerToast.error(
+          editingCategory ? 'Failed to update category.' : 'Failed to create category.',
+          {
+            style: {
+              background: '#ef4444',
+              color: 'white',
+            },
+          }
+        );
         return null;
       },
     });
@@ -137,10 +140,10 @@ const CategoriesPage = () => {
       else reject(false);
     });
 
-    toast.promise(deletePromise, {
+    sonnerToast.promise(deletePromise, {
       loading: 'Deleting category and associated menu items...',
       success: () => {
-        toast.success('Category and associated menu items deleted successfully!', {
+        sonnerToast.success('Category and associated menu items deleted successfully!', {
           style: {
             background: '#22c55e',
             color: 'white',
@@ -149,7 +152,7 @@ const CategoriesPage = () => {
         return null;
       },
       error: () => {
-        toast.error('Failed to delete category.', {
+        sonnerToast.error('Failed to delete category.', {
           style: {
             background: '#ef4444',
             color: 'white',

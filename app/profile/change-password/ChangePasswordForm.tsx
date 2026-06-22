@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -74,13 +74,13 @@ const ChangePasswordForm = () => {
         throw new Error(responseBody?.error || 'Failed to update password.');
       }
 
-      toast.success('Password updated successfully!', {
+      sonnerToast.success('Password updated successfully!', {
         style: { backgroundColor: '#22c55e', color: 'white' },
       });
       form.reset();
       router.push('/profile');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update password.', {
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to update password.', {
         style: { backgroundColor: '#ef4444', color: 'white' },
       });
     } finally {

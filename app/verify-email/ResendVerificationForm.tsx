@@ -4,7 +4,7 @@ import * as z from 'zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -55,13 +55,16 @@ const ResendVerificationForm = ({ defaultEmail = '' }: ResendVerificationFormPro
         throw new Error(responseBody?.error || 'Failed to resend verification email.');
       }
 
-      toast.success(responseBody?.message || 'Verification email sent.', {
+      sonnerToast.success(responseBody?.message || 'Verification email sent.', {
         style: { backgroundColor: '#22c55e', color: 'white' },
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to resend verification email.', {
-        style: { backgroundColor: '#ef4444', color: 'white' },
-      });
+      sonnerToast.error(
+        error instanceof Error ? error.message : 'Failed to resend verification email.',
+        {
+          style: { backgroundColor: '#ef4444', color: 'white' },
+        }
+      );
     } finally {
       setIsLoading(false);
     }

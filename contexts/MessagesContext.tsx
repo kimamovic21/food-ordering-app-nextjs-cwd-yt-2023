@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 
 export type MessageSummary = {
   _id: string;
@@ -116,7 +116,7 @@ export const MessagesProvider = ({ children }: MessagesProviderProps) => {
             payload.isIncoming &&
             currentPathRef.current !== '/messages'
           ) {
-            toast('New message received');
+            sonnerToast.info('New message received');
           }
         } catch {
           await refreshMessages();

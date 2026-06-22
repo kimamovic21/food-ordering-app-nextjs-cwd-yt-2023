@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import MenuItem from './MenuItem';
@@ -72,7 +72,7 @@ const HomeMenu = () => {
         setItems(pizzaItems);
       } catch (error) {
         console.error('Error fetching menu items:', error);
-        toast.error('Failed to load menu items.');
+        sonnerToast.error('Failed to load menu items.');
       } finally {
         setLoading(false);
       }

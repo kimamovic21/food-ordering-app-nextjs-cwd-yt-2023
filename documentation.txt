@@ -1075,3 +1075,5 @@ Add delivery and menu availability test coverage
 Add order, loyalty and restaurant test files
 
 Add route coverage and stabilize payment tests
+
+Polish shared toasts, notifications, and user menu

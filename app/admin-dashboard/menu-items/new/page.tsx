@@ -11,7 +11,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import Title from '@/components/shared/Title';
 import useProfile from '@/hooks/useProfile';
 import MenuItemImage from '../MenuItemImage';
@@ -55,7 +55,7 @@ const NewMenuItemPage = () => {
       setCategories(cats);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      toast.error('Failed to load categories');
+      sonnerToast.error('Failed to load categories');
     } finally {
       setIsCategoriesLoading(false);
     }
@@ -101,7 +101,7 @@ const NewMenuItemPage = () => {
     const trimmedName = name.trim();
 
     if (!trimmedName) {
-      toast.error('Add a menu item name first');
+      sonnerToast.error('Add a menu item name first');
       return;
     }
 
@@ -125,7 +125,7 @@ const NewMenuItemPage = () => {
       }
 
       setDescription(json.description.slice(0, AI_MENU_DESCRIPTION_MAX_CHARS));
-      toast.success('Description generated', {
+      sonnerToast.success('Description generated', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -133,7 +133,7 @@ const NewMenuItemPage = () => {
       });
     } catch (error) {
       console.error('Error generating description:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to generate description');
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to generate description');
     } finally {
       setIsDescriptionGenerating(false);
     }
@@ -143,7 +143,7 @@ const NewMenuItemPage = () => {
     e.preventDefault();
 
     if (name.trim() === '' || categoryId.trim() === '') {
-      toast.error('Name and category are required', {
+      sonnerToast.error('Name and category are required', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -158,7 +158,7 @@ const NewMenuItemPage = () => {
       .every((price) => price !== '');
 
     if (!hasEnoughPrices) {
-      toast.error(
+      sonnerToast.error(
         `Please provide ${requiredPriceCount} price${requiredPriceCount > 1 ? 's' : ''}`,
         {
           style: {
@@ -183,7 +183,7 @@ const NewMenuItemPage = () => {
         (priceMedium.trim() && isNaN(m as number)) ||
         (priceLarge.trim() && isNaN(l as number))
       ) {
-        toast.error('All prices must be valid numbers');
+        sonnerToast.error('All prices must be valid numbers');
         setIsSaving(false);
         return;
       }
@@ -191,7 +191,7 @@ const NewMenuItemPage = () => {
       let imageUrl = '';
       if (imageFile) {
         const uploadPromise = uploadImage(imageFile);
-        toast.promise(uploadPromise, {
+        sonnerToast.promise(uploadPromise, {
           loading: 'Uploading image...',
           success: 'Image uploaded!',
           error: 'Image upload failed',
@@ -219,7 +219,7 @@ const NewMenuItemPage = () => {
 
       if (!response.ok) throw new Error('Failed to create menu item');
 
-      toast.success('Menu item created!', {
+      sonnerToast.success('Menu item created!', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -228,7 +228,7 @@ const NewMenuItemPage = () => {
       router.push('/admin-dashboard/menu-items');
     } catch (err) {
       console.error(err);
-      toast.error('Failed to create menu item', {
+      sonnerToast.error('Failed to create menu item', {
         style: {
           background: '#ef4444',
           color: 'white',

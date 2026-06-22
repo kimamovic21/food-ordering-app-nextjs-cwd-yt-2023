@@ -40,7 +40,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import Image from 'next/image';
 import {
   AlertDialog,
@@ -254,7 +254,7 @@ const OrderDetailPage = () => {
         prevOrder ? { ...prevOrder, orderStatus: data.order.orderStatus } : data.order
       );
       setSelectedStatus(data.order.orderStatus);
-      toast.success('Order status updated successfully', {
+      sonnerToast.success('Order status updated successfully', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -274,7 +274,7 @@ const OrderDetailPage = () => {
     // Check if selected courier is still available
     const selectedCourierData = couriers.find((c) => c._id === selectedCourier);
     if (!selectedCourierData || !selectedCourierData.availability) {
-      toast.error('Selected courier is no longer available. Please choose another courier.', {
+      sonnerToast.error('Selected courier is no longer available. Please choose another courier.', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -304,7 +304,7 @@ const OrderDetailPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Failed to assign courier', {
+        sonnerToast.error(data.error || 'Failed to assign courier', {
           style: {
             background: '#ef4444',
             color: 'white',
@@ -323,7 +323,7 @@ const OrderDetailPage = () => {
       setShowCourierSelect(false);
       setSelectedCourier('');
       setShowConfirmModal(false);
-      toast.success('Courier assigned successfully - Order is now in transportation', {
+      sonnerToast.success('Courier assigned successfully - Order is now in transportation', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -336,7 +336,7 @@ const OrderDetailPage = () => {
       }
     } catch (err) {
       console.error(err);
-      toast.error('Failed to assign courier', {
+      sonnerToast.error('Failed to assign courier', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -370,14 +370,14 @@ const OrderDetailPage = () => {
       }
 
       setOrder(data.order);
-      toast.success('Delivery confirmed and order completed', {
+      sonnerToast.success('Delivery confirmed and order completed', {
         style: {
           background: '#22c55e',
           color: 'white',
         },
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to confirm delivery', {
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to confirm delivery', {
         style: {
           background: '#ef4444',
           color: 'white',

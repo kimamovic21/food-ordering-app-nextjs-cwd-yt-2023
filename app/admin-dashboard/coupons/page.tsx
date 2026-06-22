@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Edit3, Plus, TicketPercent, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import useProfile from '@/hooks/useProfile';
@@ -73,7 +73,7 @@ const CouponsPage = () => {
       );
     } catch (error) {
       console.error('Failed to load coupons', error);
-      toast.error('Failed to load coupons', {
+      sonnerToast.error('Failed to load coupons', {
         style: { background: '#ef4444', color: 'white' },
       });
     } finally {
@@ -107,13 +107,13 @@ const CouponsPage = () => {
         throw new Error(json?.error || 'Failed to delete coupon');
       }
 
-      toast.success('Coupon deleted successfully', {
+      sonnerToast.success('Coupon deleted successfully', {
         style: { background: '#22c55e', color: 'white' },
       });
       fetchCoupons(1, false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to delete coupon';
-      toast.error(message, {
+      sonnerToast.error(message, {
         style: { background: '#ef4444', color: 'white' },
       });
     }

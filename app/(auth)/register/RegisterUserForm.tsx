@@ -6,7 +6,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import {
   Form,
   FormControl,
@@ -70,7 +70,7 @@ const RegisterUserForm = () => {
       form.reset();
 
       if (responseBody?.verificationRequired) {
-        toast.success('Check your inbox to verify your email address.', {
+        sonnerToast.success('Check your inbox to verify your email address.', {
           style: { backgroundColor: '#22c55e', color: 'white' },
         });
         setTimeout(() => {
@@ -79,7 +79,7 @@ const RegisterUserForm = () => {
         return;
       }
 
-      toast.success('User created successfully! Please login.', {
+      sonnerToast.success('User created successfully! Please login.', {
         style: { backgroundColor: '#22c55e', color: 'white' },
       });
 
@@ -88,7 +88,7 @@ const RegisterUserForm = () => {
       }, 1500);
     } catch (err) {
       console.error(err);
-      toast.error('Registration failed. Please try again.');
+      sonnerToast.error('Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

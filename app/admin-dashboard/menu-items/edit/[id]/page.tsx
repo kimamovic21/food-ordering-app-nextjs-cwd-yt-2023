@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useRouter, useParams } from 'next/navigation';
 import { Form } from '@/components/ui/form';
 import {
@@ -62,7 +62,7 @@ const EditMenuItemPage = () => {
 
         // Check if the current user is the owner of this menu item
         if (data?._id && item.adminId && item.adminId !== data._id) {
-          toast.error('You are not authorized to edit this menu item', {
+          sonnerToast.error('You are not authorized to edit this menu item', {
             style: {
               background: '#ef4444',
               color: 'white',
@@ -96,7 +96,7 @@ const EditMenuItemPage = () => {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to load menu item');
+      sonnerToast.error('Failed to load menu item');
     } finally {
       setIsDataLoading(false);
     }
@@ -149,7 +149,7 @@ const EditMenuItemPage = () => {
     const trimmedName = name.trim();
 
     if (!trimmedName) {
-      toast.error('Add a menu item name first');
+      sonnerToast.error('Add a menu item name first');
       return;
     }
 
@@ -173,7 +173,7 @@ const EditMenuItemPage = () => {
       }
 
       setDescription(json.description.slice(0, AI_MENU_DESCRIPTION_MAX_CHARS));
-      toast.success('Description generated', {
+      sonnerToast.success('Description generated', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -181,7 +181,7 @@ const EditMenuItemPage = () => {
       });
     } catch (error) {
       console.error('Error generating description:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to generate description');
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to generate description');
     } finally {
       setIsDescriptionGenerating(false);
     }
@@ -191,7 +191,7 @@ const EditMenuItemPage = () => {
     e.preventDefault();
 
     if (name.trim() === '' || categoryId.trim() === '') {
-      toast.error('Name and category are required', {
+      sonnerToast.error('Name and category are required', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -206,7 +206,7 @@ const EditMenuItemPage = () => {
       .every((price) => price !== '');
 
     if (!hasEnoughPrices) {
-      toast.error(
+      sonnerToast.error(
         `Please provide ${requiredPriceCount} price${requiredPriceCount > 1 ? 's' : ''}`,
         {
           style: {
@@ -231,7 +231,7 @@ const EditMenuItemPage = () => {
         (priceMedium.trim() && isNaN(m as number)) ||
         (priceLarge.trim() && isNaN(l as number))
       ) {
-        toast.error('All prices must be valid numbers', {
+        sonnerToast.error('All prices must be valid numbers', {
           style: {
             background: '#ef4444',
             color: 'white',
@@ -244,7 +244,7 @@ const EditMenuItemPage = () => {
       let imageUrl = image;
       if (imageFile) {
         const uploadPromise = uploadImage(imageFile);
-        toast.promise(uploadPromise, {
+        sonnerToast.promise(uploadPromise, {
           loading: 'Uploading image...',
           success: 'Image uploaded!',
           error: 'Image upload failed',
@@ -272,7 +272,7 @@ const EditMenuItemPage = () => {
 
       if (!response.ok) throw new Error('Failed to update menu item');
 
-      toast.success('Menu item updated!', {
+      sonnerToast.success('Menu item updated!', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -281,7 +281,7 @@ const EditMenuItemPage = () => {
       router.push('/admin-dashboard/menu-items');
     } catch (err) {
       console.error(err);
-      toast.error('Failed to update menu item', {
+      sonnerToast.error('Failed to update menu item', {
         style: {
           background: '#ef4444',
           color: 'white',

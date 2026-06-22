@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Breadcrumb,
@@ -66,14 +66,14 @@ const EditRestaurantPage = () => {
       }
 
       if (!data.restaurant) {
-        toast.error('Restaurant not found');
+        sonnerToast.error('Restaurant not found');
         router.push('/admin-dashboard/restaurant');
         return;
       }
 
       // Verify that the restaurant ID matches
       if (data.restaurant._id !== restaurantId) {
-        toast.error('You can only edit your own restaurant');
+        sonnerToast.error('You can only edit your own restaurant');
         router.push('/admin-dashboard/restaurant');
         return;
       }
@@ -81,7 +81,7 @@ const EditRestaurantPage = () => {
       setRestaurant(data.restaurant);
     } catch (error) {
       console.error('Error fetching restaurant:', error);
-      toast.error('Failed to load restaurant data');
+      sonnerToast.error('Failed to load restaurant data');
       router.push('/admin-dashboard/restaurant');
     } finally {
       setLoading(false);

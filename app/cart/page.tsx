@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, type ChangeEvent } from 'react';
 import { useSession } from 'next-auth/react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -387,7 +387,7 @@ const CartPage = () => {
         setAppliedCoupon(null);
         setCouponMessage(null);
         setCouponError(message);
-        toast.error(message, {
+        sonnerToast.error(message, {
           style: { background: '#ef4444', color: 'white' },
         });
         return;
@@ -397,7 +397,7 @@ const CartPage = () => {
       setCouponCode(json.coupon.code || couponCode);
       setCouponError(null);
       setCouponMessage(json.message || 'Coupon applied successfully.');
-      toast.success('Coupon applied!', {
+      sonnerToast.success('Coupon applied!', {
         style: { background: '#22c55e', color: 'white' },
       });
     } catch (error) {
@@ -406,7 +406,7 @@ const CartPage = () => {
       setAppliedCoupon(null);
       setCouponMessage(null);
       setCouponError(message);
-      toast.error(message, {
+      sonnerToast.error(message, {
         style: { background: '#ef4444', color: 'white' },
       });
     } finally {
@@ -423,21 +423,21 @@ const CartPage = () => {
 
     try {
       if (!isLoggedIn) {
-        toast.error('Please sign in to proceed to checkout.');
+        sonnerToast.error('Please sign in to proceed to checkout.');
         return;
       }
       if (cartItems.length === 0) {
-        toast.error('Your cart is empty.');
+        sonnerToast.error('Your cart is empty.');
         return;
       }
 
       if (loadingMenuAvailability) {
-        toast.error('Please wait while we check menu availability.');
+        sonnerToast.error('Please wait while we check menu availability.');
         return;
       }
 
       if (unavailableItemIds.length > 0) {
-        toast.error('Remove unavailable items before checkout.', {
+        sonnerToast.error('Remove unavailable items before checkout.', {
           style: {
             background: '#ef4444',
             color: 'white',
@@ -448,14 +448,14 @@ const CartPage = () => {
 
       // Check if cart has items from multiple restaurants
       if (hasMultipleRestaurants()) {
-        toast.error('You must have items only from one restaurant.');
+        sonnerToast.error('You must have items only from one restaurant.');
         return;
       }
 
       // Check if the restaurant is open
       if (!isRestaurantOpen()) {
         const restaurantName = getRestaurantName();
-        toast.error(
+        sonnerToast.error(
           `${restaurantName} you want to order from is not working at the moment. Please remove items and try ordering from another restaurant.`
         );
         return;
@@ -463,7 +463,7 @@ const CartPage = () => {
 
       const missingField = Object.entries(formData).find(([, value]) => !value);
       if (missingField) {
-        toast.error('Please complete your delivery details.', {
+        sonnerToast.error('Please complete your delivery details.', {
           style: {
             background: '#ef4444', // Tailwind red-500
             color: 'white',
@@ -473,13 +473,13 @@ const CartPage = () => {
         return;
       }
       if (!profileData?.email) {
-        toast.error('We could not find your email. Please re-login.');
+        sonnerToast.error('We could not find your email. Please re-login.');
         return;
       }
 
       const couponToSend = couponValidationError ? '' : appliedCoupon?.code || '';
 
-      await toast.promise(
+      await sonnerToast.promise(
         (async () => {
           const response = await fetch('/api/checkout', {
             method: 'POST',

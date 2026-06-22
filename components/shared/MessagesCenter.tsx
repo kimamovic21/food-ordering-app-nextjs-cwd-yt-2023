@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import {
   ArrowLeft,
   Edit3,
@@ -488,7 +488,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
 
     const recipientUserId = getContactId(selectedThread.contact);
     if (!recipientUserId) {
-      toast.error('Missing message recipient');
+      sonnerToast.error('Missing message recipient');
       return;
     }
 
@@ -538,7 +538,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
       console.error(sendError);
       setOptimisticMessages((prev) => prev.filter((message) => message._id !== tempId));
       setDraft(body);
-      toast.error(sendError instanceof Error ? sendError.message : 'Failed to send message');
+      sonnerToast.error(sendError instanceof Error ? sendError.message : 'Failed to send message');
     } finally {
       setSending(false);
     }
@@ -572,7 +572,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
       await loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch });
     } catch (deleteError) {
       console.error(deleteError);
-      toast.error('Failed to delete message');
+      sonnerToast.error('Failed to delete message');
     }
   };
 
@@ -607,7 +607,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
       await loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch });
     } catch (editError) {
       console.error(editError);
-      toast.error('Failed to edit message');
+      sonnerToast.error('Failed to edit message');
     }
   };
 
@@ -636,7 +636,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
       router.push('/messages');
     } catch (hideError) {
       console.error(hideError);
-      toast.error('Failed to hide conversation');
+      sonnerToast.error('Failed to hide conversation');
     }
   };
 

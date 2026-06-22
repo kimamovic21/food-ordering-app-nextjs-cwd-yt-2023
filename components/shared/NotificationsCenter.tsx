@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Bell, Clock3, Check } from 'lucide-react';
@@ -38,63 +38,70 @@ const NotificationsCenter = ({
   role,
 }: NotificationsCenterProps) => {
   const router = useRouter();
-  const { markAsRead } = useNotifications();
+  const { markAsRead, markAllAsRead } = useNotifications();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const ITEMS_PER_PAGE = 5;
 
-  const fetchNotifications = async (showLoading = true, appendMode = false) => {
-    try {
-      if (showLoading) {
-        setLoading(true);
-      } else if (appendMode) {
-        setLoadingMore(true);
-      } else {
-        setRefreshing(true);
+  const fetchNotifications = useCallback(
+    async (showLoading = true, appendMode = false, skip = 0) => {
+      try {
+        if (showLoading) {
+          setLoading(true);
+        } else if (appendMode) {
+          setLoadingMore(true);
+        } else {
+          setRefreshing(true);
+        }
+
+        const skipValue = appendMode ? skip : 0;
+        const response = await fetch(
+          `/api/notifications?limit=${ITEMS_PER_PAGE}&skip=${skipValue}`,
+          {
+            cache: 'no-store',
+          }
+        );
+        if (!response.ok) {
+          throw new Error('Failed to load notifications');
+        }
+
+        const json = await response.json();
+        const newNotifications = Array.isArray(json.notifications) ? json.notifications : [];
+
+        if (appendMode) {
+          // Append new notifications to existing ones
+          setNotifications((prev) => [...prev, ...newNotifications]);
+          setOffset((prev) => prev + newNotifications.length);
+        } else {
+          // Replace all notifications (initial load or refresh)
+          setNotifications(newNotifications);
+          setOffset(newNotifications.length);
+        }
+
+        // Determine if there are more notifications to load
+        setHasMore(newNotifications.length === ITEMS_PER_PAGE);
+        setError(null);
+      } catch (fetchError) {
+        console.error(fetchError);
+        setError('Failed to load notifications');
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
       }
-
-      const skipValue = appendMode ? offset : 0;
-      const response = await fetch(`/api/notifications?limit=${ITEMS_PER_PAGE}&skip=${skipValue}`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to load notifications');
-      }
-
-      const json = await response.json();
-      const newNotifications = Array.isArray(json.notifications) ? json.notifications : [];
-
-      if (appendMode) {
-        // Append new notifications to existing ones
-        setNotifications((prev) => [...prev, ...newNotifications]);
-        setOffset((prev) => prev + newNotifications.length);
-      } else {
-        // Replace all notifications (initial load or refresh)
-        setNotifications(newNotifications);
-        setOffset(newNotifications.length);
-      }
-
-      // Determine if there are more notifications to load
-      setHasMore(newNotifications.length === ITEMS_PER_PAGE);
-      setError(null);
-    } catch (fetchError) {
-      console.error(fetchError);
-      setError('Failed to load notifications');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
-    }
-  };
+    },
+    []
+  );
 
   useEffect(() => {
     fetchNotifications(true, false);
-  }, []);
+  }, [fetchNotifications]);
 
   const handleNotificationClick = async (notification: AppNotification) => {
     if (!notification.isRead) {
@@ -126,6 +133,27 @@ const NotificationsCenter = ({
   };
 
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
+
+  const handleMarkAllAsRead = async () => {
+    if (unreadCount === 0 || markingAllRead) {
+      return;
+    }
+
+    try {
+      setMarkingAllRead(true);
+      const readAt = new Date().toISOString();
+      setNotifications((prev) =>
+        prev.map((notification) => ({
+          ...notification,
+          isRead: true,
+          readAt: notification.readAt || readAt,
+        }))
+      );
+      await markAllAsRead();
+    } finally {
+      setMarkingAllRead(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -174,6 +202,15 @@ const NotificationsCenter = ({
         </div>
 
         <div className='flex items-center gap-3'>
+          <Button
+            variant='outline'
+            onClick={handleMarkAllAsRead}
+            disabled={unreadCount === 0 || markingAllRead}
+            className='rounded-full'
+          >
+            {markingAllRead ? 'Marking all as read...' : 'Mark all as read'}
+          </Button>
+
           <Button
             variant='outline'
             onClick={() => fetchNotifications(false)}
@@ -293,7 +330,7 @@ const NotificationsCenter = ({
             {hasMore && (
               <div className='flex justify-center mt-8'>
                 <Button
-                  onClick={() => fetchNotifications(false, true)}
+                  onClick={() => fetchNotifications(false, true, offset)}
                   disabled={loadingMore}
                   variant='outline'
                   className='rounded-full px-8'

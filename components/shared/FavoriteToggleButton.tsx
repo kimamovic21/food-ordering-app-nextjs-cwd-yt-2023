@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Heart } from 'lucide-react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Button } from '@/components/ui/button';
 
 type FavoriteType = 'menu-item' | 'restaurant';
@@ -47,7 +47,7 @@ const FavoriteToggleButton = ({
 
   const handleToggle = async () => {
     if (status !== 'authenticated') {
-      toast.error('Please login to save favorites');
+      sonnerToast.error('Please login to save favorites');
       return;
     }
 
@@ -77,7 +77,7 @@ const FavoriteToggleButton = ({
       setLocalValue(nextIsFavorite);
       onChanged?.(nextIsFavorite);
 
-      toast.success(
+      sonnerToast.success(
         nextIsFavorite
           ? `Added to favorite ${labelByType[type]}s`
           : `Removed from favorite ${labelByType[type]}s`,
@@ -89,7 +89,7 @@ const FavoriteToggleButton = ({
         }
       );
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update favorites', {
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to update favorites', {
         style: {
           background: '#ef4444',
           color: 'white',

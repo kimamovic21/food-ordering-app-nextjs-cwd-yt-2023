@@ -11,7 +11,7 @@ import {
   TwitterShareButton,
 } from 'react-share';
 import { Copy } from 'lucide-react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 
 interface ShareActionsProps {
   url: string;
@@ -42,9 +42,9 @@ const ShareActions = ({
         document.body.removeChild(textarea);
       }
 
-      toast.success('Link copied to clipboard');
+      sonnerToast.success('Link copied to clipboard');
     } catch {
-      toast.error('Unable to copy link');
+      sonnerToast.error('Unable to copy link');
     }
   };
 

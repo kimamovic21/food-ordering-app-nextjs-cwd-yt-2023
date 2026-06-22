@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -28,7 +28,7 @@ const ManualLocationSimulator: React.FC<ManualLocationSimulatorProps> = ({
     const parsedLongitude = Number(longitude.trim());
 
     if (Number.isNaN(parsedLatitude) || Number.isNaN(parsedLongitude)) {
-      toast.error('Latitude and longitude must be valid numbers', {
+      sonnerToast.error('Latitude and longitude must be valid numbers', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -43,7 +43,7 @@ const ManualLocationSimulator: React.FC<ManualLocationSimulatorProps> = ({
       parsedLongitude < -180 ||
       parsedLongitude > 180
     ) {
-      toast.error('Coordinates are out of range', {
+      sonnerToast.error('Coordinates are out of range', {
         style: {
           background: '#ef4444',
           color: 'white',

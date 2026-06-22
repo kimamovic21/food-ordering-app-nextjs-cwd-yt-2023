@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Clock, Globe, Mail, MapPin, Phone, ShoppingCart } from 'lucide-react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -205,7 +205,7 @@ const MenuItemDetailPage = () => {
     }
 
     if (!isAvailable) {
-      toast.error(`${item.name} is currently unavailable`);
+      sonnerToast.error(`${item.name} is currently unavailable`);
       return;
     }
 
@@ -219,7 +219,7 @@ const MenuItemDetailPage = () => {
       (currentUserRestaurantId && currentUserRestaurantId === itemRestaurantId) ||
       (currentUserId && itemAdminId && currentUserId === itemAdminId)
     ) {
-      toast.error('You cannot order from your own restaurant', {
+      sonnerToast.error('You cannot order from your own restaurant', {
         style: {
           background: '#dc2626',
           color: 'white',
@@ -229,7 +229,7 @@ const MenuItemDetailPage = () => {
     }
 
     if (cartRestaurantId && cartRestaurantId !== itemRestaurantId) {
-      toast.error('Your cart contains items from another restaurant', {
+      sonnerToast.error('Your cart contains items from another restaurant', {
         description: 'Clear your cart to add items from a different restaurant',
         duration: 4000,
       });
@@ -248,7 +248,7 @@ const MenuItemDetailPage = () => {
       restaurantId: itemRestaurantId,
     });
 
-    toast.success(
+    sonnerToast.success(
       availableSizes.length === 1
         ? `${item.name} added to cart!`
         : `${item.name} (${effectiveSelectedSize}) added to cart!`,

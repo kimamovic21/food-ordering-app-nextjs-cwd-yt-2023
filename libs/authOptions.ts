@@ -9,6 +9,10 @@ import { isSkipVerifyEmail } from '@/libs/authEmails';
 
 // Use a dedicated database for NextAuth to avoid collection conflicts
 const mongoAdapter = MongoDBAdapter(mongoClientPromise, { databaseName: 'next-auth' });
+const DEFAULT_PROFILE_IMAGE = '/user-default-image.webp';
+
+const isRealProfileImage = (image?: string | null) =>
+  Boolean(image && image.trim() && image !== DEFAULT_PROFILE_IMAGE);
 
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -19,6 +23,14 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        };
+      },
     }),
     CredentialsProvider({
       name: 'Credentials',
@@ -77,6 +89,11 @@ export const authOptions = {
 
     async session({ session, token }: { session: any; token: any }) {
       if (!session?.user?.email) return session;
+      const googleProfileImage =
+        (isRealProfileImage(token?.picture) && token.picture) ||
+        (isRealProfileImage(token?.image) && token.image) ||
+        (isRealProfileImage(session.user.image) && session.user.image) ||
+        '';
 
       // First, copy role from token if available
       if (token?.role) {
@@ -89,8 +106,15 @@ export const authOptions = {
         let userInDb = await User.findOne({ email: session.user.email });
 
         if (userInDb) {
+          const dbProfileImage = isRealProfileImage(userInDb.image) ? userInDb.image : '';
+          const resolvedProfileImage = dbProfileImage || googleProfileImage || '';
+
+          if (!dbProfileImage && googleProfileImage) {
+            await User.updateOne({ _id: userInDb._id }, { $set: { image: googleProfileImage } });
+          }
+
           session.user.name = userInDb.name;
-          session.user.image = userInDb.image;
+          session.user.image = resolvedProfileImage;
           session.user.provider = userInDb.provider || 'credentials';
           session.user.phone = userInDb.phone || '';
           session.user.streetAddress = userInDb.streetAddress || '';
@@ -107,7 +131,7 @@ export const authOptions = {
             userInDb = await User.create({
               name: session.user.name || 'User',
               email: session.user.email,
-              image: session.user.image || '',
+              image: googleProfileImage || session.user.image || '',
               provider: 'oauth',
               phone: '',
               streetAddress: '',
@@ -140,10 +164,22 @@ export const authOptions = {
       return session;
     },
 
-    async jwt({ token, user }: { token: any; user?: any }) {
+    async jwt({ token, user, profile }: { token: any; user?: any; profile?: any }) {
+      const googleProfileImage =
+        (isRealProfileImage(profile?.picture) && profile.picture) ||
+        (isRealProfileImage((profile as any)?.image) && (profile as any).image) ||
+        (isRealProfileImage(token?.picture) && token.picture) ||
+        (isRealProfileImage(token?.image) && token.image) ||
+        '';
+
       if (user) {
         token.id = (user as any)._id;
         token.email = (user as any).email;
+        token.image =
+          (isRealProfileImage((user as any).image) && (user as any).image) ||
+          googleProfileImage ||
+          '';
+        token.picture = token.image;
         token.provider = (user as any).provider || 'credentials';
         token.phone = (user as any).phone || '';
         token.streetAddress = (user as any).streetAddress || '';

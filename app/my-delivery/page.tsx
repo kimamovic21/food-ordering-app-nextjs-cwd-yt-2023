@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import type { OrderMapHandle } from '@/components/shared/OrderMap';
 import dynamic from 'next/dynamic';
 import useProfile from '@/hooks/useProfile';
@@ -124,7 +124,7 @@ const CourierPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Failed to complete order', {
+        sonnerToast.error(data.error || 'Failed to complete order', {
           style: {
             background: '#ef4444',
             color: 'white',
@@ -134,7 +134,7 @@ const CourierPage = () => {
       }
 
       setOrders(orders.filter((o) => o._id !== orderId));
-      toast.success('Delivery handoff recorded. Awaiting confirmation.', {
+      sonnerToast.success('Delivery handoff recorded. Awaiting confirmation.', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -142,7 +142,7 @@ const CourierPage = () => {
       });
     } catch (err) {
       console.error(err);
-      toast.error('Failed to complete order', {
+      sonnerToast.error('Failed to complete order', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -164,7 +164,7 @@ const CourierPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Failed to toggle availability', {
+        sonnerToast.error(data.error || 'Failed to toggle availability', {
           style: {
             background: '#ef4444',
             color: 'white',
@@ -174,7 +174,7 @@ const CourierPage = () => {
       }
 
       setAvailability(data.availability);
-      toast.success(data.message, {
+      sonnerToast.success(data.message, {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -182,7 +182,7 @@ const CourierPage = () => {
       });
     } catch (err) {
       console.error(err);
-      toast.error('Failed to toggle availability', {
+      sonnerToast.error('Failed to toggle availability', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -195,7 +195,7 @@ const CourierPage = () => {
 
   const handleShareLocation = async () => {
     if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by your browser', {
+      sonnerToast.error('Geolocation is not supported by your browser', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -220,7 +220,7 @@ const CourierPage = () => {
             const data = await res.json();
 
             if (!res.ok) {
-              toast.error(data.error || 'Failed to update location', {
+              sonnerToast.error(data.error || 'Failed to update location', {
                 style: {
                   background: '#ef4444',
                   color: 'white',
@@ -231,7 +231,7 @@ const CourierPage = () => {
             }
 
             setLocationShared(true);
-            toast.success('Location shared successfully', {
+            sonnerToast.success('Location shared successfully', {
               style: {
                 background: '#22c55e',
                 color: 'white',
@@ -251,7 +251,7 @@ const CourierPage = () => {
             }, 2000);
           } catch (err) {
             console.error(err);
-            toast.error('Failed to update location', {
+            sonnerToast.error('Failed to update location', {
               style: {
                 background: '#ef4444',
                 color: 'white',
@@ -266,28 +266,28 @@ const CourierPage = () => {
           setSharingLocation(false);
 
           if (error.code === error.PERMISSION_DENIED) {
-            toast.error('Location permission denied. Please enable location access.', {
+            sonnerToast.error('Location permission denied. Please enable location access.', {
               style: {
                 background: '#ef4444',
                 color: 'white',
               },
             });
           } else if (error.code === error.POSITION_UNAVAILABLE) {
-            toast.error('Location information is unavailable.', {
+            sonnerToast.error('Location information is unavailable.', {
               style: {
                 background: '#ef4444',
                 color: 'white',
               },
             });
           } else if (error.code === error.TIMEOUT) {
-            toast.error('Location request timed out.', {
+            sonnerToast.error('Location request timed out.', {
               style: {
                 background: '#ef4444',
                 color: 'white',
               },
             });
           } else {
-            toast.error('Failed to get your location', {
+            sonnerToast.error('Failed to get your location', {
               style: {
                 background: '#ef4444',
                 color: 'white',
@@ -299,7 +299,7 @@ const CourierPage = () => {
       );
     } catch (err) {
       console.error(err);
-      toast.error('Failed to share location', {
+      sonnerToast.error('Failed to share location', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -322,7 +322,7 @@ const CourierPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Failed to update manual location', {
+        sonnerToast.error(data.error || 'Failed to update manual location', {
           style: {
             background: '#ef4444',
             color: 'white',
@@ -332,7 +332,7 @@ const CourierPage = () => {
       }
 
       setLocationShared(true);
-      toast.success('Manual location updated', {
+      sonnerToast.success('Manual location updated', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -354,7 +354,7 @@ const CourierPage = () => {
       }
     } catch (err) {
       console.error(err);
-      toast.error('Failed to update manual location', {
+      sonnerToast.error('Failed to update manual location', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -369,7 +369,7 @@ const CourierPage = () => {
     setLocationPollingEnabled((prev) => {
       const nextPollingEnabled = !prev;
 
-      toast.success(nextPollingEnabled ? 'Enabled data polling' : 'Disabled data polling', {
+      sonnerToast.success(nextPollingEnabled ? 'Enabled data polling' : 'Disabled data polling', {
         position: 'top-center',
         style: {
           background: '#22c55e',

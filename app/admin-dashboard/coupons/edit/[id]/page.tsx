@@ -11,7 +11,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import CouponForm, { type CouponFormSubmitValues } from '../../CouponForm';
@@ -64,7 +64,7 @@ const EditCouponPage = () => {
         setCoupon(json.coupon);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to load coupon';
-        toast.error(message, {
+        sonnerToast.error(message, {
           style: { background: '#ef4444', color: 'white' },
         });
         router.push('/admin-dashboard/coupons');
@@ -92,13 +92,13 @@ const EditCouponPage = () => {
         throw new Error(json?.error || 'Failed to update coupon');
       }
 
-      toast.success('Coupon updated successfully', {
+      sonnerToast.success('Coupon updated successfully', {
         style: { background: '#22c55e', color: 'white' },
       });
       router.push('/admin-dashboard/coupons');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update coupon';
-      toast.error(message, {
+      sonnerToast.error(message, {
         style: { background: '#ef4444', color: 'white' },
       });
       throw new Error(message);

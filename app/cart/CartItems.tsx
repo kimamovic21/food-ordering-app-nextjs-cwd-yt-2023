@@ -1,7 +1,7 @@
 'use client';
 
 import { FaPlus, FaMinus, FaTrash } from 'react-icons/fa';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
 
@@ -33,13 +33,7 @@ const CartItems: React.FC<CartItemsProps> = ({
 
   // Helper to show toast
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    toast(message, {
-      style: {
-        background: type === 'success' ? '#22c55e' : '#ef4444', // green or red
-        color: 'white',
-      },
-      duration: 2000,
-    });
+    sonnerToast[type](message, { duration: 2000 });
   };
 
   // Wrap updateQuantity to show toast

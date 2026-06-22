@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { MapPin, Plus, Minus, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import dynamic from 'next/dynamic';
@@ -223,11 +223,11 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by your browser');
+      sonnerToast.error('Geolocation is not supported by your browser');
       return;
     }
 
-    toast.loading('Getting your location...');
+    sonnerToast.loading('Getting your location...');
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -236,8 +236,8 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         }));
-        toast.dismiss();
-        toast.success('Location updated successfully', {
+        sonnerToast.dismiss();
+        sonnerToast.success('Location updated successfully', {
           style: {
             backgroundColor: 'rgb(22 163 74)',
             color: '#fff',
@@ -246,8 +246,8 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
         });
       },
       (error) => {
-        toast.dismiss();
-        toast.error('Failed to get location: ' + error.message);
+        sonnerToast.dismiss();
+        sonnerToast.error('Failed to get location: ' + error.message);
       }
     );
   };
@@ -281,14 +281,14 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
 
   const addBlockedDate = () => {
     if (!newBlockedDate.date || !newBlockedDate.reason) {
-      toast.error('Please fill in both date and reason');
+      sonnerToast.error('Please fill in both date and reason');
       return;
     }
 
     const normalizedDate = toIsoDate(newBlockedDate.date);
 
     if (!normalizedDate) {
-      toast.error('Please enter a valid date');
+      sonnerToast.error('Please enter a valid date');
       return;
     }
 
@@ -303,7 +303,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
       };
     });
     setNewBlockedDate({ date: '', reason: '' });
-    toast.success('Blocked date added');
+    sonnerToast.success('Blocked date added');
   };
 
   const removeBlockedDate = (index: number) => {
@@ -315,52 +315,54 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
 
   const validateForm = () => {
     if (!formData.name.trim()) {
-      toast.error('Restaurant name is required');
+      sonnerToast.error('Restaurant name is required');
       return false;
     }
     if (!formData.street.trim()) {
-      toast.error('Street address is required');
+      sonnerToast.error('Street address is required');
       return false;
     }
     if (!formData.city.trim()) {
-      toast.error('City is required');
+      sonnerToast.error('City is required');
       return false;
     }
     if (!formData.postalCode.trim()) {
-      toast.error('Postal code is required');
+      sonnerToast.error('Postal code is required');
       return false;
     }
     if (!formData.country.trim()) {
-      toast.error('Country is required');
+      sonnerToast.error('Country is required');
       return false;
     }
     if (!formData.latitude || !formData.longitude) {
-      toast.error('Location coordinates are required. Please use "Get Current Location" button');
+      sonnerToast.error(
+        'Location coordinates are required. Please use "Get Current Location" button'
+      );
       return false;
     }
     if (!formData.contact.trim()) {
-      toast.error('Contact number is required');
+      sonnerToast.error('Contact number is required');
       return false;
     }
     if (!formData.email.trim()) {
-      toast.error('Email is required');
+      sonnerToast.error('Email is required');
       return false;
     }
     if (!formData.description.trim()) {
-      toast.error('Description is required');
+      sonnerToast.error('Description is required');
       return false;
     }
     if (formData.description.length < 20 || formData.description.length > 200) {
-      toast.error('Description must be between 20 and 200 characters');
+      sonnerToast.error('Description must be between 20 and 200 characters');
       return false;
     }
     // Check images validation
     if (!imageItems || imageItems.length === 0) {
-      toast.error('At least one restaurant image is required');
+      sonnerToast.error('At least one restaurant image is required');
       return false;
     }
     if (imageItems.length > 5) {
-      toast.error('Maximum 5 images allowed');
+      sonnerToast.error('Maximum 5 images allowed');
       return false;
     }
     return true;
@@ -382,8 +384,8 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
 
       const isCreating = !isEdit;
       creatingToastId = isCreating
-        ? toast.loading('Creating restaurant please wait...')
-        : toast.loading('Updating restaurant please wait...');
+        ? sonnerToast.loading('Creating restaurant please wait...')
+        : sonnerToast.loading('Updating restaurant please wait...');
 
       // Step 1: Upload new files to Cloudinary
       const uploadedUrls: string[] = [];
@@ -471,7 +473,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
       }
 
       if (creatingToastId) {
-        toast.success(
+        sonnerToast.success(
           isCreating ? 'Restaurant created successfully' : 'Restaurant updated successfully',
           {
             id: creatingToastId,
@@ -488,10 +490,10 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
       router.push('/admin-dashboard/restaurant');
     } catch (error: any) {
       console.error('Error submitting form:', error);
-      toast.error(error.message || `Failed to ${isEdit ? 'update' : 'create'} restaurant`);
+      sonnerToast.error(error.message || `Failed to ${isEdit ? 'update' : 'create'} restaurant`);
     } finally {
       if (creatingToastId && shouldDismissToast) {
-        toast.dismiss(creatingToastId);
+        sonnerToast.dismiss(creatingToastId);
       }
       setLoading(false);
       setIsSavingImage(false);

@@ -24,7 +24,7 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import { MapPin, Phone, Mail, Globe, Users, Clock, DollarSign, Edit, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import RestaurantStatistics from './RestaurantStatistics';
@@ -101,7 +101,7 @@ const RestaurantPage = () => {
       setRestaurant(data.restaurant);
     } catch (error) {
       console.error('Error fetching restaurant:', error);
-      toast.error('Failed to load restaurant data');
+      sonnerToast.error('Failed to load restaurant data');
     } finally {
       setLoading(false);
     }
@@ -114,7 +114,7 @@ const RestaurantPage = () => {
 
     try {
       setIsDeleting(true);
-      deletingToastId = toast.loading('Deleting restaurant please wait...');
+      deletingToastId = sonnerToast.loading('Deleting restaurant please wait...');
       const response = await fetch(`/api/restaurant?id=${restaurant._id}`, {
         method: 'DELETE',
       });
@@ -126,22 +126,22 @@ const RestaurantPage = () => {
       }
 
       if (deletingToastId) {
-        toast.success('Restaurant deleted successfully', { id: deletingToastId });
+        sonnerToast.success('Restaurant deleted successfully', { id: deletingToastId });
       } else {
-        toast.success('Restaurant deleted successfully');
+        sonnerToast.success('Restaurant deleted successfully');
       }
       setRestaurant(null);
       setIsDeleteDialogOpen(false);
     } catch (error: any) {
       console.error('Error deleting restaurant:', error);
       if (deletingToastId) {
-        toast.error(error.message || 'Failed to delete restaurant', { id: deletingToastId });
+        sonnerToast.error(error.message || 'Failed to delete restaurant', { id: deletingToastId });
       } else {
-        toast.error(error.message || 'Failed to delete restaurant');
+        sonnerToast.error(error.message || 'Failed to delete restaurant');
       }
     } finally {
       if (deletingToastId) {
-        toast.dismiss(deletingToastId);
+        sonnerToast.dismiss(deletingToastId);
       }
       setIsDeleting(false);
     }

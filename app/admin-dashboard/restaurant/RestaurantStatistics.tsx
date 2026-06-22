@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, ShoppingCart, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 
 interface Statistics {
   totalUniqueUsers: number;
@@ -31,7 +31,7 @@ const RestaurantStatistics = () => {
         setStatistics(data.statistics);
       } catch (error) {
         console.error('Error fetching statistics:', error);
-        toast.error('Failed to load statistics');
+        sonnerToast.error('Failed to load statistics');
         // Set default values
         setStatistics({
           totalUniqueUsers: 0,

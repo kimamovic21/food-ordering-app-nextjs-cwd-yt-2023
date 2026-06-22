@@ -7,7 +7,7 @@ import useProfile from '@/hooks/useProfile';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import Image from 'next/image';
 import Link from 'next/link';
 import Pizza from '@/public/pizza.png';
@@ -103,7 +103,7 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
     }
 
     if (!isAvailable) {
-      toast.error(`${displayItem.name} is currently unavailable`);
+      sonnerToast.error(`${displayItem.name} is currently unavailable`);
       return;
     }
 
@@ -117,7 +117,7 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
       (currentUserRestaurantId && currentUserRestaurantId === itemRestaurantId) ||
       (currentUserId && itemAdminId && currentUserId === itemAdminId)
     ) {
-      toast.error('You cannot order from your own restaurant', {
+      sonnerToast.error('You cannot order from your own restaurant', {
         style: {
           background: '#dc2626',
           color: 'white',
@@ -127,7 +127,7 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
     }
 
     if (cartRestaurantId && cartRestaurantId !== itemRestaurantId) {
-      toast.error('Your cart contains items from another restaurant', {
+      sonnerToast.error('Your cart contains items from another restaurant', {
         description: 'Clear your cart to add items from a different restaurant',
         duration: 4000,
       });
@@ -149,7 +149,7 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
       restaurantId: itemRestaurantId,
     });
 
-    toast.success(
+    sonnerToast.success(
       availableSizes.length === 1
         ? `${displayItem.name} added to cart!`
         : `${displayItem.name} (${effectiveSelectedSize}) added to cart!`,

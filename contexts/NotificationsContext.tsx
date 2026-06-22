@@ -25,6 +25,7 @@ type NotificationsContextValue = {
   loading: boolean;
   refreshNotifications: () => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
 };
 
 const NotificationsContext = createContext<NotificationsContextValue | undefined>(undefined);
@@ -129,6 +130,33 @@ export const NotificationsProvider = ({ children }: NotificationsProviderProps) 
     [updateReadState]
   );
 
+  const markAllAsRead = useCallback(async () => {
+    const readAt = new Date().toISOString();
+
+    setNotifications((prev) =>
+      prev.map((notification) => ({
+        ...notification,
+        isRead: true,
+        readAt: notification.readAt || readAt,
+      }))
+    );
+    setUnreadCount(0);
+
+    const response = await fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mark-all-read' }),
+    });
+
+    if (!response.ok) {
+      await refreshNotifications();
+      return;
+    }
+
+    const json = await response.json();
+    setUnreadCount(Number(json.unreadCount) || 0);
+  }, [refreshNotifications]);
+
   const value = useMemo(
     () => ({
       notifications,
@@ -136,8 +164,9 @@ export const NotificationsProvider = ({ children }: NotificationsProviderProps) 
       loading,
       refreshNotifications,
       markAsRead,
+      markAllAsRead,
     }),
-    [notifications, unreadCount, loading, refreshNotifications, markAsRead]
+    [notifications, unreadCount, loading, refreshNotifications, markAsRead, markAllAsRead]
   );
 
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;

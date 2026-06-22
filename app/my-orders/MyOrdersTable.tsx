@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import Link from 'next/link';
 
 type OrderType = {
@@ -113,14 +113,14 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
 
       onOrderUpdated?.(data.order);
       setCancelOrderId(null);
-      toast.success('Order canceled', {
+      sonnerToast.success('Order canceled', {
         style: {
           background: '#22c55e',
           color: 'white',
         },
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to cancel order', {
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to cancel order', {
         style: {
           background: '#ef4444',
           color: 'white',

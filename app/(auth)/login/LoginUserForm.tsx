@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import GoogleButton from 'react-google-button';
 import Link from 'next/link';
 import InputPasswordEyeOnly from './InputPasswordEyeOnly';
@@ -58,7 +58,7 @@ const LoginUserForm = () => {
 
       if (result?.error) {
         if (result.error === 'EMAIL_NOT_VERIFIED') {
-          toast.error('Please verify your email address before signing in.', {
+          sonnerToast.error('Please verify your email address before signing in.', {
             style: { backgroundColor: '#ef4444', color: 'white' },
           });
           router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
@@ -74,7 +74,7 @@ const LoginUserForm = () => {
         const accountStatus = await accountStatusResponse.json().catch(() => null);
 
         if (accountStatus?.found && accountStatus?.provider === 'oauth') {
-          toast.error('This account uses Google sign-in. Use the Google button instead.', {
+          sonnerToast.error('This account uses Google sign-in. Use the Google button instead.', {
             style: { backgroundColor: '#ef4444', color: 'white' },
           });
           return;
@@ -85,26 +85,26 @@ const LoginUserForm = () => {
           accountStatus?.provider === 'credentials' &&
           !accountStatus?.emailVerified
         ) {
-          toast.error('Please verify your email address before signing in.', {
+          sonnerToast.error('Please verify your email address before signing in.', {
             style: { backgroundColor: '#ef4444', color: 'white' },
           });
           router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
           return;
         }
 
-        toast.error('Invalid email or password.', {
+        sonnerToast.error('Invalid email or password.', {
           style: { backgroundColor: '#ef4444', color: 'white' },
         });
         return;
       }
 
-      toast.success('Welcome back!', {
+      sonnerToast.success('Welcome back!', {
         style: { backgroundColor: '#22c55e', color: 'white' },
       });
       router.push(result?.url || '/');
     } catch (err) {
       console.error(err);
-      toast.error('Login failed. Please try again.');
+      sonnerToast.error('Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

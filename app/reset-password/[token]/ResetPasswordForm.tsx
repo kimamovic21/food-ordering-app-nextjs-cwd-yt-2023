@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -71,13 +71,13 @@ const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
         throw new Error(responseBody?.error || 'Failed to reset password.');
       }
 
-      toast.success(responseBody?.message || 'Password reset successfully.', {
+      sonnerToast.success(responseBody?.message || 'Password reset successfully.', {
         style: { backgroundColor: '#22c55e', color: 'white' },
       });
       form.reset();
       router.push('/login');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to reset password.', {
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to reset password.', {
         style: { backgroundColor: '#ef4444', color: 'white' },
       });
     } finally {

@@ -5,7 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
 import { IoCartOutline } from 'react-icons/io5';
-import { toast } from 'sonner';
+import { LogOut, User } from 'lucide-react';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
 import {
   MenuLinkSkeleton,
@@ -16,15 +17,24 @@ import {
   MyDeliveryLinkSkeleton,
   ModeToggleSkeleton,
   CartIconSkeleton,
-  UserNameSkeleton,
-  LogoutButtonSkeleton,
 } from './HeaderSkeletons';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import useProfile from '@/hooks/useProfile';
 import ModeToggle from '../theme/ModeToggle';
 import NotificationBell from './NotificationBell';
 import MessageBell from './MessageBell';
+
+const DEFAULT_PROFILE_IMAGE = '/user-default-image.webp';
 
 const Header = () => {
   const session = useSession();
@@ -35,7 +45,12 @@ const Header = () => {
 
   const status = session.status;
   const userData = session?.data?.user;
-  let userName = userData?.name || userData?.email;
+  const displayName = profileData?.name || userData?.name || userData?.email || 'My account';
+  const savedProfileImage =
+    profileData?.image && profileData.image !== DEFAULT_PROFILE_IMAGE ? profileData.image : null;
+  const profileImage = savedProfileImage || userData?.image || DEFAULT_PROFILE_IMAGE;
+  const userInitial = displayName.trim().charAt(0).toUpperCase() || 'U';
+  let userName = displayName;
 
   if (userName && userName?.includes(' ')) {
     userName = userName.split(' ')[0];
@@ -80,7 +95,7 @@ const Header = () => {
     if (status === 'authenticated') {
       const hasShownToast = sessionStorage.getItem('loginToastShown');
       if (!hasShownToast) {
-        toast.success('Successfully logged in', {
+        sonnerToast.success('Successfully logged in', {
           style: { backgroundColor: '#22c55e', color: 'white' },
         });
         sessionStorage.setItem('loginToastShown', 'true');
@@ -99,7 +114,7 @@ const Header = () => {
     Boolean(pathname && /^\/restaurants\/[^/]+(?:\/reviews)?$/.test(pathname));
 
   const handleLogout = async () => {
-    toast.success('Successfully logged out', {
+    sonnerToast.success('Successfully logged out', {
       style: { backgroundColor: '#22c55e', color: 'white' },
     });
     await signOut({ redirect: false });
@@ -209,8 +224,7 @@ const Header = () => {
             <>
               <ModeToggleSkeleton />
               <CartIconSkeleton />
-              <UserNameSkeleton />
-              <LogoutButtonSkeleton />
+              <CartIconSkeleton />
             </>
           ) : (
             <>
@@ -238,19 +252,48 @@ const Header = () => {
               </Link>
 
               {status === 'authenticated' && (
-                <>
-                  <Link className='whitespace-nowrap' href={'/profile'}>
-                    {userName}
-                  </Link>
-                  <Button
-                    onClick={handleLogout}
-                    variant='outline'
-                    size='default'
-                    className='rounded-full'
-                  >
-                    Logout
-                  </Button>
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      data-slot='button'
+                      type='button'
+                      aria-label='Open account menu'
+                      className='relative inline-flex size-10 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent p-0 transition hover:opacity-85 focus-visible:outline-none'
+                    >
+                      <Avatar className='size-9'>
+                        <AvatarImage src={profileImage} alt={`${displayName}'s avatar`} />
+                        <AvatarFallback>{userInitial}</AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align='end' className='w-56'>
+                    <DropdownMenuLabel className='min-w-0'>
+                      <span className='block truncate'>{displayName}</span>
+                      {userData?.email && userData.email !== displayName && (
+                        <span className='block truncate text-xs font-normal text-muted-foreground'>
+                          {userData.email}
+                        </span>
+                      )}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href='/profile' className='cursor-pointer'>
+                        <User className='size-4' />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      variant='destructive'
+                      className='cursor-pointer'
+                    >
+                      <LogOut className='size-4' />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
 
               {status === 'unauthenticated' && (

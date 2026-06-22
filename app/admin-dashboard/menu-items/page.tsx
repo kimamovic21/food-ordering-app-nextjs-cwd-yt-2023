@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import MenuItems from './MenuItems';
@@ -83,7 +83,7 @@ const MenuItemsListPage = () => {
       setCategories(cats);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to load data', {
+      sonnerToast.error('Failed to load data', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -126,7 +126,7 @@ const MenuItemsListPage = () => {
 
       if (!res.ok) throw new Error('Delete failed');
 
-      toast.success('Menu item deleted', {
+      sonnerToast.success('Menu item deleted', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -135,7 +135,7 @@ const MenuItemsListPage = () => {
       fetchData();
     } catch (err) {
       console.error(err);
-      toast.error('Failed to delete menu item', {
+      sonnerToast.error('Failed to delete menu item', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -163,7 +163,7 @@ const MenuItemsListPage = () => {
         throw new Error(json?.error || 'Failed to update availability');
       }
 
-      toast.success(isAvailable ? 'Menu item is available' : 'Menu item marked unavailable', {
+      sonnerToast.success(isAvailable ? 'Menu item is available' : 'Menu item marked unavailable', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -172,7 +172,7 @@ const MenuItemsListPage = () => {
     } catch (err) {
       console.error(err);
       setMenuItems(previousItems);
-      toast.error(err instanceof Error ? err.message : 'Failed to update availability', {
+      sonnerToast.error(err instanceof Error ? err.message : 'Failed to update availability', {
         style: {
           background: '#ef4444',
           color: 'white',

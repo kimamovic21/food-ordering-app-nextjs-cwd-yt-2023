@@ -63,17 +63,13 @@ describe('/api/notifications route', () => {
 
     const notificationFind = vi.mocked((await import('@/models/notification')).Notification.find);
     notificationFind.mockReturnValueOnce({
-      sort: vi
-        .fn()
-        .mockReturnValue({
-          skip: vi
+      sort: vi.fn().mockReturnValue({
+        skip: vi.fn().mockReturnValue({
+          limit: vi
             .fn()
-            .mockReturnValue({
-              limit: vi
-                .fn()
-                .mockReturnValue({ lean: vi.fn().mockResolvedValue([{ _id: 'n1', title: 'A' }]) }),
-            }),
+            .mockReturnValue({ lean: vi.fn().mockResolvedValue([{ _id: 'n1', title: 'A' }]) }),
         }),
+      }),
     } as never);
     vi.mocked(
       (await import('@/models/notification')).Notification.countDocuments
@@ -119,5 +115,46 @@ describe('/api/notifications route', () => {
 
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
+  });
+
+  it('marks all notifications as read for current user', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'user@example.com' },
+    } as never);
+
+    const userFindOne = vi.mocked((await import('@/models/user')).User.findOne);
+    userFindOne.mockReturnValueOnce({
+      select: vi
+        .fn()
+        .mockReturnValue({ lean: vi.fn().mockResolvedValue({ _id: 'user-1', role: 'user' }) }),
+    } as never);
+
+    const notificationModel = (await import('@/models/notification')).Notification;
+    const updateMany = vi.mocked(notificationModel.updateMany);
+
+    updateMany.mockResolvedValueOnce({ modifiedCount: 3 } as never);
+    vi.mocked(notificationModel.countDocuments).mockResolvedValueOnce(0 as never);
+
+    const { PATCH } = await loadRoute();
+    const res = await PATCH(
+      new Request('http://localhost/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mark-all-read' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ success: true, unreadCount: 0 });
+    expect(updateMany).toHaveBeenCalledWith(
+      { recipientUserId: 'user-1', isRead: false },
+      {
+        $set: {
+          isRead: true,
+          readAt: expect.any(Date),
+        },
+      }
+    );
   });
 });

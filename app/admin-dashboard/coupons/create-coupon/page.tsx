@@ -11,7 +11,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import CouponForm, { type CouponFormSubmitValues } from '../CouponForm';
@@ -42,13 +42,13 @@ const CreateCouponPage = () => {
         throw new Error(json?.error || 'Failed to create coupon');
       }
 
-      toast.success('Coupon created successfully', {
+      sonnerToast.success('Coupon created successfully', {
         style: { background: '#22c55e', color: 'white' },
       });
       router.push('/admin-dashboard/coupons');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create coupon';
-      toast.error(message, {
+      sonnerToast.error(message, {
         style: { background: '#ef4444', color: 'white' },
       });
       throw new Error(message);

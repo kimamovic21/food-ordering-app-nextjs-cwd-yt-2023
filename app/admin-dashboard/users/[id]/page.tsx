@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { toast } from 'sonner';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -98,7 +98,7 @@ const UserDetailsPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Failed to make courier', {
+        sonnerToast.error(data.error || 'Failed to make courier', {
           style: {
             background: '#ef4444',
             color: 'white',
@@ -108,7 +108,7 @@ const UserDetailsPage = () => {
       }
 
       setUser({ ...user, role: 'courier' });
-      toast.success('User has been promoted to courier', {
+      sonnerToast.success('User has been promoted to courier', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -116,7 +116,7 @@ const UserDetailsPage = () => {
       });
     } catch (err) {
       console.error(err);
-      toast.error('Failed to make courier', {
+      sonnerToast.error('Failed to make courier', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -141,7 +141,7 @@ const UserDetailsPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Failed to remove courier', {
+        sonnerToast.error(data.error || 'Failed to remove courier', {
           style: {
             background: '#ef4444',
             color: 'white',
@@ -151,7 +151,7 @@ const UserDetailsPage = () => {
       }
 
       setUser({ ...user, role: 'user' });
-      toast.success('User courier role has been removed', {
+      sonnerToast.success('User courier role has been removed', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -159,7 +159,7 @@ const UserDetailsPage = () => {
       });
     } catch (err) {
       console.error(err);
-      toast.error('Failed to remove courier', {
+      sonnerToast.error('Failed to remove courier', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -184,7 +184,7 @@ const UserDetailsPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Failed to make admin', {
+        sonnerToast.error(data.error || 'Failed to make admin', {
           style: {
             background: '#ef4444',
             color: 'white',
@@ -194,7 +194,7 @@ const UserDetailsPage = () => {
       }
 
       setUser({ ...user, role: 'admin' });
-      toast.success('User has been promoted to admin', {
+      sonnerToast.success('User has been promoted to admin', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -202,7 +202,7 @@ const UserDetailsPage = () => {
       });
     } catch (err) {
       console.error(err);
-      toast.error('Failed to make admin', {
+      sonnerToast.error('Failed to make admin', {
         style: {
           background: '#ef4444',
           color: 'white',
@@ -227,7 +227,7 @@ const UserDetailsPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Failed to remove admin', {
+        sonnerToast.error(data.error || 'Failed to remove admin', {
           style: {
             background: '#ef4444',
             color: 'white',
@@ -237,7 +237,7 @@ const UserDetailsPage = () => {
       }
 
       setUser({ ...user, role: 'user' });
-      toast.success('User admin role has been removed', {
+      sonnerToast.success('User admin role has been removed', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -245,7 +245,7 @@ const UserDetailsPage = () => {
       });
     } catch (err) {
       console.error(err);
-      toast.error('Failed to remove admin', {
+      sonnerToast.error('Failed to remove admin', {
         style: {
           background: '#ef4444',
           color: 'white',
