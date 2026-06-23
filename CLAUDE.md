@@ -15,6 +15,7 @@ This file provides guidance for AI assistance in this repository.
 - AI: OpenAI SDK for server-side menu description generation
 - Sharing: react-share
 - Messaging: approved app-native threads with realtime unread badges and per-user message visibility
+- Order operations: restaurant capacity limits, preparation/delivery estimates, delivery PIN handoff, customer/admin delivery confirmation, and support tickets
 
 ## Goals for AI Assistance
 
@@ -32,6 +33,9 @@ This file provides guidance for AI assistance in this repository.
 - Avoid breaking changes to API response shapes.
 - Preserve role-based access checks (admin/courier/user).
 - Preserve message access rules: no customer-to-customer chat, and order conversations must match the assigned courier or restaurant owner.
+- Preserve checkout capacity checks before Stripe session creation.
+- Preserve delivery double confirmation: courier PIN handoff first, then customer or restaurant admin completion.
+- Keep support tickets role-scoped between restaurant support and app support.
 - Keep payment and webhook flows idempotent.
 - Keep receipt email generation in server code.
 
@@ -102,6 +106,7 @@ Keep these in sync with example.env and usage in code:
 - NEXT_PUBLIC_SUPER_ADMIN_EMAIL
 - RESEND_API_KEY
 - SENDER_EMAIL
+- SKIP_VERIFY_EMAIL
 - OPEN_AI_API_KEY
 
 Optional server-side override used in auth flow:

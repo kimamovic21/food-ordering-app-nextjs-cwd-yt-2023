@@ -1,0 +1,317 @@
+# Application Description
+
+This document describes what the app does from the point of view of each role and how the major business rules work.
+
+## Short Summary
+
+The project is a food ordering platform where customers browse restaurants and menu items, place orders through Stripe Checkout, track delivery, confirm receipt, review restaurants/couriers, report problems, and message approved contacts. Restaurant admins manage their restaurant, menu, orders, couriers, support tickets, and statistics. Couriers manage availability, delivery tasks, live location sharing, delivery PIN handoff, and delivery history. Super admin manages global platform data and elevated user actions.
+
+## User Roles
+
+### Customer
+
+Customers are normal users who order food.
+
+They can:
+
+- Register, verify email when credentials verification is enabled, and sign in with credentials or Google OAuth.
+- Edit profile details such as name, phone, delivery address, and avatar.
+- Browse restaurants and menu items.
+- Filter, search, sort, and paginate public restaurant/menu views.
+- Add menu items to cart when they are available.
+- Use coupons and loyalty discounts when eligible.
+- Checkout through Stripe.
+- View order history and order details.
+- Track order progress and live courier location when delivery starts.
+- See delivery PIN on active delivery orders.
+- Confirm final delivery after courier handoff.
+- Cancel unpaid orders while they are still in `placed` status.
+- Favorite restaurants and menu items.
+- Review restaurants and couriers after completed paid orders.
+- Report a problem for an order.
+- Use approved message threads.
+
+Important customer rules:
+
+- Customers cannot order from their own restaurant.
+- Customers cannot checkout again while a previous delivered order still needs their confirmation.
+- Customers cannot add unavailable menu items to cart or checkout with them.
+- Customers can only message contacts allowed by their order flow.
+
+## Admin / Restaurant Owner
+
+Admins usually represent restaurant owners. An admin can own one restaurant and manage its operational workflow.
+
+They can:
+
+- Create, edit, and delete their restaurant.
+- Upload restaurant images.
+- Configure restaurant location, working hours, blocked dates, tax, courier fee, staff count, preparation estimate, delivery estimate, and active order limit.
+- Create, edit, delete, and search menu items.
+- Mark menu items as available or unavailable.
+- Use the AI menu description helper when creating or editing menu items.
+- Create and manage restaurant coupons.
+- View restaurant orders.
+- Move paid orders from `placed` to `processing` to `ready`.
+- Assign available couriers to ready orders.
+- View customer delivery location.
+- View order time breakdown and estimated timing.
+- Finalize delivery when a courier has recorded handoff but the customer does not confirm.
+- View restaurant review feedback.
+- Manage restaurant support tickets.
+- Message approved users and couriers.
+- Receive notifications for orders, cancellations, paid orders, delivery updates, and support tickets.
+
+Important admin rules:
+
+- Admins cannot update unpaid order status.
+- Admins cannot mark an order as delivered. The courier must do that with the delivery PIN.
+- Admins can finalize completion only after the order is in `delivered` status.
+- Restaurant support tickets are scoped to the admin's restaurant.
+- Active order limit blocks checkout when the restaurant has too many paid active kitchen orders.
+
+## Super Admin
+
+Super admin is an admin account whose email matches `NEXT_PUBLIC_SUPER_ADMIN_EMAIL` in the UI and optionally `SUPER_ADMIN_EMAIL` on the server.
+
+Super admin can:
+
+- Manage global categories.
+- Manage users.
+- Grant and remove admin roles.
+- Grant and remove courier roles.
+- View global statistics.
+- View courier management screens.
+- Receive and manage app-support tickets.
+- Access elevated admin views protected from normal restaurant admins.
+
+Important super admin rules:
+
+- Super admin actions must stay role-protected.
+- App-support tickets should route to super admin rather than a restaurant owner.
+- Server-side checks should use `SUPER_ADMIN_EMAIL` where available, with `NEXT_PUBLIC_SUPER_ADMIN_EMAIL` for UI checks.
+
+## Courier
+
+Couriers deliver orders assigned by restaurant admins.
+
+They can:
+
+- View courier dashboard pages.
+- Toggle availability.
+- Receive assigned delivery notifications.
+- View active delivery details.
+- Share live location.
+- Simulate/manual update location in development/testing flows.
+- View delivery map and customer address.
+- Enter the customer's delivery PIN to record handoff.
+- View completed delivery history.
+- View courier reviews and ratings.
+- Report delivery problems.
+- Message approved admins.
+
+Important courier rules:
+
+- Couriers can only mark assigned orders as delivered.
+- Courier handoff requires the customer-visible delivery PIN.
+- Courier delivery does not immediately complete the order. Customer or restaurant admin confirmation completes it.
+- Couriers cannot take multiple active orders when `takenOrder` is already set.
+
+## Restaurant And Menu Logic
+
+Restaurants store:
+
+- owner
+- address and coordinates
+- contact details
+- image gallery
+- working hours
+- blocked dates
+- tax percentage
+- courier fee
+- average preparation minutes
+- average delivery minutes
+- active order limit
+- total employees
+
+Menu items store:
+
+- restaurant/admin ownership
+- name, category, description, image
+- prices by size
+- availability state
+
+Availability logic:
+
+- Admins can mark a menu item unavailable when ingredients are missing or the item is temporarily sold out.
+- Public menu cards show availability badges.
+- Unavailable items cannot be added to cart.
+- Checkout validates availability again on the server.
+
+Busy restaurant logic:
+
+- Each restaurant has `activeOrderLimit`.
+- Checkout counts paid active kitchen orders in `placed`, `processing`, and `ready`.
+- When the count reaches the limit, checkout is blocked before Stripe session creation.
+- Cart shows a warning and disables checkout when the restaurant detail API reports `isBusy`.
+
+## Cart And Checkout Logic
+
+The cart is client-side state managed by `CartContext`.
+
+Checkout server rules:
+
+- User must be authenticated.
+- Delivery details must be present.
+- Cart must contain valid items.
+- Cart must contain items from one restaurant only.
+- Restaurant must exist.
+- User cannot order from their own restaurant.
+- Previous delivered orders must be confirmed before starting another checkout.
+- Menu items must still be available.
+- Coupon must belong to the restaurant and satisfy date/minimum rules.
+- Loyalty discount is recalculated server-side.
+- Restaurant active kitchen capacity must not be full.
+- Order is created as unpaid before redirecting to Stripe.
+- Stripe webhook later marks payment complete.
+
+## Order Status Logic
+
+Order statuses:
+
+- `placed`: order exists, waiting for payment or restaurant action.
+- `processing`: kitchen started preparing it.
+- `ready`: kitchen finished; order is ready for courier assignment.
+- `transportation`: courier is assigned and delivery is in progress.
+- `delivered`: courier entered delivery PIN and recorded handoff.
+- `completed`: customer or admin confirmed final delivery.
+- `canceled`: unpaid order was canceled before preparation.
+
+Timeline fields are stored on the order so the UI can show exact phase durations:
+
+- `processingAt`
+- `readyAt`
+- `transportationAt`
+- `courierDeliveredAt`
+- `customerConfirmedDeliveryAt`
+- `adminConfirmedDeliveryAt`
+- `completedAt`
+- `canceledAt`
+
+## Delivery Confirmation Logic
+
+Delivery is intentionally double-verified.
+
+Flow:
+
+1. Admin marks paid order as ready.
+2. Admin assigns a courier.
+3. Order becomes `transportation`.
+4. Customer sees delivery PIN.
+5. Courier arrives and asks for PIN.
+6. Courier enters PIN and marks order as `delivered`.
+7. Customer confirms receipt and order becomes `completed`.
+8. If customer does not confirm, restaurant admin can finalize it.
+
+This prevents a courier from fully completing an order alone.
+
+## Support Ticket Logic
+
+Support tickets are created when users or couriers report a problem.
+
+Ticket targets:
+
+- `restaurant_support`: visible to the restaurant owner for the related restaurant.
+- `app_support`: visible to super admin.
+
+Ticket statuses:
+
+- `open`
+- `in_review`
+- `resolved`
+- `closed`
+
+Admins can:
+
+- view tickets
+- filter by status
+- add response notes
+- mark in review
+- resolve
+- close
+- open the related order
+- message the reporter
+
+## Messaging Logic
+
+The app has an approved internal messaging system.
+
+Rules:
+
+- No customer-to-customer chat.
+- Customers can message only approved order contacts.
+- Couriers can message admins.
+- Admins have broader staff/customer messaging access.
+- Messages support delivery/seen state, editing, and per-user hiding/deletion behavior.
+- Server-sent events and polling keep unread state fresh.
+
+## Notifications Logic
+
+Notifications are stored per recipient and surfaced in the header/notification center.
+
+Notification examples:
+
+- order placed
+- order paid
+- order status changed
+- courier assigned
+- delivery awaiting confirmation
+- order completed
+- order canceled
+- support ticket created
+
+Notification routing depends on role and metadata. For example, a support ticket notification routes an admin to `/admin-dashboard/support-tickets`.
+
+## Review And Loyalty Logic
+
+Reviews:
+
+- Customers can review restaurants after completed paid orders.
+- Customers can review couriers after completed paid delivery orders.
+- Review pages aggregate public feedback and ratings.
+
+Loyalty:
+
+- Completed orders count toward loyalty status.
+- Loyalty discount is recalculated server-side during checkout.
+- The discount applies to the food subtotal according to the loyalty tier.
+
+## Admin Statistics
+
+Statistics pages summarize operational data for admins and super admin.
+
+Examples:
+
+- order totals
+- completed/unsuccessful orders
+- user counts
+- restaurant statistics
+
+## External Services
+
+- Stripe: checkout sessions, payment links, webhook payment confirmation.
+- Cloudinary: uploaded user, restaurant, and menu images.
+- Resend + React Email: verification, reset, and receipt emails.
+- Google OAuth: social login through NextAuth.
+- OpenAI: server-side menu description generation.
+- Leaflet: map rendering and courier tracking UI.
+
+## Is This Good Practice?
+
+Yes. Keeping `ARCHITECTURE.md` and `DESCRIPTION.md` is a good practice for this kind of project because:
+
+- new contributors understand the system faster
+- AI tools have better project context
+- business rules are less likely to be accidentally removed
+- diagrams explain workflows better than code alone
+- the README can stay shorter while detailed docs live separately

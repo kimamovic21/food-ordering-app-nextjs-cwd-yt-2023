@@ -9,6 +9,7 @@
 - Email: Resend + React Email
 - Images: Cloudinary
 - Mapping: Leaflet + React Leaflet
+- Order operations: restaurant busy limits, preparation/delivery estimates, delivery PIN handoff, customer/admin completion, and support tickets
 
 ## Implementation Rules
 
@@ -21,6 +22,9 @@
 
 - Secrets must remain server-side.
 - Treat auth, payments, and courier flows as sensitive paths.
+- Keep checkout capacity checks in place before Stripe sessions are created.
+- Keep delivery completion double-confirmed with courier PIN handoff followed by customer/admin finalization.
+- Keep support tickets scoped between restaurant support and app support.
 - Keep webhook and async job processing idempotent.
 - Never perform destructive DB changes without explicit approval.
 

@@ -8,6 +8,7 @@
 - NextAuth auth flows (`libs/authOptions.ts`, `app/api/auth/**`)
 - Stripe payments (`app/api/checkout/**`, `app/api/payment-link/**`, `app/api/webhook/**`)
 - Resend email integration (`libs/sendPurchaseReceiptEmail.tsx`)
+- Order operations: restaurant busy limits, preparation/delivery estimates, delivery PIN handoff, customer/admin completion, and support tickets
 
 ## Coding Expectations
 
@@ -20,6 +21,9 @@
 
 - Never leak server secrets into client bundles.
 - Keep role checks intact for admin, courier, and user routes.
+- Keep checkout capacity checks in place before Stripe sessions are created.
+- Keep delivery completion double-confirmed with courier PIN handoff followed by customer/admin finalization.
+- Keep support tickets scoped between restaurant support and app support.
 - Keep webhook logic idempotent and safe on retries.
 - Ask before schema-level changes or backfills that may impact production data.
 

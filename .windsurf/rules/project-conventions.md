@@ -19,6 +19,9 @@ description: Project rules for this Next.js food ordering app. Use when editing 
 - Keep Stripe, Cloudinary, and Resend credentials in server-side code only.
 - Validate API inputs and keep response shapes stable unless a change is requested.
 - Preserve role checks for admin, courier, and user flows.
+- Preserve checkout capacity checks before Stripe session creation.
+- Preserve delivery double confirmation with courier PIN handoff followed by customer/admin completion.
+- Keep support tickets scoped between restaurant support and app support.
 - Keep Stripe webhook handling idempotent.
 
 ## Code Areas To Treat Carefully
@@ -27,6 +30,7 @@ description: Project rules for this Next.js food ordering app. Use when editing 
 - Payments: app/api/checkout, app/api/payment-link, app/api/webhook
 - Email: libs/sendPurchaseReceiptEmail.tsx and components/resend
 - Courier: app/my-delivery, app/my-deliveries, app/api/my-delivery, app/api/my-deliveries
+- Order operations: app/api/orders, app/api/support-tickets, components/shared/OrderPhaseTimeline.tsx
 
 ## Validation And Documentation
 

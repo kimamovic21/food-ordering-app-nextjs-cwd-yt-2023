@@ -16,9 +16,10 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 
 ## High-Level Features
 
-- Customer flows: auth, profile, menu browsing, cart/checkout, favorites, loyalty, reviews, approved messaging.
-- Admin dashboard: users, categories, menu items, restaurants, orders, couriers, statistics, and AI-assisted menu descriptions.
-- Courier flows: assignment, availability toggle, live location sharing, and tracked delivery maps.
+- Customer flows: auth, profile, menu browsing, cart/checkout, favorites, loyalty, reviews, approved messaging, order timelines, delivery confirmation, and support tickets.
+- Admin dashboard: users, categories, menu items, restaurants, orders, couriers, support tickets, statistics, and AI-assisted menu descriptions.
+- Courier flows: assignment, availability toggle, live location sharing, delivery PIN handoff, problem reporting, and tracked delivery maps.
+- Restaurant operations: menu item availability, preparation/delivery estimates, and active order limit checks that can temporarily block checkout when the kitchen is busy.
 
 ## Local Setup
 
@@ -43,6 +44,7 @@ See `example.env`. Variables currently used in the project include:
 - `SUPER_ADMIN_EMAIL` (optional server-side override)
 - `RESEND_API_KEY`, `SENDER_EMAIL`
 - `OPEN_AI_API_KEY` (server-side OpenAI key for AI menu descriptions)
+- `SKIP_VERIFY_EMAIL` (optional credentials-auth verification toggle)
 
 ## Code Layout
 
@@ -66,6 +68,9 @@ See `example.env`. Variables currently used in the project include:
 - Keep secrets in server-side code only (Stripe, Cloudinary, Resend, OpenAI keys).
 - Avoid breaking API response shapes unless explicitly requested.
 - Messaging should remain role-restricted: no customer-to-customer chat, and order threads must match the assigned courier or restaurant owner.
+- Checkout must preserve restaurant capacity checks: compare paid active kitchen orders against the restaurant `activeOrderLimit` before creating Stripe sessions.
+- Delivery completion is double-confirmed: courier records handoff with the delivery PIN, then customer or restaurant admin finalizes completion.
+- Support tickets should remain role-scoped: restaurant owners handle their restaurant reports, while app-support tickets route to the super admin.
 
 ## AI Configuration Folders
 
