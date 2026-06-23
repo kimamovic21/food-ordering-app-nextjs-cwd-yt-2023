@@ -51,6 +51,10 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
     typeof body.averageDeliveryMinutes === 'number'
       ? body.averageDeliveryMinutes
       : Number(body.averageDeliveryMinutes) || 20;
+  const activeOrderLimit =
+    typeof body.activeOrderLimit === 'number'
+      ? body.activeOrderLimit
+      : Number(body.activeOrderLimit) || 10;
   const totalEmployees =
     typeof body.totalEmployees === 'number'
       ? body.totalEmployees
@@ -83,6 +87,7 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
     courierFee: Math.max(0, courierFee),
     averagePreparationMinutes: Math.min(240, Math.max(0, averagePreparationMinutes)),
     averageDeliveryMinutes: Math.min(240, Math.max(0, averageDeliveryMinutes)),
+    activeOrderLimit: Math.min(100, Math.max(1, activeOrderLimit)),
     workingHours: Array.isArray(body.workingHours) ? body.workingHours : [],
     blockedDates: normalizeBlockedDates(body.blockedDates),
     totalEmployees: Math.max(1, totalEmployees),
@@ -217,6 +222,7 @@ export async function POST(req: NextRequest) {
       courierFee: payload.courierFee,
       averagePreparationMinutes: payload.averagePreparationMinutes,
       averageDeliveryMinutes: payload.averageDeliveryMinutes,
+      activeOrderLimit: payload.activeOrderLimit,
       workingHours: payload.workingHours,
       blockedDates: payload.blockedDates,
       totalEmployees: payload.totalEmployees,

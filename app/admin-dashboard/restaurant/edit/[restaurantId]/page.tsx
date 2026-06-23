@@ -44,6 +44,7 @@ interface Restaurant {
   courierFee: number;
   averagePreparationMinutes: number;
   averageDeliveryMinutes: number;
+  activeOrderLimit: number;
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;

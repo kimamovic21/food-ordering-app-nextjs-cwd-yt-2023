@@ -262,6 +262,26 @@ describe('POST /api/checkout', () => {
     expect(stripeCreateSession).not.toHaveBeenCalled();
   });
 
+  it('rejects checkout when restaurant active kitchen orders reached the limit', async () => {
+    vi.mocked(Restaurant.findById).mockResolvedValueOnce({
+      _id: 'restaurant-1',
+      tax: 10,
+      courierFee: 5,
+      activeOrderLimit: 10,
+    } as never);
+    vi.mocked(Order.countDocuments).mockResolvedValueOnce(10 as never);
+
+    const POST = await loadCheckoutRoute();
+    const response = await POST(createCheckoutRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toEqual({
+      error: 'This restaurant is very busy at the moment. Please wait a little bit and try again.',
+    });
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
   it('rejects checkout when coupon validation fails', async () => {
     vi.mocked(Coupon.findOne).mockResolvedValueOnce({
       _id: 'coupon-1',

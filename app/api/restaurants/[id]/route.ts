@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { getRestaurantRatingSummaries } from '@/libs/reviewSummary';
+import { Order } from '@/models/order';
 import { Restaurant } from '@/models/restaurant';
 
 type WorkingHour = {
@@ -76,7 +77,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
     const restaurant = await Restaurant.findById(id)
       .select(
-        'name street city postalCode country latitude longitude contact email webAddress description images workingHours blockedDates tax courierFee totalEmployees createdAt updatedAt'
+        'name street city postalCode country latitude longitude contact email webAddress description images workingHours blockedDates tax courierFee averagePreparationMinutes averageDeliveryMinutes activeOrderLimit totalEmployees createdAt updatedAt'
       )
       .lean();
 
@@ -91,12 +92,24 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     );
     const ratingMap = await getRestaurantRatingSummaries([restaurant._id]);
     const rating = ratingMap.get(String(restaurant._id));
+    const activeOrderLimit = Math.min(
+      100,
+      Math.max(1, Number((restaurant as any).activeOrderLimit) || 10)
+    );
+    const activeKitchenOrders = await Order.countDocuments({
+      restaurantId: restaurant._id,
+      orderStatus: { $in: ['placed', 'processing', 'ready'] },
+      $or: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
+    });
 
     return NextResponse.json(
       {
         restaurant: {
           ...restaurant,
           isOpen,
+          activeOrderLimit,
+          activeKitchenOrders,
+          isBusy: activeKitchenOrders >= activeOrderLimit,
           averageRating: rating?.averageRating ?? 0,
           ratingCount: rating?.ratingCount ?? 0,
         },

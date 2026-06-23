@@ -73,6 +73,13 @@ const RestaurantSchema = new Schema(
       min: 0,
       max: 240,
     },
+    activeOrderLimit: {
+      type: Number,
+      required: true,
+      default: 10,
+      min: 1,
+      max: 100,
+    },
     workingHours: {
       type: [WorkingHoursSchema],
       required: true,

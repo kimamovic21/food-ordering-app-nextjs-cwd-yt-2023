@@ -340,6 +340,11 @@ const CartPage = () => {
     return restaurant?.name || 'The restaurant';
   };
 
+  const isRestaurantBusy = () => {
+    const restaurant = getCartRestaurant();
+    return Boolean(restaurant?.isBusy);
+  };
+
   const subtotal = getTotalPrice();
   const couponValidationError = appliedCoupon
     ? getCouponValidationError({ coupon: appliedCoupon, subtotal })
@@ -461,6 +466,13 @@ const CartPage = () => {
         return;
       }
 
+      if (isRestaurantBusy()) {
+        sonnerToast.error(
+          `${getRestaurantName()} is very busy at the moment. Please wait a little bit and try again.`
+        );
+        return;
+      }
+
       const missingField = Object.entries(formData).find(([, value]) => !value);
       if (missingField) {
         sonnerToast.error('Please complete your delivery details.', {
@@ -540,6 +552,7 @@ const CartPage = () => {
   const { includedTax, taxPercentage, totalDeliveryFee } = calculateTotals();
   const multipleRestaurants = hasMultipleRestaurants();
   const restaurantOpen = isRestaurantOpen();
+  const restaurantBusy = isRestaurantBusy();
   const restaurantName = getRestaurantName();
   const displayedCouponMessage = couponValidationError || couponMessage;
   const unavailableCartItems = cartItems.filter((item) => unavailableItemIds.includes(item._id));
@@ -564,6 +577,14 @@ const CartPage = () => {
           <p className='text-orange-800 dark:text-orange-200 font-semibold'>
             {restaurantName} you want to order from is not working at the moment. Please remove
             items from this restaurant and try ordering from another restaurant.
+          </p>
+        </div>
+      )}
+
+      {!multipleRestaurants && restaurantOpen && restaurantBusy && (
+        <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
+          <p className='font-semibold text-amber-800 dark:text-amber-200'>
+            {restaurantName} is very busy at the moment. Please wait a little bit and try again.
           </p>
         </div>
       )}
@@ -614,6 +635,7 @@ const CartPage = () => {
             isSubmitting={isSubmitting}
             handleCheckout={handleCheckout}
             restaurantsOpen={restaurantOpen && !multipleRestaurants}
+            restaurantBusy={restaurantBusy}
             loadingRestaurants={loadingRestaurants}
             hasUnavailableItems={unavailableItemIds.length > 0}
             loadingMenuAvailability={loadingMenuAvailability}

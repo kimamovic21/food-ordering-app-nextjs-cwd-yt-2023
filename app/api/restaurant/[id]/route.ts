@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { getRestaurantRatingSummaries } from '@/libs/reviewSummary';
+import { Order } from '@/models/order';
 import { Restaurant } from '@/models/restaurant';
 
 // Check if restaurant is open at a specific time
@@ -73,6 +74,16 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     const isOpen = isRestaurantOpen(restaurant.workingHours, restaurant.blockedDates, now);
     const ratingMap = await getRestaurantRatingSummaries([restaurant._id]);
     const rating = ratingMap.get(String(restaurant._id));
+    const activeOrderLimit = Math.min(
+      100,
+      Math.max(1, Number((restaurant as any).activeOrderLimit) || 10)
+    );
+    const activeKitchenOrders = await Order.countDocuments({
+      restaurantId: restaurant._id,
+      orderStatus: { $in: ['placed', 'processing', 'ready'] },
+      $or: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
+    });
+    const isBusy = activeKitchenOrders >= activeOrderLimit;
 
     return NextResponse.json(
       {
@@ -90,6 +101,11 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
           images: restaurant.images,
           tax: restaurant.tax,
           courierFee: restaurant.courierFee,
+          averagePreparationMinutes: restaurant.averagePreparationMinutes,
+          averageDeliveryMinutes: restaurant.averageDeliveryMinutes,
+          activeOrderLimit,
+          activeKitchenOrders,
+          isBusy,
           workingHours: restaurant.workingHours,
           blockedDates: restaurant.blockedDates,
           isOpen,

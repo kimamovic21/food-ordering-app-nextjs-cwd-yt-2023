@@ -47,6 +47,7 @@ interface RestaurantFormData {
   courierFee: number;
   averagePreparationMinutes: number;
   averageDeliveryMinutes: number;
+  activeOrderLimit: number;
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;
@@ -77,6 +78,7 @@ const formatRestaurantDataForForm = (restaurant: RestaurantFormData | undefined)
     ...restaurant,
     averagePreparationMinutes: restaurant.averagePreparationMinutes ?? 25,
     averageDeliveryMinutes: restaurant.averageDeliveryMinutes ?? 20,
+    activeOrderLimit: restaurant.activeOrderLimit ?? 10,
     blockedDates: blockedDates.map((bd) => {
       const date = new Date(bd.date);
       const year = date.getUTCFullYear();
@@ -113,6 +115,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
     courierFee: 5,
     averagePreparationMinutes: 25,
     averageDeliveryMinutes: 20,
+    activeOrderLimit: 10,
     workingHours: defaultWorkingHours,
     blockedDates: [],
     totalEmployees: 1,
@@ -186,6 +189,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
       courierFee: data.courierFee,
       averagePreparationMinutes: data.averagePreparationMinutes,
       averageDeliveryMinutes: data.averageDeliveryMinutes,
+      activeOrderLimit: data.activeOrderLimit,
       workingHours: data.workingHours,
       blockedDates: data.blockedDates
         .map((blocked) => {
@@ -370,6 +374,10 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
     }
     if (formData.averageDeliveryMinutes < 0 || formData.averageDeliveryMinutes > 240) {
       sonnerToast.error('Average delivery time must be between 0 and 240 minutes');
+      return false;
+    }
+    if (formData.activeOrderLimit < 1 || formData.activeOrderLimit > 100) {
+      sonnerToast.error('Active order limit must be between 1 and 100 orders');
       return false;
     }
     // Check images validation
@@ -868,6 +876,28 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
                   <span className='text-sm text-muted-foreground'>min</span>
                 </div>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor='activeOrderLimit' className='mb-2'>
+                Active Order Limit *
+              </Label>
+              <div className='flex items-center gap-2'>
+                <Input
+                  id='activeOrderLimit'
+                  type='number'
+                  min='1'
+                  max='100'
+                  step='1'
+                  value={formData.activeOrderLimit}
+                  onChange={(e) => handleNumberChange(e, 'activeOrderLimit')}
+                  required
+                />
+                <span className='text-sm text-muted-foreground'>orders</span>
+              </div>
+              <p className='mt-1 text-xs text-muted-foreground'>
+                Checkout pauses when paid kitchen orders reach this limit.
+              </p>
             </div>
           </CardContent>
         </Card>

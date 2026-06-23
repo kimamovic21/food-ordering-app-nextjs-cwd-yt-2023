@@ -63,6 +63,7 @@ interface Restaurant {
   courierFee: number;
   averagePreparationMinutes?: number;
   averageDeliveryMinutes?: number;
+  activeOrderLimit?: number;
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;
@@ -463,6 +464,10 @@ const RestaurantPage = () => {
                   {restaurant.averageDeliveryMinutes || 20} min
                 </p>
               </div>
+            </div>
+            <div className='rounded-lg border p-3'>
+              <p className='text-sm text-muted-foreground'>Active Order Limit</p>
+              <p className='text-lg font-semibold'>{restaurant.activeOrderLimit || 10} orders</p>
             </div>
           </CardContent>
         </Card>

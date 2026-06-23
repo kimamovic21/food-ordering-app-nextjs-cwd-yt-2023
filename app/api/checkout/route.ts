@@ -151,6 +151,26 @@ export async function POST(req: Request) {
     return Response.json({ error: 'You cannot order from your own restaurant' }, { status: 403 });
   }
 
+  const activeOrderLimit = Math.min(
+    100,
+    Math.max(1, Number((restaurant as any).activeOrderLimit) || 10)
+  );
+  const activeKitchenOrders = await Order.countDocuments({
+    restaurantId: restaurant._id,
+    orderStatus: { $in: ['placed', 'processing', 'ready'] },
+    $or: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
+  });
+
+  if (activeKitchenOrders >= activeOrderLimit) {
+    return Response.json(
+      {
+        error:
+          'This restaurant is very busy at the moment. Please wait a little bit and try again.',
+      },
+      { status: 409 }
+    );
+  }
+
   const itemIds = sanitizedItems
     .map((item) => item._id)
     .filter((id) => mongoose.Types.ObjectId.isValid(id))
