@@ -1083,3 +1083,5 @@ Add order timeline estimates and support tickets
 Add restaurant busy checkout limit
 
 Add project architecture documentation
+
+Add focused test scripts and checkout coverage

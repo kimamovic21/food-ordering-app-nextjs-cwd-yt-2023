@@ -126,6 +126,7 @@ const OrderSchema = new Schema(
 
     total: { type: Number, required: true },
     orderPaid: { type: Boolean, default: false },
+    paid: { type: Boolean, default: false },
     orderStatus: {
       type: String,
       enum: [
