@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
+import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 
 type CartProduct = {
@@ -81,6 +82,9 @@ type OrderDetailsType = {
   taxPercentage?: number;
   taxAmount?: number;
   deliveryFee?: number;
+  estimatedPreparationMinutes?: number | null;
+  estimatedDeliveryMinutes?: number | null;
+  estimatedTotalMinutes?: number | null;
   loyaltyDiscount?: number;
   loyaltyDiscountPercentage?: number;
   loyaltyTier?: string;
@@ -438,10 +442,15 @@ const MyOrderDetailPage = () => {
                 onSubmitted={(nextReview) => setCourierReview(nextReview)}
               />
             )}
+            {order.orderStatus !== 'canceled' && <ReportProblemDialog orderId={order._id} />}
           </div>
         </div>
 
-        <OrderStatusBanner status={order.orderStatus} />
+        <OrderStatusBanner
+          status={order.orderStatus}
+          estimatedPreparationMinutes={order.estimatedPreparationMinutes}
+          estimatedDeliveryMinutes={order.estimatedDeliveryMinutes}
+        />
 
         {!order.paymentStatus && order.orderStatus === 'placed' && (
           <Card className='mb-6 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'>
@@ -646,6 +655,10 @@ const MyOrderDetailPage = () => {
               transportationAt={order.transportationAt}
               courierDeliveredAt={order.courierDeliveredAt}
               completedAt={order.completedAt}
+              orderStatus={order.orderStatus}
+              estimatedPreparationMinutes={order.estimatedPreparationMinutes}
+              estimatedDeliveryMinutes={order.estimatedDeliveryMinutes}
+              estimatedTotalMinutes={order.estimatedTotalMinutes}
             />
           </div>
         )}

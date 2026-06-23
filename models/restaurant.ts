@@ -59,6 +59,20 @@ const RestaurantSchema = new Schema(
       default: 5,
       min: 0,
     },
+    averagePreparationMinutes: {
+      type: Number,
+      required: true,
+      default: 25,
+      min: 0,
+      max: 240,
+    },
+    averageDeliveryMinutes: {
+      type: Number,
+      required: true,
+      default: 20,
+      min: 0,
+      max: 240,
+    },
     workingHours: {
       type: [WorkingHoursSchema],
       required: true,

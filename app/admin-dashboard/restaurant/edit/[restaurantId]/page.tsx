@@ -42,6 +42,8 @@ interface Restaurant {
   description: string;
   tax: number;
   courierFee: number;
+  averagePreparationMinutes: number;
+  averageDeliveryMinutes: number;
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;

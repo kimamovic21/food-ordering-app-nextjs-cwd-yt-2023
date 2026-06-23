@@ -43,6 +43,14 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
   const tax = typeof body.tax === 'number' ? body.tax : Number(body.tax) || 17;
   const courierFee =
     typeof body.courierFee === 'number' ? body.courierFee : Number(body.courierFee) || 5;
+  const averagePreparationMinutes =
+    typeof body.averagePreparationMinutes === 'number'
+      ? body.averagePreparationMinutes
+      : Number(body.averagePreparationMinutes) || 25;
+  const averageDeliveryMinutes =
+    typeof body.averageDeliveryMinutes === 'number'
+      ? body.averageDeliveryMinutes
+      : Number(body.averageDeliveryMinutes) || 20;
   const totalEmployees =
     typeof body.totalEmployees === 'number'
       ? body.totalEmployees
@@ -73,6 +81,8 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
     description: body.description,
     tax: Math.min(100, Math.max(0, tax)),
     courierFee: Math.max(0, courierFee),
+    averagePreparationMinutes: Math.min(240, Math.max(0, averagePreparationMinutes)),
+    averageDeliveryMinutes: Math.min(240, Math.max(0, averageDeliveryMinutes)),
     workingHours: Array.isArray(body.workingHours) ? body.workingHours : [],
     blockedDates: normalizeBlockedDates(body.blockedDates),
     totalEmployees: Math.max(1, totalEmployees),
@@ -205,6 +215,8 @@ export async function POST(req: NextRequest) {
       description: payload.description,
       tax: payload.tax,
       courierFee: payload.courierFee,
+      averagePreparationMinutes: payload.averagePreparationMinutes,
+      averageDeliveryMinutes: payload.averageDeliveryMinutes,
       workingHours: payload.workingHours,
       blockedDates: payload.blockedDates,
       totalEmployees: payload.totalEmployees,

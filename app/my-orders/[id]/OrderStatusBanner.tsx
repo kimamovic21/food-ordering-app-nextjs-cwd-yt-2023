@@ -116,14 +116,33 @@ const statusContent: Record<
 
 type OrderStatusBannerProps = {
   status: OrderStatus;
+  estimatedPreparationMinutes?: number | null;
+  estimatedDeliveryMinutes?: number | null;
 };
 
-const OrderStatusBanner = ({ status }: OrderStatusBannerProps) => {
+const formatEstimate = (minutes?: number | null) => {
+  const value = Number(minutes);
+  return Number.isFinite(value) && value > 0 ? `${value} min` : null;
+};
+
+const OrderStatusBanner = ({
+  status,
+  estimatedPreparationMinutes,
+  estimatedDeliveryMinutes,
+}: OrderStatusBannerProps) => {
   const content = statusContent[status];
   if (!content) return null;
 
   const Icon = content.icon;
   const tone = statusToneStyles[content.tone];
+  const prepEstimate = formatEstimate(estimatedPreparationMinutes);
+  const deliveryEstimate = formatEstimate(estimatedDeliveryMinutes);
+  const estimateSubtext =
+    status === 'processing' && prepEstimate
+      ? `Estimated kitchen preparation: ${prepEstimate}.`
+      : status === 'transportation' && deliveryEstimate
+        ? `Estimated delivery travel time: ${deliveryEstimate}.`
+        : content.subtext;
 
   return (
     <div className={`${tone.wrapper} rounded-lg mt-4 p-6 mb-6`}>
@@ -134,7 +153,7 @@ const OrderStatusBanner = ({ status }: OrderStatusBannerProps) => {
         <div className='space-y-1'>
           <h3 className={`font-semibold text-lg ${tone.title}`}>{content.title}</h3>
           <p className={`${tone.body}`}>{content.description}</p>
-          {content.subtext ? <p className={`${tone.body} text-sm`}>{content.subtext}</p> : null}
+          {estimateSubtext ? <p className={`${tone.body} text-sm`}>{estimateSubtext}</p> : null}
         </div>
       </div>
     </div>

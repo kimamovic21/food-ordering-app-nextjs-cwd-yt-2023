@@ -16,6 +16,7 @@ import type { OrderMapHandle } from '@/components/shared/OrderMap';
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
+import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
 
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), { ssr: false });
 
@@ -166,6 +167,7 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
               Ask the customer for the delivery PIN and record the delivery handoff when done.
             </p>
           </div>
+          <ReportProblemDialog orderId={order._id} defaultTarget='app_support' />
           {/* Complete Order Button */}
           <AlertDialog>
             <AlertDialogTrigger asChild>

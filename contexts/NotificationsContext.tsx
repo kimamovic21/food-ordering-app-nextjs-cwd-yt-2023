@@ -10,10 +10,16 @@ export type AppNotification = {
     | 'order_paid'
     | 'order_status_changed'
     | 'courier_assigned'
-    | 'order_completed';
+    | 'order_completed'
+    | 'order_canceled'
+    | 'support_ticket';
   title: string;
   message: string;
   orderId?: string | null;
+  metadata?: {
+    ticketId?: string | null;
+    [key: string]: unknown;
+  } | null;
   isRead: boolean;
   readAt?: string | null;
   createdAt: string;

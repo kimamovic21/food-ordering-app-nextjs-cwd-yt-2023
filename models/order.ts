@@ -58,6 +58,24 @@ const OrderSchema = new Schema(
       default: 5,
       min: 0,
     },
+    estimatedPreparationMinutes: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 240,
+    },
+    estimatedDeliveryMinutes: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 240,
+    },
+    estimatedTotalMinutes: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 480,
+    },
 
     // Loyalty discount
     loyaltyDiscount: {

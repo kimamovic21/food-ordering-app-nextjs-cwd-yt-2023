@@ -17,6 +17,7 @@ const NotificationSchema = new Schema(
         'courier_assigned',
         'order_completed',
         'order_canceled',
+        'support_ticket',
       ],
       required: true,
     },

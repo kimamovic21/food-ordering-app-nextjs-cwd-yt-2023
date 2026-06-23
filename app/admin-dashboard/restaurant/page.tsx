@@ -61,6 +61,8 @@ interface Restaurant {
   description: string;
   tax: number;
   courierFee: number;
+  averagePreparationMinutes?: number;
+  averageDeliveryMinutes?: number;
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;
@@ -447,6 +449,20 @@ const RestaurantPage = () => {
             <div>
               <p className='text-sm text-muted-foreground mb-2'>Tax Rate</p>
               <Badge variant='secondary'>{restaurant.tax}%</Badge>
+            </div>
+            <div className='grid gap-3 sm:grid-cols-2'>
+              <div className='rounded-lg border p-3'>
+                <p className='text-sm text-muted-foreground'>Average Prep</p>
+                <p className='text-lg font-semibold'>
+                  {restaurant.averagePreparationMinutes || 25} min
+                </p>
+              </div>
+              <div className='rounded-lg border p-3'>
+                <p className='text-sm text-muted-foreground'>Average Delivery</p>
+                <p className='text-lg font-semibold'>
+                  {restaurant.averageDeliveryMinutes || 20} min
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

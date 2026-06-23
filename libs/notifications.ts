@@ -9,7 +9,8 @@ type NotificationType =
   | 'order_status_changed'
   | 'courier_assigned'
   | 'order_completed'
-  | 'order_canceled';
+  | 'order_canceled'
+  | 'support_ticket';
 
 type CreateNotificationInput = {
   recipientUserIds: Array<string | mongoose.Types.ObjectId>;
@@ -82,6 +83,24 @@ const findRestaurantAdminIds = async (restaurantId: string | mongoose.Types.Obje
     .lean();
 
   return admins.map((admin) => admin._id);
+};
+
+const findSuperAdminIds = async () => {
+  const superAdminEmail =
+    process.env.SUPER_ADMIN_EMAIL || process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
+
+  if (!superAdminEmail) {
+    return [];
+  }
+
+  const superAdmins = await User.find({
+    role: 'admin',
+    email: superAdminEmail,
+  })
+    .select('_id')
+    .lean();
+
+  return superAdmins.map((admin) => admin._id);
 };
 
 export const notifyOrderPlaced = async (params: {
@@ -236,4 +255,35 @@ export const notifyOrderDelivered = async (params: {
       metadata: { restaurantId: params.restaurantId.toString() },
     }),
   ]);
+};
+
+export const notifySupportTicketCreated = async (params: {
+  ticketId: string | mongoose.Types.ObjectId;
+  orderId?: string | mongoose.Types.ObjectId | null;
+  restaurantId?: string | mongoose.Types.ObjectId | null;
+  reporterEmail: string;
+  target: 'restaurant_support' | 'app_support';
+  subject: string;
+}) => {
+  const recipientIds =
+    params.target === 'app_support' || !params.restaurantId
+      ? await findSuperAdminIds()
+      : await findRestaurantAdminIds(params.restaurantId);
+
+  if (recipientIds.length === 0) {
+    return;
+  }
+
+  await createNotifications({
+    recipientUserIds: recipientIds,
+    type: 'support_ticket',
+    title: 'New problem report',
+    message: `${params.reporterEmail} reported: ${params.subject}`,
+    orderId: params.orderId || null,
+    metadata: {
+      ticketId: params.ticketId.toString(),
+      restaurantId: params.restaurantId ? params.restaurantId.toString() : null,
+      target: params.target,
+    },
+  });
 };

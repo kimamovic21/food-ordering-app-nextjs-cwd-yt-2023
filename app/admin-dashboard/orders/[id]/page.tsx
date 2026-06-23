@@ -98,6 +98,9 @@ type OrderDetailsType = {
   taxPercentage?: number;
   taxAmount?: number;
   deliveryFee?: number;
+  estimatedPreparationMinutes?: number | null;
+  estimatedDeliveryMinutes?: number | null;
+  estimatedTotalMinutes?: number | null;
   loyaltyDiscount?: number;
   loyaltyDiscountPercentage?: number;
   loyaltyTier?: string;
@@ -867,6 +870,10 @@ const OrderDetailPage = () => {
             transportationAt={order.transportationAt}
             courierDeliveredAt={order.courierDeliveredAt}
             completedAt={order.completedAt}
+            orderStatus={order.orderStatus}
+            estimatedPreparationMinutes={order.estimatedPreparationMinutes}
+            estimatedDeliveryMinutes={order.estimatedDeliveryMinutes}
+            estimatedTotalMinutes={order.estimatedTotalMinutes}
           />
         )}
 

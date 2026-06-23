@@ -245,6 +245,15 @@ export async function POST(req: Request) {
   );
   const taxAmount = roundToTwoDecimals(subtotal * (restaurant.tax / 100));
   const deliveryFee = roundToTwoDecimals(restaurant.courierFee || 5);
+  const estimatedPreparationMinutes = Math.max(
+    0,
+    Number((restaurant as any).averagePreparationMinutes) || 25
+  );
+  const estimatedDeliveryMinutes = Math.max(
+    0,
+    Number((restaurant as any).averageDeliveryMinutes) || 20
+  );
+  const estimatedTotalMinutes = estimatedPreparationMinutes + estimatedDeliveryMinutes;
   const discountedSubtotal = roundToTwoDecimals(
     Math.max(subtotal - couponDiscountAmount - verifiedLoyaltyDiscount, 0)
   );
@@ -291,6 +300,9 @@ export async function POST(req: Request) {
     taxPercentage: restaurant.tax,
     taxAmount,
     deliveryFee,
+    estimatedPreparationMinutes,
+    estimatedDeliveryMinutes,
+    estimatedTotalMinutes,
     loyaltyDiscount: verifiedLoyaltyDiscount,
     loyaltyDiscountPercentage: verifiedLoyaltyPercentage,
     loyaltyTier: loyaltyStatus.currentTier?.name || null,

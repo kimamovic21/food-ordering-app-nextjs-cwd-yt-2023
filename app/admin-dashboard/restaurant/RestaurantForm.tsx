@@ -45,6 +45,8 @@ interface RestaurantFormData {
   description: string;
   tax: number;
   courierFee: number;
+  averagePreparationMinutes: number;
+  averageDeliveryMinutes: number;
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;
@@ -73,6 +75,8 @@ const formatRestaurantDataForForm = (restaurant: RestaurantFormData | undefined)
 
   return {
     ...restaurant,
+    averagePreparationMinutes: restaurant.averagePreparationMinutes ?? 25,
+    averageDeliveryMinutes: restaurant.averageDeliveryMinutes ?? 20,
     blockedDates: blockedDates.map((bd) => {
       const date = new Date(bd.date);
       const year = date.getUTCFullYear();
@@ -107,6 +111,8 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
     description: '',
     tax: 17,
     courierFee: 5,
+    averagePreparationMinutes: 25,
+    averageDeliveryMinutes: 20,
     workingHours: defaultWorkingHours,
     blockedDates: [],
     totalEmployees: 1,
@@ -178,6 +184,8 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
       description: data.description,
       tax: data.tax,
       courierFee: data.courierFee,
+      averagePreparationMinutes: data.averagePreparationMinutes,
+      averageDeliveryMinutes: data.averageDeliveryMinutes,
       workingHours: data.workingHours,
       blockedDates: data.blockedDates
         .map((blocked) => {
@@ -354,6 +362,14 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
     }
     if (formData.description.length < 20 || formData.description.length > 200) {
       sonnerToast.error('Description must be between 20 and 200 characters');
+      return false;
+    }
+    if (formData.averagePreparationMinutes < 0 || formData.averagePreparationMinutes > 240) {
+      sonnerToast.error('Average preparation time must be between 0 and 240 minutes');
+      return false;
+    }
+    if (formData.averageDeliveryMinutes < 0 || formData.averageDeliveryMinutes > 240) {
+      sonnerToast.error('Average delivery time must be between 0 and 240 minutes');
       return false;
     }
     // Check images validation
@@ -811,6 +827,46 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
                   required
                 />
                 <span className='text-muted-foreground'>%</span>
+              </div>
+            </div>
+
+            <div className='grid gap-4 sm:grid-cols-2'>
+              <div>
+                <Label htmlFor='averagePreparationMinutes' className='mb-2'>
+                  Average Preparation *
+                </Label>
+                <div className='flex items-center gap-2'>
+                  <Input
+                    id='averagePreparationMinutes'
+                    type='number'
+                    min='0'
+                    max='240'
+                    step='1'
+                    value={formData.averagePreparationMinutes}
+                    onChange={(e) => handleNumberChange(e, 'averagePreparationMinutes')}
+                    required
+                  />
+                  <span className='text-sm text-muted-foreground'>min</span>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor='averageDeliveryMinutes' className='mb-2'>
+                  Average Delivery *
+                </Label>
+                <div className='flex items-center gap-2'>
+                  <Input
+                    id='averageDeliveryMinutes'
+                    type='number'
+                    min='0'
+                    max='240'
+                    step='1'
+                    value={formData.averageDeliveryMinutes}
+                    onChange={(e) => handleNumberChange(e, 'averageDeliveryMinutes')}
+                    required
+                  />
+                  <span className='text-sm text-muted-foreground'>min</span>
+                </div>
               </div>
             </div>
           </CardContent>
