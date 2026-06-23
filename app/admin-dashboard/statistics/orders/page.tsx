@@ -28,11 +28,30 @@ interface OrdersStatistics {
   paidOrders: number;
   unpaidOrders: number;
   totalIncome: number;
+  netRevenue: number;
+  averageOrderValue: number;
+  activeOrders: number;
+  completedOrders: number;
+  canceledOrders: number;
+  cancellationRate: number;
+  completionRate: number;
+  paymentConversionRate: number;
+  statusData: { status: string; label: string; count: number }[];
+  topRestaurants: {
+    restaurantId: string;
+    restaurantName: string;
+    orders: number;
+    paidOrders: number;
+    revenue: number;
+  }[];
   monthlyData: { month: string; orders: number }[];
   dailyData: { date: string; orders: number }[];
 }
 
 type TimeRange = '7d' | '30d' | '3m' | '6m' | '12m';
+
+const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
+const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
 const OrdersStatisticsPage = () => {
   const [statistics, setStatistics] = useState<OrdersStatistics | null>(null);
@@ -118,6 +137,13 @@ const OrdersStatisticsPage = () => {
     },
   } satisfies ChartConfig;
 
+  const statusChartConfig = {
+    count: {
+      label: 'Orders',
+      color: 'hsl(var(--primary))',
+    },
+  } satisfies ChartConfig;
+
   if (profileLoading || loading) {
     return <OrdersStatisticsLoading />;
   }
@@ -130,6 +156,57 @@ const OrdersStatisticsPage = () => {
       </section>
     );
   }
+
+  const metricCards = [
+    {
+      title: 'Total Orders',
+      description: 'All orders placed',
+      value: statistics.totalOrders.toString(),
+      tone: '',
+    },
+    {
+      title: 'Paid Orders',
+      description: 'Completed payments',
+      value: statistics.paidOrders.toString(),
+      tone: 'text-green-600',
+    },
+    {
+      title: 'Active Orders',
+      description: 'Kitchen and delivery queue',
+      value: statistics.activeOrders.toString(),
+      tone: 'text-orange-600',
+    },
+    {
+      title: 'Canceled Orders',
+      description: `${formatPercent(statistics.cancellationRate)} cancellation rate`,
+      value: statistics.canceledOrders.toString(),
+      tone: 'text-red-600',
+    },
+    {
+      title: 'Total Revenue',
+      description: 'Paid order total',
+      value: formatCurrency(statistics.totalIncome),
+      tone: 'text-green-600',
+    },
+    {
+      title: 'Net Revenue',
+      description: 'Paid revenue excluding canceled',
+      value: formatCurrency(statistics.netRevenue),
+      tone: 'text-green-600',
+    },
+    {
+      title: 'Average Order',
+      description: 'Average paid order value',
+      value: formatCurrency(statistics.averageOrderValue),
+      tone: '',
+    },
+    {
+      title: 'Payment Rate',
+      description: 'Paid orders divided by all orders',
+      value: formatPercent(statistics.paymentConversionRate),
+      tone: 'text-green-600',
+    },
+  ];
 
   return (
     <section className='mt-8 max-w-7xl mx-auto px-4 pb-12'>
@@ -149,44 +226,66 @@ const OrdersStatisticsPage = () => {
 
       <Title>Orders statistics</Title>
 
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-6'>
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4 mt-6'>
+        {metricCards.map((card) => (
+          <Card key={card.title}>
+            <CardHeader className='pb-3'>
+              <CardTitle className='text-sm font-medium'>{card.title}</CardTitle>
+              <CardDescription>{card.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${card.tone}`}>{card.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className='grid gap-6 lg:grid-cols-2 mt-8'>
         <Card>
-          <CardHeader className='pb-3'>
-            <CardTitle className='text-sm font-medium'>Total Orders</CardTitle>
-            <CardDescription>All orders placed</CardDescription>
+          <CardHeader>
+            <CardTitle>Order status breakdown</CardTitle>
+            <CardDescription>Current lifecycle distribution across all orders</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{statistics.totalOrders}</div>
+            <ChartContainer config={statusChartConfig} className='h-[320px] w-full'>
+              <BarChart
+                data={statistics.statusData}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray='3 3' vertical={false} />
+                <XAxis dataKey='label' tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey='count' fill='var(--color-count)' radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ChartContainer>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className='pb-3'>
-            <CardTitle className='text-sm font-medium'>Paid Orders</CardTitle>
-            <CardDescription>Completed payments</CardDescription>
+          <CardHeader>
+            <CardTitle>Top restaurant revenue</CardTitle>
+            <CardDescription>Restaurants ranked by paid order revenue</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-green-600'>{statistics.paidOrders}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='pb-3'>
-            <CardTitle className='text-sm font-medium'>Unpaid Orders</CardTitle>
-            <CardDescription>Awaiting payment</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-orange-600'>{statistics.unpaidOrders}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='pb-3'>
-            <CardTitle className='text-sm font-medium'>Total Income</CardTitle>
-            <CardDescription>Sum of paid orders</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>${statistics.totalIncome.toFixed(2)}</div>
+          <CardContent className='space-y-4'>
+            {statistics.topRestaurants.length > 0 ? (
+              statistics.topRestaurants.map((restaurant) => (
+                <div
+                  key={restaurant.restaurantId}
+                  className='flex items-center justify-between gap-4 border-b pb-3 last:border-b-0 last:pb-0'
+                >
+                  <div className='min-w-0'>
+                    <p className='truncate text-sm font-medium'>{restaurant.restaurantName}</p>
+                    <p className='text-xs text-muted-foreground'>
+                      {restaurant.orders} orders, {restaurant.paidOrders} paid
+                    </p>
+                  </div>
+                  <p className='shrink-0 font-semibold'>{formatCurrency(restaurant.revenue)}</p>
+                </div>
+              ))
+            ) : (
+              <p className='text-sm text-muted-foreground'>No restaurant revenue yet.</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -236,7 +335,7 @@ const OrdersStatisticsPage = () => {
                 tickMargin={8}
                 interval={timeRange === '7d' ? 0 : 'preserveStartEnd'}
               />
-              <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Area
                 type='monotone'
@@ -271,7 +370,7 @@ const OrdersStatisticsPage = () => {
                 textAnchor='end'
                 height={80}
               />
-              <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey='orders' fill='var(--color-orders)' radius={[8, 8, 0, 0]} />
             </BarChart>

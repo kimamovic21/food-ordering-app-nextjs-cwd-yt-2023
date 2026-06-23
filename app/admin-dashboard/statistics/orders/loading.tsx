@@ -17,8 +17,8 @@ const OrdersStatisticsLoading = () => {
       <Skeleton className='h-9 w-44' />
 
       {/* Metric cards */}
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-6'>
-        {Array.from({ length: 4 }).map((_, idx) => (
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4 mt-6'>
+        {Array.from({ length: 8 }).map((_, idx) => (
           <Card key={idx} className='h-full overflow-hidden'>
             <CardHeader className='pb-3'>
               <CardTitle className='text-sm font-medium'>
@@ -30,6 +30,23 @@ const OrdersStatisticsLoading = () => {
             </CardHeader>
             <CardContent>
               <Skeleton className='h-7 w-16 max-w-full' />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Breakdown panels */}
+      <div className='grid gap-6 lg:grid-cols-2 mt-8'>
+        {Array.from({ length: 2 }).map((_, idx) => (
+          <Card key={idx}>
+            <CardHeader className='space-y-2'>
+              <Skeleton className='h-5 w-44' />
+              <Skeleton className='h-4 w-64 max-w-full' />
+            </CardHeader>
+            <CardContent>
+              <div className='h-72 w-full rounded-lg border bg-muted/40 p-4'>
+                <Skeleton className='h-full w-full rounded-md' />
+              </div>
             </CardContent>
           </Card>
         ))}

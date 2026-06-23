@@ -25,11 +25,23 @@ import UsersStatisticsLoading from './loading';
 
 interface UsersStatistics {
   totalUsers: number;
+  totalCustomers: number;
+  totalAdmins: number;
+  totalCouriers: number;
+  googleUsers: number;
+  credentialsUsers: number;
+  verifiedUsers: number;
+  unverifiedUsers: number;
+  verificationRate: number;
+  roleData: { role: string; label: string; count: number }[];
+  providerData: { provider: string; label: string; count: number }[];
   monthlyData: { month: string; users: number }[];
   dailyData: { date: string; users: number }[];
 }
 
 type TimeRange = '7d' | '30d' | '3m' | '6m' | '12m';
+
+const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
 const UsersStatisticsPage = () => {
   const [statistics, setStatistics] = useState<UsersStatistics | null>(null);
@@ -115,6 +127,13 @@ const UsersStatisticsPage = () => {
     },
   } satisfies ChartConfig;
 
+  const breakdownChartConfig = {
+    count: {
+      label: 'Users',
+      color: 'hsl(var(--primary))',
+    },
+  } satisfies ChartConfig;
+
   if (profileLoading || loading) {
     return <UsersStatisticsLoading />;
   }
@@ -127,6 +146,57 @@ const UsersStatisticsPage = () => {
       </section>
     );
   }
+
+  const metricCards = [
+    {
+      title: 'Total Users',
+      description: 'Registered accounts',
+      value: statistics.totalUsers.toString(),
+      tone: '',
+    },
+    {
+      title: 'Customers',
+      description: 'Regular buyer accounts',
+      value: statistics.totalCustomers.toString(),
+      tone: '',
+    },
+    {
+      title: 'Restaurant Admins',
+      description: 'Restaurant owner accounts',
+      value: statistics.totalAdmins.toString(),
+      tone: '',
+    },
+    {
+      title: 'Couriers',
+      description: 'Delivery worker accounts',
+      value: statistics.totalCouriers.toString(),
+      tone: '',
+    },
+    {
+      title: 'Google Sign-ins',
+      description: 'OAuth account registrations',
+      value: statistics.googleUsers.toString(),
+      tone: 'text-green-600',
+    },
+    {
+      title: 'Credentials Sign-ins',
+      description: 'Email and password accounts',
+      value: statistics.credentialsUsers.toString(),
+      tone: '',
+    },
+    {
+      title: 'Verified Emails',
+      description: `${formatPercent(statistics.verificationRate)} verification rate`,
+      value: statistics.verifiedUsers.toString(),
+      tone: 'text-green-600',
+    },
+    {
+      title: 'Unverified Emails',
+      description: 'Accounts still needing verification',
+      value: statistics.unverifiedUsers.toString(),
+      tone: 'text-orange-600',
+    },
+  ];
 
   return (
     <section className='mt-8 max-w-7xl mx-auto px-4 pb-12'>
@@ -146,14 +216,60 @@ const UsersStatisticsPage = () => {
 
       <Title>Users statistics</Title>
 
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6'>
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4 mt-6'>
+        {metricCards.map((card) => (
+          <Card key={card.title}>
+            <CardHeader className='pb-3'>
+              <CardTitle className='text-sm font-medium'>{card.title}</CardTitle>
+              <CardDescription>{card.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${card.tone}`}>{card.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className='grid gap-6 lg:grid-cols-2 mt-8'>
         <Card>
-          <CardHeader className='pb-3'>
-            <CardTitle className='text-sm font-medium'>Total Users</CardTitle>
-            <CardDescription>Registered accounts</CardDescription>
+          <CardHeader>
+            <CardTitle>Users by role</CardTitle>
+            <CardDescription>Customer, admin, and courier account split</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{statistics.totalUsers}</div>
+            <ChartContainer config={breakdownChartConfig} className='h-[320px] w-full'>
+              <BarChart
+                data={statistics.roleData}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray='3 3' vertical={false} />
+                <XAxis dataKey='label' tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey='count' fill='var(--color-count)' radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Users by sign-in method</CardTitle>
+            <CardDescription>Google OAuth compared with credentials accounts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={breakdownChartConfig} className='h-[320px] w-full'>
+              <BarChart
+                data={statistics.providerData}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray='3 3' vertical={false} />
+                <XAxis dataKey='label' tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey='count' fill='var(--color-count)' radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
@@ -203,7 +319,7 @@ const UsersStatisticsPage = () => {
                 tickMargin={8}
                 interval={timeRange === '7d' ? 0 : 'preserveStartEnd'}
               />
-              <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Area
                 type='monotone'
@@ -238,7 +354,7 @@ const UsersStatisticsPage = () => {
                 textAnchor='end'
                 height={80}
               />
-              <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey='users' fill='var(--color-users)' radius={[8, 8, 0, 0]} />
             </BarChart>

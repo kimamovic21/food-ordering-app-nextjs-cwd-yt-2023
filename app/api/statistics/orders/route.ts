@@ -2,9 +2,8 @@ import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
 import { isSuperAdmin } from '@/app/api/auth/[...nextauth]/route';
 import { Order } from '@/models/order';
-
-const getPaymentStatus = (order: any) =>
-  Boolean(order.orderPaid ?? order.paymentStatus ?? order.paid);
+import { Restaurant } from '@/models/restaurant';
+import { buildDailyData, buildMonthlyData, summarizeOrders } from '@/libs/statistics';
 
 export async function GET() {
   try {
@@ -15,97 +14,17 @@ export async function GET() {
 
     await mongoose.connect(process.env.MONGODB_URL as string);
 
-    const orders = await Order.find().sort({ createdAt: -1 });
-    const now = new Date();
+    const [orders, restaurants] = await Promise.all([
+      Order.find().sort({ createdAt: -1 }),
+      Restaurant.find().select('_id name').lean(),
+    ]);
 
-    const totalOrders = orders.length;
-    const paidOrders = orders.filter((order) => getPaymentStatus(order)).length;
-    const unpaidOrders = orders.filter((order) => !getPaymentStatus(order)).length;
-    const totalIncome = orders
-      .filter((order) => getPaymentStatus(order))
-      .reduce((sum, order) => sum + order.total, 0);
-
-    const ordersLast12Months = orders.filter((order) => {
-      const orderDate = new Date(order.createdAt);
-      const monthsAgo = new Date(now);
-      monthsAgo.setMonth(monthsAgo.getMonth() - 12);
-      return orderDate >= monthsAgo;
-    });
-
-    const ordersPerMonth: Record<string, number> = {};
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date(now);
-      date.setMonth(date.getMonth() - i);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      ordersPerMonth[monthKey] = 0;
-    }
-
-    ordersLast12Months.forEach((order) => {
-      const orderDate = new Date(order.createdAt);
-      const monthKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(
-        2,
-        '0'
-      )}`;
-      if (ordersPerMonth[monthKey] !== undefined) {
-        ordersPerMonth[monthKey]++;
-      }
-    });
-
-    const monthNames = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    const monthlyData = Object.entries(ordersPerMonth).map(([month, count]) => {
-      const [year, monthNum] = month.split('-');
-      return {
-        month: `${monthNames[parseInt(monthNum, 10) - 1]} ${year}`,
-        orders: count,
-      };
-    });
-
-    const dailyOrdersMap: Record<string, number> = {};
-    const ordersLast365Days = orders.filter((order) => {
-      const orderDate = new Date(order.createdAt);
-      const daysAgo = new Date(now);
-      daysAgo.setDate(daysAgo.getDate() - 365);
-      return orderDate >= daysAgo;
-    });
-
-    for (let i = 364; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      const dayKey = date.toISOString().split('T')[0];
-      dailyOrdersMap[dayKey] = 0;
-    }
-
-    ordersLast365Days.forEach((order) => {
-      const orderDate = new Date(order.createdAt);
-      const dayKey = orderDate.toISOString().split('T')[0];
-      if (dailyOrdersMap[dayKey] !== undefined) {
-        dailyOrdersMap[dayKey]++;
-      }
-    });
-
-    const dailyData = Object.entries(dailyOrdersMap).map(([date, count]) => ({
-      date,
-      orders: count,
-    }));
+    const orderSummary = summarizeOrders(orders, restaurants);
+    const monthlyData = buildMonthlyData(orders, (order) => order.createdAt, 'orders');
+    const dailyData = buildDailyData(orders, (order) => order.createdAt, 'orders');
 
     return NextResponse.json({
-      totalOrders,
-      paidOrders,
-      unpaidOrders,
-      totalIncome,
+      ...orderSummary,
       monthlyData,
       dailyData,
     });

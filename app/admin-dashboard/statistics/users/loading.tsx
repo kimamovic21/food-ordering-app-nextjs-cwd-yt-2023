@@ -16,21 +16,40 @@ const UsersStatisticsLoading = () => {
       {/* Title */}
       <Skeleton className='h-9 w-44' />
 
-      {/* Metric card */}
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6'>
-        <Card className='h-full overflow-hidden'>
-          <CardHeader className='pb-3'>
-            <CardTitle className='text-sm font-medium'>
-              <Skeleton className='h-4 w-28 max-w-full' />
-            </CardTitle>
-            <CardDescription>
-              <Skeleton className='h-3 w-36 max-w-full' />
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Skeleton className='h-7 w-16 max-w-full' />
-          </CardContent>
-        </Card>
+      {/* Metric cards */}
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4 mt-6'>
+        {Array.from({ length: 8 }).map((_, idx) => (
+          <Card key={idx} className='h-full overflow-hidden'>
+            <CardHeader className='pb-3'>
+              <CardTitle className='text-sm font-medium'>
+                <Skeleton className='h-4 w-32 max-w-full' />
+              </CardTitle>
+              <CardDescription>
+                <Skeleton className='h-3 w-40 max-w-full' />
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className='h-7 w-16 max-w-full' />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Breakdown charts */}
+      <div className='grid gap-6 lg:grid-cols-2 mt-8'>
+        {Array.from({ length: 2 }).map((_, idx) => (
+          <Card key={idx}>
+            <CardHeader className='space-y-2'>
+              <Skeleton className='h-5 w-44' />
+              <Skeleton className='h-4 w-64 max-w-full' />
+            </CardHeader>
+            <CardContent>
+              <div className='h-72 w-full rounded-lg border bg-muted/40 p-4'>
+                <Skeleton className='h-full w-full rounded-md' />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Users over time chart */}

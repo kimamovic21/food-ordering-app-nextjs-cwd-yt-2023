@@ -18,8 +18,31 @@ vi.mock('@/models/order', () => ({
 
 vi.mock('@/models/user', () => ({
   User: {
-    countDocuments: vi.fn(),
     find: vi.fn(),
+  },
+}));
+
+vi.mock('@/models/restaurant', () => ({
+  Restaurant: {
+    find: vi.fn(),
+  },
+}));
+
+vi.mock('@/models/menuItem', () => ({
+  MenuItem: {
+    countDocuments: vi.fn(),
+  },
+}));
+
+vi.mock('@/models/supportTicket', () => ({
+  SupportTicket: {
+    countDocuments: vi.fn(),
+  },
+}));
+
+vi.mock('@/models/notification', () => ({
+  Notification: {
+    countDocuments: vi.fn(),
   },
 }));
 
@@ -49,9 +72,23 @@ describe('/api/statistics routes', () => {
     vi.mocked((await import('@/models/order')).Order.find).mockReturnValueOnce({
       sort: vi.fn().mockResolvedValue([]),
     } as never);
-    vi.mocked((await import('@/models/user')).User.countDocuments).mockResolvedValueOnce(
+    vi.mocked((await import('@/models/user')).User.find).mockReturnValueOnce({
+      sort: vi.fn().mockResolvedValue([]),
+    } as never);
+    vi.mocked((await import('@/models/restaurant')).Restaurant.find).mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([]),
+      }),
+    } as never);
+    vi.mocked((await import('@/models/menuItem')).MenuItem.countDocuments).mockResolvedValue(
       0 as never
     );
+    vi.mocked(
+      (await import('@/models/supportTicket')).SupportTicket.countDocuments
+    ).mockResolvedValueOnce(0 as never);
+    vi.mocked(
+      (await import('@/models/notification')).Notification.countDocuments
+    ).mockResolvedValueOnce(0 as never);
 
     const { GET } = await loadStats();
     const res = await GET();
@@ -60,6 +97,11 @@ describe('/api/statistics routes', () => {
     expect(res.status).toBe(200);
     expect(body.totalOrders).toBe(0);
     expect(body.totalUsers).toBe(0);
+    expect(body.totalRestaurants).toBe(0);
+    expect(body.totalMenuItems).toBe(0);
+    expect(body.openSupportTickets).toBe(0);
+    expect(Array.isArray(body.statusData)).toBe(true);
+    expect(Array.isArray(body.topRestaurants)).toBe(true);
     expect(Array.isArray(body.monthlyData)).toBe(true);
     expect(Array.isArray(body.dailyData)).toBe(true);
   });
@@ -68,9 +110,31 @@ describe('/api/statistics routes', () => {
     vi.mocked(isSuperAdmin).mockResolvedValueOnce(true as never);
     vi.mocked((await import('@/models/order')).Order.find).mockReturnValueOnce({
       sort: vi.fn().mockResolvedValue([
-        { total: 10, createdAt: new Date(), orderPaid: true },
-        { total: 5, createdAt: new Date(), orderPaid: false },
+        {
+          total: 10,
+          createdAt: new Date(),
+          orderPaid: true,
+          orderStatus: 'completed',
+          restaurantId: { toString: () => 'restaurant-1' },
+        },
+        {
+          total: 5,
+          createdAt: new Date(),
+          orderPaid: false,
+          orderStatus: 'canceled',
+          restaurantId: { toString: () => 'restaurant-1' },
+        },
       ]),
+    } as never);
+    vi.mocked((await import('@/models/restaurant')).Restaurant.find).mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          {
+            _id: { toString: () => 'restaurant-1' },
+            name: 'Test Restaurant',
+          },
+        ]),
+      }),
     } as never);
 
     const { GET } = await loadOrdersStats();
@@ -81,12 +145,18 @@ describe('/api/statistics routes', () => {
     expect(body.totalOrders).toBe(2);
     expect(body.paidOrders).toBe(1);
     expect(body.unpaidOrders).toBe(1);
+    expect(body.completedOrders).toBe(1);
+    expect(body.canceledOrders).toBe(1);
+    expect(body.topRestaurants[0].restaurantName).toBe('Test Restaurant');
   });
 
   it('returns user statistics payload for users endpoint', async () => {
     vi.mocked(isSuperAdmin).mockResolvedValueOnce(true as never);
     vi.mocked((await import('@/models/user')).User.find).mockReturnValueOnce({
-      sort: vi.fn().mockResolvedValue([{ createdAt: new Date() }, { createdAt: new Date() }]),
+      sort: vi.fn().mockResolvedValue([
+        { createdAt: new Date(), role: 'user', provider: 'credentials', emailVerifiedAt: null },
+        { createdAt: new Date(), role: 'courier', provider: 'google', emailVerifiedAt: new Date() },
+      ]),
     } as never);
 
     const { GET } = await loadUsersStats();
@@ -95,6 +165,11 @@ describe('/api/statistics routes', () => {
 
     expect(res.status).toBe(200);
     expect(body.totalUsers).toBe(2);
+    expect(body.totalCustomers).toBe(1);
+    expect(body.totalCouriers).toBe(1);
+    expect(body.googleUsers).toBe(1);
+    expect(body.verifiedUsers).toBe(1);
+    expect(Array.isArray(body.roleData)).toBe(true);
     expect(Array.isArray(body.monthlyData)).toBe(true);
   });
 });
