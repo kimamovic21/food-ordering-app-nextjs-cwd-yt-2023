@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { Coupon } from '@/models/coupon';
+import { Order } from '@/models/order';
 import { Restaurant } from '@/models/restaurant';
 import { User } from '@/models/user';
 
@@ -10,6 +11,10 @@ vi.mock('next-auth/next', () => ({
 
 vi.mock('@/libs/mongoConnect', () => ({
   mongoConnect: vi.fn(),
+}));
+
+vi.mock('@/libs/auditLog', () => ({
+  createAuditLog: vi.fn(),
 }));
 
 vi.mock('mongoose', () => ({
@@ -54,6 +59,12 @@ vi.mock('@/models/coupon', () => ({
   },
 }));
 
+vi.mock('@/models/order', () => ({
+  Order: {
+    countDocuments: vi.fn(),
+  },
+}));
+
 const loadCouponsRoute = async () => import('@/app/api/coupons/route');
 
 const adminUser = {
@@ -91,13 +102,15 @@ const coupon = {
   discountType: 'percentage',
   discountValue: 20,
   minimumOrderAmount: 10,
+  maxDiscountAmount: null,
   usageLimit: 100,
-  usagePerCustomer: 1,
+  usagePerCustomer: null,
   usageCount: 0,
   startsAt: new Date('2026-01-01T00:00:00Z'),
   expiresAt: new Date('2027-01-01T00:00:00Z'),
   isActive: true,
   isPublic: true,
+  firstOrderOnly: false,
   terms: '',
   tags: ['popular'],
 };
@@ -134,6 +147,36 @@ describe('/api/coupons route', () => {
     expect(body.discountAmount).toBe(10);
     expect(getServerSession).not.toHaveBeenCalled();
     expect(mongoConnect).toHaveBeenCalled();
+  });
+
+  it('validates first-order coupons against customer order history', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'customer@example.com' },
+    } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce({
+      _id: 'customer-1',
+      email: 'customer@example.com',
+    } as never);
+    vi.mocked(Order.countDocuments).mockResolvedValueOnce(1 as never);
+    vi.mocked(Order.countDocuments).mockResolvedValueOnce(0 as never);
+    vi.mocked(Coupon.findOne).mockReturnValueOnce({
+      lean: vi.fn().mockResolvedValue({
+        ...coupon,
+        usagePerCustomer: 1,
+        firstOrderOnly: true,
+      }),
+    } as never);
+
+    const { GET } = await loadCouponsRoute();
+    const res = await GET(
+      new Request(
+        'http://localhost/api/coupons?code=save20&restaurantId=507f1f77bcf86cd799439011&subtotal=50'
+      )
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body).toEqual({ valid: false, error: 'This coupon is for first orders only.' });
   });
 
   it('blocks admin coupon listing without a session', async () => {

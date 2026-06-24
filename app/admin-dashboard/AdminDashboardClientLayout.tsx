@@ -6,6 +6,7 @@ import { signOut } from 'next-auth/react';
 import {
   BarChart3,
   Bell,
+  ClipboardList,
   Home,
   List,
   LifeBuoy,
@@ -166,6 +167,12 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
       label: 'Support Tickets',
       superAdminOnly: false,
       icon: LifeBuoy,
+    },
+    {
+      href: '/admin-dashboard/audit-logs',
+      label: 'Audit Logs',
+      superAdminOnly: false,
+      icon: ClipboardList,
     },
     { href: '/admin-dashboard/categories', label: 'Categories', superAdminOnly: true, icon: List },
     { href: '/admin-dashboard/users', label: 'Users', superAdminOnly: true, icon: Users },

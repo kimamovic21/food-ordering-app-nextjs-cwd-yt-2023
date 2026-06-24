@@ -8,9 +8,11 @@ export type CouponLike = {
   discountType?: CouponDiscountType;
   discountValue: number;
   minimumOrderAmount?: number;
+  maxDiscountAmount?: number | null;
   usageLimit?: number | null;
   usagePerCustomer?: number | null;
   usageCount?: number;
+  firstOrderOnly?: boolean;
   isActive?: boolean;
   startsAt?: string | Date | null;
   expiresAt?: string | Date | null;
@@ -64,8 +66,14 @@ export const calculateCouponDiscountAmount = (subtotal: number, coupon: CouponLi
     Math.max(COUPON_PERCENTAGE_MIN, Number(coupon.discountValue) || 0)
   );
   const rawDiscount = (baseSubtotal * percentage) / 100;
+  const maxDiscountAmount =
+    typeof coupon.maxDiscountAmount === 'number' && coupon.maxDiscountAmount > 0
+      ? coupon.maxDiscountAmount
+      : null;
+  const cappedDiscount =
+    maxDiscountAmount === null ? rawDiscount : Math.min(rawDiscount, maxDiscountAmount);
 
-  return roundMoney(Math.min(baseSubtotal, rawDiscount));
+  return roundMoney(Math.min(baseSubtotal, cappedDiscount));
 };
 
 export const getCouponDateValidationError = ({
@@ -106,10 +114,14 @@ export const getCouponDateValidationError = ({
 export const getCouponValidationError = ({
   coupon,
   subtotal,
+  completedOrderCount = 0,
+  customerCouponUsageCount = 0,
   now = new Date(),
 }: {
   coupon: CouponLike;
   subtotal: number;
+  completedOrderCount?: number;
+  customerCouponUsageCount?: number;
   now?: Date;
 }) => {
   if (coupon.isActive === false) {
@@ -130,6 +142,16 @@ export const getCouponValidationError = ({
   const usageCount = Number(coupon.usageCount || 0);
   if (usageLimit !== null && usageCount >= usageLimit) {
     return 'Coupon usage limit reached.';
+  }
+
+  if (coupon.firstOrderOnly && completedOrderCount > 0) {
+    return 'This coupon is for first orders only.';
+  }
+
+  const usagePerCustomer =
+    typeof coupon.usagePerCustomer === 'number' ? Math.max(1, coupon.usagePerCustomer) : null;
+  if (usagePerCustomer !== null && customerCouponUsageCount >= usagePerCustomer) {
+    return 'You have already used this coupon.';
   }
 
   const minimumOrderAmount = Math.max(0, Number(coupon.minimumOrderAmount) || 0);

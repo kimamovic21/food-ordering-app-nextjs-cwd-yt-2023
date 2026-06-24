@@ -265,10 +265,13 @@ export const notifySupportTicketCreated = async (params: {
   target: 'restaurant_support' | 'app_support';
   subject: string;
 }) => {
+  const superAdminIds = await findSuperAdminIds();
+  const restaurantAdminIds =
+    params.target === 'restaurant_support' && params.restaurantId
+      ? await findRestaurantAdminIds(params.restaurantId)
+      : [];
   const recipientIds =
-    params.target === 'app_support' || !params.restaurantId
-      ? await findSuperAdminIds()
-      : await findRestaurantAdminIds(params.restaurantId);
+    params.target === 'app_support' ? superAdminIds : [...restaurantAdminIds, ...superAdminIds];
 
   if (recipientIds.length === 0) {
     return;
@@ -277,7 +280,8 @@ export const notifySupportTicketCreated = async (params: {
   await createNotifications({
     recipientUserIds: recipientIds,
     type: 'support_ticket',
-    title: 'New problem report',
+    title:
+      params.target === 'app_support' ? 'New app support report' : 'New restaurant problem report',
     message: `${params.reporterEmail} reported: ${params.subject}`,
     orderId: params.orderId || null,
     metadata: {

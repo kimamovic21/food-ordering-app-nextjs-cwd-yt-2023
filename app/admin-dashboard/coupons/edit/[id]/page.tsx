@@ -24,12 +24,14 @@ type Coupon = {
   description: string;
   discountValue: number;
   minimumOrderAmount: number;
+  maxDiscountAmount: number | null;
   usageLimit: number | null;
   usagePerCustomer: number;
   startsAt: string | null;
   expiresAt: string | null;
   isActive: boolean;
   isPublic: boolean;
+  firstOrderOnly: boolean;
   terms: string;
   tags: string[];
 };

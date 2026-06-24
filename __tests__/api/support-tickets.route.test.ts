@@ -108,6 +108,18 @@ describe('/api/support-tickets', () => {
     expect(query.limit).toHaveBeenCalledWith(100);
   });
 
+  it('normalizes legacy closed tickets as resolved', async () => {
+    const query = createTicketQuery([{ _id: 'ticket-1', subject: 'Handled', status: 'closed' }]);
+    vi.mocked(SupportTicket.find).mockReturnValue(query as never);
+
+    const { GET } = await loadRoute();
+    const response = await GET(new Request('http://localhost/api/support-tickets'));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.tickets).toEqual([{ _id: 'ticket-1', subject: 'Handled', status: 'resolved' }]);
+  });
+
   it('scopes restaurant admins to restaurant support tickets for their restaurant', async () => {
     const restaurantId = createObjectId('restaurant-1');
     const query = createTicketQuery([]);
@@ -193,6 +205,57 @@ describe('/api/support-tickets', () => {
       target: 'restaurant_support',
       subject: 'Wrong pizza size',
     });
+  });
+
+  it('lets an admin report their own customer order from another restaurant', async () => {
+    const adminId = createObjectId('admin-1');
+    const adminRestaurantId = createObjectId('admin-restaurant');
+    const orderRestaurantId = createObjectId('order-restaurant');
+    const orderId = createObjectId('order-1');
+    const ticket = { _id: createObjectId('ticket-1') };
+    const populatedTicket = { _id: 'ticket-1', subject: 'One extra pizza' };
+    const query = createTicketQuery(populatedTicket);
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'admin@example.com' },
+    } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce({
+      _id: adminId,
+      name: 'Admin Customer',
+      email: 'admin@example.com',
+      role: 'admin',
+      restaurantId: adminRestaurantId,
+    } as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce({
+      _id: orderId,
+      userId: adminId,
+      restaurantId: orderRestaurantId,
+    } as never);
+    vi.mocked(SupportTicket.create).mockResolvedValueOnce(ticket as never);
+    vi.mocked(SupportTicket.findById).mockReturnValueOnce(query as never);
+
+    const { POST } = await loadRoute();
+    const response = await POST(
+      createRequest('http://localhost/api/support-tickets', {
+        orderId: 'order-1',
+        target: 'restaurant_support',
+        category: 'order_issue',
+        subject: 'One extra pizza',
+        description: 'I accidentally ordered one extra pizza.',
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body).toEqual({ ticket: populatedTicket });
+    expect(SupportTicket.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reporterId: adminId,
+        reporterRole: 'admin',
+        orderId,
+        restaurantId: orderRestaurantId,
+      })
+    );
   });
 
   it('rejects reports for orders that do not belong to the signed-in user', async () => {
@@ -298,7 +361,7 @@ describe('/api/support-tickets', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ticketId: 'ticket-1',
-          status: 'closed',
+          status: 'resolved',
           responseNote: 'Handled by app support.',
         }),
       })
@@ -308,5 +371,34 @@ describe('/api/support-tickets', () => {
     expect(response.status).toBe(403);
     expect(body).toEqual({ error: 'You cannot update this ticket' });
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it('rejects closed as a support ticket status', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'admin@example.com' },
+    } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce({
+      _id: createObjectId('admin-1'),
+      email: 'admin@example.com',
+      role: 'admin',
+      restaurantId: createObjectId('restaurant-1'),
+    } as never);
+
+    const { PATCH } = await loadRoute();
+    const response = await PATCH(
+      new Request('http://localhost/api/support-tickets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketId: 'ticket-1',
+          status: 'closed',
+        }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ error: 'Invalid ticket status' });
+    expect(SupportTicket.findById).not.toHaveBeenCalled();
   });
 });

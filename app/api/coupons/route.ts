@@ -3,8 +3,10 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { Coupon } from '@/models/coupon';
+import { Order } from '@/models/order';
 import { Restaurant } from '@/models/restaurant';
 import { User } from '@/models/user';
+import { createAuditLog } from '@/libs/auditLog';
 import {
   calculateCouponDiscountAmount,
   getCouponDateValidationError,
@@ -26,6 +28,8 @@ const serializeCoupon = (coupon: any) => ({
   discountType: coupon.discountType,
   discountValue: Number(coupon.discountValue) || 0,
   minimumOrderAmount: Number(coupon.minimumOrderAmount) || 0,
+  maxDiscountAmount:
+    typeof coupon.maxDiscountAmount === 'number' ? Number(coupon.maxDiscountAmount) : null,
   usageLimit: typeof coupon.usageLimit === 'number' ? coupon.usageLimit : null,
   usagePerCustomer: Number(coupon.usagePerCustomer) || 1,
   usageCount: Number(coupon.usageCount) || 0,
@@ -33,6 +37,7 @@ const serializeCoupon = (coupon: any) => ({
   expiresAt: coupon.expiresAt ? new Date(coupon.expiresAt).toISOString() : null,
   isActive: Boolean(coupon.isActive),
   isPublic: Boolean(coupon.isPublic),
+  firstOrderOnly: Boolean(coupon.firstOrderOnly),
   terms: coupon.terms || '',
   tags: Array.isArray(coupon.tags) ? coupon.tags : [],
   lastUsedAt: coupon.lastUsedAt ? new Date(coupon.lastUsedAt).toISOString() : null,
@@ -64,6 +69,10 @@ const buildCouponPayload = (body: Record<string, unknown>) => {
   const description = typeof body.description === 'string' ? body.description.trim() : '';
   const discountValue = Math.round(Number(body.discountValue ?? body.discountPercentage ?? 0));
   const minimumOrderAmount = Math.max(0, Number(body.minimumOrderAmount) || 0);
+  const maxDiscountAmount =
+    body.maxDiscountAmount === null || body.maxDiscountAmount === ''
+      ? null
+      : Math.max(0, Number(body.maxDiscountAmount) || 0);
   const usageLimit =
     body.usageLimit === null || body.usageLimit === ''
       ? null
@@ -73,6 +82,7 @@ const buildCouponPayload = (body: Record<string, unknown>) => {
   const expiresAt = body.expiresAt ? new Date(String(body.expiresAt)) : null;
   const isActive = body.isActive !== undefined ? Boolean(body.isActive) : true;
   const isPublic = body.isPublic !== undefined ? Boolean(body.isPublic) : true;
+  const firstOrderOnly = Boolean(body.firstOrderOnly);
   const terms = typeof body.terms === 'string' ? body.terms.trim() : '';
   const tags = Array.isArray(body.tags)
     ? body.tags
@@ -88,12 +98,14 @@ const buildCouponPayload = (body: Record<string, unknown>) => {
     discountType: 'percentage' as const,
     discountValue,
     minimumOrderAmount,
+    maxDiscountAmount,
     usageLimit,
     usagePerCustomer,
     startsAt,
     expiresAt,
     isActive,
     isPublic,
+    firstOrderOnly,
     terms,
     tags,
   };
@@ -134,7 +146,37 @@ export async function GET(request: Request) {
       );
     }
 
-    const validationError = getCouponValidationError({ coupon, subtotal });
+    let completedOrderCount = 0;
+    let customerCouponUsageCount = 0;
+
+    if (coupon.firstOrderOnly || coupon.usagePerCustomer) {
+      const session = await getServerSession(authOptions);
+      const user = session?.user?.email ? await User.findOne({ email: session.user.email }) : null;
+
+      if (!user) {
+        return Response.json(
+          { valid: false, error: 'Sign in to use this coupon.' },
+          { status: 401 }
+        );
+      }
+
+      [completedOrderCount, customerCouponUsageCount] = await Promise.all([
+        Order.countDocuments({ userId: user._id, orderStatus: 'completed' }),
+        Order.countDocuments({
+          userId: user._id,
+          couponId: coupon._id,
+          orderStatus: { $ne: 'canceled' },
+          $or: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
+        }),
+      ]);
+    }
+
+    const validationError = getCouponValidationError({
+      coupon,
+      subtotal,
+      completedOrderCount,
+      customerCouponUsageCount,
+    });
     if (validationError) {
       return Response.json({ valid: false, error: validationError }, { status: 400 });
     }
@@ -275,6 +317,15 @@ export async function POST(request: Request) {
     updatedBy: adminContext.user._id,
   });
 
+  await createAuditLog({
+    actor: adminContext.user,
+    action: 'coupon.created',
+    entityType: 'coupon',
+    entityId: coupon._id,
+    restaurantId: adminContext.restaurant._id,
+    metadata: { code: coupon.code, discountValue: coupon.discountValue },
+  });
+
   return Response.json({ coupon: serializeCoupon(coupon) }, { status: 201 });
 }
 
@@ -363,6 +414,15 @@ export async function PUT(request: Request) {
     { new: true, runValidators: true }
   );
 
+  await createAuditLog({
+    actor: adminContext.user,
+    action: 'coupon.updated',
+    entityType: 'coupon',
+    entityId: id,
+    restaurantId: adminContext.restaurant._id,
+    metadata: { code: payload.code, discountValue: payload.discountValue },
+  });
+
   return Response.json({ coupon: serializeCoupon(updatedCoupon) });
 }
 
@@ -394,6 +454,15 @@ export async function DELETE(request: Request) {
   if (!deleted) {
     return Response.json({ error: 'Coupon not found' }, { status: 404 });
   }
+
+  await createAuditLog({
+    actor: adminContext.user,
+    action: 'coupon.deleted',
+    entityType: 'coupon',
+    entityId: id,
+    restaurantId: adminContext.restaurant._id,
+    metadata: { code: deleted.code },
+  });
 
   return Response.json({ message: 'Coupon deleted successfully' });
 }

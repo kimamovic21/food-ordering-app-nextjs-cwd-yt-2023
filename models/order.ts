@@ -31,6 +31,9 @@ const OrderSchema = new Schema(
     postalCode: { type: String, required: true },
     city: { type: String, required: true },
     country: { type: String, required: true },
+    deliveryLatitude: { type: Number, default: null },
+    deliveryLongitude: { type: Number, default: null },
+    deliveryDistanceKm: { type: Number, default: null, min: 0 },
     cartProducts: { type: [CartProductSchema], required: true },
 
     // Restaurant reference

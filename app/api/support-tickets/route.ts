@@ -17,7 +17,7 @@ const validCategories = [
   'app_issue',
   'other',
 ] as const;
-const validStatuses = ['open', 'in_review', 'resolved', 'closed'] as const;
+const validStatuses = ['open', 'in_review', 'resolved'] as const;
 const validPriorities = ['low', 'normal', 'high'] as const;
 
 const getCurrentUser = async () => {
@@ -38,6 +38,10 @@ const isSuperAdminUser = (user: any) => {
 };
 
 const canAccessOrder = (user: any, order: any) => {
+  if (order.userId?.toString() === user._id.toString()) {
+    return true;
+  }
+
   if (user.role === 'admin') {
     return (
       isSuperAdminUser(user) ||
@@ -59,6 +63,9 @@ const populateTicketQuery = (query: any) =>
     .populate('orderId', 'email orderStatus total createdAt')
     .populate('resolvedBy', 'name email')
     .sort({ createdAt: -1 });
+
+const normalizeTicket = (ticket: any) =>
+  ticket && ticket.status === 'closed' ? { ...ticket, status: 'resolved' } : ticket;
 
 export async function GET(request: Request) {
   await mongoose.connect(process.env.MONGODB_URL as string);
@@ -99,7 +106,7 @@ export async function GET(request: Request) {
 
   const tickets = await populateTicketQuery(SupportTicket.find(filter).limit(100)).lean();
 
-  return Response.json({ tickets });
+  return Response.json({ tickets: tickets.map(normalizeTicket) });
 }
 
 export async function POST(request: Request) {
@@ -190,7 +197,7 @@ export async function POST(request: Request) {
 
   const populatedTicket = await populateTicketQuery(SupportTicket.findById(ticket._id)).lean();
 
-  return Response.json({ ticket: populatedTicket }, { status: 201 });
+  return Response.json({ ticket: normalizeTicket(populatedTicket) }, { status: 201 });
 }
 
 export async function PATCH(request: Request) {
@@ -240,7 +247,7 @@ export async function PATCH(request: Request) {
   ticket.status = status;
   ticket.responseNote = responseNote;
 
-  if (status === 'resolved' || status === 'closed') {
+  if (status === 'resolved') {
     ticket.resolvedBy = user._id;
     ticket.resolvedAt = new Date();
   } else {
@@ -252,5 +259,5 @@ export async function PATCH(request: Request) {
 
   const updatedTicket = await populateTicketQuery(SupportTicket.findById(ticket._id)).lean();
 
-  return Response.json({ ticket: updatedTicket });
+  return Response.json({ ticket: normalizeTicket(updatedTicket) });
 }

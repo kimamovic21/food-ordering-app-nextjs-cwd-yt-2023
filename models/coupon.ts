@@ -56,6 +56,11 @@ const CouponSchema = new Schema(
       default: 0,
       min: 0,
     },
+    maxDiscountAmount: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
     usageLimit: {
       type: Number,
       default: null,
@@ -86,6 +91,10 @@ const CouponSchema = new Schema(
     isPublic: {
       type: Boolean,
       default: true,
+    },
+    firstOrderOnly: {
+      type: Boolean,
+      default: false,
     },
     terms: {
       type: String,

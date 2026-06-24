@@ -114,9 +114,9 @@ const ReportProblemDialog = ({
           {triggerLabel}
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Report a problem</DialogTitle>
+      <DialogContent className='w-[min(calc(100vw-2rem),640px)] gap-5 p-5 sm:p-6'>
+        <DialogHeader className='pr-10 text-left'>
+          <DialogTitle className='text-xl'>Report a problem</DialogTitle>
           <DialogDescription>
             Send this as a ticket so the restaurant owner or app support can review it.
           </DialogDescription>
@@ -176,8 +176,8 @@ const ReportProblemDialog = ({
           </div>
         </div>
 
-        <DialogFooter showCloseButton>
-          <Button type='button' onClick={handleSubmit} disabled={submitting}>
+        <DialogFooter showCloseButton className='gap-3 pt-1'>
+          <Button type='button' onClick={handleSubmit} disabled={submitting} className='sm:w-auto'>
             {submitting ? 'Sending...' : 'Send report'}
           </Button>
         </DialogFooter>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type KeyboardEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Table,
   TableHeader,
@@ -10,7 +11,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, CreditCard, X } from 'lucide-react';
+import { CreditCard, Eye, RefreshCcw, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -25,6 +26,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
+import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
 
 type OrderType = {
@@ -50,7 +52,10 @@ type MyOrdersTableProps = {
 };
 
 const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) => {
+  const router = useRouter();
+  const { replaceCart } = useCart();
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
+  const [reorderingOrder, setReorderingOrder] = useState<string | null>(null);
   const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
   const [cancelingOrder, setCancelingOrder] = useState<string | null>(null);
 
@@ -92,6 +97,40 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       action();
+    }
+  };
+
+  const handleReorder = async (orderId: string) => {
+    try {
+      setReorderingOrder(orderId);
+      const res = await fetch('/api/my-orders/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to reorder');
+      }
+
+      replaceCart(data.cartItems || []);
+      sonnerToast.success('Order added to cart', {
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
+      router.push('/cart');
+    } catch (error) {
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to reorder', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+    } finally {
+      setReorderingOrder(null);
     }
   };
 
@@ -247,6 +286,22 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
                         </Link>
                       </TooltipTrigger>
                       <TooltipContent>Order details</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <RefreshCcw
+                          aria-label='Reorder'
+                          onClick={() => handleReorder(order._id)}
+                          onKeyDown={(event) =>
+                            handleIconKeyDown(event, () => handleReorder(order._id))
+                          }
+                          aria-disabled={reorderingOrder === order._id}
+                          className={`size-5 cursor-pointer align-middle text-muted-foreground transition-colors hover:text-primary ${reorderingOrder === order._id ? 'pointer-events-none opacity-50' : ''}`}
+                          tabIndex={reorderingOrder === order._id ? -1 : 0}
+                          role='button'
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>Reorder</TooltipContent>
                     </Tooltip>
                     {!order.paymentStatus && order.orderStatus !== 'canceled' && (
                       <Tooltip>

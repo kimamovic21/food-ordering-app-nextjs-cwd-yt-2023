@@ -13,6 +13,8 @@ import {
   getCouponValidationError,
   normalizeCouponCode,
 } from '@/libs/coupon';
+import { createAuditLog } from '@/libs/auditLog';
+import { getRestaurantOrderingStatus } from '@/libs/restaurantAvailability';
 import mongoose from 'mongoose';
 import Stripe from 'stripe';
 
@@ -51,6 +53,8 @@ export async function POST(req: Request) {
     postalCode,
     city,
     country,
+    deliveryLatitude,
+    deliveryLongitude,
     cartItems,
     loyaltyDiscountPercentage,
     couponCode,
@@ -60,6 +64,8 @@ export async function POST(req: Request) {
     postalCode?: string;
     city?: string;
     country?: string;
+    deliveryLatitude?: number | null;
+    deliveryLongitude?: number | null;
     cartItems?: CartItemPayload[];
     loyaltyDiscountPercentage?: number;
     couponCode?: string;
@@ -149,6 +155,38 @@ export async function POST(req: Request) {
   // Business rule: users cannot place orders from their own restaurant
   if (user.restaurantId?.toString() === restaurant._id.toString()) {
     return Response.json({ error: 'You cannot order from your own restaurant' }, { status: 403 });
+  }
+
+  const normalizedDeliveryLatitude =
+    deliveryLatitude === null || deliveryLatitude === undefined ? null : Number(deliveryLatitude);
+  const normalizedDeliveryLongitude =
+    deliveryLongitude === null || deliveryLongitude === undefined
+      ? null
+      : Number(deliveryLongitude);
+  const hasDeliveryLocation =
+    Number.isFinite(normalizedDeliveryLatitude) && Number.isFinite(normalizedDeliveryLongitude);
+  const orderingStatus = getRestaurantOrderingStatus({
+    restaurant,
+    deliveryLatitude: hasDeliveryLocation ? normalizedDeliveryLatitude : null,
+    deliveryLongitude: hasDeliveryLocation ? normalizedDeliveryLongitude : null,
+  });
+
+  if (orderingStatus.requiresDeliveryLocation) {
+    return Response.json(
+      {
+        error: `Please use your current location so we can confirm this restaurant delivers within ${orderingStatus.deliveryRadiusKm} km.`,
+      },
+      { status: 400 }
+    );
+  }
+
+  if (!orderingStatus.isAcceptingOrders) {
+    return Response.json(
+      {
+        error: orderingStatus.reason || 'This restaurant is not accepting orders right now.',
+      },
+      { status: orderingStatus.isWithinDeliveryRadius === false ? 400 : 409 }
+    );
   }
 
   const activeOrderLimit = Math.min(
@@ -250,7 +288,19 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Coupon for this restaurant not available' }, { status: 400 });
     }
 
-    const couponValidationError = getCouponValidationError({ coupon, subtotal });
+    const customerCouponUsageCount = await Order.countDocuments({
+      userId: user._id,
+      couponId: coupon._id,
+      orderStatus: { $ne: 'canceled' },
+      $or: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
+    });
+
+    const couponValidationError = getCouponValidationError({
+      coupon,
+      subtotal,
+      completedOrderCount,
+      customerCouponUsageCount,
+    });
     if (couponValidationError) {
       return Response.json({ error: couponValidationError }, { status: 400 });
     }
@@ -308,6 +358,12 @@ export async function POST(req: Request) {
     postalCode,
     city,
     country,
+    deliveryLatitude: hasDeliveryLocation ? normalizedDeliveryLatitude : null,
+    deliveryLongitude: hasDeliveryLocation ? normalizedDeliveryLongitude : null,
+    deliveryDistanceKm:
+      typeof orderingStatus.distanceKm === 'number'
+        ? roundToTwoDecimals(orderingStatus.distanceKm)
+        : null,
     cartProducts: sanitizedItems.map((item) => ({
       productId: item._id,
       name: item.name,
@@ -345,6 +401,20 @@ export async function POST(req: Request) {
   } catch (notificationError) {
     console.error('Failed to create order placed notifications:', notificationError);
   }
+
+  await createAuditLog({
+    actor: user,
+    action: 'order.created',
+    entityType: 'order',
+    entityId: order._id,
+    restaurantId: restaurant._id,
+    orderId: order._id,
+    metadata: {
+      total,
+      couponCode: couponSnapshot.couponCode,
+      deliveryDistanceKm: orderingStatus.distanceKm,
+    },
+  });
 
   // Add items to Stripe line items
   sanitizedItems.forEach((item) => {

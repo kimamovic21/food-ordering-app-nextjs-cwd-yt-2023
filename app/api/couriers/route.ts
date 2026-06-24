@@ -5,6 +5,7 @@ import {
   notifyCourierAboutAssignment,
   notifyUserAboutOrderStatusChange,
 } from '@/libs/notifications';
+import { COURIER_OWN_ORDER_ASSIGNMENT_ERROR, isCourierOrderOwner } from '@/libs/courierAssignment';
 import { createDeliveryPin } from '@/libs/deliveryPin';
 import mongoose from 'mongoose';
 
@@ -82,6 +83,10 @@ export async function PATCH(request: Request) {
       { error: 'Order must be in ready status before assigning a courier' },
       { status: 400 }
     );
+  }
+
+  if (isCourierOrderOwner(order.userId, courier._id)) {
+    return Response.json({ error: COURIER_OWN_ORDER_ASSIGNMENT_ERROR }, { status: 400 });
   }
 
   // Update courier's taken order

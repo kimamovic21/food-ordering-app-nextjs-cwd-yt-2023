@@ -2,6 +2,7 @@ import { authOptions } from '@/libs/authOptions';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
 import { notifyUserAboutOrderStatusChange } from '@/libs/notifications';
+import { createAuditLog } from '@/libs/auditLog';
 import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth/next';
 
@@ -169,6 +170,18 @@ export async function PATCH(request: Request) {
   }
 
   const savedOrder = await order.save();
+
+  if (previousStatus !== orderStatus) {
+    await createAuditLog({
+      actor: user,
+      action: 'order.status_updated',
+      entityType: 'order',
+      entityId: order._id,
+      restaurantId: order.restaurantId,
+      orderId: order._id,
+      metadata: { previousStatus, orderStatus },
+    });
+  }
 
   if (previousStatus !== orderStatus && order.userId) {
     try {

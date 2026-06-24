@@ -4,6 +4,7 @@ import { MenuItem } from '@/models/menuItem';
 import { Restaurant } from '@/models/restaurant';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
+import { createAuditLog } from '@/libs/auditLog';
 import { notifyRestaurantAdminsAboutCanceledOrder } from '@/libs/notifications';
 import mongoose from 'mongoose';
 
@@ -195,6 +196,16 @@ export async function PATCH(request: Request) {
 
     await order.save();
 
+    await createAuditLog({
+      actor: user,
+      action: 'order.canceled',
+      entityType: 'order',
+      entityId: order._id,
+      restaurantId: order.restaurantId,
+      orderId: order._id,
+      metadata: { total: Number((order as any).total) || 0 },
+    });
+
     try {
       await notifyRestaurantAdminsAboutCanceledOrder({
         restaurantId: order.restaurantId,
@@ -223,6 +234,16 @@ export async function PATCH(request: Request) {
   order.completedAt = now;
 
   await order.save();
+
+  await createAuditLog({
+    actor: user,
+    action: 'order.customer_confirmed_delivery',
+    entityType: 'order',
+    entityId: order._id,
+    restaurantId: order.restaurantId,
+    orderId: order._id,
+    metadata: { completedAt: now.toISOString() },
+  });
 
   return Response.json({ order: normalizeOrder(order.toObject()) });
 }

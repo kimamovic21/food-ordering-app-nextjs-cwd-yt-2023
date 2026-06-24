@@ -19,6 +19,7 @@ interface CartContextType {
   removeFromCart: (id: string, size: string) => void;
   updateQuantity: (id: string, size: string, quantity: number) => void;
   clearCart: () => void;
+  replaceCart: (items: CartItem[]) => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
   getCartRestaurantId: () => string | null; // Get the restaurantId of items in cart
@@ -121,6 +122,10 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     setCartItems([]);
   }, []);
 
+  const replaceCart = useCallback((items: CartItem[]) => {
+    setCartItems(items.filter((item) => item.restaurantId && item.quantity > 0));
+  }, []);
+
   const getCartRestaurantId = (): string | null => {
     if (cartItems.length === 0) return null;
     return cartItems[0].restaurantId;
@@ -149,6 +154,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         removeFromCart,
         updateQuantity,
         clearCart,
+        replaceCart,
         getTotalItems,
         getTotalPrice,
         getCartRestaurantId,

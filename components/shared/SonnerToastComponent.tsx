@@ -6,6 +6,7 @@ import { toast, type ExternalToast } from 'sonner';
 type ToastMessage = ReactNode;
 type ToastVariant = 'success' | 'error' | 'pending';
 type PromiseToastOptions = Parameters<typeof toast.promise>[1];
+type PromiseToastMessage<Data = unknown> = ReactNode | ((data: Data) => ReactNode);
 
 type SonnerToastComponentProps = {
   success?: ToastMessage;
@@ -27,12 +28,6 @@ const toastStyles: Record<ToastVariant, CSSProperties> = {
     background: 'var(--primary)',
     color: 'white',
   },
-};
-
-const promiseClassNames = {
-  success: 'bg-green-500 text-white border-green-500',
-  error: 'bg-red-500 text-white border-red-500',
-  loading: 'bg-primary text-white border-primary',
 };
 
 const withToastStyle = (variant: ToastVariant, options?: ExternalToast): ExternalToast => ({
@@ -58,15 +53,44 @@ export const sonnerToast = {
     promise: Promise<ToastData> | (() => Promise<ToastData>),
     options?: PromiseToastOptions
   ) => {
-    const { classNames, style: _style, ...toastOptions } = options ?? {};
+    const {
+      loading,
+      success,
+      error,
+      finally: onFinally,
+      ...rawToastOptions
+    } = (options ?? {}) as PromiseToastOptions & {
+      loading?: PromiseToastMessage;
+      success?: PromiseToastMessage<ToastData>;
+      error?: PromiseToastMessage<unknown>;
+      finally?: () => void | Promise<void>;
+    };
+    const toastOptions = rawToastOptions as ExternalToast;
+    const activePromise = typeof promise === 'function' ? promise() : promise;
+    const loadingToastId = sonnerToast.loading(loading || 'Loading...', toastOptions);
 
-    return toast.promise(promise, {
-      ...toastOptions,
-      classNames: {
-        ...classNames,
-        ...promiseClassNames,
-      },
-    });
+    activePromise
+      .then(async (data) => {
+        const successMessage =
+          typeof success === 'function' ? success(data) : success || 'Completed successfully.';
+        sonnerToast.success((await successMessage) as ToastMessage, {
+          ...toastOptions,
+          id: loadingToastId,
+        });
+      })
+      .catch(async (err) => {
+        const errorMessage =
+          typeof error === 'function' ? error(err) : error || 'Something went wrong.';
+        sonnerToast.error((await errorMessage) as ToastMessage, {
+          ...toastOptions,
+          id: loadingToastId,
+        });
+      })
+      .finally(() => {
+        void onFinally?.();
+      });
+
+    return activePromise;
   },
   dismiss: toast.dismiss,
 };

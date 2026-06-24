@@ -17,12 +17,14 @@ export type CouponFormSubmitValues = {
   description: string;
   discountValue: number;
   minimumOrderAmount: number;
+  maxDiscountAmount: number | null;
   usageLimit: number | null;
   usagePerCustomer: number;
   startsAt: string;
   expiresAt: string | null;
   isActive: boolean;
   isPublic: boolean;
+  firstOrderOnly: boolean;
   terms: string;
   tags: string[];
 };
@@ -33,12 +35,14 @@ export type CouponFormInitialValues = Partial<{
   description: string;
   discountValue: number;
   minimumOrderAmount: number;
+  maxDiscountAmount: number | null;
   usageLimit: number | null;
   usagePerCustomer: number;
   startsAt: string | null;
   expiresAt: string | null;
   isActive: boolean;
   isPublic: boolean;
+  firstOrderOnly: boolean;
   terms: string;
   tags: string[];
 }>;
@@ -81,6 +85,9 @@ const buildInitialFormState = (initialValues?: CouponFormInitialValues) => {
     description: initialValues?.description || '',
     discountValue: String(initialValues?.discountValue ?? 10),
     minimumOrderAmount: String(initialValues?.minimumOrderAmount ?? 0),
+    maxDiscountAmount: initialValues?.maxDiscountAmount
+      ? String(initialValues.maxDiscountAmount)
+      : '',
     usageLimit: initialValues?.usageLimit ? String(initialValues.usageLimit) : '',
     usagePerCustomer: String(initialValues?.usagePerCustomer ?? 1),
     startsAt: initialValues?.startsAt
@@ -91,6 +98,7 @@ const buildInitialFormState = (initialValues?: CouponFormInitialValues) => {
       : defaultCouponDates.expiresAt,
     isActive: initialValues?.isActive ?? true,
     isPublic: initialValues?.isPublic ?? true,
+    firstOrderOnly: initialValues?.firstOrderOnly ?? false,
     terms: initialValues?.terms || '',
     tags: (initialValues?.tags || []).join(', '),
   };
@@ -121,6 +129,9 @@ const CouponForm = ({
     const code = normalizeCouponCode(formData.code);
     const discountValue = Number(formData.discountValue);
     const minimumOrderAmount = Number(formData.minimumOrderAmount || 0);
+    const maxDiscountAmount = formData.maxDiscountAmount.trim()
+      ? Number(formData.maxDiscountAmount)
+      : null;
     const usageLimit = formData.usageLimit.trim() ? Number(formData.usageLimit) : null;
     const usagePerCustomer = Number(formData.usagePerCustomer || 1);
 
@@ -146,6 +157,14 @@ const CouponForm = ({
 
     if (Number.isNaN(minimumOrderAmount) || minimumOrderAmount < 0) {
       setFormError('Minimum order amount must be 0 or greater.');
+      return;
+    }
+
+    if (
+      maxDiscountAmount !== null &&
+      (!Number.isFinite(maxDiscountAmount) || maxDiscountAmount < 0)
+    ) {
+      setFormError('Maximum discount amount must be 0 or greater.');
       return;
     }
 
@@ -176,12 +195,14 @@ const CouponForm = ({
         description: formData.description.trim(),
         discountValue,
         minimumOrderAmount,
+        maxDiscountAmount,
         usageLimit,
         usagePerCustomer,
         startsAt: formData.startsAt,
         expiresAt: formData.expiresAt || null,
         isActive: formData.isActive,
         isPublic: formData.isPublic,
+        firstOrderOnly: formData.firstOrderOnly,
         terms: formData.terms.trim(),
         tags: formData.tags
           .split(',')
@@ -251,6 +272,19 @@ const CouponForm = ({
             step='0.01'
             value={formData.minimumOrderAmount}
             onChange={(event) => handleChange('minimumOrderAmount', event.target.value)}
+          />
+        </div>
+
+        <div className='space-y-2'>
+          <Label htmlFor='maxDiscountAmount'>Maximum discount amount</Label>
+          <Input
+            id='maxDiscountAmount'
+            type='number'
+            min='0'
+            step='0.01'
+            value={formData.maxDiscountAmount}
+            onChange={(event) => handleChange('maxDiscountAmount', event.target.value)}
+            placeholder='Optional cap'
           />
         </div>
 
@@ -343,6 +377,16 @@ const CouponForm = ({
             className='h-4 w-4 rounded border-border'
           />
           <span className='text-sm font-medium'>Show publicly in checkout</span>
+        </label>
+
+        <label className='flex items-center gap-3 rounded-lg border border-border p-4'>
+          <input
+            type='checkbox'
+            checked={formData.firstOrderOnly}
+            onChange={(event) => handleChange('firstOrderOnly', event.target.checked)}
+            className='h-4 w-4 rounded border-border'
+          />
+          <span className='text-sm font-medium'>First order only</span>
         </label>
       </div>
 

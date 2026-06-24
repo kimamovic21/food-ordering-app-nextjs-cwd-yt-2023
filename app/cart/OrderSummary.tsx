@@ -23,6 +23,8 @@ interface OrderSummaryProps {
   handleCheckout: () => void;
   restaurantsOpen: boolean;
   restaurantBusy?: boolean;
+  restaurantPaused?: boolean;
+  missingDeliveryLocation?: boolean;
   loadingRestaurants: boolean;
   hasUnavailableItems?: boolean;
   loadingMenuAvailability?: boolean;
@@ -47,6 +49,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   handleCheckout,
   restaurantsOpen,
   restaurantBusy = false,
+  restaurantPaused = false,
+  missingDeliveryLocation = false,
   loadingRestaurants,
   hasUnavailableItems = false,
   loadingMenuAvailability = false,
@@ -157,7 +161,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           disabled={
             isSubmitting ||
             !restaurantsOpen ||
+            restaurantPaused ||
             restaurantBusy ||
+            missingDeliveryLocation ||
             loadingRestaurants ||
             loadingMenuAvailability ||
             hasUnavailableItems
@@ -173,8 +179,12 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             </>
           ) : !restaurantsOpen ? (
             'Restaurant Closed'
+          ) : restaurantPaused ? (
+            'Restaurant Paused'
           ) : restaurantBusy ? (
             'Restaurant Busy'
+          ) : missingDeliveryLocation ? (
+            'Confirm Location'
           ) : loadingMenuAvailability ? (
             'Checking Menu'
           ) : hasUnavailableItems ? (

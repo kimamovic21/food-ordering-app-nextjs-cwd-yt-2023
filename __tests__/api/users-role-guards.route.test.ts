@@ -16,7 +16,6 @@ vi.mock('@/models/user', () => ({
 const loadMakeAdmin = async () => (await import('@/app/api/users/make-admin/route')).PATCH;
 const loadRemoveAdmin = async () => (await import('@/app/api/users/remove-admin/route')).PATCH;
 const loadMakeCourier = async () => (await import('@/app/api/users/make-courier/route')).PATCH;
-const loadRemoveCourier = async () => (await import('@/app/api/users/remove-courier/route')).PATCH;
 
 describe('User role mutation route guards', () => {
   beforeEach(() => {

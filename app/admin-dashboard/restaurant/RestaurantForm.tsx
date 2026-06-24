@@ -48,6 +48,9 @@ interface RestaurantFormData {
   averagePreparationMinutes: number;
   averageDeliveryMinutes: number;
   activeOrderLimit: number;
+  deliveryRadiusKm: number;
+  isPaused: boolean;
+  pauseReason: string;
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;
@@ -79,6 +82,9 @@ const formatRestaurantDataForForm = (restaurant: RestaurantFormData | undefined)
     averagePreparationMinutes: restaurant.averagePreparationMinutes ?? 25,
     averageDeliveryMinutes: restaurant.averageDeliveryMinutes ?? 20,
     activeOrderLimit: restaurant.activeOrderLimit ?? 10,
+    deliveryRadiusKm: restaurant.deliveryRadiusKm ?? 10,
+    isPaused: restaurant.isPaused ?? false,
+    pauseReason: restaurant.pauseReason ?? '',
     blockedDates: blockedDates.map((bd) => {
       const date = new Date(bd.date);
       const year = date.getUTCFullYear();
@@ -116,6 +122,9 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
     averagePreparationMinutes: 25,
     averageDeliveryMinutes: 20,
     activeOrderLimit: 10,
+    deliveryRadiusKm: 10,
+    isPaused: false,
+    pauseReason: '',
     workingHours: defaultWorkingHours,
     blockedDates: [],
     totalEmployees: 1,
@@ -190,6 +199,9 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
       averagePreparationMinutes: data.averagePreparationMinutes,
       averageDeliveryMinutes: data.averageDeliveryMinutes,
       activeOrderLimit: data.activeOrderLimit,
+      deliveryRadiusKm: data.deliveryRadiusKm,
+      isPaused: data.isPaused,
+      pauseReason: data.pauseReason,
       workingHours: data.workingHours,
       blockedDates: data.blockedDates
         .map((blocked) => {
@@ -378,6 +390,14 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
     }
     if (formData.activeOrderLimit < 1 || formData.activeOrderLimit > 100) {
       sonnerToast.error('Active order limit must be between 1 and 100 orders');
+      return false;
+    }
+    if (formData.deliveryRadiusKm < 1 || formData.deliveryRadiusKm > 15) {
+      sonnerToast.error('Delivery radius must be between 1 and 15 km');
+      return false;
+    }
+    if (formData.pauseReason.length > 160) {
+      sonnerToast.error('Pause reason must be 160 characters or less');
       return false;
     }
     // Check images validation
@@ -878,26 +898,96 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
               </div>
             </div>
 
-            <div>
-              <Label htmlFor='activeOrderLimit' className='mb-2'>
-                Active Order Limit *
-              </Label>
-              <div className='flex items-center gap-2'>
-                <Input
-                  id='activeOrderLimit'
-                  type='number'
-                  min='1'
-                  max='100'
-                  step='1'
-                  value={formData.activeOrderLimit}
-                  onChange={(e) => handleNumberChange(e, 'activeOrderLimit')}
-                  required
-                />
-                <span className='text-sm text-muted-foreground'>orders</span>
+            <div className='grid gap-4 sm:grid-cols-2'>
+              <div>
+                <Label htmlFor='activeOrderLimit' className='mb-2'>
+                  Active Order Limit *
+                </Label>
+                <div className='flex items-center gap-2'>
+                  <Input
+                    id='activeOrderLimit'
+                    type='number'
+                    min='1'
+                    max='100'
+                    step='1'
+                    value={formData.activeOrderLimit}
+                    onChange={(e) => handleNumberChange(e, 'activeOrderLimit')}
+                    required
+                  />
+                  <span className='text-sm text-muted-foreground'>orders</span>
+                </div>
+                <p className='mt-1 text-xs text-muted-foreground'>
+                  Checkout pauses when paid kitchen orders reach this limit.
+                </p>
               </div>
-              <p className='mt-1 text-xs text-muted-foreground'>
-                Checkout pauses when paid kitchen orders reach this limit.
-              </p>
+
+              <div>
+                <Label htmlFor='deliveryRadiusKm' className='mb-2'>
+                  Delivery Radius *
+                </Label>
+                <div className='flex items-center gap-2'>
+                  <Input
+                    id='deliveryRadiusKm'
+                    type='number'
+                    min='1'
+                    max='15'
+                    step='0.5'
+                    value={formData.deliveryRadiusKm}
+                    onChange={(e) => handleNumberChange(e, 'deliveryRadiusKm')}
+                    required
+                  />
+                  <span className='text-sm text-muted-foreground'>km</span>
+                </div>
+                <p className='mt-1 text-xs text-muted-foreground'>
+                  10 km is recommended; 15 km is the maximum allowed.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Ordering Controls */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ordering Controls</CardTitle>
+            <CardDescription>
+              Pause checkout temporarily when the kitchen is overloaded
+            </CardDescription>
+          </CardHeader>
+          <CardContent className='space-y-4'>
+            <label
+              htmlFor='isPaused'
+              className='flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/40'
+            >
+              <Checkbox
+                id='isPaused'
+                checked={formData.isPaused}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, isPaused: checked === true }))
+                }
+                className='mt-1'
+              />
+              <span>
+                <span className='block font-medium'>Pause new orders</span>
+                <span className='text-sm text-muted-foreground'>
+                  Customers can browse your menu, but checkout is blocked while this is enabled.
+                </span>
+              </span>
+            </label>
+
+            <div>
+              <Label htmlFor='pauseReason' className='mb-2'>
+                Pause Reason
+              </Label>
+              <Textarea
+                id='pauseReason'
+                name='pauseReason'
+                value={formData.pauseReason}
+                onChange={handleInputChange}
+                placeholder='Example: Kitchen is catching up on current orders.'
+                maxLength={160}
+                rows={3}
+              />
             </div>
           </CardContent>
         </Card>

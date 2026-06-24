@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle2, ExternalLink, MessageSquareText, RefreshCw } from 'lucide-react';
+import { CheckCircle2, ExternalLink, RefreshCw } from 'lucide-react';
 import Title from '@/components/shared/Title';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,7 +54,7 @@ type SupportTicket = {
   category: string;
   subject: string;
   description: string;
-  status: 'open' | 'in_review' | 'resolved' | 'closed';
+  status: 'open' | 'in_review' | 'resolved';
   priority: 'low' | 'normal' | 'high';
   responseNote?: string;
   createdAt: string;
@@ -65,7 +65,6 @@ const statusLabels = {
   open: 'Open',
   in_review: 'In review',
   resolved: 'Resolved',
-  closed: 'Closed',
 };
 
 const categoryLabels: Record<string, string> = {
@@ -151,7 +150,7 @@ const SupportTicketsPage = () => {
     () => ({
       open: tickets.filter((ticket) => ticket.status === 'open').length,
       inReview: tickets.filter((ticket) => ticket.status === 'in_review').length,
-      done: tickets.filter((ticket) => ['resolved', 'closed'].includes(ticket.status)).length,
+      resolved: tickets.filter((ticket) => ticket.status === 'resolved').length,
     }),
     [tickets]
   );
@@ -225,7 +224,6 @@ const SupportTicketsPage = () => {
               <SelectItem value='open'>Open</SelectItem>
               <SelectItem value='in_review'>In review</SelectItem>
               <SelectItem value='resolved'>Resolved</SelectItem>
-              <SelectItem value='closed'>Closed</SelectItem>
             </SelectContent>
           </Select>
           <Button type='button' variant='outline' onClick={() => fetchTickets()} className='gap-2'>
@@ -250,8 +248,8 @@ const SupportTicketsPage = () => {
         </Card>
         <Card>
           <CardHeader className='pb-2'>
-            <CardDescription>Resolved or closed</CardDescription>
-            <CardTitle>{ticketStats.done}</CardTitle>
+            <CardDescription>Resolved</CardDescription>
+            <CardTitle>{ticketStats.resolved}</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -265,7 +263,6 @@ const SupportTicketsPage = () => {
       ) : (
         <div className='space-y-4'>
           {tickets.map((ticket) => {
-            const reporterId = getId(ticket.reporterId);
             const orderId = getId(ticket.orderId);
             const reporter =
               typeof ticket.reporterId === 'object' && ticket.reporterId ? ticket.reporterId : null;
@@ -273,9 +270,6 @@ const SupportTicketsPage = () => {
               typeof ticket.restaurantId === 'object' && ticket.restaurantId
                 ? ticket.restaurantId
                 : null;
-            const messageHref = reporterId
-              ? `/messages/${reporterId}${orderId ? `?context=order&orderId=${orderId}` : ''}`
-              : '/messages';
 
             return (
               <Card
@@ -313,12 +307,6 @@ const SupportTicketsPage = () => {
                           </Link>
                         </Button>
                       )}
-                      <Button asChild variant='outline' size='sm' className='gap-2'>
-                        <Link href={messageHref}>
-                          <MessageSquareText className='size-4' />
-                          Message reporter
-                        </Link>
-                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -362,14 +350,6 @@ const SupportTicketsPage = () => {
                     >
                       <CheckCircle2 className='size-4' />
                       Resolve
-                    </Button>
-                    <Button
-                      type='button'
-                      variant='secondary'
-                      onClick={() => updateTicket(ticket._id, 'closed')}
-                      disabled={updatingTicketId === ticket._id || ticket.status === 'closed'}
-                    >
-                      Close
                     </Button>
                   </div>
                 </CardContent>

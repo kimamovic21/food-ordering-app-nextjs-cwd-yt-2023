@@ -107,8 +107,35 @@ vi.mock('@/libs/coupon', () => ({
 }));
 
 vi.mock('@/libs/notifications', () => ({
+  notifyOrderPlaced: vi.fn(),
   notifyRestaurantAdminsAboutPaidOrder: vi.fn(),
 }));
+
+vi.mock('@/libs/auditLog', () => ({
+  createAuditLog: vi.fn(),
+}));
+
+const openWorkingHours = [
+  { day: 'monday', openTime: '00:00', closeTime: '23:59', isClosed: false },
+  { day: 'tuesday', openTime: '00:00', closeTime: '23:59', isClosed: false },
+  { day: 'wednesday', openTime: '00:00', closeTime: '23:59', isClosed: false },
+  { day: 'thursday', openTime: '00:00', closeTime: '23:59', isClosed: false },
+  { day: 'friday', openTime: '00:00', closeTime: '23:59', isClosed: false },
+  { day: 'saturday', openTime: '00:00', closeTime: '23:59', isClosed: false },
+  { day: 'sunday', openTime: '00:00', closeTime: '23:59', isClosed: false },
+];
+
+const openRestaurant = {
+  _id: 'restaurant-1',
+  tax: 10,
+  courierFee: 5,
+  latitude: 43.8563,
+  longitude: 18.4131,
+  workingHours: openWorkingHours,
+  blockedDates: [],
+  deliveryRadiusKm: 10,
+  isPaused: false,
+};
 
 const loadCheckoutRoute = async () => {
   const mod = await import('@/app/api/checkout/route');
@@ -122,6 +149,8 @@ const createCheckoutRequest = (overrides: Partial<Record<string, unknown>> = {})
     postalCode: '71000',
     city: 'Sarajevo',
     country: 'BiH',
+    deliveryLatitude: 43.8563,
+    deliveryLongitude: 18.4131,
     loyaltyDiscountPercentage: 0,
     cartItems: [
       {
@@ -160,11 +189,7 @@ describe('POST /api/checkout', () => {
       restaurantId: null,
     } as never);
 
-    vi.mocked(Restaurant.findById).mockResolvedValue({
-      _id: 'restaurant-1',
-      tax: 10,
-      courierFee: 5,
-    } as never);
+    vi.mocked(Restaurant.findById).mockResolvedValue(openRestaurant as never);
 
     vi.mocked(MenuItem.find).mockReturnValue({
       select: vi.fn().mockReturnValue({
@@ -262,11 +287,40 @@ describe('POST /api/checkout', () => {
     expect(stripeCreateSession).not.toHaveBeenCalled();
   });
 
+  it('rejects checkout when restaurant paused new orders', async () => {
+    vi.mocked(Restaurant.findById).mockResolvedValueOnce({
+      ...openRestaurant,
+      isPaused: true,
+      pauseReason: 'Kitchen is catching up on current orders.',
+    } as never);
+
+    const POST = await loadCheckoutRoute();
+    const response = await POST(createCheckoutRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toEqual({ error: 'Kitchen is catching up on current orders.' });
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
+  it('rejects checkout when delivery location is outside restaurant radius', async () => {
+    const POST = await loadCheckoutRoute();
+    const response = await POST(
+      createCheckoutRequest({
+        deliveryLatitude: 44.8563,
+        deliveryLongitude: 19.4131,
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toContain('This restaurant delivers within 10 km.');
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
   it('rejects checkout when restaurant active kitchen orders reached the limit', async () => {
     vi.mocked(Restaurant.findById).mockResolvedValueOnce({
-      _id: 'restaurant-1',
-      tax: 10,
-      courierFee: 5,
+      ...openRestaurant,
       activeOrderLimit: 10,
     } as never);
     vi.mocked(Order.countDocuments).mockResolvedValueOnce(10 as never);

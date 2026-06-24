@@ -13,6 +13,10 @@ vi.mock('@/libs/mongoConnect', () => ({
   mongoConnect: vi.fn(),
 }));
 
+vi.mock('@/libs/auditLog', () => ({
+  createAuditLog: vi.fn(),
+}));
+
 vi.mock('@/models/user', () => ({
   User: {
     findOne: vi.fn(),

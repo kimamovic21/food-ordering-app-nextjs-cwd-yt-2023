@@ -103,7 +103,10 @@ const CartPage = () => {
     postalCode: '',
     city: '',
     country: '',
+    deliveryLatitude: null as number | null,
+    deliveryLongitude: null as number | null,
   });
+  const [isGettingDeliveryLocation, setIsGettingDeliveryLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [restaurants, setRestaurants] = useState<Map<string, any>>(new Map());
@@ -202,6 +205,8 @@ const CartPage = () => {
         postalCode: profileData.postalCode || '',
         city: profileData.city || '',
         country: profileData.country || '',
+        deliveryLatitude: null,
+        deliveryLongitude: null,
       });
     }
   }, [profileData]);
@@ -328,10 +333,7 @@ const CartPage = () => {
   const isRestaurantOpen = () => {
     const restaurant = getCartRestaurant();
 
-    if (!restaurant || !restaurant.isOpen) {
-      return false;
-    }
-    return true;
+    return Boolean(restaurant?.isOpen);
   };
 
   // Get the restaurant name from cart
@@ -343,6 +345,76 @@ const CartPage = () => {
   const isRestaurantBusy = () => {
     const restaurant = getCartRestaurant();
     return Boolean(restaurant?.isBusy);
+  };
+
+  const isRestaurantPaused = () => {
+    const restaurant = getCartRestaurant();
+    return Boolean(restaurant?.isPaused);
+  };
+
+  const getRestaurantUnavailableReason = () => {
+    const restaurant = getCartRestaurant();
+    return restaurant?.orderingUnavailableReason || null;
+  };
+
+  const getDeliveryRadiusKm = () => {
+    const restaurant = getCartRestaurant();
+    return typeof restaurant?.deliveryRadiusKm === 'number' ? restaurant.deliveryRadiusKm : null;
+  };
+
+  const getDeliveryDistanceKm = () => {
+    const restaurant = getCartRestaurant();
+    if (
+      typeof restaurant?.latitude !== 'number' ||
+      typeof restaurant?.longitude !== 'number' ||
+      typeof formData.deliveryLatitude !== 'number' ||
+      typeof formData.deliveryLongitude !== 'number'
+    ) {
+      return null;
+    }
+
+    const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+    const earthRadiusKm = 6371;
+    const latDelta = toRadians(formData.deliveryLatitude - restaurant.latitude);
+    const lonDelta = toRadians(formData.deliveryLongitude - restaurant.longitude);
+    const originLat = toRadians(restaurant.latitude);
+    const destinationLat = toRadians(formData.deliveryLatitude);
+    const haversine =
+      Math.sin(latDelta / 2) * Math.sin(latDelta / 2) +
+      Math.sin(lonDelta / 2) *
+        Math.sin(lonDelta / 2) *
+        Math.cos(originLat) *
+        Math.cos(destinationLat);
+
+    return earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+  };
+
+  const hasDeliveryLocation =
+    typeof formData.deliveryLatitude === 'number' && typeof formData.deliveryLongitude === 'number';
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      sonnerToast.error('Your browser does not support location checks.');
+      return;
+    }
+
+    setIsGettingDeliveryLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData((prev) => ({
+          ...prev,
+          deliveryLatitude: position.coords.latitude,
+          deliveryLongitude: position.coords.longitude,
+        }));
+        setIsGettingDeliveryLocation(false);
+        sonnerToast.success('Delivery location confirmed');
+      },
+      () => {
+        setIsGettingDeliveryLocation(false);
+        sonnerToast.error('Unable to access your location. Please allow location access.');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
   };
 
   const subtotal = getTotalPrice();
@@ -461,7 +533,16 @@ const CartPage = () => {
       if (!isRestaurantOpen()) {
         const restaurantName = getRestaurantName();
         sonnerToast.error(
-          `${restaurantName} you want to order from is not working at the moment. Please remove items and try ordering from another restaurant.`
+          getRestaurantUnavailableReason() ||
+            `${restaurantName} you want to order from is not working at the moment. Please remove items and try ordering from another restaurant.`
+        );
+        return;
+      }
+
+      if (isRestaurantPaused()) {
+        sonnerToast.error(
+          getRestaurantUnavailableReason() ||
+            `${getRestaurantName()} paused new orders for a little while. Please try again soon.`
         );
         return;
       }
@@ -473,7 +554,15 @@ const CartPage = () => {
         return;
       }
 
-      const missingField = Object.entries(formData).find(([, value]) => !value);
+      if (!hasDeliveryLocation) {
+        sonnerToast.error('Please use your current location before checkout.');
+        return;
+      }
+
+      const missingField = Object.entries(formData).find(
+        ([key, value]) =>
+          key !== 'deliveryLatitude' && key !== 'deliveryLongitude' && !String(value || '').trim()
+      );
       if (missingField) {
         sonnerToast.error('Please complete your delivery details.', {
           style: {
@@ -552,8 +641,17 @@ const CartPage = () => {
   const { includedTax, taxPercentage, totalDeliveryFee } = calculateTotals();
   const multipleRestaurants = hasMultipleRestaurants();
   const restaurantOpen = isRestaurantOpen();
+  const restaurantPaused = isRestaurantPaused();
   const restaurantBusy = isRestaurantBusy();
   const restaurantName = getRestaurantName();
+  const deliveryRadiusKm = getDeliveryRadiusKm();
+  const deliveryDistanceKm = getDeliveryDistanceKm();
+  const missingDeliveryLocation =
+    !multipleRestaurants &&
+    restaurantOpen &&
+    !restaurantPaused &&
+    !restaurantBusy &&
+    !hasDeliveryLocation;
   const displayedCouponMessage = couponValidationError || couponMessage;
   const unavailableCartItems = cartItems.filter((item) => unavailableItemIds.includes(item._id));
 
@@ -575,16 +673,34 @@ const CartPage = () => {
       {!multipleRestaurants && !restaurantOpen && (
         <div className='mb-4 p-4 bg-orange-100 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg'>
           <p className='text-orange-800 dark:text-orange-200 font-semibold'>
-            {restaurantName} you want to order from is not working at the moment. Please remove
-            items from this restaurant and try ordering from another restaurant.
+            {getRestaurantUnavailableReason() ||
+              `${restaurantName} you want to order from is not working at the moment. Please remove items from this restaurant and try ordering from another restaurant.`}
           </p>
         </div>
       )}
 
-      {!multipleRestaurants && restaurantOpen && restaurantBusy && (
+      {!multipleRestaurants && restaurantOpen && restaurantPaused && (
+        <div className='mb-4 rounded-lg border border-orange-300 bg-orange-100 p-4 dark:border-orange-700 dark:bg-orange-900/20'>
+          <p className='font-semibold text-orange-800 dark:text-orange-200'>
+            {getRestaurantUnavailableReason() ||
+              `${restaurantName} paused new orders for a little while. Please try again soon.`}
+          </p>
+        </div>
+      )}
+
+      {!multipleRestaurants && restaurantOpen && !restaurantPaused && restaurantBusy && (
         <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
           <p className='font-semibold text-amber-800 dark:text-amber-200'>
             {restaurantName} is very busy at the moment. Please wait a little bit and try again.
+          </p>
+        </div>
+      )}
+
+      {missingDeliveryLocation && (
+        <div className='mb-4 rounded-lg border border-primary/30 bg-primary/10 p-4'>
+          <p className='font-semibold text-primary'>
+            Confirm your delivery location so we can check the {deliveryRadiusKm || 10} km delivery
+            radius.
           </p>
         </div>
       )}
@@ -616,6 +732,10 @@ const CartPage = () => {
             email={profileData?.email || ''}
             formData={formData}
             handleInputChange={handleInputChange}
+            deliveryRadiusKm={deliveryRadiusKm}
+            deliveryDistanceKm={deliveryDistanceKm}
+            isGettingDeliveryLocation={isGettingDeliveryLocation}
+            onUseCurrentLocation={handleUseCurrentLocation}
           />
           <OrderSummary
             subtotal={subtotal}
@@ -635,7 +755,9 @@ const CartPage = () => {
             isSubmitting={isSubmitting}
             handleCheckout={handleCheckout}
             restaurantsOpen={restaurantOpen && !multipleRestaurants}
+            restaurantPaused={restaurantPaused}
             restaurantBusy={restaurantBusy}
+            missingDeliveryLocation={missingDeliveryLocation}
             loadingRestaurants={loadingRestaurants}
             hasUnavailableItems={unavailableItemIds.length > 0}
             loadingMenuAvailability={loadingMenuAvailability}

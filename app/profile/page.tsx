@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { sonnerToast } from '@/components/shared/SonnerToastComponent';
+import SonnerToastComponent, { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import type { ExtendedUser } from '@/types/user';
 import Title from '@/components/shared/Title';
 import UserProfileForm from './UserProfileForm';
@@ -12,6 +12,14 @@ import UserProfileImage from './UserProfileImage';
 import ProfilePageLoading from './loading';
 
 const FALLBACK_IMAGE = '/user-default-image.webp';
+const PROFILE_UPDATE_TOAST_ID = 'profile-update-toast';
+
+type ProfileToastState = {
+  key: number;
+  pending?: string;
+  success?: string;
+  error?: string;
+};
 
 const ProfilePage = () => {
   const session = useSession();
@@ -32,6 +40,7 @@ const ProfilePage = () => {
   const [isRemovingImage, setIsRemovingImage] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isInitialSessionLoading, setIsInitialSessionLoading] = useState(true);
+  const [profileToast, setProfileToast] = useState<ProfileToastState | null>(null);
 
   useEffect(() => {
     if (status !== 'loading') {
@@ -169,18 +178,22 @@ const ProfilePage = () => {
       return updatedUser;
     })();
 
-    sonnerToast.promise(savePromise, {
-      loading: 'Saving profile...',
-      success: 'Profile updated!',
-      error: (err) => (err instanceof Error ? err.message : 'Failed to update profile.'),
-      style: {
-        background: '#22c55e', // Tailwind green-500
-        color: 'white',
-      },
+    setProfileToast({
+      key: Date.now(),
+      pending: 'Saving profile...',
     });
 
     try {
       await savePromise;
+      setProfileToast({
+        key: Date.now(),
+        success: 'Profile updated!',
+      });
+    } catch (error) {
+      setProfileToast({
+        key: Date.now(),
+        error: error instanceof Error ? error.message : 'Failed to update profile.',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -226,6 +239,15 @@ const ProfilePage = () => {
 
   return (
     <section className='mt-8 max-w-5xl mx-auto'>
+      {profileToast && (
+        <SonnerToastComponent
+          key={profileToast.key}
+          pending={profileToast.pending}
+          success={profileToast.success}
+          error={profileToast.error}
+          options={{ id: PROFILE_UPDATE_TOAST_ID }}
+        />
+      )}
       <Title className='text-center'>Profile</Title>
 
       <div className='max-w-3xl mx-auto mt-8'>

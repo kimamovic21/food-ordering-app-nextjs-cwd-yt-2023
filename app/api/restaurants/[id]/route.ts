@@ -1,69 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mongoConnect } from '@/libs/mongoConnect';
+import { getRestaurantOrderingStatus } from '@/libs/restaurantAvailability';
 import { getRestaurantRatingSummaries } from '@/libs/reviewSummary';
 import { Order } from '@/models/order';
 import { Restaurant } from '@/models/restaurant';
-
-type WorkingHour = {
-  day: string;
-  openTime: string;
-  closeTime: string;
-  isClosed?: boolean;
-};
-
-type BlockedDate = {
-  date: string | Date;
-};
-
-const isRestaurantOpen = (
-  workingHours: WorkingHour[] = [],
-  blockedDates: BlockedDate[] = [],
-  targetDate: Date = new Date()
-) => {
-  const isBlocked = blockedDates.some((blocked) => {
-    const blockedDate = new Date(blocked.date);
-
-    if (Number.isNaN(blockedDate.getTime())) {
-      return false;
-    }
-
-    return (
-      blockedDate.getFullYear() === targetDate.getFullYear() &&
-      blockedDate.getMonth() === targetDate.getMonth() &&
-      blockedDate.getDate() === targetDate.getDate()
-    );
-  });
-
-  if (isBlocked) {
-    return false;
-  }
-
-  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  const dayName = dayNames[targetDate.getDay()];
-  const todayHours = workingHours.find((hours) => hours.day === dayName);
-
-  if (!todayHours || todayHours.isClosed) {
-    return false;
-  }
-
-  const [openHour, openMinute] = todayHours.openTime.split(':').map(Number);
-  const [closeHour, closeMinute] = todayHours.closeTime.split(':').map(Number);
-
-  if (
-    Number.isNaN(openHour) ||
-    Number.isNaN(openMinute) ||
-    Number.isNaN(closeHour) ||
-    Number.isNaN(closeMinute)
-  ) {
-    return false;
-  }
-
-  const currentTime = targetDate.getHours() * 60 + targetDate.getMinutes();
-  const openTime = openHour * 60 + openMinute;
-  const closeTime = closeHour * 60 + closeMinute;
-
-  return currentTime >= openTime && currentTime <= closeTime;
-};
 
 export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -77,7 +17,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
     const restaurant = await Restaurant.findById(id)
       .select(
-        'name street city postalCode country latitude longitude contact email webAddress description images workingHours blockedDates tax courierFee averagePreparationMinutes averageDeliveryMinutes activeOrderLimit totalEmployees createdAt updatedAt'
+        'name street city postalCode country latitude longitude contact email webAddress description images workingHours blockedDates tax courierFee averagePreparationMinutes averageDeliveryMinutes activeOrderLimit deliveryRadiusKm isPaused pauseReason totalEmployees createdAt updatedAt'
       )
       .lean();
 
@@ -85,11 +25,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
     }
 
-    const isOpen = isRestaurantOpen(
-      Array.isArray(restaurant.workingHours) ? restaurant.workingHours : [],
-      Array.isArray(restaurant.blockedDates) ? restaurant.blockedDates : [],
-      new Date()
-    );
+    const orderingStatus = getRestaurantOrderingStatus({ restaurant });
     const ratingMap = await getRestaurantRatingSummaries([restaurant._id]);
     const rating = ratingMap.get(String(restaurant._id));
     const activeOrderLimit = Math.min(
@@ -106,7 +42,12 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       {
         restaurant: {
           ...restaurant,
-          isOpen,
+          isOpen: orderingStatus.isOpen,
+          isPaused: orderingStatus.isPaused,
+          pauseReason: orderingStatus.pauseReason,
+          isAcceptingOrders: orderingStatus.isAcceptingOrders,
+          orderingUnavailableReason: orderingStatus.reason,
+          deliveryRadiusKm: orderingStatus.deliveryRadiusKm,
           activeOrderLimit,
           activeKitchenOrders,
           isBusy: activeKitchenOrders >= activeOrderLimit,

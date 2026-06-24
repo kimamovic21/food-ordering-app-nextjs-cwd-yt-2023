@@ -42,7 +42,7 @@ const SupportTicketSchema = new Schema(
     description: { type: String, required: true, trim: true, maxlength: 1000 },
     status: {
       type: String,
-      enum: ['open', 'in_review', 'resolved', 'closed'],
+      enum: ['open', 'in_review', 'resolved'],
       default: 'open',
       index: true,
     },

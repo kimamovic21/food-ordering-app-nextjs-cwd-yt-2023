@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import mongoose from 'mongoose';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
+import { MenuItem } from '@/models/menuItem';
 import { RestaurantReview } from '@/models/restaurantReview';
 import { CourierReview } from '@/models/courierReview';
 import {
@@ -48,6 +49,10 @@ vi.mock('@/libs/mongoConnect', () => ({
 vi.mock('@/libs/notifications', () => ({
   notifyRestaurantAdminsAboutCanceledOrder: vi.fn(),
   notifyUserAboutOrderStatusChange: vi.fn(),
+}));
+
+vi.mock('@/libs/auditLog', () => ({
+  createAuditLog: vi.fn(),
 }));
 
 vi.mock('@/models/user', () => ({
@@ -381,6 +386,111 @@ describe('high-priority order, review, and payment-link routes', () => {
     expect(res.status).toBe(403);
     expect(body).toEqual({ error: 'Unauthorized - Order does not belong to you' });
     expect(deliveredOrderDoc.save).not.toHaveBeenCalled();
+  });
+
+  it('builds reorder cart items from current menu item data', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: customer.email } } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    vi.mocked(Order.findOne).mockReturnValueOnce({
+      lean: vi.fn().mockResolvedValue({
+        _id: { toString: () => 'order-1' },
+        userId: customer._id,
+        restaurantId: { toString: () => 'restaurant-1' },
+        cartProducts: [
+          {
+            productId: { toString: () => 'menu-item-1' },
+            name: 'Old Pizza',
+            size: 'medium',
+            quantity: 2,
+            price: 9,
+          },
+        ],
+      }),
+    } as never);
+    vi.mocked(MenuItem.find).mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          {
+            _id: { toString: () => 'menu-item-1' },
+            name: 'Pizza',
+            description: 'Fresh pizza',
+            image: 'pizza.jpg',
+            priceType: 'triple',
+            priceMedium: 12,
+            restaurantId: { toString: () => 'restaurant-1' },
+            isAvailable: true,
+          },
+        ]),
+      }),
+    } as never);
+
+    const { POST } = await import('@/app/api/my-orders/reorder/route');
+    const res = await POST(
+      new Request('http://localhost/api/my-orders/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.cartItems).toEqual([
+      expect.objectContaining({
+        _id: 'menu-item-1',
+        name: 'Pizza',
+        size: 'medium',
+        quantity: 2,
+        price: 12,
+        restaurantId: 'restaurant-1',
+      }),
+    ]);
+  });
+
+  it('blocks reordering currently unavailable menu items', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: customer.email } } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    vi.mocked(Order.findOne).mockReturnValueOnce({
+      lean: vi.fn().mockResolvedValue({
+        _id: { toString: () => 'order-1' },
+        userId: customer._id,
+        restaurantId: { toString: () => 'restaurant-1' },
+        cartProducts: [
+          {
+            productId: { toString: () => 'menu-item-1' },
+            name: 'Pizza',
+            size: 'small',
+            quantity: 1,
+            price: 9,
+          },
+        ],
+      }),
+    } as never);
+    vi.mocked(MenuItem.find).mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          {
+            _id: { toString: () => 'menu-item-1' },
+            name: 'Pizza',
+            restaurantId: { toString: () => 'restaurant-1' },
+            isAvailable: false,
+          },
+        ]),
+      }),
+    } as never);
+
+    const { POST } = await import('@/app/api/my-orders/reorder/route');
+    const res = await POST(
+      new Request('http://localhost/api/my-orders/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body).toEqual({ error: 'Pizza is currently unavailable.' });
   });
 
   it('allows restaurant review only for a paid completed order owned by the user', async () => {

@@ -64,6 +64,9 @@ interface Restaurant {
   averagePreparationMinutes?: number;
   averageDeliveryMinutes?: number;
   activeOrderLimit?: number;
+  deliveryRadiusKm?: number;
+  isPaused?: boolean;
+  pauseReason?: string;
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;
@@ -469,6 +472,24 @@ const RestaurantPage = () => {
               <p className='text-sm text-muted-foreground'>Active Order Limit</p>
               <p className='text-lg font-semibold'>{restaurant.activeOrderLimit || 10} orders</p>
             </div>
+            <div className='grid gap-3 sm:grid-cols-2'>
+              <div className='rounded-lg border p-3'>
+                <p className='text-sm text-muted-foreground'>Delivery Radius</p>
+                <p className='text-lg font-semibold'>{restaurant.deliveryRadiusKm || 10} km</p>
+              </div>
+              <div className='rounded-lg border p-3'>
+                <p className='text-sm text-muted-foreground'>Ordering Status</p>
+                <Badge variant={restaurant.isPaused ? 'destructive' : 'default'}>
+                  {restaurant.isPaused ? 'Paused' : 'Accepting orders'}
+                </Badge>
+              </div>
+            </div>
+            {restaurant.isPaused && restaurant.pauseReason && (
+              <div className='rounded-lg border border-destructive/30 bg-destructive/10 p-3'>
+                <p className='text-sm font-medium text-destructive'>Pause reason</p>
+                <p className='mt-1 text-sm text-muted-foreground'>{restaurant.pauseReason}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

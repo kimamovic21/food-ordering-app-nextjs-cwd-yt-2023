@@ -5,6 +5,7 @@ import { mongoConnect } from '@/libs/mongoConnect';
 import { Restaurant } from '@/models/restaurant';
 import { User } from '@/models/user';
 import { MenuItem } from '@/models/menuItem';
+import { createAuditLog } from '@/libs/auditLog';
 import cloudinary from '@/libs/cloudinary';
 
 type BlockedDateInput = {
@@ -55,10 +56,15 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
     typeof body.activeOrderLimit === 'number'
       ? body.activeOrderLimit
       : Number(body.activeOrderLimit) || 10;
+  const deliveryRadiusKm =
+    typeof body.deliveryRadiusKm === 'number'
+      ? body.deliveryRadiusKm
+      : Number(body.deliveryRadiusKm) || 10;
   const totalEmployees =
     typeof body.totalEmployees === 'number'
       ? body.totalEmployees
       : Number(body.totalEmployees) || 1;
+  const pauseReason = typeof body.pauseReason === 'string' ? body.pauseReason.trim() : '';
 
   // Handle images array
   let images: string[] = [];
@@ -88,6 +94,9 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
     averagePreparationMinutes: Math.min(240, Math.max(0, averagePreparationMinutes)),
     averageDeliveryMinutes: Math.min(240, Math.max(0, averageDeliveryMinutes)),
     activeOrderLimit: Math.min(100, Math.max(1, activeOrderLimit)),
+    deliveryRadiusKm: Math.min(15, Math.max(1, deliveryRadiusKm)),
+    isPaused: Boolean(body.isPaused),
+    pauseReason: pauseReason.slice(0, 160),
     workingHours: Array.isArray(body.workingHours) ? body.workingHours : [],
     blockedDates: normalizeBlockedDates(body.blockedDates),
     totalEmployees: Math.max(1, totalEmployees),
@@ -223,6 +232,9 @@ export async function POST(req: NextRequest) {
       averagePreparationMinutes: payload.averagePreparationMinutes,
       averageDeliveryMinutes: payload.averageDeliveryMinutes,
       activeOrderLimit: payload.activeOrderLimit,
+      deliveryRadiusKm: payload.deliveryRadiusKm,
+      isPaused: payload.isPaused,
+      pauseReason: payload.pauseReason,
       workingHours: payload.workingHours,
       blockedDates: payload.blockedDates,
       totalEmployees: payload.totalEmployees,
@@ -233,6 +245,15 @@ export async function POST(req: NextRequest) {
 
     // Update user with restaurant ID
     await User.findByIdAndUpdate(user._id, { restaurantId: restaurant._id });
+
+    await createAuditLog({
+      actor: user,
+      action: 'restaurant.created',
+      entityType: 'restaurant',
+      entityId: restaurant._id,
+      restaurantId: restaurant._id,
+      metadata: { name: restaurant.name },
+    });
 
     return NextResponse.json({ restaurant }, { status: 201 });
   } catch (error) {
@@ -304,6 +325,19 @@ export async function PUT(req: NextRequest) {
         runValidators: true,
       }
     );
+
+    await createAuditLog({
+      actor: user,
+      action: 'restaurant.updated',
+      entityType: 'restaurant',
+      entityId: _id,
+      restaurantId: _id,
+      metadata: {
+        isPaused: updateData.isPaused,
+        deliveryRadiusKm: updateData.deliveryRadiusKm,
+        activeOrderLimit: updateData.activeOrderLimit,
+      },
+    });
 
     return NextResponse.json({ restaurant: updatedRestaurant }, { status: 200 });
   } catch (error) {
@@ -402,6 +436,15 @@ export async function DELETE(req: NextRequest) {
 
     // Remove restaurant ID from user
     await User.findByIdAndUpdate(user._id, { restaurantId: null });
+
+    await createAuditLog({
+      actor: user,
+      action: 'restaurant.deleted',
+      entityType: 'restaurant',
+      entityId: restaurantId,
+      restaurantId,
+      metadata: { deletedMenuItemsCount: menuItems.length, name: restaurant.name },
+    });
 
     return NextResponse.json(
       {

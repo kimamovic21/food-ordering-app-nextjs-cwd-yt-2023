@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
+import { COURIER_OWN_ORDER_ASSIGNMENT_ERROR, isCourierOrderOwner } from '@/libs/courierAssignment';
 import Image from 'next/image';
 import {
   AlertDialog,
@@ -274,6 +275,12 @@ const OrderDetailPage = () => {
   const handleAssignCourier = async () => {
     if (!order || !selectedCourier) return;
 
+    if (isCourierOrderOwner(order.userId, selectedCourier)) {
+      sonnerToast.error(COURIER_OWN_ORDER_ASSIGNMENT_ERROR);
+      setShowConfirmModal(false);
+      return;
+    }
+
     // Check if selected courier is still available
     const selectedCourierData = couriers.find((c) => c._id === selectedCourier);
     if (!selectedCourierData || !selectedCourierData.availability) {
@@ -351,6 +358,11 @@ const OrderDetailPage = () => {
   };
 
   const handleConfirmAssignment = () => {
+    if (isCourierOrderOwner(order?.userId, selectedCourier)) {
+      sonnerToast.error(COURIER_OWN_ORDER_ASSIGNMENT_ERROR);
+      return;
+    }
+
     setShowConfirmModal(true);
   };
 

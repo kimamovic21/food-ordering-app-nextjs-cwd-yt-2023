@@ -45,6 +45,9 @@ interface Restaurant {
   averagePreparationMinutes: number;
   averageDeliveryMinutes: number;
   activeOrderLimit: number;
+  deliveryRadiusKm: number;
+  isPaused: boolean;
+  pauseReason: string;
   workingHours: WorkingHours[];
   blockedDates: BlockedDate[];
   totalEmployees: number;

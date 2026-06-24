@@ -80,6 +80,23 @@ const RestaurantSchema = new Schema(
       min: 1,
       max: 100,
     },
+    deliveryRadiusKm: {
+      type: Number,
+      required: true,
+      default: 10,
+      min: 1,
+      max: 15,
+    },
+    isPaused: {
+      type: Boolean,
+      default: false,
+    },
+    pauseReason: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 160,
+    },
     workingHours: {
       type: [WorkingHoursSchema],
       required: true,

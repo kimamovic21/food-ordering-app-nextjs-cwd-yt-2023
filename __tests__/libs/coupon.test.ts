@@ -23,6 +23,9 @@ describe('coupon utils', () => {
     const coupon = { discountValue: 10 } as any;
     expect(calculateCouponDiscountAmount(100, coupon)).toBe(10);
 
+    const capped = { discountValue: 50, maxDiscountAmount: 12 } as any;
+    expect(calculateCouponDiscountAmount(100, capped)).toBe(12);
+
     const big = { discountValue: 200 } as any;
     // capped by COUPON_PERCENTAGE_MAX
     const maxDiscount = calculateCouponDiscountAmount(100, big);
@@ -81,6 +84,24 @@ describe('coupon utils', () => {
     expect(getCouponValidationError({ coupon: usage, subtotal: 100 })).toBe(
       'Coupon usage limit reached.'
     );
+
+    const firstOrderOnly: any = { ...base, isActive: true, firstOrderOnly: true };
+    expect(
+      getCouponValidationError({
+        coupon: firstOrderOnly,
+        subtotal: 100,
+        completedOrderCount: 1,
+      })
+    ).toBe('This coupon is for first orders only.');
+
+    const usedByCustomer: any = { ...base, isActive: true, usagePerCustomer: 1 };
+    expect(
+      getCouponValidationError({
+        coupon: usedByCustomer,
+        subtotal: 100,
+        customerCouponUsageCount: 1,
+      })
+    ).toBe('You have already used this coupon.');
 
     const badDiscount: any = { ...base, isActive: true, discountValue: 1 };
     expect(getCouponValidationError({ coupon: badDiscount, subtotal: 100 })).toBe(
