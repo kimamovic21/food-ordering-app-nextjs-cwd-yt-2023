@@ -1,6 +1,10 @@
 import { getServerSession } from 'next-auth/next';
 import { Order } from '@/models/order';
-import { notifyOrderDelivered } from '@/libs/notifications';
+import {
+  notifyOrderDelivered,
+  notifyRestaurantAdminsAboutCourierAssignmentUpdate,
+  notifyUserAboutOrderStatusChange,
+} from '@/libs/notifications';
 
 vi.mock('mongoose', () => ({
   default: {
@@ -33,6 +37,8 @@ vi.mock('@/models/order', () => ({
 
 vi.mock('@/libs/notifications', () => ({
   notifyOrderDelivered: vi.fn(),
+  notifyRestaurantAdminsAboutCourierAssignmentUpdate: vi.fn(),
+  notifyUserAboutOrderStatusChange: vi.fn(),
 }));
 
 const loadAvailability = async () =>
@@ -73,6 +79,12 @@ const assignedOrder = (overrides: Record<string, unknown> = {}) => ({
       orderPaid: this.orderPaid,
       deliveryPin: this.deliveryPin,
       courierDeliveredAt: this.courierDeliveredAt,
+      courierAssignmentStatus: this.courierAssignmentStatus,
+      courierAcceptedAt: this.courierAcceptedAt,
+      courierDeclinedAt: this.courierDeclinedAt,
+      restaurantHandedToCourierAt: this.restaurantHandedToCourierAt,
+      courierPickedUpAt: this.courierPickedUpAt,
+      transportationAt: this.transportationAt,
     };
   },
   ...overrides,
@@ -247,6 +259,112 @@ describe('Courier availability and location routes', () => {
     expect(body).toEqual({ error: 'You are not assigned to this order' });
     expect(orderDoc.save).not.toHaveBeenCalled();
     expect(userDoc.save).not.toHaveBeenCalled();
+  });
+
+  it('lets assigned couriers accept pending assignments', async () => {
+    const userDoc = courierUser();
+    const orderDoc = assignedOrder({
+      orderStatus: 'ready',
+      courierAssignmentStatus: 'pending',
+    });
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: userDoc.email, role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce(userDoc as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(orderDoc as never);
+
+    const PATCH = await loadDeliveryOrdersPatch();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', action: 'accept-assignment' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.order.courierAssignmentStatus).toBe('accepted');
+    expect(orderDoc.courierAcceptedAt).toEqual(expect.any(Date));
+    expect(orderDoc.save).toHaveBeenCalled();
+    expect(notifyRestaurantAdminsAboutCourierAssignmentUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        restaurantId: orderDoc.restaurantId,
+        orderId: orderDoc._id,
+        status: 'accepted',
+      })
+    );
+  });
+
+  it('lets assigned couriers decline assignments and frees the courier', async () => {
+    const userDoc = courierUser();
+    const orderDoc = assignedOrder({
+      orderStatus: 'ready',
+      courierAssignmentStatus: 'pending',
+    });
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: userDoc.email, role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce(userDoc as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(orderDoc as never);
+
+    const PATCH = await loadDeliveryOrdersPatch();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', action: 'decline-assignment' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.order.courierAssignmentStatus).toBe('declined');
+    expect(orderDoc.courierId).toBeNull();
+    expect(userDoc.takenOrder).toBeNull();
+    expect(orderDoc.save).toHaveBeenCalled();
+    expect(userDoc.save).toHaveBeenCalled();
+  });
+
+  it('lets couriers mark accepted and handed orders as picked up', async () => {
+    const userDoc = courierUser();
+    const orderDoc = assignedOrder({
+      orderStatus: 'ready',
+      courierAssignmentStatus: 'accepted',
+      restaurantHandedToCourierAt: new Date(),
+    });
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: userDoc.email, role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce(userDoc as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(orderDoc as never);
+
+    const PATCH = await loadDeliveryOrdersPatch();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', action: 'pick-up' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.order.orderStatus).toBe('transportation');
+    expect(orderDoc.orderStatus).toBe('transportation');
+    expect(orderDoc.courierPickedUpAt).toEqual(expect.any(Date));
+    expect(orderDoc.transportationAt).toEqual(expect.any(Date));
+    expect(orderDoc.save).toHaveBeenCalled();
+    expect(notifyUserAboutOrderStatusChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: orderDoc.userId,
+        orderId: orderDoc._id,
+        orderStatus: 'transportation',
+      })
+    );
   });
 
   it('marks assigned orders delivered with the correct PIN without exposing the PIN', async () => {

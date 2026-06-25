@@ -56,12 +56,16 @@ const ReportProblemDialog = ({
   const [category, setCategory] = useState('order_issue');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
 
   const resetForm = () => {
     setTarget(defaultTarget);
     setCategory('order_issue');
     setSubject('');
     setDescription('');
+    setContactEmail('');
+    setContactPhone('');
   };
 
   const handleSubmit = async () => {
@@ -87,6 +91,8 @@ const ReportProblemDialog = ({
           category,
           subject,
           description,
+          contactEmail,
+          contactPhone,
         }),
       });
       const json = await response.json();
@@ -173,6 +179,30 @@ const ReportProblemDialog = ({
               rows={5}
               placeholder='Explain what happened and what needs to be checked.'
             />
+          </div>
+
+          <div className='grid gap-4 sm:grid-cols-2'>
+            <div className='space-y-2'>
+              <Label htmlFor='ticket-contact-email'>Contact email</Label>
+              <Input
+                id='ticket-contact-email'
+                type='email'
+                value={contactEmail}
+                onChange={(event) => setContactEmail(event.target.value)}
+                maxLength={120}
+                placeholder='Optional follow-up email'
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='ticket-contact-phone'>Mobile phone</Label>
+              <Input
+                id='ticket-contact-phone'
+                value={contactPhone}
+                onChange={(event) => setContactPhone(event.target.value)}
+                maxLength={40}
+                placeholder='Optional phone number'
+              />
+            </div>
           </div>
         </div>
 

@@ -12,7 +12,8 @@ export type AppNotification = {
     | 'courier_assigned'
     | 'order_completed'
     | 'order_canceled'
-    | 'support_ticket';
+    | 'support_ticket'
+    | 'late_order';
   title: string;
   message: string;
   orderId?: string | null;

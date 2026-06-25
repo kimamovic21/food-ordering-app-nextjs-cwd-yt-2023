@@ -1,10 +1,7 @@
 import { isAdmin } from '@/app/api/auth/[...nextauth]/route';
 import { User } from '@/models/user';
 import { Order } from '@/models/order';
-import {
-  notifyCourierAboutAssignment,
-  notifyUserAboutOrderStatusChange,
-} from '@/libs/notifications';
+import { notifyCourierAboutAssignment } from '@/libs/notifications';
 import { COURIER_OWN_ORDER_ASSIGNMENT_ERROR, isCourierOrderOwner } from '@/libs/courierAssignment';
 import { createDeliveryPin } from '@/libs/deliveryPin';
 import mongoose from 'mongoose';
@@ -95,8 +92,12 @@ export async function PATCH(request: Request) {
 
   // Update order with courier and change status to transportation
   order.courierId = courierId;
-  order.orderStatus = 'transportation';
-  order.transportationAt = new Date();
+  order.courierAssignmentStatus = 'pending';
+  order.courierAssignedAt = new Date();
+  order.courierAcceptedAt = null;
+  order.courierDeclinedAt = null;
+  order.restaurantHandedToCourierAt = null;
+  order.courierPickedUpAt = null;
   if (!order.deliveryPin) {
     order.deliveryPin = createDeliveryPin();
   }
@@ -107,14 +108,6 @@ export async function PATCH(request: Request) {
       courierId,
       orderId: order._id,
     });
-
-    if (order.userId) {
-      await notifyUserAboutOrderStatusChange({
-        userId: order.userId,
-        orderId: order._id,
-        orderStatus: 'transportation',
-      });
-    }
   } catch (notificationError) {
     console.error('Failed to create courier assignment notifications:', notificationError);
   }

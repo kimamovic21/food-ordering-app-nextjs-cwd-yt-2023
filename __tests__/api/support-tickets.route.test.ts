@@ -1,5 +1,8 @@
 import { getServerSession } from 'next-auth/next';
-import { notifySupportTicketCreated } from '@/libs/notifications';
+import {
+  notifySupportTicketCreated,
+  notifySupportTicketReporterAboutStatus,
+} from '@/libs/notifications';
 import { Order } from '@/models/order';
 import { SupportTicket } from '@/models/supportTicket';
 import { User } from '@/models/user';
@@ -45,6 +48,7 @@ vi.mock('@/models/supportTicket', () => ({
 
 vi.mock('@/libs/notifications', () => ({
   notifySupportTicketCreated: vi.fn(),
+  notifySupportTicketReporterAboutStatus: vi.fn(),
 }));
 
 const loadRoute = async () => import('@/app/api/support-tickets/route');
@@ -189,6 +193,8 @@ describe('/api/support-tickets', () => {
       reporterRole: 'user',
       reporterName: 'Customer',
       reporterEmail: 'customer@example.com',
+      contactEmail: 'customer@example.com',
+      contactPhone: '',
       orderId,
       restaurantId,
       target: 'restaurant_support',
@@ -252,6 +258,8 @@ describe('/api/support-tickets', () => {
       expect.objectContaining({
         reporterId: adminId,
         reporterRole: 'admin',
+        contactEmail: 'admin@example.com',
+        contactPhone: '',
         orderId,
         restaurantId: orderRestaurantId,
       })
@@ -287,8 +295,11 @@ describe('/api/support-tickets', () => {
     const save = vi.fn().mockResolvedValue(undefined);
     const ticket = {
       _id: createObjectId('ticket-1'),
+      reporterId: createObjectId('user-1'),
+      orderId: createObjectId('order-1'),
       target: 'restaurant_support',
       restaurantId,
+      subject: 'Missing item',
       status: 'open',
       responseNote: '',
       resolvedBy: null,
@@ -332,6 +343,13 @@ describe('/api/support-tickets', () => {
     expect(ticket.resolvedBy).toBe(adminId);
     expect(ticket.resolvedAt).toBeInstanceOf(Date);
     expect(save).toHaveBeenCalled();
+    expect(notifySupportTicketReporterAboutStatus).toHaveBeenCalledWith({
+      reporterId: ticket.reporterId,
+      ticketId: ticket._id,
+      orderId: ticket.orderId,
+      status: 'resolved',
+      subject: 'Missing item',
+    });
   });
 
   it('blocks restaurant admins from updating app support tickets', async () => {

@@ -4,10 +4,23 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { signOut } from 'next-auth/react';
-import { Bike, ClipboardCheck, Home, LogOut, Menu, Star, Truck, X } from 'lucide-react';
+import {
+  Bell,
+  Bike,
+  ClipboardCheck,
+  Home,
+  LogOut,
+  Menu,
+  MessageSquareText,
+  Star,
+  Truck,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import useProfile from '@/hooks/useProfile';
+import { useMessages } from '@/contexts/MessagesContext';
+import { useNotifications } from '@/contexts/NotificationsContext';
 import { cn } from '@/libs/utils';
 
 const CourierDashboardLayoutSkeleton = () => {
@@ -57,6 +70,8 @@ const CourierDashboardClientLayout = ({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const router = useRouter();
   const { data: profileData, loading } = useProfile();
+  const { unreadCount: unreadMessagesCount } = useMessages();
+  const { unreadCount: unreadNotificationsCount } = useNotifications();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const isCourier = profileData?.role === 'courier';
@@ -87,6 +102,25 @@ const CourierDashboardClientLayout = ({ children }: { children: React.ReactNode 
 
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: '/' });
+  };
+
+  const renderNewBadge = (count: number, isActive: boolean) => {
+    if (count <= 0) {
+      return null;
+    }
+
+    return (
+      <span
+        className={cn(
+          'ml-auto inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold',
+          isActive
+            ? 'bg-primary-foreground/20 text-primary-foreground'
+            : 'bg-primary text-primary-foreground'
+        )}
+      >
+        New {count > 99 ? '99+' : count}
+      </span>
+    );
   };
 
   if (loading) {
@@ -141,6 +175,39 @@ const CourierDashboardClientLayout = ({ children }: { children: React.ReactNode 
             <Home size={18} />
             <span>Go back to home</span>
           </Link>
+
+          <Link
+            href='/notifications'
+            onClick={() => setIsSidebarOpen(false)}
+            className={cn(
+              'mt-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors',
+              pathname?.startsWith('/notifications')
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'text-foreground hover:bg-muted'
+            )}
+          >
+            <Bell size={20} />
+            <span>Notifications</span>
+            {renderNewBadge(
+              unreadNotificationsCount,
+              Boolean(pathname?.startsWith('/notifications'))
+            )}
+          </Link>
+
+          <Link
+            href='/messages'
+            onClick={() => setIsSidebarOpen(false)}
+            className={cn(
+              'mt-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors',
+              pathname?.startsWith('/messages')
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'text-foreground hover:bg-muted'
+            )}
+          >
+            <MessageSquareText size={20} />
+            <span>Messages</span>
+            {renderNewBadge(unreadMessagesCount, Boolean(pathname?.startsWith('/messages')))}
+          </Link>
         </div>
 
         <nav className='flex-1 p-4 space-y-2'>
@@ -151,6 +218,39 @@ const CourierDashboardClientLayout = ({ children }: { children: React.ReactNode 
           >
             <Home size={18} />
             <span>Go back to home</span>
+          </Link>
+
+          <Link
+            href='/notifications'
+            onClick={() => setIsSidebarOpen(false)}
+            className={cn(
+              'xl:hidden flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors',
+              pathname?.startsWith('/notifications')
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'text-foreground hover:bg-muted'
+            )}
+          >
+            <Bell size={20} />
+            <span>Notifications</span>
+            {renderNewBadge(
+              unreadNotificationsCount,
+              Boolean(pathname?.startsWith('/notifications'))
+            )}
+          </Link>
+
+          <Link
+            href='/messages'
+            onClick={() => setIsSidebarOpen(false)}
+            className={cn(
+              'xl:hidden flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors',
+              pathname?.startsWith('/messages')
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'text-foreground hover:bg-muted'
+            )}
+          >
+            <MessageSquareText size={20} />
+            <span>Messages</span>
+            {renderNewBadge(unreadMessagesCount, Boolean(pathname?.startsWith('/messages')))}
           </Link>
 
           <div className='xl:hidden h-px bg-border my-2'></div>

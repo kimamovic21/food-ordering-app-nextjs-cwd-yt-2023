@@ -14,6 +14,7 @@ import {
   Menu,
   MessageSquareText,
   PieChart,
+  Columns3,
   TicketPercent,
   ShoppingCart,
   SquareMenu,
@@ -162,6 +163,12 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
       icon: TicketPercent,
     },
     { href: '/admin-dashboard/orders', label: 'Orders', superAdminOnly: false, icon: ShoppingCart },
+    {
+      href: '/admin-dashboard/order-queue',
+      label: 'Order Queue',
+      superAdminOnly: false,
+      icon: Columns3,
+    },
     {
       href: '/admin-dashboard/support-tickets',
       label: 'Support Tickets',

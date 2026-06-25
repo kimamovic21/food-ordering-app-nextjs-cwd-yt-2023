@@ -83,6 +83,7 @@ type OrderDetailsType = {
     | 'completed'
     | 'canceled';
   courierId?: { _id: string; name: string; email: string; image?: string };
+  courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
   createdAt: string;
   updatedAt: string;
   processingAt?: string | null;
@@ -93,6 +94,11 @@ type OrderDetailsType = {
   adminConfirmedDeliveryAt?: string | null;
   deliveryCompletedBy?: 'customer' | 'admin' | null;
   deliveryPin?: string | null;
+  courierAssignedAt?: string | null;
+  courierAcceptedAt?: string | null;
+  courierDeclinedAt?: string | null;
+  restaurantHandedToCourierAt?: string | null;
+  courierPickedUpAt?: string | null;
   canceledAt?: string | null;
   completedAt?: string | null;
   stripeSessionId?: string;
@@ -116,6 +122,9 @@ type CourierType = {
   availability: boolean;
   takenOrder?: string;
   role: string;
+  distanceToRestaurantKm?: number | null;
+  averageRating?: number;
+  ratingCount?: number;
 };
 
 type OrderReviewType = {
@@ -135,6 +144,7 @@ const OrderDetailPage = () => {
   const [couriers, setCouriers] = useState<CourierType[]>([]);
   const [selectedCourier, setSelectedCourier] = useState<string>('');
   const [assigningCourier, setAssigningCourier] = useState(false);
+  const [handingToCourier, setHandingToCourier] = useState(false);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [showCourierSelect, setShowCourierSelect] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -207,7 +217,7 @@ const OrderDetailPage = () => {
     if (order?.orderStatus === 'ready') {
       const fetchCouriers = async () => {
         try {
-          const res = await fetch('/api/my-delivery?availableOnly=true');
+          const res = await fetch(`/api/my-delivery?availableOnly=true&orderId=${order._id}`);
           if (!res.ok) throw new Error('Failed to fetch couriers');
           const data = await res.json();
           setCouriers(data.couriers);
@@ -226,7 +236,7 @@ const OrderDetailPage = () => {
 
       return () => clearInterval(interval);
     }
-  }, [order?.orderStatus]);
+  }, [order?._id, order?.orderStatus]);
 
   const handleStatusUpdate = async () => {
     if (!order) return;
@@ -292,7 +302,7 @@ const OrderDetailPage = () => {
       });
       // Refresh courier list
       try {
-        const res = await fetch('/api/my-delivery?availableOnly=true');
+        const res = await fetch(`/api/my-delivery?availableOnly=true&orderId=${order._id}`);
         if (res.ok) {
           const data = await res.json();
           setCouriers(data.couriers);
@@ -324,16 +334,11 @@ const OrderDetailPage = () => {
       }
 
       // Update order with courier info and transportation status
-      const updatedOrder = {
-        ...order,
-        courierId: data.courier,
-        orderStatus: 'transportation' as const,
-      };
-      setOrder(updatedOrder);
+      setOrder({ ...data.order, courierId: data.courier });
       setShowCourierSelect(false);
       setSelectedCourier('');
       setShowConfirmModal(false);
-      sonnerToast.success('Courier assigned successfully - Order is now in transportation', {
+      sonnerToast.success('Courier assignment sent. Waiting for courier confirmation.', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -364,6 +369,35 @@ const OrderDetailPage = () => {
     }
 
     setShowConfirmModal(true);
+  };
+
+  const handleHandoffToCourier = async () => {
+    if (!order) return;
+
+    try {
+      setHandingToCourier(true);
+      const res = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order._id, action: 'handoff-to-courier' }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        sonnerToast.error(data.error || 'Failed to record courier handoff');
+        return;
+      }
+
+      setOrder((current) =>
+        current ? { ...current, ...data.order, courierId: current.courierId } : data.order
+      );
+      sonnerToast.success('Order handed to courier');
+    } catch (error) {
+      console.error(error);
+      sonnerToast.error('Failed to record courier handoff');
+    } finally {
+      setHandingToCourier(false);
+    }
   };
 
   const handleAdminConfirmDelivery = async () => {
@@ -740,7 +774,7 @@ const OrderDetailPage = () => {
           </Card>
         )}
 
-        {order.orderStatus === 'ready' && (
+        {order.orderStatus === 'ready' && !order.courierId && (
           <Card>
             <CardHeader>
               <CardTitle className='flex items-center gap-2'>📦 Order Ready for Pickup</CardTitle>
@@ -779,13 +813,19 @@ const OrderDetailPage = () => {
                                 disabled={!!courier.takenOrder}
                               >
                                 {courier.name} - {courier.email}
+                                {typeof courier.distanceToRestaurantKm === 'number'
+                                  ? ` - ${courier.distanceToRestaurantKm} km away`
+                                  : ''}
+                                {courier.ratingCount
+                                  ? ` - ${Number(courier.averageRating || 0).toFixed(1)} rating`
+                                  : ''}
                                 {courier.takenOrder ? ' (Currently delivering)' : ''}
                               </option>
                             ))}
                           </select>
                           <p className='text-xs text-muted-foreground'>
-                            Only couriers who are not currently delivering an order are available
-                            for assignment.
+                            Suggested couriers are sorted by availability, current order load,
+                            distance to restaurant, then rating.
                           </p>
                         </>
                       )}
@@ -814,6 +854,53 @@ const OrderDetailPage = () => {
                   </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {order.orderStatus === 'ready' && order.courierId && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Courier Handoff</CardTitle>
+              <CardDescription>
+                The courier must accept the assignment before the restaurant hands over the order.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className='rounded-lg border p-4 text-sm'>
+                <p className='font-semibold'>{order.courierId.name}</p>
+                <p className='text-muted-foreground'>{order.courierId.email}</p>
+                <p className='mt-2'>
+                  Assignment status:{' '}
+                  <span className='font-medium capitalize'>
+                    {order.courierAssignmentStatus || 'pending'}
+                  </span>
+                </p>
+                {order.restaurantHandedToCourierAt && (
+                  <p className='mt-2 text-green-600'>Restaurant handoff recorded.</p>
+                )}
+              </div>
+              {order.courierAssignmentStatus === 'pending' && (
+                <p className='text-sm text-amber-600'>
+                  Waiting for courier to accept or decline this delivery.
+                </p>
+              )}
+              {order.courierAssignmentStatus === 'accepted' &&
+                !order.restaurantHandedToCourierAt && (
+                  <Button
+                    type='button'
+                    onClick={handleHandoffToCourier}
+                    disabled={handingToCourier}
+                    className='w-full sm:w-auto'
+                  >
+                    {handingToCourier ? 'Recording...' : 'Mark handed to courier'}
+                  </Button>
+                )}
+              {order.restaurantHandedToCourierAt && !order.courierPickedUpAt && (
+                <p className='text-sm text-muted-foreground'>
+                  Waiting for courier to mark the order as picked up.
+                </p>
+              )}
             </CardContent>
           </Card>
         )}

@@ -16,13 +16,25 @@ export const resolveNotificationTargetPath = (
   role: NotificationRole
 ) => {
   if (notification.type === 'courier_assigned') {
+    if (role === 'admin' && notification.orderId) {
+      return `/admin-dashboard/orders/${notification.orderId}`;
+    }
+
     return '/my-delivery';
   }
 
+  if (notification.type === 'late_order' && role === 'admin' && notification.orderId) {
+    return `/admin-dashboard/orders/${notification.orderId}`;
+  }
+
   if (notification.type === 'support_ticket') {
-    return notification.metadata?.ticketId
-      ? `/admin-dashboard/support-tickets?ticketId=${notification.metadata.ticketId}`
-      : '/admin-dashboard/support-tickets';
+    if (role === 'admin') {
+      return notification.metadata?.ticketId
+        ? `/admin-dashboard/support-tickets?ticketId=${notification.metadata.ticketId}`
+        : '/admin-dashboard/support-tickets';
+    }
+
+    return notification.orderId ? `/my-orders/${notification.orderId}` : '/notifications';
   }
 
   if (!notification.orderId) {

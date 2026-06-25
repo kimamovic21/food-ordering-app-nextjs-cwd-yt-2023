@@ -1,7 +1,10 @@
 import { getServerSession } from 'next-auth/next';
 import mongoose from 'mongoose';
 import { authOptions } from '@/libs/authOptions';
-import { notifySupportTicketCreated } from '@/libs/notifications';
+import {
+  notifySupportTicketCreated,
+  notifySupportTicketReporterAboutStatus,
+} from '@/libs/notifications';
 import { Order } from '@/models/order';
 import { SupportTicket } from '@/models/supportTicket';
 import { User } from '@/models/user';
@@ -125,6 +128,10 @@ export async function POST(request: Request) {
   const priority = validPriorities.includes(body.priority) ? body.priority : 'normal';
   const subject = typeof body.subject === 'string' ? body.subject.trim() : '';
   const description = typeof body.description === 'string' ? body.description.trim() : '';
+  const contactEmail =
+    typeof body.contactEmail === 'string' ? body.contactEmail.trim().slice(0, 120) : user.email;
+  const contactPhone =
+    typeof body.contactPhone === 'string' ? body.contactPhone.trim().slice(0, 40) : '';
 
   if (subject.length < 4 || subject.length > 120) {
     return Response.json(
@@ -173,6 +180,8 @@ export async function POST(request: Request) {
     reporterRole: user.role,
     reporterName: user.name || '',
     reporterEmail: user.email,
+    contactEmail,
+    contactPhone,
     orderId: order?._id || null,
     restaurantId: restaurantId || null,
     target,
@@ -244,6 +253,7 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'You cannot update this ticket' }, { status: 403 });
   }
 
+  const previousStatus = ticket.status;
   ticket.status = status;
   ticket.responseNote = responseNote;
 
@@ -256,6 +266,20 @@ export async function PATCH(request: Request) {
   }
 
   await ticket.save();
+
+  if (status !== previousStatus && (status === 'in_review' || status === 'resolved')) {
+    try {
+      await notifySupportTicketReporterAboutStatus({
+        reporterId: ticket.reporterId,
+        ticketId: ticket._id,
+        orderId: ticket.orderId || null,
+        status,
+        subject: ticket.subject,
+      });
+    } catch (notificationError) {
+      console.error('Failed to create support ticket reporter notification:', notificationError);
+    }
+  }
 
   const updatedTicket = await populateTicketQuery(SupportTicket.findById(ticket._id)).lean();
 

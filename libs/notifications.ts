@@ -10,7 +10,8 @@ type NotificationType =
   | 'courier_assigned'
   | 'order_completed'
   | 'order_canceled'
-  | 'support_ticket';
+  | 'support_ticket'
+  | 'late_order';
 
 type CreateNotificationInput = {
   recipientUserIds: Array<string | mongoose.Types.ObjectId>;
@@ -209,6 +210,51 @@ export const notifyCourierAboutAssignment = async (params: {
   });
 };
 
+export const notifyCourierAboutRestaurantHandoff = async (params: {
+  courierId: string | mongoose.Types.ObjectId;
+  orderId: string | mongoose.Types.ObjectId;
+}) => {
+  await createNotifications({
+    recipientUserIds: [params.courierId],
+    type: 'courier_assigned',
+    title: 'Order handed to you',
+    message: `Restaurant marked order #${params.orderId.toString().slice(-6)} as handed to courier. Please record pickup when you receive it.`,
+    orderId: params.orderId,
+  });
+};
+
+export const notifyRestaurantAdminsAboutCourierAssignmentUpdate = async (params: {
+  restaurantId: string | mongoose.Types.ObjectId;
+  orderId: string | mongoose.Types.ObjectId;
+  courierName?: string | null;
+  status: 'accepted' | 'declined' | 'picked_up';
+}) => {
+  const adminIds = await findRestaurantAdminIds(params.restaurantId);
+
+  if (adminIds.length === 0) {
+    return;
+  }
+
+  const statusLabel =
+    params.status === 'accepted'
+      ? 'accepted'
+      : params.status === 'declined'
+        ? 'declined'
+        : 'picked up';
+
+  await createNotifications({
+    recipientUserIds: adminIds,
+    type: 'courier_assigned',
+    title: 'Courier assignment updated',
+    message: `${params.courierName || 'Courier'} ${statusLabel} order #${params.orderId.toString().slice(-6)}.`,
+    orderId: params.orderId,
+    metadata: {
+      restaurantId: params.restaurantId.toString(),
+      courierAssignmentStatus: params.status,
+    },
+  });
+};
+
 export const notifyUserAboutOrderCompletion = async (params: {
   userId: string | mongoose.Types.ObjectId;
   orderId: string | mongoose.Types.ObjectId;
@@ -288,6 +334,54 @@ export const notifySupportTicketCreated = async (params: {
       ticketId: params.ticketId.toString(),
       restaurantId: params.restaurantId ? params.restaurantId.toString() : null,
       target: params.target,
+    },
+  });
+};
+
+export const notifySupportTicketReporterAboutStatus = async (params: {
+  reporterId: string | mongoose.Types.ObjectId;
+  ticketId: string | mongoose.Types.ObjectId;
+  orderId?: string | mongoose.Types.ObjectId | null;
+  status: 'in_review' | 'resolved';
+  subject: string;
+}) => {
+  await createNotifications({
+    recipientUserIds: [params.reporterId],
+    type: 'support_ticket',
+    title: params.status === 'in_review' ? 'Problem report in review' : 'Problem report resolved',
+    message:
+      params.status === 'in_review'
+        ? `Your report "${params.subject}" is now being reviewed.`
+        : `Your report "${params.subject}" has been resolved.`,
+    orderId: params.orderId || null,
+    metadata: {
+      ticketId: params.ticketId.toString(),
+      supportTicketStatus: params.status,
+    },
+  });
+};
+
+export const notifyRestaurantAdminsAboutLateOrder = async (params: {
+  restaurantId: string | mongoose.Types.ObjectId;
+  orderId: string | mongoose.Types.ObjectId;
+  minutesSincePlaced: number;
+}) => {
+  const adminIds = await findRestaurantAdminIds(params.restaurantId);
+
+  if (adminIds.length === 0) {
+    return;
+  }
+
+  await createNotifications({
+    recipientUserIds: adminIds,
+    type: 'late_order',
+    title: 'Late order warning',
+    message: `Order #${params.orderId.toString().slice(-6)} has been active for ${params.minutesSincePlaced} minutes and is not out for delivery yet.`,
+    orderId: params.orderId,
+    metadata: {
+      restaurantId: params.restaurantId.toString(),
+      lateOrderAlert: 'placement_to_transport_120',
+      minutesSincePlaced: params.minutesSincePlaced,
     },
   });
 };

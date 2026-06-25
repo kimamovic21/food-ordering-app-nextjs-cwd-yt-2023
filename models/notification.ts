@@ -18,6 +18,7 @@ const NotificationSchema = new Schema(
         'order_completed',
         'order_canceled',
         'support_ticket',
+        'late_order',
       ],
       required: true,
     },

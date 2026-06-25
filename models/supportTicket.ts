@@ -15,6 +15,8 @@ const SupportTicketSchema = new Schema(
     },
     reporterName: { type: String, default: '' },
     reporterEmail: { type: String, required: true },
+    contactEmail: { type: String, default: '', trim: true, maxlength: 120 },
+    contactPhone: { type: String, default: '', trim: true, maxlength: 40 },
     orderId: { type: Schema.Types.ObjectId, ref: 'Order', default: null, index: true },
     restaurantId: { type: Schema.Types.ObjectId, ref: 'Restaurant', default: null, index: true },
     target: {

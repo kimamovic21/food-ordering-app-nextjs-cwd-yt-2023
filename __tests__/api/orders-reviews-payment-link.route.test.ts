@@ -47,6 +47,7 @@ vi.mock('@/libs/mongoConnect', () => ({
 }));
 
 vi.mock('@/libs/notifications', () => ({
+  notifyCourierAboutRestaurantHandoff: vi.fn(),
   notifyRestaurantAdminsAboutCanceledOrder: vi.fn(),
   notifyUserAboutOrderStatusChange: vi.fn(),
 }));

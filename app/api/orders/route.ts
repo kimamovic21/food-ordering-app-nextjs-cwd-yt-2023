@@ -1,7 +1,10 @@
 import { authOptions } from '@/libs/authOptions';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
-import { notifyUserAboutOrderStatusChange } from '@/libs/notifications';
+import {
+  notifyCourierAboutRestaurantHandoff,
+  notifyUserAboutOrderStatusChange,
+} from '@/libs/notifications';
 import { createAuditLog } from '@/libs/auditLog';
 import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth/next';
@@ -90,10 +93,15 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'Admin is not assigned to a restaurant' }, { status: 403 });
   }
 
-  const { id, orderStatus } = await request.json();
+  const { id, orderStatus, action } = await request.json();
 
   if (!id || !mongoose.Types.ObjectId.isValid(id)) {
     return Response.json({ error: 'Invalid order ID' }, { status: 400 });
+  }
+
+  const allowedActions = ['handoff-to-courier'];
+  if (action && !allowedActions.includes(action)) {
+    return Response.json({ error: 'Invalid order action' }, { status: 400 });
   }
 
   const allowedStatuses = [
@@ -104,18 +112,18 @@ export async function PATCH(request: Request) {
     'delivered',
     'completed',
   ];
-  if (!allowedStatuses.includes(orderStatus)) {
+  if (!action && !allowedStatuses.includes(orderStatus)) {
     return Response.json({ error: 'Invalid order status' }, { status: 400 });
   }
 
-  if (orderStatus === 'delivered') {
+  if (!action && orderStatus === 'delivered') {
     return Response.json(
       { error: 'Courier must mark the order as delivered with the delivery PIN' },
       { status: 400 }
     );
   }
 
-  if (orderStatus === 'transportation') {
+  if (!action && orderStatus === 'transportation') {
     return Response.json(
       { error: 'Order automatically moves to transportation when courier is assigned' },
       { status: 400 }
@@ -143,6 +151,46 @@ export async function PATCH(request: Request) {
       { error: 'Cannot update status before payment is completed' },
       { status: 400 }
     );
+  }
+
+  if (action === 'handoff-to-courier') {
+    if (order.orderStatus !== 'ready') {
+      return Response.json(
+        { error: 'Order must be ready before courier handoff' },
+        { status: 400 }
+      );
+    }
+
+    if (!order.courierId || order.courierAssignmentStatus !== 'accepted') {
+      return Response.json(
+        { error: 'Courier must accept the assignment before handoff' },
+        { status: 400 }
+      );
+    }
+
+    order.restaurantHandedToCourierAt = new Date();
+    const savedOrder = await order.save();
+
+    await createAuditLog({
+      actor: user,
+      action: 'order.handed_to_courier',
+      entityType: 'order',
+      entityId: order._id,
+      restaurantId: order.restaurantId,
+      orderId: order._id,
+      metadata: { courierId: order.courierId.toString() },
+    });
+
+    try {
+      await notifyCourierAboutRestaurantHandoff({
+        courierId: order.courierId,
+        orderId: order._id,
+      });
+    } catch (notificationError) {
+      console.error('Failed to create courier handoff notification:', notificationError);
+    }
+
+    return Response.json({ order: normalizeOrder(savedOrder.toObject()) });
   }
 
   if (orderStatus === 'completed' && previousStatus !== 'delivered') {

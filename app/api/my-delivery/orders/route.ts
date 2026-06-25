@@ -2,7 +2,11 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
-import { notifyOrderDelivered } from '@/libs/notifications';
+import {
+  notifyOrderDelivered,
+  notifyRestaurantAdminsAboutCourierAssignmentUpdate,
+  notifyUserAboutOrderStatusChange,
+} from '@/libs/notifications';
 import { createDeliveryPin } from '@/libs/deliveryPin';
 import mongoose from 'mongoose';
 
@@ -32,10 +36,14 @@ export async function GET() {
     return Response.json({ error: 'Only courier can access this' }, { status: 403 });
   }
 
-  // Get orders assigned to this courier with transportation status
   const orders = await Order.find({
     courierId: user._id,
-    orderStatus: 'transportation',
+    orderStatus: { $in: ['ready', 'transportation'] },
+    $or: [
+      { courierAssignmentStatus: { $in: ['pending', 'accepted'] } },
+      { orderStatus: 'transportation', courierAssignmentStatus: null },
+      { orderStatus: 'transportation', courierAssignmentStatus: { $exists: false } },
+    ],
   });
 
   const normalizedOrders = await Promise.all(
@@ -68,7 +76,7 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'Only courier can update order status' }, { status: 403 });
   }
 
-  const { orderId, deliveryPin } = await request.json();
+  const { orderId, deliveryPin, action } = await request.json();
 
   if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
     return Response.json({ error: 'Invalid order ID' }, { status: 400 });
@@ -85,7 +93,103 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'You are not assigned to this order' }, { status: 403 });
   }
 
-  // Verify order status is transportation
+  if (action === 'accept-assignment') {
+    if (order.courierAssignmentStatus !== 'pending') {
+      return Response.json({ error: 'This assignment is not pending' }, { status: 400 });
+    }
+
+    order.courierAssignmentStatus = 'accepted';
+    order.courierAcceptedAt = new Date();
+    await order.save();
+
+    if (order.restaurantId) {
+      try {
+        await notifyRestaurantAdminsAboutCourierAssignmentUpdate({
+          restaurantId: order.restaurantId,
+          orderId: order._id,
+          courierName: user.name,
+          status: 'accepted',
+        });
+      } catch (notificationError) {
+        console.error('Failed to create courier accepted notification:', notificationError);
+      }
+    }
+
+    return Response.json({ order: normalizeOrder(order.toObject()) });
+  }
+
+  if (action === 'decline-assignment') {
+    if (!['pending', 'accepted'].includes(order.courierAssignmentStatus || '')) {
+      return Response.json({ error: 'This assignment cannot be declined' }, { status: 400 });
+    }
+
+    order.courierAssignmentStatus = 'declined';
+    order.courierDeclinedAt = new Date();
+    order.courierId = null;
+    user.takenOrder = null;
+
+    await order.save();
+    await user.save();
+
+    if (order.restaurantId) {
+      try {
+        await notifyRestaurantAdminsAboutCourierAssignmentUpdate({
+          restaurantId: order.restaurantId,
+          orderId: order._id,
+          courierName: user.name,
+          status: 'declined',
+        });
+      } catch (notificationError) {
+        console.error('Failed to create courier declined notification:', notificationError);
+      }
+    }
+
+    return Response.json({ order: normalizeOrder(order.toObject()) });
+  }
+
+  if (action === 'pick-up') {
+    if (order.courierAssignmentStatus !== 'accepted') {
+      return Response.json({ error: 'Accept this assignment before pickup' }, { status: 400 });
+    }
+
+    if (!order.restaurantHandedToCourierAt) {
+      return Response.json(
+        { error: 'Restaurant must hand this order to you before pickup' },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date();
+    order.orderStatus = 'transportation';
+    order.courierPickedUpAt = now;
+    order.transportationAt = now;
+
+    await order.save();
+
+    try {
+      if (order.restaurantId) {
+        await notifyRestaurantAdminsAboutCourierAssignmentUpdate({
+          restaurantId: order.restaurantId,
+          orderId: order._id,
+          courierName: user.name,
+          status: 'picked_up',
+        });
+      }
+
+      if (order.userId) {
+        await notifyUserAboutOrderStatusChange({
+          userId: order.userId,
+          orderId: order._id,
+          orderStatus: 'transportation',
+        });
+      }
+    } catch (notificationError) {
+      console.error('Failed to create pickup notification:', notificationError);
+    }
+
+    return Response.json({ order: normalizeOrder(order.toObject()) });
+  }
+
   if (order.orderStatus !== 'transportation') {
     return Response.json(
       { error: 'Order must be in transportation status to mark as delivered' },

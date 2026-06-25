@@ -34,6 +34,18 @@ vi.mock('@/models/order', () => ({
   },
 }));
 
+vi.mock('@/models/courierReview', () => ({
+  CourierReview: {
+    aggregate: vi.fn(),
+  },
+}));
+
+vi.mock('@/models/restaurant', () => ({
+  Restaurant: {
+    findById: vi.fn(),
+  },
+}));
+
 vi.mock('@/libs/notifications', () => ({
   notifyCourierAboutAssignment: vi.fn(),
   notifyUserAboutOrderStatusChange: vi.fn(),

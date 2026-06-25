@@ -52,6 +52,9 @@ type OrderDetailsType = {
     | 'completed'
     | 'canceled';
   courierId?: { _id: string; name: string; email: string; image?: string };
+  courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
+  restaurantHandedToCourierAt?: string | null;
+  courierPickedUpAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -63,6 +66,7 @@ const CourierPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [completing, setCompleting] = useState<string | null>(null);
+  const [updatingAssignment, setUpdatingAssignment] = useState<string | null>(null);
   const [availability, setAvailability] = useState(false);
   const [togglingAvailability, setTogglingAvailability] = useState(false);
   const [sharingLocation, setSharingLocation] = useState(false);
@@ -150,6 +154,45 @@ const CourierPage = () => {
       });
     } finally {
       setCompleting(null);
+    }
+  };
+
+  const handleAssignmentAction = async (
+    orderId: string,
+    action: 'accept-assignment' | 'decline-assignment' | 'pick-up'
+  ) => {
+    try {
+      setUpdatingAssignment(orderId);
+      const res = await fetch('/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, action }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        sonnerToast.error(data.error || 'Failed to update assignment');
+        return;
+      }
+
+      if (action === 'decline-assignment') {
+        setOrders((current) => current.filter((order) => order._id !== orderId));
+        sonnerToast.success('Assignment declined');
+        return;
+      }
+
+      setOrders((current) =>
+        current.map((order) => (order._id === orderId ? { ...order, ...data.order } : order))
+      );
+      sonnerToast.success(
+        action === 'accept-assignment' ? 'Assignment accepted' : 'Order pickup recorded'
+      );
+    } catch (err) {
+      console.error(err);
+      sonnerToast.error('Failed to update assignment');
+    } finally {
+      setUpdatingAssignment(null);
     }
   };
 
@@ -456,6 +499,8 @@ const CourierPage = () => {
               key={order._id}
               order={order}
               completing={completing}
+              updatingAssignment={updatingAssignment}
+              onAssignmentAction={handleAssignmentAction}
               onComplete={handleCompleteOrder}
               mapRefs={mapRefs}
               enableCourierPolling={locationPollingEnabled}

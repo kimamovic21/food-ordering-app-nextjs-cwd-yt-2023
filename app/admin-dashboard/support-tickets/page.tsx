@@ -33,6 +33,8 @@ type SupportTicket = {
   reporterRole: 'user' | 'courier' | 'admin';
   reporterName: string;
   reporterEmail: string;
+  contactEmail?: string;
+  contactPhone?: string;
   orderId?:
     | string
     | {
@@ -314,6 +316,24 @@ const SupportTicketsPage = () => {
                   <div className='rounded-lg border bg-muted/20 p-4 text-sm leading-relaxed'>
                     {ticket.description}
                   </div>
+
+                  {(ticket.contactEmail || ticket.contactPhone || ticket.reporterEmail) && (
+                    <div className='rounded-lg border p-4 text-sm'>
+                      <p className='mb-2 font-semibold'>Reporter contact</p>
+                      <div className='grid gap-2 sm:grid-cols-2'>
+                        <div>
+                          <span className='text-muted-foreground'>Email</span>
+                          <p>{ticket.contactEmail || ticket.reporterEmail}</p>
+                        </div>
+                        {ticket.contactPhone && (
+                          <div>
+                            <span className='text-muted-foreground'>Mobile phone</span>
+                            <p>{ticket.contactPhone}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div className='space-y-2'>
                     <label htmlFor={`response-note-${ticket._id}`} className='text-sm font-medium'>
