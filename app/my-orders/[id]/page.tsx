@@ -57,6 +57,7 @@ type OrderDetailsType = {
   postalCode: string;
   city: string;
   country: string;
+  specialInstructions?: string;
   cartProducts: CartProduct[];
   total: number;
   paymentStatus: boolean;
@@ -451,6 +452,20 @@ const MyOrderDetailPage = () => {
           estimatedPreparationMinutes={order.estimatedPreparationMinutes}
           estimatedDeliveryMinutes={order.estimatedDeliveryMinutes}
         />
+
+        {order.specialInstructions?.trim() && (
+          <Card className='mb-6'>
+            <CardHeader>
+              <CardTitle>Special Instructions</CardTitle>
+              <CardDescription>Notes shared with the restaurant and courier.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className='whitespace-pre-wrap text-sm leading-relaxed'>
+                {order.specialInstructions}
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {!order.paymentStatus && order.orderStatus === 'placed' && (
           <Card className='mb-6 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'>

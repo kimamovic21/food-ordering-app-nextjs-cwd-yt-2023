@@ -23,6 +23,7 @@ type ReceiptOrder = {
   couponCode?: string | null;
   couponDiscountAmount?: number;
   couponDiscountPercentage?: number;
+  specialInstructions?: string | null;
   total?: number;
 };
 
@@ -190,6 +191,15 @@ const CheckoutContent = () => {
                   Email: {receipt.restaurant.email}
                 </p>
               ) : null}
+            </div>
+          ) : null}
+
+          {receipt.order.specialInstructions ? (
+            <div className='mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-neutral-700 dark:bg-neutral-800/40'>
+              <p className='text-gray-500 text-sm'>Special instructions</p>
+              <p className='mt-1 whitespace-pre-wrap text-sm text-gray-900 dark:text-gray-100'>
+                {receipt.order.specialInstructions}
+              </p>
             </div>
           ) : null}
 

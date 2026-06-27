@@ -29,6 +29,7 @@ type PurchaseReceiptPdfDocumentProps = {
   couponCode?: string | null;
   couponDiscountAmount?: number;
   couponDiscountPercentage?: number;
+  specialInstructions?: string | null;
   total: number;
 };
 
@@ -136,6 +137,7 @@ export default function PurchaseReceiptPdfDocument({
   couponCode,
   couponDiscountAmount = 0,
   couponDiscountPercentage = 0,
+  specialInstructions,
   total,
 }: PurchaseReceiptPdfDocumentProps) {
   const purchasedDate = purchasedOn
@@ -184,6 +186,13 @@ export default function PurchaseReceiptPdfDocument({
             {restaurant.email ? (
               <Text style={styles.itemSub}>Email: {restaurant.email}</Text>
             ) : null}
+          </View>
+        ) : null}
+
+        {specialInstructions ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Special Instructions</Text>
+            <Text style={styles.itemSub}>{specialInstructions}</Text>
           </View>
         ) : null}
 

@@ -124,6 +124,7 @@ export async function PATCH(request: Request) {
     }
 
     order.courierAssignmentStatus = 'declined';
+    order.courierDeclinedBy = user._id;
     order.courierDeclinedAt = new Date();
     order.courierId = null;
     user.takenOrder = null;

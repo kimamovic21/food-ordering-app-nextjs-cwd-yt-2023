@@ -151,6 +151,7 @@ const createCheckoutRequest = (overrides: Partial<Record<string, unknown>> = {})
     country: 'BiH',
     deliveryLatitude: 43.8563,
     deliveryLongitude: 18.4131,
+    specialInstructions: 'No onions, please call when outside.',
     loyaltyDiscountPercentage: 0,
     cartItems: [
       {
@@ -402,6 +403,20 @@ describe('POST /api/checkout', () => {
       error: 'Please confirm your previous delivered order before starting a new checkout.',
     });
     expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
+  it('persists optional special instructions on created orders', async () => {
+    const POST = await loadCheckoutRoute();
+    const response = await POST(createCheckoutRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ url: 'https://checkout.stripe.com/session/test-1' });
+    expect(Order.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        specialInstructions: 'No onions, please call when outside.',
+      })
+    );
   });
 
   it('returns 500 when stripe session creation fails', async () => {

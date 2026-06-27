@@ -179,6 +179,7 @@ export async function PATCH(request: Request) {
   order.courierAssignmentStatus = 'pending';
   order.courierAssignedAt = new Date();
   order.courierAcceptedAt = null;
+  order.courierDeclinedBy = null;
   order.courierDeclinedAt = null;
   order.restaurantHandedToCourierAt = null;
   order.courierPickedUpAt = null;

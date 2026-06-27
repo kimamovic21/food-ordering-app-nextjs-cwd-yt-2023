@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Calendar, MapPin, DollarSign } from 'lucide-react';
+import { Package, Calendar, MapPin, DollarSign, Clock, Star, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import useProfile from '@/hooks/useProfile';
 import Link from 'next/link';
@@ -35,6 +35,15 @@ type DeliveredOrder = {
   updatedAt: string;
 };
 
+type CourierPerformanceSummary = {
+  completedDeliveries: number;
+  declinedAssignments: number;
+  lateDeliveries: number;
+  averageDeliveryMinutes: number;
+  averageRating: number;
+  ratingCount: number;
+};
+
 const INITIAL_VISIBLE_ORDERS = 9;
 const ORDERS_INCREMENT = 9;
 
@@ -42,6 +51,14 @@ const MyDeliveriesPage = () => {
   const router = useRouter();
   const { data: profileData, loading: profileLoading } = useProfile();
   const [orders, setOrders] = useState<DeliveredOrder[]>([]);
+  const [summary, setSummary] = useState<CourierPerformanceSummary>({
+    completedDeliveries: 0,
+    declinedAssignments: 0,
+    lateDeliveries: 0,
+    averageDeliveryMinutes: 0,
+    averageRating: 0,
+    ratingCount: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [visibleOrders, setVisibleOrders] = useState(INITIAL_VISIBLE_ORDERS);
@@ -64,6 +81,14 @@ const MyDeliveriesPage = () => {
         }
         const data = await res.json();
         setOrders(data.orders);
+        setSummary({
+          completedDeliveries: Number(data.summary?.completedDeliveries) || 0,
+          declinedAssignments: Number(data.summary?.declinedAssignments) || 0,
+          lateDeliveries: Number(data.summary?.lateDeliveries) || 0,
+          averageDeliveryMinutes: Number(data.summary?.averageDeliveryMinutes) || 0,
+          averageRating: Number(data.summary?.averageRating) || 0,
+          ratingCount: Number(data.summary?.ratingCount) || 0,
+        });
         setVisibleOrders(INITIAL_VISIBLE_ORDERS);
         setError(null);
       } catch (err) {
@@ -90,10 +115,57 @@ const MyDeliveriesPage = () => {
 
   const hasMoreOrders = orders.length > visibleOrders;
   const displayedOrders = orders.slice(0, visibleOrders);
+  const performanceCards = [
+    {
+      label: 'Completed deliveries',
+      value: summary.completedDeliveries.toString(),
+      icon: Package,
+    },
+    {
+      label: 'Average delivery time',
+      value: summary.averageDeliveryMinutes ? `${summary.averageDeliveryMinutes} min` : '-',
+      icon: Clock,
+    },
+    {
+      label: 'Average rating',
+      value: summary.ratingCount ? `${summary.averageRating.toFixed(1)} / 5` : 'No ratings',
+      icon: Star,
+    },
+    {
+      label: 'Declined assignments',
+      value: summary.declinedAssignments.toString(),
+      icon: XCircle,
+    },
+    {
+      label: 'Late deliveries',
+      value: summary.lateDeliveries.toString(),
+      icon: Clock,
+    },
+  ];
 
   return (
     <div className='container mx-auto px-4 py-8 max-w-7xl'>
       <Title className='mb-8'>My Deliveries</Title>
+
+      <div className='mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5'>
+        {performanceCards.map((card) => {
+          const Icon = card.icon;
+
+          return (
+            <Card key={card.label}>
+              <CardContent className='flex items-center gap-3 p-4'>
+                <span className='flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+                  <Icon className='size-5' />
+                </span>
+                <div>
+                  <p className='text-xs text-muted-foreground'>{card.label}</p>
+                  <p className='text-lg font-semibold'>{card.value}</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
       {error && (
         <div className='bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg mb-6'>

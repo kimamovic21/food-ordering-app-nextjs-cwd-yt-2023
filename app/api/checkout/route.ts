@@ -55,6 +55,7 @@ export async function POST(req: Request) {
     country,
     deliveryLatitude,
     deliveryLongitude,
+    specialInstructions,
     cartItems,
     loyaltyDiscountPercentage,
     couponCode,
@@ -66,6 +67,7 @@ export async function POST(req: Request) {
     country?: string;
     deliveryLatitude?: number | null;
     deliveryLongitude?: number | null;
+    specialInstructions?: string;
     cartItems?: CartItemPayload[];
     loyaltyDiscountPercentage?: number;
     couponCode?: string;
@@ -78,6 +80,9 @@ export async function POST(req: Request) {
   if (!Array.isArray(cartItems) || cartItems.length === 0) {
     return Response.json({ error: 'Cart is empty' }, { status: 400 });
   }
+
+  const normalizedSpecialInstructions =
+    typeof specialInstructions === 'string' ? specialInstructions.trim().slice(0, 500) : '';
 
   const sanitizedItems = cartItems
     .map((item) => ({
@@ -364,6 +369,7 @@ export async function POST(req: Request) {
       typeof orderingStatus.distanceKm === 'number'
         ? roundToTwoDecimals(orderingStatus.distanceKm)
         : null,
+    specialInstructions: normalizedSpecialInstructions,
     cartProducts: sanitizedItems.map((item) => ({
       productId: item._id,
       name: item.name,

@@ -37,6 +37,7 @@ type OrderDetailsType = {
   postalCode: string;
   city: string;
   country: string;
+  specialInstructions?: string;
   cartProducts: CartProduct[];
   total: number;
   paymentStatus: boolean;
@@ -134,6 +135,14 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
               </div>
             </div>
           </div>
+          {order.specialInstructions?.trim() && (
+            <div className='rounded-lg border bg-muted/20 p-4'>
+              <h3 className='font-semibold text-foreground mb-2'>Special Instructions</h3>
+              <p className='whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground'>
+                {order.specialInstructions}
+              </p>
+            </div>
+          )}
           {/* Items */}
           <div className='border rounded-lg p-4'>
             <h3 className='font-semibold text-foreground mb-3'>Items</h3>

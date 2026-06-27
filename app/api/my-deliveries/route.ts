@@ -1,8 +1,26 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
+import { CourierReview } from '@/models/courierReview';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
 import mongoose from 'mongoose';
+
+const LATE_DELIVERY_GRACE_MINUTES = 15;
+
+const getMinutesBetween = (start?: Date | string | null, end?: Date | string | null) => {
+  if (!start || !end) {
+    return null;
+  }
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return null;
+  }
+
+  return Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / 60000));
+};
 
 export async function GET() {
   await mongoose.connect(process.env.MONGODB_URL as string);
@@ -26,5 +44,52 @@ export async function GET() {
     .sort({ updatedAt: -1 })
     .lean();
 
-  return Response.json({ orders: deliveredOrders });
+  const deliveryDurations = deliveredOrders
+    .map((order: any) =>
+      getMinutesBetween(
+        order.courierPickedUpAt || order.transportationAt,
+        order.courierDeliveredAt || order.completedAt || order.updatedAt
+      )
+    )
+    .filter((duration): duration is number => typeof duration === 'number');
+  const totalDeliveryMinutes = deliveryDurations.reduce((sum, duration) => sum + duration, 0);
+  const lateDeliveries = deliveredOrders.filter((order: any) => {
+    const duration = getMinutesBetween(
+      order.courierPickedUpAt || order.transportationAt,
+      order.courierDeliveredAt || order.completedAt || order.updatedAt
+    );
+    const estimate = Number(order.estimatedDeliveryMinutes) || 0;
+
+    return typeof duration === 'number' && estimate > 0
+      ? duration > estimate + LATE_DELIVERY_GRACE_MINUTES
+      : false;
+  }).length;
+  const declinedAssignments = await Order.countDocuments({
+    courierDeclinedBy: user._id,
+    courierAssignmentStatus: 'declined',
+  });
+  const ratingSummary = await CourierReview.aggregate([
+    { $match: { courierId: user._id } },
+    {
+      $group: {
+        _id: null,
+        averageRating: { $avg: '$rating' },
+        ratingCount: { $sum: 1 },
+      },
+    },
+  ]);
+
+  return Response.json({
+    orders: deliveredOrders,
+    summary: {
+      completedDeliveries: deliveredOrders.length,
+      declinedAssignments,
+      lateDeliveries,
+      averageDeliveryMinutes: deliveryDurations.length
+        ? Math.round(totalDeliveryMinutes / deliveryDurations.length)
+        : 0,
+      averageRating: Number(ratingSummary[0]?.averageRating || 0),
+      ratingCount: Number(ratingSummary[0]?.ratingCount || 0),
+    },
+  });
 }

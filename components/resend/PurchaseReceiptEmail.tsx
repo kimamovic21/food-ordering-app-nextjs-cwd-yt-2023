@@ -40,6 +40,7 @@ type PurchaseReceiptEmailProps = {
   couponCode?: string | null;
   couponDiscountAmount?: number;
   couponDiscountPercentage?: number;
+  specialInstructions?: string | null;
   total: number;
 };
 
@@ -78,6 +79,7 @@ export default function PurchaseReceiptEmail({
   couponCode,
   couponDiscountAmount = 0,
   couponDiscountPercentage = 0,
+  specialInstructions,
   total,
 }: PurchaseReceiptEmailProps) {
   const purchasedDate = purchasedOn
@@ -166,6 +168,25 @@ export default function PurchaseReceiptEmail({
             ) : null}
 
             <Hr style={{ borderColor: '#e5e7eb', margin: '22px 0' }} />
+
+            {specialInstructions ? (
+              <Section
+                style={{
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  padding: '12px 14px',
+                  backgroundColor: '#fafafa',
+                  marginBottom: '18px',
+                }}
+              >
+                <Text style={{ margin: '0 0 6px', fontSize: '13px', color: '#6b7280' }}>
+                  Special instructions
+                </Text>
+                <Text style={{ margin: 0, fontSize: '14px', lineHeight: '22px', color: '#111827' }}>
+                  {specialInstructions}
+                </Text>
+              </Section>
+            ) : null}
 
             <Section style={{ border: '1px solid #e5e7eb', borderRadius: '14px', padding: '20px' }}>
               {items.map((item, index) => {

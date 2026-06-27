@@ -81,6 +81,7 @@ const assignedOrder = (overrides: Record<string, unknown> = {}) => ({
       courierDeliveredAt: this.courierDeliveredAt,
       courierAssignmentStatus: this.courierAssignmentStatus,
       courierAcceptedAt: this.courierAcceptedAt,
+      courierDeclinedBy: this.courierDeclinedBy,
       courierDeclinedAt: this.courierDeclinedAt,
       restaurantHandedToCourierAt: this.restaurantHandedToCourierAt,
       courierPickedUpAt: this.courierPickedUpAt,
@@ -322,6 +323,7 @@ describe('Courier availability and location routes', () => {
 
     expect(res.status).toBe(200);
     expect(body.order.courierAssignmentStatus).toBe('declined');
+    expect(orderDoc.courierDeclinedBy).toBe(userDoc._id);
     expect(orderDoc.courierId).toBeNull();
     expect(userDoc.takenOrder).toBeNull();
     expect(orderDoc.save).toHaveBeenCalled();

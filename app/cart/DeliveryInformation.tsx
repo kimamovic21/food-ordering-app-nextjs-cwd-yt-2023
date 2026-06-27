@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { MapPin } from 'lucide-react';
 
 interface DeliveryInformationProps {
@@ -13,8 +14,9 @@ interface DeliveryInformationProps {
     country: string;
     deliveryLatitude: number | null;
     deliveryLongitude: number | null;
+    specialInstructions: string;
   };
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   deliveryRadiusKm?: number | null;
   deliveryDistanceKm?: number | null;
   isGettingDeliveryLocation: boolean;
@@ -104,6 +106,24 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
           onChange={handleInputChange}
           placeholder='Your country'
         />
+      </div>
+
+      <div className='mb-6'>
+        <Label htmlFor='specialInstructions' className='mb-2'>
+          Special instructions
+        </Label>
+        <Textarea
+          id='specialInstructions'
+          name='specialInstructions'
+          value={formData.specialInstructions}
+          onChange={handleInputChange}
+          maxLength={500}
+          rows={4}
+          placeholder='No onions, cut pizza, call when outside...'
+        />
+        <p className='mt-1 text-xs text-muted-foreground'>
+          Optional notes for the restaurant and courier. Please do not add paid extras here.
+        </p>
       </div>
 
       <div className='rounded-lg border bg-muted/30 p-3'>

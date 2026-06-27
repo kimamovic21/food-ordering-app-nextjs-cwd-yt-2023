@@ -16,6 +16,7 @@ describe('PurchaseReceiptEmail component', () => {
       couponCode: 'SAVE',
       couponDiscountAmount: 2,
       couponDiscountPercentage: 10,
+      specialInstructions: 'No onions, call when outside.',
       total: 12,
     };
 
@@ -26,6 +27,7 @@ describe('PurchaseReceiptEmail component', () => {
     expect(output).toContain('Purchase Receipt');
     expect(output).toContain('order-123');
     expect(output).toContain('Burger');
+    expect(output).toContain('No onions, call when outside.');
     expect(output).toContain('$12.00');
   });
 });

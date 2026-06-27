@@ -78,7 +78,7 @@ const CartSkeleton = () => (
         {/* Delivery Information Skeleton */}
         <div className='bg-card border rounded-xl p-4 sm:p-6 space-y-4 lg:max-h-[70vh] lg:overflow-y-auto'>
           <Skeleton className='h-6 w-40 mb-2' />
-          {[...Array(5)].map((_, i) => (
+          {[...Array(6)].map((_, i) => (
             <div key={i} className='space-y-2'>
               <Skeleton className='h-4 w-24' />
               <Skeleton className='h-9 w-full' />
@@ -105,6 +105,7 @@ const CartPage = () => {
     country: '',
     deliveryLatitude: null as number | null,
     deliveryLongitude: null as number | null,
+    specialInstructions: '',
   });
   const [isGettingDeliveryLocation, setIsGettingDeliveryLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -207,6 +208,7 @@ const CartPage = () => {
         country: profileData.country || '',
         deliveryLatitude: null,
         deliveryLongitude: null,
+        specialInstructions: '',
       });
     }
   }, [profileData]);
@@ -285,7 +287,7 @@ const CartPage = () => {
     }
   }, [appliedCoupon, cartItems]);
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -561,7 +563,10 @@ const CartPage = () => {
 
       const missingField = Object.entries(formData).find(
         ([key, value]) =>
-          key !== 'deliveryLatitude' && key !== 'deliveryLongitude' && !String(value || '').trim()
+          key !== 'deliveryLatitude' &&
+          key !== 'deliveryLongitude' &&
+          key !== 'specialInstructions' &&
+          !String(value || '').trim()
       );
       if (missingField) {
         sonnerToast.error('Please complete your delivery details.', {

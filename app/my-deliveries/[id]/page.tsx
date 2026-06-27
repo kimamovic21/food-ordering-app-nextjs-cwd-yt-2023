@@ -33,6 +33,7 @@ type DeliveredOrder = {
   postalCode: string;
   city: string;
   country: string;
+  specialInstructions?: string;
   cartProducts: CartProduct[];
   deliveryFee: number;
   loyaltyDiscount?: number;
@@ -145,6 +146,19 @@ const DeliveryDetailsPage = () => {
         <h1 className='text-3xl font-bold mb-2'>Delivery Details</h1>
         <p className='text-muted-foreground'>Order #{order._id.slice(-6).toUpperCase()}</p>
       </div>
+
+      {order.specialInstructions?.trim() && (
+        <Card className='mb-6'>
+          <CardHeader>
+            <CardTitle>Special Instructions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className='whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground'>
+              {order.specialInstructions}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
         {/* Order Status Card */}

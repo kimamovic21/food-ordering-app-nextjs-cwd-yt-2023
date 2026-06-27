@@ -180,6 +180,7 @@ describe('POST /api/webhook', () => {
       ],
       taxAmount: 1,
       deliveryFee: 2,
+      specialInstructions: 'Cut pizza into small slices.',
       total: 15,
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
       orderPaid: false,
@@ -219,6 +220,11 @@ describe('POST /api/webhook', () => {
     expect(notifyRestaurantAdminsAboutPaidOrder).toHaveBeenCalledTimes(1);
     expect(Coupon.findByIdAndUpdate).toHaveBeenCalledTimes(1);
     expect(sendPurchaseReceiptEmail).toHaveBeenCalledTimes(1);
+    expect(sendPurchaseReceiptEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        specialInstructions: 'Cut pizza into small slices.',
+      })
+    );
   });
 
   it('returns success and does not mutate orders when metadata.orderId is missing', async () => {

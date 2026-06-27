@@ -34,6 +34,12 @@ const OrderSchema = new Schema(
     deliveryLatitude: { type: Number, default: null },
     deliveryLongitude: { type: Number, default: null },
     deliveryDistanceKm: { type: Number, default: null, min: 0 },
+    specialInstructions: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 500,
+    },
     cartProducts: { type: [CartProductSchema], required: true },
 
     // Restaurant reference
@@ -157,6 +163,7 @@ const OrderSchema = new Schema(
     readyAt: { type: Date, default: null },
     courierAssignedAt: { type: Date, default: null },
     courierAcceptedAt: { type: Date, default: null },
+    courierDeclinedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     courierDeclinedAt: { type: Date, default: null },
     restaurantHandedToCourierAt: { type: Date, default: null },
     courierPickedUpAt: { type: Date, default: null },

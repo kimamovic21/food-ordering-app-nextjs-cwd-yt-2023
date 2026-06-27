@@ -23,7 +23,18 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
-import { MapPin, Phone, Mail, Globe, Users, Clock, DollarSign, Edit, Trash2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Users,
+  Clock,
+  DollarSign,
+  Edit,
+  Trash2,
+} from 'lucide-react';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
@@ -75,10 +86,18 @@ interface Restaurant {
   updatedAt: string;
 }
 
+type OrderingLoad = {
+  activeKitchenOrders: number;
+  activeOrderLimit: number;
+  shouldSuggestPause: boolean;
+  isAtCapacity: boolean;
+};
+
 const RestaurantPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [orderingLoad, setOrderingLoad] = useState<OrderingLoad | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -105,6 +124,7 @@ const RestaurantPage = () => {
       }
 
       setRestaurant(data.restaurant);
+      setOrderingLoad(data.orderingLoad || null);
     } catch (error) {
       console.error('Error fetching restaurant:', error);
       sonnerToast.error('Failed to load restaurant data');
@@ -327,6 +347,37 @@ const RestaurantPage = () => {
           </Dialog>
         </div>
       </div>
+
+      {orderingLoad &&
+        !restaurant.isPaused &&
+        (orderingLoad.shouldSuggestPause || orderingLoad.isAtCapacity) && (
+          <Card className='mb-6 border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'>
+            <CardContent className='flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between'>
+              <div className='flex gap-3'>
+                <AlertTriangle className='mt-1 size-5 shrink-0 text-amber-600' />
+                <div>
+                  <p className='font-semibold text-amber-900 dark:text-amber-100'>
+                    {orderingLoad.isAtCapacity
+                      ? 'Restaurant is at active order capacity'
+                      : 'Restaurant is getting busy'}
+                  </p>
+                  <p className='mt-1 text-sm text-amber-800 dark:text-amber-100/80'>
+                    {orderingLoad.activeKitchenOrders} of {orderingLoad.activeOrderLimit} active
+                    kitchen orders are waiting. Consider pausing checkout for a little while if the
+                    kitchen needs time to catch up.
+                  </p>
+                </div>
+              </div>
+              <Button
+                type='button'
+                onClick={() => router.push(`/admin-dashboard/restaurant/edit/${restaurant._id}`)}
+                className='shrink-0'
+              >
+                Review pause settings
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
       {/* Restaurant Images */}
       {restaurant.images && restaurant.images.length > 0 && (

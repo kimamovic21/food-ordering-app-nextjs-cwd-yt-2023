@@ -9,6 +9,7 @@ import {
   Bike,
   ClipboardCheck,
   Home,
+  LifeBuoy,
   LogOut,
   Menu,
   MessageSquareText,
@@ -97,6 +98,11 @@ const CourierDashboardClientLayout = ({ children }: { children: React.ReactNode 
       href: '/courier-dashboard/reviews',
       label: 'My Ratings',
       icon: Star,
+    },
+    {
+      href: '/my-reports',
+      label: 'My Reports',
+      icon: LifeBuoy,
     },
   ];
 

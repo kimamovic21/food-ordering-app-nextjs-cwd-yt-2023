@@ -71,6 +71,7 @@ type OrderDetailsType = {
   postalCode: string;
   city: string;
   country: string;
+  specialInstructions?: string;
   cartProducts: CartProduct[];
   total: number;
   paymentStatus: boolean;
@@ -593,6 +594,20 @@ const OrderDetailPage = () => {
       </div>
 
       <div className='space-y-6'>
+        {order.specialInstructions?.trim() && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Special Instructions</CardTitle>
+              <CardDescription>Customer notes for kitchen and courier handoff.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className='whitespace-pre-wrap text-sm leading-relaxed'>
+                {order.specialInstructions}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Order Information and Order Items - Side by side on large screens */}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
           <OrderInfoCard

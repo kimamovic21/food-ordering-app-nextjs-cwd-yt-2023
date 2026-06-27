@@ -19,6 +19,8 @@ vi.mock('@/libs/notifications', () => ({
   notifyOrderDelivered: vi.fn(),
   notifyRestaurantAdminsAboutPaidOrder: vi.fn(),
   notifyCourierAboutAssignment: vi.fn(),
+  notifyCourierAboutRestaurantHandoff: vi.fn(),
+  notifyRestaurantAdminsAboutCourierAssignmentUpdate: vi.fn(),
   notifyUserAboutOrderStatusChange: vi.fn(),
 }));
 
@@ -176,7 +178,7 @@ describe('E2E: Courier lifecycle', () => {
     );
     expect(readyResp.status).toBe(200);
 
-    // admin assigns an available courier, moving the order to transportation
+    // admin assigns an available courier, creating a pending assignment
     const { PATCH: AssignCourier } = await import('@/app/api/my-delivery/route');
     const assignResp = await AssignCourier(
       new Request('http://localhost/api/my-delivery', {
@@ -190,7 +192,32 @@ describe('E2E: Courier lifecycle', () => {
     );
     expect(assignResp.status).toBe(200);
 
-    // courier posts location
+    // courier accepts the assignment
+    activeSession = { user: { email: courier.email, role: 'courier' } };
+    const { PATCH: DeliveryOrderAction } = await import('@/app/api/my-delivery/orders/route');
+    const acceptResp = await DeliveryOrderAction(
+      new Request('http://localhost', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order._id.toString(), action: 'accept-assignment' }),
+      })
+    );
+    expect(acceptResp.status).toBe(200);
+    const acceptBody = await acceptResp.json();
+    expect(acceptBody.order.courierAssignmentStatus).toBe('accepted');
+
+    // restaurant records the courier handoff
+    activeSession = { user: { email: admin.email, role: 'admin' } };
+    const handoffResp = await PatchOrderStatus(
+      new Request('http://localhost/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order._id.toString(), action: 'handoff-to-courier' }),
+      })
+    );
+    expect(handoffResp.status).toBe(200);
+
+    // courier posts location and marks the order as picked up
     activeSession = { user: { email: courier.email, role: 'courier' } };
     const { POST: PostLocation } = await import('@/app/api/my-delivery/location/route');
     const locResp = await PostLocation(
@@ -201,9 +228,19 @@ describe('E2E: Courier lifecycle', () => {
     );
     expect(locResp.status).toBe(200);
 
+    const pickupResp = await DeliveryOrderAction(
+      new Request('http://localhost', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order._id.toString(), action: 'pick-up' }),
+      })
+    );
+    expect(pickupResp.status).toBe(200);
+    const pickupBody = await pickupResp.json();
+    expect(pickupBody.order.orderStatus).toBe('transportation');
+
     // courier confirms handoff with customer PIN
-    const { PATCH: CompleteOrder } = await import('@/app/api/my-delivery/orders/route');
-    const completeResp = await CompleteOrder(
+    const completeResp = await DeliveryOrderAction(
       new Request('http://localhost', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -234,6 +271,9 @@ describe('E2E: Courier lifecycle', () => {
     expect(updated?.orderStatus).toBe('completed');
     expect(updated?.processingAt).toBeTruthy();
     expect(updated?.readyAt).toBeTruthy();
+    expect(updated?.courierAcceptedAt).toBeTruthy();
+    expect(updated?.restaurantHandedToCourierAt).toBeTruthy();
+    expect(updated?.courierPickedUpAt).toBeTruthy();
     expect(updated?.transportationAt).toBeTruthy();
     expect(updated?.courierDeliveredAt).toBeTruthy();
     expect(updated?.customerConfirmedDeliveryAt).toBeTruthy();

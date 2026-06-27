@@ -62,4 +62,33 @@ describe('Order model validation', () => {
     const o: any = new Order(data);
     await expect(o.validate()).resolves.toBeUndefined();
   });
+
+  it('rejects overly long special instructions', async () => {
+    const data: any = {
+      email: 'a@b.com',
+      phone: '123',
+      streetAddress: 'addr',
+      postalCode: '00000',
+      city: 'C',
+      country: 'X',
+      specialInstructions: 'x'.repeat(501),
+      cartProducts: [
+        {
+          productId: '507f1f77bcf86cd799439011',
+          name: 'X',
+          size: 'M',
+          quantity: 1,
+          price: 10,
+          restaurantId: '507f1f77bcf86cd799439011',
+        },
+      ],
+      restaurantId: '507f1f77bcf86cd799439011',
+      taxPercentage: 10,
+      deliveryFee: 5,
+      total: 10,
+    };
+
+    const o: any = new Order(data);
+    await expect(o.validate()).rejects.toBeTruthy();
+  });
 });

@@ -173,6 +173,12 @@ const Header = () => {
                       Orders
                     </Link>
                     <Link
+                      className={`${pathname === '/my-reports' ? 'text-primary font-semibold' : ''}`}
+                      href={'/my-reports'}
+                    >
+                      Reports
+                    </Link>
+                    <Link
                       className={`${pathname === '/reviews' ? 'text-primary font-semibold' : ''}`}
                       href={'/reviews'}
                     >
@@ -420,6 +426,13 @@ const Header = () => {
                   className='hover:text-primary'
                 >
                   Reviews
+                </Link>
+                <Link
+                  href='/my-reports'
+                  onClick={() => setMobileOpen(false)}
+                  className='hover:text-primary'
+                >
+                  Reports
                 </Link>
                 <Link
                   href='/favorite-meals'

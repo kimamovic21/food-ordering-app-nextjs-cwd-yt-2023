@@ -3,6 +3,7 @@ import { mongoConnect } from '@/libs/mongoConnect';
 import { Restaurant } from '@/models/restaurant';
 import { User } from '@/models/user';
 import { MenuItem } from '@/models/menuItem';
+import { Order } from '@/models/order';
 import cloudinary from '@/libs/cloudinary';
 
 vi.mock('next-auth/next', () => ({
@@ -37,6 +38,12 @@ vi.mock('@/models/menuItem', () => ({
   MenuItem: {
     find: vi.fn(),
     deleteMany: vi.fn(),
+  },
+}));
+
+vi.mock('@/models/order', () => ({
+  Order: {
+    countDocuments: vi.fn(),
   },
 }));
 
@@ -91,6 +98,7 @@ describe('/api/restaurant route', () => {
       user: { email: adminUser.email },
     } as never);
     vi.mocked(User.findOne).mockResolvedValue(adminUser as never);
+    vi.mocked(Order.countDocuments).mockResolvedValue(0 as never);
   });
 
   it('blocks restaurant creation for unauthenticated users', async () => {
@@ -127,6 +135,29 @@ describe('/api/restaurant route', () => {
     );
     expect(User.findByIdAndUpdate).toHaveBeenCalledWith(adminUser._id, {
       restaurantId: 'restaurant-1',
+    });
+  });
+
+  it('returns ordering load and suggests pause when active orders are near capacity', async () => {
+    vi.mocked(Restaurant.findOne).mockResolvedValueOnce({
+      _id: 'restaurant-1',
+      ownerId: adminUser._id,
+      activeOrderLimit: 10,
+      isPaused: false,
+      images: [],
+    } as never);
+    vi.mocked(Order.countDocuments).mockResolvedValueOnce(9 as never);
+
+    const { GET } = await loadRestaurantRoute();
+    const res = await GET();
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.orderingLoad).toEqual({
+      activeKitchenOrders: 9,
+      activeOrderLimit: 10,
+      shouldSuggestPause: true,
+      isAtCapacity: false,
     });
   });
 

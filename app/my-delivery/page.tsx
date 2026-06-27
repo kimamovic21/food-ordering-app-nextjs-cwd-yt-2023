@@ -40,6 +40,7 @@ type OrderDetailsType = {
   postalCode: string;
   city: string;
   country: string;
+  specialInstructions?: string;
   cartProducts: CartProduct[];
   total: number;
   paymentStatus: boolean;

@@ -5,6 +5,7 @@ import { mongoConnect } from '@/libs/mongoConnect';
 import { Restaurant } from '@/models/restaurant';
 import { User } from '@/models/user';
 import { MenuItem } from '@/models/menuItem';
+import { Order } from '@/models/order';
 import { createAuditLog } from '@/libs/auditLog';
 import cloudinary from '@/libs/cloudinary';
 
@@ -160,7 +161,32 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ restaurant }, { status: 200 });
+    const activeOrderLimit = Math.min(
+      100,
+      Math.max(1, Number((restaurant as any).activeOrderLimit) || 10)
+    );
+    const activeKitchenOrders = await Order.countDocuments({
+      restaurantId: restaurant._id,
+      orderStatus: { $in: ['placed', 'processing', 'ready'] },
+      $or: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
+    });
+    const busySuggestionThreshold = Math.max(1, activeOrderLimit - 2);
+
+    return NextResponse.json(
+      {
+        restaurant,
+        orderingLoad: {
+          activeKitchenOrders,
+          activeOrderLimit,
+          shouldSuggestPause:
+            !restaurant.isPaused &&
+            activeKitchenOrders >= busySuggestionThreshold &&
+            activeKitchenOrders < activeOrderLimit,
+          isAtCapacity: activeKitchenOrders >= activeOrderLimit,
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error fetching restaurant:', error);
     return NextResponse.json({ error: 'Failed to fetch restaurant' }, { status: 500 });

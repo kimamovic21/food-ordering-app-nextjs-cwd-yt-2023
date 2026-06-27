@@ -167,6 +167,8 @@ describe('E2E: Checkout restaurant active order capacity', () => {
           postalCode: '71000',
           city: 'Sarajevo',
           country: 'BiH',
+          deliveryLatitude: 43.8563,
+          deliveryLongitude: 18.4131,
           loyaltyDiscountPercentage: 0,
           cartItems: [
             {
