@@ -8,7 +8,7 @@
 - NextAuth auth flows (`libs/authOptions.ts`, `app/api/auth/**`)
 - Stripe payments (`app/api/checkout/**`, `app/api/payment-link/**`, `app/api/webhook/**`)
 - Resend email integration (`libs/sendPurchaseReceiptEmail.tsx`)
-- Order operations: restaurant busy limits, preparation/delivery estimates, delivery PIN handoff, customer/admin completion, and support tickets
+- Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin completion, support tickets, and late-order alerts
 
 ## Coding Expectations
 
@@ -21,9 +21,12 @@
 
 - Never leak server secrets into client bundles.
 - Keep role checks intact for admin, courier, and user routes.
-- Keep checkout capacity checks in place before Stripe sessions are created.
+- Keep checkout accepting-order checks in place before Stripe sessions are created: working hours, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty.
+- Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
+- Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Keep delivery completion double-confirmed with courier PIN handoff followed by customer/admin finalization.
 - Keep support tickets scoped between restaurant support and app support.
+- Keep ETA-style notifications and late active-order alerts aligned with order timeline state.
 - Keep webhook logic idempotent and safe on retries.
 - Ask before schema-level changes or backfills that may impact production data.
 
@@ -40,4 +43,5 @@
 - Test folders: `__tests__/` for unit tests, `mocks/` for fixtures, `e2e/` for real-flow tests.
 - Single-file execution: `npm run test:file -- <path>`.
 - Prefer behavior-focused tests that cover success and failure paths.
+- For order-flow work, cover checkout validation, coupon suggestion, restaurant availability, notification copy, courier summaries, and lifecycle transitions.
 - Use `npm run test:e2e` for register/login and other real DB flow validation.

@@ -11,14 +11,14 @@ It includes:
 - customer authentication, profile management, cart, checkout, and order history
 - restaurant browsing with search/filter/sort/pagination and shareable URLs
 - favorites for meals and restaurants
-- loyalty rewards with delivery fee discounts
+- loyalty rewards with delivery fee discounts and loyalty history
 - ratings and review flows
 - approved in-app messaging between customers, restaurant owners, admins, and couriers
 - notifications center with unread counts, mark-as-read actions, and role-aware routing
 - admin dashboard for users, menu items, categories, restaurants, couriers, orders, support tickets, and statistics
-- courier dashboard with active delivery, delivery history, and courier ratings views
+- courier dashboard with active delivery, route distance summaries, delivery history, and courier ratings views
 - courier workflow with assignment, availability toggle, live location sharing on maps, delivery PIN handoff, and delivery history
-- order timeline with preparation/delivery estimates, delivery confirmation, and report-problem support tickets
+- order timeline with preparation/delivery estimates, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
 - restaurant busy checkout protection based on each restaurant's active kitchen order limit
 - Stripe checkout/webhook flow
 - Cloudinary media uploads
@@ -33,12 +33,13 @@ It includes:
 - Profile editing (name, phone, address, avatar)
 - Menu and restaurant discovery with filtering/sorting/search
 - Menu item availability indicators with disabled ordering for sold-out items
-- Cart, checkout, busy restaurant checks, and order tracking
+- Cart, checkout, best coupon suggestion, busy/closed restaurant checks, and order tracking
 - Favorites for menu items and restaurants
 - Loyalty tiers and automatic delivery-fee discounts
 - Personal review management and restaurant review pages
 - Per-order courier reviews and ratings (optional, one submission per order)
 - Order details with courier information, order timeline estimates, delivery PIN visibility, customer delivery confirmation, and a public courier review page for customers
+- Reorder previous orders from order history or order details after current menu item availability and prices are revalidated
 - Report-problem action on order details, creating support tickets for restaurant support or app support
 - Social sharing actions for restaurant/menu pages
 - Message inbox at `/messages` and direct thread view at `/messages/[participantId]`
@@ -49,9 +50,9 @@ It includes:
 - Super-admin protected management actions
 - CRUD for categories, menu items, restaurants, and users
 - Menu item availability controls for temporarily unavailable or sold-out items
-- Restaurant preparation/delivery estimate settings and active order limit controls
+- Restaurant preparation/delivery estimate settings, working-hours checkout protection, and active order limit controls
 - Courier management and order assignment
-- Order lifecycle management and dashboards/statistics
+- Order lifecycle management, late-order operational alerts, order queue, and dashboards/statistics
 - Support ticket dashboard for reported order, delivery, and app issues
 - Notifications management with order, delivery, and assignment updates
 - Messaging center with delivery/seen states, inline editing, and per-user delete behavior
@@ -64,6 +65,7 @@ It includes:
 - Real-time courier location sharing
 - Leaflet map tracking with polling + manual refresh
 - Delivery PIN entry to record courier handoff before customer/admin confirmation
+- Route distance and estimated delivery time summaries for active and completed deliveries
 - Report-problem action for delivery issues
 - Courier-facing review and rating list for completed deliveries
 - Customer-facing courier review page from order details
@@ -147,9 +149,14 @@ This project uses many dependencies; below are the main packages actively used i
 
 - Restaurants can configure average preparation time, average delivery time, and an active kitchen order limit in the admin restaurant form.
 - Checkout snapshots the restaurant estimates onto each order, so order detail timelines can show expected timing alongside actual phase durations.
+- Checkout blocks restaurants that are closed, paused, outside delivery radius, or blocked by working hours, and surfaces the next opening time when available.
 - Checkout blocks new orders when the restaurant has reached its paid active kitchen order limit (`placed`, `processing`, or `ready` orders).
+- Cart can suggest the best public coupon for the current restaurant subtotal and let the customer apply it directly.
+- Previous orders can be reordered into the cart only after current menu item existence, availability, restaurant ownership, and prices are rechecked.
 - Couriers record delivery handoff with a customer-visible PIN; customers or the restaurant admin then finalize delivery completion.
+- Order status notifications use phase-specific copy, including preparation and delivery ETA hints when an estimate is available.
 - Customers and couriers can report order or delivery problems; admins manage those reports from `/admin-dashboard/support-tickets`.
+- `/admin-dashboard/orders` surfaces late active-order alerts and links to `/admin-dashboard/order-queue` for the full operational view.
 
 ## Auth: Email Verification & Password Reset
 

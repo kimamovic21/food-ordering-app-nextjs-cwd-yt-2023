@@ -118,6 +118,12 @@ const CartPage = () => {
   const [couponMessage, setCouponMessage] = useState<string | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [bestCoupon, setBestCoupon] = useState<{
+    coupon: CouponLike;
+    discountAmount: number;
+    message: string | null;
+  } | null>(null);
+  const [isLoadingBestCoupon, setIsLoadingBestCoupon] = useState(false);
   const [unavailableItemIds, setUnavailableItemIds] = useState<string[]>([]);
   const [loadingMenuAvailability, setLoadingMenuAvailability] = useState(false);
 
@@ -430,12 +436,81 @@ const CartPage = () => {
   const loyaltyDiscountBase = Math.max(0, subtotal - couponDiscount);
   const loyaltyDiscount = calculateLoyaltyDiscount(loyaltyDiscountBase, loyaltyDiscountPercentage);
 
+  useEffect(() => {
+    const restaurantId = cartItems.length > 0 ? cartItems[0]?.restaurantId : null;
+
+    if (!restaurantId || subtotal <= 0) {
+      setBestCoupon(null);
+      setIsLoadingBestCoupon(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchBestCoupon = async () => {
+      setIsLoadingBestCoupon(true);
+
+      try {
+        const response = await fetch(
+          `/api/coupons?best=true&restaurantId=${encodeURIComponent(
+            restaurantId
+          )}&subtotal=${encodeURIComponent(String(subtotal))}`
+        );
+        const json = await response.json().catch(() => null);
+
+        if (!cancelled) {
+          setBestCoupon(
+            response.ok && json?.coupon
+              ? {
+                  coupon: json.coupon,
+                  discountAmount: Number(json.discountAmount) || 0,
+                  message: json.message || null,
+                }
+              : null
+          );
+        }
+      } catch (error) {
+        console.error('Failed to fetch best coupon:', error);
+        if (!cancelled) {
+          setBestCoupon(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingBestCoupon(false);
+        }
+      }
+    };
+
+    fetchBestCoupon();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cartItems, subtotal]);
+
   const handleCouponCodeChange = (value: string) => {
     const normalized = normalizeCouponCode(value);
     setCouponCode(normalized);
     if (couponError) {
       setCouponError(null);
     }
+  };
+
+  const handleApplyBestCoupon = () => {
+    if (!bestCoupon?.coupon) {
+      return;
+    }
+
+    setAppliedCoupon(bestCoupon.coupon);
+    setCouponCode(bestCoupon.coupon.code);
+    setCouponError(null);
+    setCouponMessage(
+      bestCoupon.message ||
+        `Coupon applied successfully. You saved $${bestCoupon.discountAmount.toFixed(2)}.`
+    );
+    sonnerToast.success('Best coupon applied!', {
+      style: { background: '#22c55e', color: 'white' },
+    });
   };
 
   const handleApplyCoupon = async () => {
@@ -754,8 +829,15 @@ const CartPage = () => {
             couponMessage={displayedCouponMessage}
             couponError={couponValidationError || couponError}
             isApplyingCoupon={isApplyingCoupon}
+            bestCouponCode={bestCoupon?.coupon.code || null}
+            bestCouponDiscount={bestCoupon?.discountAmount || 0}
+            bestCouponApplied={Boolean(
+              appliedCoupon?.code && bestCoupon?.coupon.code === appliedCoupon.code
+            )}
+            isLoadingBestCoupon={isLoadingBestCoupon}
             onCouponCodeChange={handleCouponCodeChange}
             onApplyCoupon={handleApplyCoupon}
+            onApplyBestCoupon={handleApplyBestCoupon}
             isLoggedIn={isLoggedIn}
             isSubmitting={isSubmitting}
             handleCheckout={handleCheckout}

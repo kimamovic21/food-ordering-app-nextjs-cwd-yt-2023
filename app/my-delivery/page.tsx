@@ -41,6 +41,8 @@ type OrderDetailsType = {
   city: string;
   country: string;
   specialInstructions?: string;
+  deliveryDistanceKm?: number | null;
+  estimatedDeliveryMinutes?: number | null;
   cartProducts: CartProduct[];
   total: number;
   paymentStatus: boolean;

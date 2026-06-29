@@ -16,10 +16,10 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 
 ## High-Level Features
 
-- Customer flows: auth, profile, menu browsing, cart/checkout, favorites, loyalty, reviews, approved messaging, order timelines, delivery confirmation, and support tickets.
-- Admin dashboard: users, categories, menu items, restaurants, orders, couriers, support tickets, statistics, and AI-assisted menu descriptions.
-- Courier flows: assignment, availability toggle, live location sharing, delivery PIN handoff, problem reporting, and tracked delivery maps.
-- Restaurant operations: menu item availability, preparation/delivery estimates, and active order limit checks that can temporarily block checkout when the kitchen is busy.
+- Customer flows: auth, profile, menu browsing, cart/checkout, best coupon suggestion, reorder, favorites, loyalty history, reviews, approved messaging, order timelines, delivery confirmation, and support tickets.
+- Admin dashboard: users, categories, menu items, restaurants, orders, order queue, late-order alerts, couriers, support tickets, statistics, and AI-assisted menu descriptions.
+- Courier flows: assignment, availability toggle, live location sharing, delivery PIN handoff, problem reporting, tracked delivery maps, route distance summaries, and delivery history metrics.
+- Restaurant operations: menu item availability, working-hours checkout protection, pause/blocked-date/radius checks, preparation/delivery estimates, and active order limit checks that can temporarily block checkout when the kitchen is busy.
 
 ## Local Setup
 
@@ -68,9 +68,12 @@ See `example.env`. Variables currently used in the project include:
 - Keep secrets in server-side code only (Stripe, Cloudinary, Resend, OpenAI keys).
 - Avoid breaking API response shapes unless explicitly requested.
 - Messaging should remain role-restricted: no customer-to-customer chat, and order threads must match the assigned courier or restaurant owner.
-- Checkout must preserve restaurant capacity checks: compare paid active kitchen orders against the restaurant `activeOrderLimit` before creating Stripe sessions.
+- Checkout must preserve restaurant accepting-order checks: working hours, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty must be validated before creating Stripe sessions.
+- Best coupon suggestions are user-facing help only; checkout must revalidate coupons server-side.
+- Reorder must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Delivery completion is double-confirmed: courier records handoff with the delivery PIN, then customer or restaurant admin finalizes completion.
 - Support tickets should remain role-scoped: restaurant owners handle their restaurant reports, while app-support tickets route to the super admin.
+- Order notifications can include ETA-style phase copy, and late active-order alerts should point admins toward the order queue.
 
 ## AI Configuration Folders
 
@@ -107,6 +110,7 @@ See `example.env`. Variables currently used in the project include:
 - Keep runtime code unchanged unless explicitly requested; prefer tests-only changes.
 - For auth tests, cover both success and failure behavior contracts.
 - For profile tests, cover info updates, image upload/remove, and account deletion flows.
+- For order-flow tests, cover checkout validation, best coupon suggestion, reorder validation, restaurant availability, notification copy, courier summaries, and delivery status transitions.
 - Use `MONGODB_URL_TESTS` for local test database configuration when needed.
 - Keep e2e tests data-safe with explicit cleanup of created records.
 

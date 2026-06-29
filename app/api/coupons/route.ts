@@ -116,6 +116,85 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const restaurantId = url.searchParams.get('restaurantId');
+  const wantsBestCoupon = url.searchParams.get('best') === 'true';
+
+  if (wantsBestCoupon) {
+    if (!restaurantId || !mongoose.Types.ObjectId.isValid(restaurantId)) {
+      return Response.json({ coupon: null, discountAmount: 0, message: null }, { status: 200 });
+    }
+
+    const subtotal = Math.max(0, Number(url.searchParams.get('subtotal') || 0));
+    const now = new Date();
+    const coupons = await Coupon.find({
+      restaurantId: new mongoose.Types.ObjectId(restaurantId),
+      isActive: true,
+      isPublic: true,
+      startsAt: { $lte: now },
+      $or: [{ expiresAt: null }, { expiresAt: { $gte: now } }],
+    }).lean();
+
+    const couponsNeedingUser = coupons.some(
+      (coupon: any) => coupon.firstOrderOnly || Number(coupon.usagePerCustomer) > 0
+    );
+    const session = couponsNeedingUser ? await getServerSession(authOptions) : null;
+    const user = session?.user?.email ? await User.findOne({ email: session.user.email }) : null;
+    const completedOrderCount = user
+      ? await Order.countDocuments({ userId: user._id, orderStatus: 'completed' })
+      : 0;
+
+    const candidates = await Promise.all(
+      coupons.map(async (coupon: any) => {
+        const needsUser = coupon.firstOrderOnly || Number(coupon.usagePerCustomer) > 0;
+        if (needsUser && !user) {
+          return null;
+        }
+
+        const customerCouponUsageCount =
+          user && Number(coupon.usagePerCustomer) > 0
+            ? await Order.countDocuments({
+                userId: user._id,
+                couponId: coupon._id,
+                orderStatus: { $ne: 'canceled' },
+                $or: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
+              })
+            : 0;
+        const validationError = getCouponValidationError({
+          coupon,
+          subtotal,
+          completedOrderCount,
+          customerCouponUsageCount,
+          now,
+        });
+
+        if (validationError) {
+          return null;
+        }
+
+        const discountAmount = calculateCouponDiscountAmount(subtotal, coupon);
+        return discountAmount > 0 ? { coupon, discountAmount } : null;
+      })
+    );
+
+    const bestCoupon = candidates
+      .filter((candidate): candidate is { coupon: any; discountAmount: number } =>
+        Boolean(candidate)
+      )
+      .sort((left, right) => {
+        if (right.discountAmount !== left.discountAmount) {
+          return right.discountAmount - left.discountAmount;
+        }
+
+        return Number(right.coupon.discountValue || 0) - Number(left.coupon.discountValue || 0);
+      })[0];
+
+    return Response.json({
+      coupon: bestCoupon ? serializeCoupon(bestCoupon.coupon) : null,
+      discountAmount: bestCoupon?.discountAmount || 0,
+      message: bestCoupon
+        ? `Best coupon found: ${bestCoupon.coupon.code}. You can save $${bestCoupon.discountAmount.toFixed(2)}.`
+        : null,
+    });
+  }
 
   if (code) {
     const normalizedCode = normalizeCouponCode(code);

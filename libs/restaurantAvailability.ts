@@ -26,20 +26,84 @@ export const normalizeDeliveryRadiusKm = (value: unknown) => {
 const getDayName = (date: Date) =>
   date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
+const dayLabel = (date: Date, baseDate: Date) => {
+  if (isSameLocalDate(date, baseDate)) return 'today';
+
+  const tomorrow = new Date(baseDate);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (isSameLocalDate(date, tomorrow)) return 'tomorrow';
+
+  return date.toLocaleDateString('en-US', { weekday: 'long' });
+};
+
 const isSameLocalDate = (left: Date, right: Date) =>
   left.getFullYear() === right.getFullYear() &&
   left.getMonth() === right.getMonth() &&
   left.getDate() === right.getDate();
+
+const isBlockedOnDate = (blockedDates: RestaurantBlockedDate[] = [], targetDate: Date) =>
+  blockedDates.some((blockedDate) => {
+    const date = new Date(blockedDate.date);
+    return !Number.isNaN(date.getTime()) && isSameLocalDate(date, targetDate);
+  });
+
+const parseTimeForDate = (time: string, targetDate: Date) => {
+  const [hour, minute] = time.split(':').map(Number);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+    return null;
+  }
+
+  const date = new Date(targetDate);
+  date.setHours(hour, minute, 0, 0);
+  return date;
+};
+
+export const getNextOpeningSummary = (
+  workingHours: RestaurantWorkingHour[] = [],
+  blockedDates: RestaurantBlockedDate[] = [],
+  targetDate = new Date()
+) => {
+  for (let dayOffset = 0; dayOffset < 8; dayOffset += 1) {
+    const candidateDate = new Date(targetDate);
+    candidateDate.setDate(candidateDate.getDate() + dayOffset);
+
+    if (isBlockedOnDate(blockedDates, candidateDate)) {
+      continue;
+    }
+
+    const hours = workingHours.find((item) => item.day === getDayName(candidateDate));
+    if (!hours || hours.isClosed) {
+      continue;
+    }
+
+    const openTime = parseTimeForDate(hours.openTime, candidateDate);
+    const closeTime = parseTimeForDate(hours.closeTime, candidateDate);
+
+    if (!openTime || !closeTime) {
+      continue;
+    }
+
+    if (dayOffset === 0 && targetDate > closeTime) {
+      continue;
+    }
+
+    if (dayOffset === 0 && targetDate >= openTime && targetDate <= closeTime) {
+      return null;
+    }
+
+    return `This restaurant opens ${dayLabel(candidateDate, targetDate)} at ${hours.openTime}.`;
+  }
+
+  return 'This restaurant is not accepting orders during the listed working hours.';
+};
 
 export const isRestaurantOpen = (
   workingHours: RestaurantWorkingHour[] = [],
   blockedDates: RestaurantBlockedDate[] = [],
   targetDate = new Date()
 ) => {
-  const blockedToday = blockedDates.some((blockedDate) => {
-    const date = new Date(blockedDate.date);
-    return !Number.isNaN(date.getTime()) && isSameLocalDate(date, targetDate);
-  });
+  const blockedToday = isBlockedOnDate(blockedDates, targetDate);
 
   if (blockedToday) {
     return false;
@@ -141,7 +205,12 @@ export const getRestaurantOrderingStatus = ({
     reason =
       pauseReason || 'This restaurant paused new orders for a little while. Please try again soon.';
   } else if (!isOpen) {
-    reason = 'This restaurant is not working at the moment. Please try again during open hours.';
+    reason =
+      getNextOpeningSummary(
+        Array.isArray(restaurant?.workingHours) ? restaurant.workingHours : [],
+        Array.isArray(restaurant?.blockedDates) ? restaurant.blockedDates : [],
+        now
+      ) || 'This restaurant is not working at the moment. Please try again during open hours.';
   } else if (isWithinDeliveryRadius === false) {
     reason = `This restaurant delivers within ${deliveryRadiusKm} km. Your location is ${distanceKm?.toFixed(
       1

@@ -186,12 +186,29 @@ export const notifyUserAboutOrderStatusChange = async (params: {
   userId: string | mongoose.Types.ObjectId;
   orderId: string | mongoose.Types.ObjectId;
   orderStatus: string;
+  estimatedMinutes?: number | null;
 }) => {
+  const orderNumber = params.orderId.toString().slice(-6);
+  const estimate =
+    typeof params.estimatedMinutes === 'number' && params.estimatedMinutes > 0
+      ? ` Estimated time: about ${params.estimatedMinutes} minutes.`
+      : '';
+  const statusMessages: Record<string, string> = {
+    processing: `Kitchen started preparing order #${orderNumber}.${estimate}`,
+    ready: `Order #${orderNumber} is ready and waiting for courier handoff.`,
+    transportation: `Courier picked up order #${orderNumber} and is on the way.${estimate}`,
+    delivered: `Courier marked order #${orderNumber} as delivered. Please confirm it when you receive your food.`,
+    completed: `Order #${orderNumber} is completed. Thank you for confirming delivery.`,
+    canceled: `Order #${orderNumber} was canceled.`,
+  };
+
   await createNotifications({
     recipientUserIds: [params.userId],
     type: 'order_status_changed',
     title: 'Order status updated',
-    message: `Your order #${params.orderId.toString().slice(-6)} is now ${formatOrderStatusLabel(params.orderStatus)}.`,
+    message:
+      statusMessages[params.orderStatus] ||
+      `Your order #${orderNumber} is now ${formatOrderStatusLabel(params.orderStatus)}.`,
     orderId: params.orderId,
     metadata: { orderStatus: params.orderStatus },
   });

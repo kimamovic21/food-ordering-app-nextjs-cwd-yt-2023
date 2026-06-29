@@ -15,7 +15,7 @@ This file provides guidance for AI assistance in this repository.
 - AI: OpenAI SDK for server-side menu description generation
 - Sharing: react-share
 - Messaging: approved app-native threads with realtime unread badges and per-user message visibility
-- Order operations: restaurant capacity limits, preparation/delivery estimates, delivery PIN handoff, customer/admin delivery confirmation, and support tickets
+- Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin delivery confirmation, support tickets, and late-order alerts
 
 ## Goals for AI Assistance
 
@@ -33,9 +33,12 @@ This file provides guidance for AI assistance in this repository.
 - Avoid breaking changes to API response shapes.
 - Preserve role-based access checks (admin/courier/user).
 - Preserve message access rules: no customer-to-customer chat, and order conversations must match the assigned courier or restaurant owner.
-- Preserve checkout capacity checks before Stripe session creation.
+- Preserve checkout accepting-order checks before Stripe session creation: working hours, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty.
+- Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
+- Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Preserve delivery double confirmation: courier PIN handoff first, then customer or restaurant admin completion.
 - Keep support tickets role-scoped between restaurant support and app support.
+- Keep ETA-style notifications and late active-order alerts aligned with order timeline state.
 - Keep payment and webhook flows idempotent.
 - Keep receipt email generation in server code.
 
@@ -57,6 +60,7 @@ This file provides guidance for AI assistance in this repository.
 - Reusable fixtures are stored in `mocks/`.
 - E2E tests are stored in `e2e/` and use `MONGODB_URL_TESTS`.
 - Auth starter tests exist for register and credentials login behavior.
+- Order-flow coverage includes checkout, coupons, restaurant availability helpers, notification copy, courier delivery summaries, and high-risk lifecycle transitions.
 - Run npm run lint after changes.
 - Run npm run test after test-related changes.
 - For API changes, note any new env vars in example.env.
@@ -67,10 +71,20 @@ This file provides guidance for AI assistance in this repository.
 - `npm run test`
 - `npm run test:watch`
 - `npm run test:file -- __tests__/api/register.route.test.ts`
+- `npm run test:api`
 - `npm run test:auth`
+- `npm run test:components`
+- `npm run test:libs`
+- `npm run test:models`
 - `npm run test:profile`
 - `npm run test:e2e`
 - `npm run test:e2e:file -- e2e/auth/register-login.e2e.test.ts`
+- `npm run test:e2e:admin`
+- `npm run test:e2e:auth`
+- `npm run test:e2e:checkout`
+- `npm run test:e2e:courier`
+- `npm run test:e2e:favorites`
+- `npm run test:e2e:messages`
 - `npm run test:e2e:profile`
 - `npm run test:all`
 

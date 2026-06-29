@@ -39,6 +39,7 @@ import {
 import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
 import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
+import { useCart } from '@/contexts/CartContext';
 
 type CartProduct = {
   productId: string;
@@ -124,11 +125,13 @@ const MyOrderDetailPage = () => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [cancelingOrder, setCancelingOrder] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [reorderingOrder, setReorderingOrder] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { data: profileData, loading: profileLoading } = useProfile();
   const params = useParams();
   const router = useRouter();
+  const { replaceCart } = useCart();
   const orderId = params?.id as string;
   const isFirstLoad = useRef(true);
 
@@ -400,6 +403,43 @@ const MyOrderDetailPage = () => {
     }
   };
 
+  const handleReorder = async () => {
+    if (!order) return;
+
+    setReorderingOrder(true);
+
+    try {
+      const response = await fetch('/api/my-orders/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order._id }),
+      });
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.error || 'Failed to reorder');
+      }
+
+      replaceCart(json.cartItems || []);
+      sonnerToast.success('Order added to cart', {
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
+      router.push('/cart');
+    } catch (error) {
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to reorder', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+    } finally {
+      setReorderingOrder(false);
+    }
+  };
+
   return (
     <section className='mt-8'>
       <div className='mt-8 max-w-[1600px] mx-auto px-4'>
@@ -426,6 +466,15 @@ const MyOrderDetailPage = () => {
               completedAt={order.completedAt || order.canceledAt}
               isCompleted={order.orderStatus === 'completed' || order.orderStatus === 'canceled'}
             />
+            <Button
+              type='button'
+              variant='outline'
+              onClick={handleReorder}
+              disabled={reorderingOrder}
+              className='w-full sm:w-auto'
+            >
+              {reorderingOrder ? 'Adding to cart...' : 'Reorder'}
+            </Button>
             {!restaurantReview && (
               <LeaveReviewDialog
                 orderId={order._id}

@@ -24,13 +24,17 @@ Auth is a high-value and high-risk area. Testing register and login first gives 
   - `app/api/upload/users/route.ts`
   - `app/api/checkout/route.ts`
   - `app/api/webhook/route.ts`
+  - `app/api/coupons/route.ts`
+  - `app/api/my-deliveries/route.ts`
   - credentials `authorize` handler in `libs/authOptions.ts`
+  - restaurant availability helpers in `libs/restaurantAvailability.ts`
+  - notification copy/routing helpers in `libs/notifications.ts`
 - E2E tests for:
   - register + login flow
   - profile management flow (info update, image upload/remove, account deletion)
   - checkout & payment flow (order creation, coupon application, payment webhook)
 
-These tests intentionally avoid changing existing runtime auth code.
+Recent high-priority coverage also checks best coupon suggestion rules, restaurant closed/busy availability helpers, ETA-style notification copy, and courier delivery summaries.
 
 ## Folder Layout
 
@@ -52,15 +56,30 @@ These tests intentionally avoid changing existing runtime auth code.
 - `npm run test`: run all tests once
 - `npm run test:watch`: run in watch mode
 - `npm run test:file -- <path>`: run only one file
+- `npm run test:api`: run API route tests
 - `npm run test:auth`: run only auth-focused tests
+- `npm run test:components`: run component tests
+- `npm run test:libs`: run library/helper tests
+- `npm run test:models`: run model tests
 - `npm run test:profile`: run only profile-focused unit tests
 - `npm run test:payment`: run only payment & webhook unit tests (checkout + webhook)
 - `npm run test:e2e`: run all e2e tests
 - `npm run test:e2e:watch`: run e2e tests in watch mode
 - `npm run test:e2e:file -- <path>`: run one e2e file
+- `npm run test:e2e:admin`: run admin e2e tests
+- `npm run test:e2e:auth`: run auth e2e tests
+- `npm run test:e2e:courier`: run courier e2e tests
+- `npm run test:e2e:favorites`: run favorites e2e tests
+- `npm run test:e2e:messages`: run messages e2e tests
 - `npm run test:e2e:profile`: run only profile-focused e2e tests
 - `npm run test:e2e:checkout`: run only checkout & payment e2e tests
 - `npm run test:all`: run unit + e2e tests
+
+Useful focused command after recent order-flow changes:
+
+```bash
+npm run test:file -- __tests__/api/coupons.route.test.ts __tests__/api/my-deliveries.route.test.ts __tests__/libs/restaurantAvailability.test.ts __tests__/libs/notifications.test.ts
+```
 
 ## Environment Variables
 
@@ -77,6 +96,7 @@ Test setup will use:
 
 - E2E tests use real MongoDB data and perform cleanup of test-created users.
 - Keep e2e coverage focused on high-risk user journeys.
+- For order-flow work, prioritize tests around checkout validation, reorder validation, coupon selection, restaurant availability, delivery status changes, support ticket permissions, and courier route summaries.
 - Detailed e2e guide: `e2e/README.md`.
 
 ### New Auth E2E Coverage

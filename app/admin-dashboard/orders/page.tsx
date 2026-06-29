@@ -1,7 +1,9 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { AlertTriangle } from 'lucide-react';
 import {
   Pagination,
   PaginationContent,
@@ -41,6 +43,11 @@ type OrderType = {
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState<OrderType[]>([]);
+  const [operationalAlerts, setOperationalAlerts] = useState({
+    activeOrders: 0,
+    lateOrders: 0,
+    lateThresholdMinutes: 120,
+  });
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -84,6 +91,17 @@ const OrdersPage = () => {
         setTotalPages(json.totalPages || 1);
         setError(null);
         setNoRestaurant(false);
+
+        const queueResponse = await fetch('/api/orders/queue', { cache: 'no-store' });
+        if (queueResponse.ok) {
+          const queueJson = await queueResponse.json();
+          const queueOrders = Array.isArray(queueJson.orders) ? queueJson.orders : [];
+          setOperationalAlerts({
+            activeOrders: queueOrders.length,
+            lateOrders: queueOrders.filter((order: any) => order.isLateBeforeTransport).length,
+            lateThresholdMinutes: Number(queueJson.lateThresholdMinutes) || 120,
+          });
+        }
       } catch (error) {
         console.error('Failed to load orders', error);
       } finally {
@@ -153,6 +171,32 @@ const OrdersPage = () => {
   return (
     <section className='mt-8 flex flex-col min-h-[calc(100vh-8rem)] max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10'>
       <Title>Orders</Title>
+
+      {operationalAlerts.lateOrders > 0 && (
+        <Card className='mt-4 border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950/30 dark:text-red-100'>
+          <div className='flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between'>
+            <div className='flex items-start gap-3'>
+              <AlertTriangle className='mt-0.5 size-5 shrink-0' />
+              <div>
+                <p className='font-semibold'>
+                  {operationalAlerts.lateOrders} order
+                  {operationalAlerts.lateOrders === 1 ? '' : 's'} need attention
+                </p>
+                <p className='text-sm opacity-90'>
+                  Active for at least {operationalAlerts.lateThresholdMinutes} minutes and not out
+                  for delivery yet.
+                </p>
+              </div>
+            </div>
+            <Link
+              href='/admin-dashboard/order-queue'
+              className='rounded-md border border-red-300 px-3 py-2 text-center text-sm font-medium transition hover:bg-red-100 dark:border-red-800 dark:hover:bg-red-950'
+            >
+              Open order queue
+            </Link>
+          </div>
+        </Card>
+      )}
 
       {error && (
         <div className='mt-4 bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-3 rounded-lg'>

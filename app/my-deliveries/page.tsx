@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Calendar, MapPin, DollarSign, Clock, Star, XCircle } from 'lucide-react';
+import { Package, Calendar, MapPin, DollarSign, Clock, Star, XCircle, Route } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import useProfile from '@/hooks/useProfile';
 import Link from 'next/link';
@@ -28,6 +28,8 @@ type DeliveredOrder = {
   city: string;
   country: string;
   cartProducts: CartProduct[];
+  deliveryDistanceKm?: number | null;
+  estimatedDeliveryMinutes?: number | null;
   total: number;
   orderPaid: boolean;
   orderStatus: 'completed';
@@ -40,6 +42,8 @@ type CourierPerformanceSummary = {
   declinedAssignments: number;
   lateDeliveries: number;
   averageDeliveryMinutes: number;
+  totalDistanceKm: number;
+  averageDistanceKm: number;
   averageRating: number;
   ratingCount: number;
 };
@@ -56,6 +60,8 @@ const MyDeliveriesPage = () => {
     declinedAssignments: 0,
     lateDeliveries: 0,
     averageDeliveryMinutes: 0,
+    totalDistanceKm: 0,
+    averageDistanceKm: 0,
     averageRating: 0,
     ratingCount: 0,
   });
@@ -86,6 +92,8 @@ const MyDeliveriesPage = () => {
           declinedAssignments: Number(data.summary?.declinedAssignments) || 0,
           lateDeliveries: Number(data.summary?.lateDeliveries) || 0,
           averageDeliveryMinutes: Number(data.summary?.averageDeliveryMinutes) || 0,
+          totalDistanceKm: Number(data.summary?.totalDistanceKm) || 0,
+          averageDistanceKm: Number(data.summary?.averageDistanceKm) || 0,
           averageRating: Number(data.summary?.averageRating) || 0,
           ratingCount: Number(data.summary?.ratingCount) || 0,
         });
@@ -141,13 +149,18 @@ const MyDeliveriesPage = () => {
       value: summary.lateDeliveries.toString(),
       icon: Clock,
     },
+    {
+      label: 'Total route distance',
+      value: summary.totalDistanceKm ? `${summary.totalDistanceKm.toFixed(1)} km` : '-',
+      icon: Route,
+    },
   ];
 
   return (
     <div className='container mx-auto px-4 py-8 max-w-7xl'>
       <Title className='mb-8'>My Deliveries</Title>
 
-      <div className='mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5'>
+      <div className='mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'>
         {performanceCards.map((card) => {
           const Icon = card.icon;
 
@@ -231,6 +244,17 @@ const MyDeliveriesPage = () => {
                         <p className='text-muted-foreground'>{order.cartProducts.length} item(s)</p>
                       </div>
                     </div>
+
+                    {typeof order.deliveryDistanceKm === 'number' && (
+                      <div className='flex items-center gap-2'>
+                        <Route className='h-4 w-4 text-muted-foreground' />
+                        <div className='text-sm'>
+                          <p className='text-muted-foreground'>
+                            {order.deliveryDistanceKm.toFixed(1)} km route
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </Link>

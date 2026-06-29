@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { notifySupportTicketCreated } from '@/libs/notifications';
+import { notifySupportTicketCreated, notifyUserAboutOrderStatusChange } from '@/libs/notifications';
 import { Notification } from '@/models/notification';
 import { User } from '@/models/user';
 
@@ -134,5 +134,26 @@ describe('notification helpers', () => {
       })
     );
     expect(notifications[0].recipientUserId.toString()).toBe(superAdminId);
+  });
+
+  it('uses delivery phase copy with estimated minutes for user status updates', async () => {
+    await notifyUserAboutOrderStatusChange({
+      userId: restaurantAdminId,
+      orderId,
+      orderStatus: 'transportation',
+      estimatedMinutes: 18,
+    });
+
+    expect(Notification.insertMany).toHaveBeenCalledWith([
+      expect.objectContaining({
+        type: 'order_status_changed',
+        title: 'Order status updated',
+        message: `Courier picked up order #${orderId.toString().slice(-6)} and is on the way. Estimated time: about 18 minutes.`,
+        orderId,
+        isRead: false,
+        readAt: null,
+        metadata: { orderStatus: 'transportation' },
+      }),
+    ]);
   });
 });

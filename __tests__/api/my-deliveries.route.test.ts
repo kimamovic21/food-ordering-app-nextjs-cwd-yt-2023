@@ -64,12 +64,14 @@ describe('GET /api/my-deliveries', () => {
           courierPickedUpAt: new Date('2026-01-01T10:00:00.000Z'),
           courierDeliveredAt: new Date('2026-01-01T10:20:00.000Z'),
           estimatedDeliveryMinutes: 30,
+          deliveryDistanceKm: 4.2,
         },
         {
           _id: 'order-2',
           transportationAt: new Date('2026-01-01T11:00:00.000Z'),
           completedAt: new Date('2026-01-01T12:00:00.000Z'),
           estimatedDeliveryMinutes: 30,
+          deliveryDistanceKm: 5.8,
         },
       ]) as never
     );
@@ -89,6 +91,8 @@ describe('GET /api/my-deliveries', () => {
       declinedAssignments: 2,
       lateDeliveries: 1,
       averageDeliveryMinutes: 40,
+      totalDistanceKm: 10,
+      averageDistanceKm: 5,
       averageRating: 4.5,
       ratingCount: 4,
     });

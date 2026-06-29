@@ -182,6 +182,7 @@ export async function PATCH(request: Request) {
           userId: order.userId,
           orderId: order._id,
           orderStatus: 'transportation',
+          estimatedMinutes: order.estimatedDeliveryMinutes,
         });
       }
     } catch (notificationError) {

@@ -16,8 +16,13 @@ interface OrderSummaryProps {
   couponMessage: string | null;
   couponError: string | null;
   isApplyingCoupon: boolean;
+  bestCouponCode?: string | null;
+  bestCouponDiscount?: number;
+  bestCouponApplied?: boolean;
+  isLoadingBestCoupon?: boolean;
   onCouponCodeChange: (value: string) => void;
   onApplyCoupon: () => void;
+  onApplyBestCoupon?: () => void;
   isLoggedIn: boolean;
   isSubmitting: boolean;
   handleCheckout: () => void;
@@ -42,8 +47,13 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   couponMessage,
   couponError,
   isApplyingCoupon,
+  bestCouponCode = null,
+  bestCouponDiscount = 0,
+  bestCouponApplied = false,
+  isLoadingBestCoupon = false,
   onCouponCodeChange,
   onApplyCoupon,
+  onApplyBestCoupon,
   isLoggedIn,
   isSubmitting,
   handleCheckout,
@@ -115,6 +125,29 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             <p className='text-sm text-green-600 font-medium'>{couponMessage}</p>
           )}
           {couponError && <p className='text-sm text-red-600 font-medium'>{couponError}</p>}
+          {isLoadingBestCoupon && (
+            <p className='text-xs text-muted-foreground'>Checking best coupon for this cart...</p>
+          )}
+          {!isLoadingBestCoupon && bestCouponCode && bestCouponDiscount > 0 && (
+            <div className='rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800 dark:border-green-900 dark:bg-green-950/30 dark:text-green-200'>
+              <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+                <span>
+                  Best coupon: <strong>{bestCouponCode}</strong> saves $
+                  {bestCouponDiscount.toFixed(2)}
+                </span>
+                <Button
+                  type='button'
+                  size='sm'
+                  variant={bestCouponApplied ? 'secondary' : 'outline'}
+                  onClick={onApplyBestCoupon}
+                  disabled={bestCouponApplied}
+                  className='h-8 border-green-300 text-green-700 hover:bg-green-100 dark:text-green-200'
+                >
+                  {bestCouponApplied ? 'Applied' : 'Apply best'}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {couponDiscount > 0 && (

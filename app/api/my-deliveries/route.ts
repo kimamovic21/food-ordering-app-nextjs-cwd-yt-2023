@@ -68,6 +68,10 @@ export async function GET() {
     courierDeclinedBy: user._id,
     courierAssignmentStatus: 'declined',
   });
+  const deliveryDistances = deliveredOrders
+    .map((order: any) => Number(order.deliveryDistanceKm))
+    .filter((distance) => Number.isFinite(distance) && distance > 0);
+  const totalDistanceKm = deliveryDistances.reduce((sum, distance) => sum + distance, 0);
   const ratingSummary = await CourierReview.aggregate([
     { $match: { courierId: user._id } },
     {
@@ -87,6 +91,10 @@ export async function GET() {
       lateDeliveries,
       averageDeliveryMinutes: deliveryDurations.length
         ? Math.round(totalDeliveryMinutes / deliveryDurations.length)
+        : 0,
+      totalDistanceKm: Number(totalDistanceKm.toFixed(1)),
+      averageDistanceKm: deliveryDistances.length
+        ? Number((totalDistanceKm / deliveryDistances.length).toFixed(1))
         : 0,
       averageRating: Number(ratingSummary[0]?.averageRating || 0),
       ratingCount: Number(ratingSummary[0]?.ratingCount || 0),

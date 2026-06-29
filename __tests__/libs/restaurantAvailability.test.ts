@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   getRestaurantOrderingStatus,
+  getNextOpeningSummary,
   isRestaurantOpen,
   normalizeDeliveryRadiusKm,
 } from '@/libs/restaurantAvailability';
@@ -17,6 +18,16 @@ describe('restaurant availability helpers', () => {
     expect(
       isRestaurantOpen(openWorkingHours, [{ date: '2026-06-24', reason: 'Holiday' }], date)
     ).toBe(false);
+  });
+
+  it('explains when a closed restaurant opens next', () => {
+    expect(getNextOpeningSummary(openWorkingHours, [], new Date('2026-06-24T08:00:00'))).toBe(
+      'This restaurant opens today at 09:00.'
+    );
+
+    expect(getNextOpeningSummary(openWorkingHours, [], new Date('2026-06-24T22:00:00'))).toBe(
+      'This restaurant opens Wednesday at 09:00.'
+    );
   });
 
   it('normalizes delivery radius to recommended app bounds', () => {

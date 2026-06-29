@@ -237,6 +237,12 @@ export async function PATCH(request: Request) {
         userId: order.userId,
         orderId: order._id,
         orderStatus,
+        estimatedMinutes:
+          orderStatus === 'processing'
+            ? order.estimatedPreparationMinutes
+            : orderStatus === 'ready'
+              ? order.estimatedDeliveryMinutes
+              : null,
       });
     } catch (notificationError) {
       console.error('Failed to create order status notification:', notificationError);

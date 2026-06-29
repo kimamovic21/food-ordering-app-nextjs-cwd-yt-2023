@@ -149,6 +149,44 @@ describe('/api/coupons route', () => {
     expect(mongoConnect).toHaveBeenCalled();
   });
 
+  it('returns the best public coupon for a restaurant subtotal', async () => {
+    vi.mocked(Coupon.find).mockReturnValueOnce({
+      lean: vi.fn().mockResolvedValue([
+        {
+          ...coupon,
+          _id: { toString: () => 'coupon-save-20' },
+          code: 'SAVE20',
+          discountValue: 20,
+          minimumOrderAmount: 10,
+          usagePerCustomer: null,
+        },
+        {
+          ...coupon,
+          _id: { toString: () => 'coupon-save-30' },
+          code: 'SAVE30',
+          discountValue: 30,
+          minimumOrderAmount: 10,
+          maxDiscountAmount: 12,
+          usagePerCustomer: null,
+        },
+      ]),
+    } as never);
+
+    const { GET } = await loadCouponsRoute();
+    const res = await GET(
+      new Request(
+        'http://localhost/api/coupons?best=true&restaurantId=507f1f77bcf86cd799439011&subtotal=50'
+      )
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.coupon.code).toBe('SAVE30');
+    expect(body.discountAmount).toBe(12);
+    expect(body.message).toContain('SAVE30');
+    expect(getServerSession).not.toHaveBeenCalled();
+  });
+
   it('validates first-order coupons against customer order history', async () => {
     vi.mocked(getServerSession).mockResolvedValueOnce({
       user: { email: 'customer@example.com' },

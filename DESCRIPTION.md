@@ -20,8 +20,10 @@ They can:
 - Filter, search, sort, and paginate public restaurant/menu views.
 - Add menu items to cart when they are available.
 - Use coupons and loyalty discounts when eligible.
+- See and apply the best available public coupon for the current restaurant cart.
 - Checkout through Stripe.
 - View order history and order details.
+- Reorder a previous order after current menu item prices and availability are rechecked.
 - Track order progress and live courier location when delivery starts.
 - See delivery PIN on active delivery orders.
 - Confirm final delivery after courier handoff.
@@ -36,6 +38,7 @@ Important customer rules:
 - Customers cannot order from their own restaurant.
 - Customers cannot checkout again while a previous delivered order still needs their confirmation.
 - Customers cannot add unavailable menu items to cart or checkout with them.
+- Customers cannot checkout from restaurants that are closed, paused, outside delivery radius, blocked by date, or at active kitchen capacity.
 - Customers can only message contacts allowed by their order flow.
 
 ## Admin / Restaurant Owner
@@ -52,6 +55,7 @@ They can:
 - Use the AI menu description helper when creating or editing menu items.
 - Create and manage restaurant coupons.
 - View restaurant orders.
+- View late active-order alerts and open the order queue for lifecycle-stage monitoring.
 - Move paid orders from `placed` to `processing` to `ready`.
 - Assign available couriers to ready orders.
 - View customer delivery location.
@@ -69,6 +73,7 @@ Important admin rules:
 - Admins can finalize completion only after the order is in `delivered` status.
 - Restaurant support tickets are scoped to the admin's restaurant.
 - Active order limit blocks checkout when the restaurant has too many paid active kitchen orders.
+- Late-order alerts warn admins when an active paid order has not reached transportation after the configured threshold.
 
 ## Super Admin
 
@@ -104,6 +109,7 @@ They can:
 - Share live location.
 - Simulate/manual update location in development/testing flows.
 - View delivery map and customer address.
+- View route distance and estimated delivery time summaries for active and completed deliveries.
 - Enter the customer's delivery PIN to record handoff.
 - View completed delivery history.
 - View courier reviews and ratings.
@@ -154,6 +160,24 @@ Busy restaurant logic:
 - Checkout counts paid active kitchen orders in `placed`, `processing`, and `ready`.
 - When the count reaches the limit, checkout is blocked before Stripe session creation.
 - Cart shows a warning and disables checkout when the restaurant detail API reports `isBusy`.
+- Checkout also blocks restaurants that are paused, closed by working hours, blocked for a date, or outside the configured delivery radius.
+- When a restaurant is closed by schedule, the cart can show the next available opening time.
+
+## Coupon And Reorder Logic
+
+Coupons:
+
+- Customers can enter a coupon manually.
+- Cart can suggest the best public coupon for the current restaurant subtotal.
+- Best-coupon suggestions respect date windows, minimum order amount, active status, usage limits, first-order-only rules, and per-customer limits.
+- Checkout revalidates the submitted coupon server-side before creating a Stripe session.
+
+Reorder:
+
+- Customers can reorder from `/my-orders` and `/my-orders/[id]`.
+- Reorder rebuilds the cart from current `menu_items` data instead of trusting the old order snapshot.
+- Deleted, unavailable, invalid, cross-restaurant, or price-mismatched items are blocked or refreshed before checkout.
+- Reorder replaces the current cart and sends the customer back to `/cart`.
 
 ## Cart And Checkout Logic
 
@@ -166,10 +190,12 @@ Checkout server rules:
 - Cart must contain valid items.
 - Cart must contain items from one restaurant only.
 - Restaurant must exist.
+- Restaurant must currently accept orders based on schedule, pause state, blocked dates, delivery radius, and active order limit.
 - User cannot order from their own restaurant.
 - Previous delivered orders must be confirmed before starting another checkout.
 - Menu items must still be available.
 - Coupon must belong to the restaurant and satisfy date/minimum rules.
+- Best coupon suggestions are only UI help until the customer applies them and checkout validates them.
 - Loyalty discount is recalculated server-side.
 - Restaurant active kitchen capacity must not be full.
 - Order is created as unpaid before redirecting to Stripe.
@@ -198,6 +224,12 @@ Timeline fields are stored on the order so the UI can show exact phase durations
 - `completedAt`
 - `canceledAt`
 
+Operational order monitoring:
+
+- `/api/orders/queue` returns active paid orders grouped by lifecycle phase.
+- `/admin-dashboard/orders` shows a late-order alert when an active paid order has stayed before transportation for too long.
+- The alert links admins to `/admin-dashboard/order-queue` for the full operational view.
+
 ## Delivery Confirmation Logic
 
 Delivery is intentionally double-verified.
@@ -215,6 +247,11 @@ Flow:
 
 This prevents a courier from fully completing an order alone.
 
+Courier history and performance:
+
+- Completed delivery history includes route distance and estimated delivery-time summaries.
+- Courier dashboard metrics can summarize completed deliveries, declined assignments, average delivery minutes, late deliveries, ratings, and total/average route distance.
+
 ## Support Ticket Logic
 
 Support tickets are created when users or couriers report a problem.
@@ -229,7 +266,6 @@ Ticket statuses:
 - `open`
 - `in_review`
 - `resolved`
-- `closed`
 
 Admins can:
 
@@ -238,9 +274,7 @@ Admins can:
 - add response notes
 - mark in review
 - resolve
-- close
 - open the related order
-- message the reporter
 
 ## Messaging Logic
 
@@ -269,6 +303,8 @@ Notification examples:
 - order completed
 - order canceled
 - support ticket created
+- late active order warning
+- phase-specific ETA updates
 
 Notification routing depends on role and metadata. For example, a support ticket notification routes an admin to `/admin-dashboard/support-tickets`.
 
@@ -285,6 +321,7 @@ Loyalty:
 - Completed orders count toward loyalty status.
 - Loyalty discount is recalculated server-side during checkout.
 - The discount applies to the food subtotal according to the loyalty tier.
+- `/loyalty` shows recent completed order history and recent loyalty/coupon savings.
 
 ## Admin Statistics
 

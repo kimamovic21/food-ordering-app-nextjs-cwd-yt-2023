@@ -82,7 +82,7 @@ The important persistent models are:
 - `User`: account, role, profile fields, courier availability/location, restaurant ownership, favorites.
 - `Restaurant`: owner, location, contact, images, working hours, blocked dates, tax, courier fee, preparation/delivery estimates, active order limit.
 - `MenuItem`: restaurant item, category, image, prices, availability.
-- `Order`: customer delivery details, cart snapshot, payment data, restaurant fee/tax snapshots, estimate snapshots, status timeline timestamps, courier, delivery PIN, completion state.
+- `Order`: customer delivery details, cart snapshot, payment data, restaurant fee/tax snapshots, coupon/loyalty snapshots, estimate snapshots, route distance, status timeline timestamps, courier, delivery PIN, completion state.
 - `Coupon`: restaurant-scoped discounts and validity rules.
 - `RestaurantReview` and `CourierReview`: one review per completed order flow.
 - `Notification`: role-aware notifications with read state and metadata routing.
@@ -144,8 +144,11 @@ Key checks:
 - User cannot order from their own restaurant.
 - User cannot start another checkout while a previous delivered order still needs customer confirmation.
 - Menu items must still exist and be available.
+- Restaurant must currently accept orders based on working hours, pause state, blocked dates, delivery radius, and active kitchen capacity.
 - Restaurant active kitchen order count must be below `activeOrderLimit`.
 - Coupon and loyalty discounts are validated server-side.
+- Best coupon suggestions shown in cart are revalidated at checkout before Stripe is created.
+- Reorders rebuild cart items from current `menu_items` records so deleted, unavailable, cross-restaurant, or changed-price items cannot silently proceed.
 
 ```mermaid
 sequenceDiagram
@@ -158,7 +161,7 @@ sequenceDiagram
 
   User->>Cart: Click Proceed to Checkout
   Cart->>CheckoutAPI: Send delivery info and cart
-  CheckoutAPI->>Mongo: Validate user, restaurant, menu items, coupons, capacity
+  CheckoutAPI->>Mongo: Validate user, restaurant availability, menu items, coupons, capacity
   CheckoutAPI->>Mongo: Create unpaid order snapshot
   CheckoutAPI->>Stripe: Create checkout session
   Stripe-->>User: Hosted payment page
@@ -204,6 +207,12 @@ Estimate snapshots are saved on each order:
 
 This lets the order timeline compare expected timing against actual progress.
 
+Operational monitoring builds on the same timestamps:
+
+- `/api/orders/queue` returns active paid orders grouped by lifecycle phase.
+- `/admin-dashboard/orders` surfaces late-order alerts and links admins to `/admin-dashboard/order-queue`.
+- ETA-style notifications reuse estimate snapshots so status changes can include useful preparation or delivery timing.
+
 ## Delivery And Courier Flow
 
 ```mermaid
@@ -228,6 +237,8 @@ sequenceDiagram
 
 If the customer does not confirm, the restaurant owner can finalize delivery from the admin order detail page.
 
+Courier delivery views also show route distance and estimated travel time. Completed delivery history can summarize completed deliveries, declined assignments, average delivery minutes, late deliveries, ratings, and total/average route distance.
+
 ## Support Ticket Flow
 
 Customers and couriers can report a problem from the order or delivery UI. Admins manage tickets in `/admin-dashboard/support-tickets`.
@@ -243,8 +254,7 @@ flowchart TD
   Target --> SuperAdmin[Super Admin]
   RestaurantOwner --> Dashboard[Support Ticket Dashboard]
   SuperAdmin --> Dashboard
-  Dashboard --> Status[Open / In Review / Resolved / Closed]
-  Dashboard --> Messages[Message Reporter]
+  Dashboard --> Status[Open / In Review / Resolved]
 ```
 
 Rules:
@@ -256,6 +266,8 @@ Rules:
 ## Notifications And Messaging
 
 Notifications are stored in MongoDB and polled through `NotificationsContext`. Notification routing is role-aware through `libs/notificationClient.ts`.
+
+Important notification examples include order placement, payment, order status changes, ETA-style phase updates, courier assignment, support ticket creation, late active-order warnings, and delivery completion prompts.
 
 Messages are app-native conversations, not open public chat. The allowed role combinations are enforced in `libs/messages.ts`.
 
@@ -287,6 +299,8 @@ Recommended commands:
 ```bash
 npm run lint
 npm run test
+npm run test:api
+npm run test:libs
 npm run test:file -- __tests__/api/checkout.route.test.ts
 npm run test:e2e
 ```
@@ -295,6 +309,7 @@ For risky areas, prefer focused route tests first:
 
 - auth and role guards
 - checkout and Stripe webhook behavior
+- restaurant availability, best coupon suggestion, and reorder validation
 - order lifecycle and delivery confirmation
 - support ticket authorization
-- courier assignment and location updates
+- courier assignment, location updates, route distance summaries, and delivery metrics
