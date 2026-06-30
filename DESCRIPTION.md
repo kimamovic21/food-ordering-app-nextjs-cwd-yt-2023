@@ -341,6 +341,7 @@ Examples:
 - Resend + React Email: verification, reset, and receipt emails.
 - Google OAuth: social login through NextAuth.
 - OpenAI: server-side menu description generation.
+- Upstash Redis: short-lived rate-limit counters for sensitive auth, checkout, support, and AI routes.
 - Leaflet: map rendering and courier tracking UI.
 
 ## Is This Good Practice?

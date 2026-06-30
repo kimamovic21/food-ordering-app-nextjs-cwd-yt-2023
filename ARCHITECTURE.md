@@ -4,7 +4,7 @@ This document explains how the food ordering app is organized, how the main syst
 
 ## System Overview
 
-The app is a full-stack Next.js App Router application. Pages, server route handlers, API logic, and UI live in the same repository. MongoDB stores the application data through Mongoose models. External services handle payments, media uploads, email, OAuth, AI text generation, and maps.
+The app is a full-stack Next.js App Router application. Pages, server route handlers, API logic, and UI live in the same repository. MongoDB stores the application data through Mongoose models. External services handle payments, media uploads, email, OAuth, AI text generation, rate limiting, and maps.
 
 ```mermaid
 flowchart LR
@@ -17,6 +17,7 @@ flowchart LR
   Resend[Resend + React Email]
   Google[Google OAuth]
   OpenAI[OpenAI Menu Description]
+  Redis[Upstash Redis Rate Limits]
   Maps[Leaflet Maps]
 
   Browser --> NextApp
@@ -27,6 +28,7 @@ flowchart LR
   Api --> Resend
   Api --> Google
   Api --> OpenAI
+  Api --> Redis
   Browser --> Maps
   Stripe --> Api
 ```
@@ -37,7 +39,7 @@ flowchart LR
 - `components/`: shared UI components and shadcn/Radix primitives.
 - `contexts/`: client-side global state for cart, notifications, and messages.
 - `hooks/`: client hooks such as profile and favorites data loading.
-- `libs/`: auth, database, notifications, messages, coupons, loyalty, email, AI, and helper utilities.
+- `libs/`: auth, database, notifications, messages, coupons, loyalty, email, AI, rate limiting, and helper utilities.
 - `models/`: Mongoose schemas and MongoDB collection contracts.
 - `__tests__/`, `e2e/`, `mocks/`: Vitest unit/integration/e2e test areas.
 
@@ -112,6 +114,8 @@ erDiagram
 ## Authentication And Roles
 
 Authentication uses NextAuth. Credentials users can go through email verification and password reset flows. Google OAuth users are handled through the NextAuth Google provider.
+
+Upstash Redis rate limiting protects sensitive auth routes and credentials login from repeated abuse. The counters are short-lived and do not replace MongoDB user data.
 
 Roles:
 

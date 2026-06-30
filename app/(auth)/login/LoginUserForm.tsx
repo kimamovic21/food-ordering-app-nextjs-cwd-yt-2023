@@ -65,6 +65,13 @@ const LoginUserForm = () => {
           return;
         }
 
+        if (result.error === 'RATE_LIMITED') {
+          sonnerToast.error('Too many login attempts. Please try again in a minute.', {
+            style: { backgroundColor: '#ef4444', color: 'white' },
+          });
+          return;
+        }
+
         const accountStatusResponse = await fetch('/api/account-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

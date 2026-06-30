@@ -24,6 +24,7 @@ It includes:
 - Cloudinary media uploads
 - email purchase receipts with Resend + React Email
 - AI-assisted menu item descriptions for admin create/edit flows
+- Upstash Redis-backed rate limiting for sensitive auth, checkout, support, and AI endpoints
 
 ## Key Features
 
@@ -109,6 +110,7 @@ This project uses many dependencies; below are the main packages actively used i
 - Auth.js MongoDB Adapter: [https://authjs.dev/getting-started/adapters/mongodb](https://authjs.dev/getting-started/adapters/mongodb)
 - MongoDB: [https://www.mongodb.com/](https://www.mongodb.com/)
 - Mongoose: [https://mongoosejs.com/](https://mongoosejs.com/)
+- Upstash Redis: [https://upstash.com/](https://upstash.com/)
 - bcrypt: [https://www.npmjs.com/package/bcrypt](https://www.npmjs.com/package/bcrypt)
 
 ### Payments
@@ -162,7 +164,7 @@ This project uses many dependencies; below are the main packages actively used i
 
 - Overview: Credentials-based accounts now require email verification when `SKIP_VERIFY_EMAIL` is `false` (recommended for local development). In production you can set `SKIP_VERIFY_EMAIL=true` to skip verification for legacy or migration scenarios.
 - Scope: This applies only to `provider: 'credentials'` users. OAuth users (Google) are automatically marked verified and are not subject to verification or password reset flows.
-- Env vars used: `RESEND_API_KEY`, `SENDER_EMAIL`, and `SKIP_VERIFY_EMAIL`.
+- Env vars used: `RESEND_API_KEY`, `SENDER_EMAIL`, `SKIP_VERIFY_EMAIL`, and optional Upstash Redis variables for rate limiting.
 - Endpoints (server):
   - `POST /api/register` — creates a credentials user and (when required) issues a verification token and sends an email.
   - `POST /api/verify-email` — accepts `{ token }` and marks the user verified when token is valid.
@@ -175,6 +177,13 @@ This project uses many dependencies; below are the main packages actively used i
   - `/reset-password/[token]` — page to set a new password using the token in the URL.
 
 See `libs/authEmails.tsx` for token generation, hashing, and sending logic (Resend + React Email templates are under `components/resend/`).
+
+## Rate Limiting
+
+- Upstash Redis stores short-lived counters for sensitive endpoints.
+- Protected flows include credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
+- Redis is not the main database. MongoDB remains the source of truth for users, orders, restaurants, messages, and tickets.
+- If Upstash env vars are missing or Redis is temporarily unavailable, `libs/rateLimit.ts` fails open so local development and critical app flows do not break.
 
 For the exact complete dependency list and versions, check package.json.
 
@@ -200,6 +209,8 @@ Copy example.env into .env and set all values.
 - SENDER_EMAIL: sender identity for outgoing purchase receipt emails
 - SKIP_VERIFY_EMAIL: when true, skips email verification for credential sign-ups and legacy accounts
 - OPEN_AI_API_KEY: OpenAI API key for server-side AI menu description generation
+- UPSTASH_REDIS_REST_URL: Upstash Redis REST endpoint for rate limiting
+- UPSTASH_REDIS_REST_TOKEN: Upstash Redis REST token for rate limiting
 
 Note: some flows also support SUPER_ADMIN_EMAIL on server side, while UI checks NEXT_PUBLIC_SUPER_ADMIN_EMAIL.
 
@@ -212,6 +223,7 @@ Note: some flows also support SUPER_ADMIN_EMAIL on server side, while UI checks 
 - Resend: [https://resend.com](https://resend.com)
 - React Email docs: [https://react.email/](https://react.email/)
 - OpenAI API: [https://platform.openai.com/docs](https://platform.openai.com/docs)
+- Upstash Redis: [https://upstash.com/redis](https://upstash.com/redis)
 
 ## Available Scripts
 

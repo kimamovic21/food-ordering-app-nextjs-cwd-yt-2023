@@ -9,6 +9,7 @@
 - Email: Resend + React Email
 - Images: Cloudinary
 - Mapping: Leaflet + React Leaflet
+- Rate limiting: Upstash Redis for short-lived counters on sensitive routes
 - Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin completion, support tickets, and late-order alerts
 
 ## Implementation Rules
@@ -28,6 +29,7 @@
 - Keep delivery completion double-confirmed with courier PIN handoff followed by customer/admin finalization.
 - Keep support tickets scoped between restaurant support and app support.
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state.
+- Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Keep webhook and async job processing idempotent.
 - Never perform destructive DB changes without explicit approval.
 

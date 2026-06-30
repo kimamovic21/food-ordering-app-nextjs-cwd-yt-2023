@@ -9,7 +9,7 @@ alwaysApply: true
 
 ## Project Conventions
 
-- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend.
+- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend, Upstash Redis.
 - Prefer small, incremental changes.
 - Follow existing patterns in `app/`, `libs/`, `models/`, `components/`, and `contexts/`.
 - Avoid introducing new dependencies unless explicitly requested.
@@ -24,6 +24,7 @@ alwaysApply: true
 - Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
 - Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Preserve order timing fields and snapshots for preparation/delivery estimates and timeline UI.
+- Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 
 ## Security And Integrations
 

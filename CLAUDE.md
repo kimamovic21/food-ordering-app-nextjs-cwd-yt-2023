@@ -13,6 +13,7 @@ This file provides guidance for AI assistance in this repository.
 - Maps: Leaflet
 - Email: Resend + React Email
 - AI: OpenAI SDK for server-side menu description generation
+- Rate limiting: Upstash Redis for short-lived counters on sensitive routes
 - Sharing: react-share
 - Messaging: approved app-native threads with realtime unread badges and per-user message visibility
 - Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin delivery confirmation, support tickets, and late-order alerts
@@ -39,6 +40,7 @@ This file provides guidance for AI assistance in this repository.
 - Preserve delivery double confirmation: courier PIN handoff first, then customer or restaurant admin completion.
 - Keep support tickets role-scoped between restaurant support and app support.
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state.
+- Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Keep payment and webhook flows idempotent.
 - Keep receipt email generation in server code.
 
@@ -122,6 +124,8 @@ Keep these in sync with example.env and usage in code:
 - SENDER_EMAIL
 - SKIP_VERIFY_EMAIL
 - OPEN_AI_API_KEY
+- UPSTASH_REDIS_REST_URL
+- UPSTASH_REDIS_REST_TOKEN
 
 Optional server-side override used in auth flow:
 

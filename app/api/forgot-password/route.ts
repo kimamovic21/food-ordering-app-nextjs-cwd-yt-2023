@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
 import { User } from '@/models/user';
 import { generateAuthToken, hashAuthToken, sendPasswordResetEmail } from '@/libs/authEmails';
+import {
+  createRateLimitKey,
+  createRateLimitResponse,
+  enforceRateLimit,
+  getClientIp,
+} from '@/libs/rateLimit';
 
 export async function POST(req: Request) {
   try {
@@ -11,6 +17,20 @@ export async function POST(req: Request) {
 
     if (!email) {
       return Response.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    const rateLimit = await enforceRateLimit({
+      identifier: createRateLimitKey('forgot-password', getClientIp(req), email),
+      limit: 5,
+      namespace: 'auth-forgot-password',
+      window: '15 m',
+    });
+
+    if (!rateLimit.success) {
+      return createRateLimitResponse(
+        rateLimit,
+        'Too many password reset requests. Please try again later.'
+      );
     }
 
     const user = await User.findOne({ email });

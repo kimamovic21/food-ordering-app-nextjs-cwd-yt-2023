@@ -1,6 +1,6 @@
 # AI Agent Guide
 
-This repository is a full-stack food ordering app built with Next.js App Router, TypeScript, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, and Resend/React Email.
+This repository is a full-stack food ordering app built with Next.js App Router, TypeScript, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Upstash Redis, and Resend/React Email.
 
 ## Project Summary
 
@@ -12,6 +12,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - Maps: Leaflet and React Leaflet for courier and delivery tracking.
 - Email: Resend + React Email (`react-email`, `@react-email/components`, `@react-email/render`) for purchase receipts.
 - AI: OpenAI SDK is used server-side for admin menu item description generation.
+- Rate limiting: Upstash Redis stores short-lived counters for sensitive auth, checkout, support, and AI routes.
 - Sharing: `react-share` is used for social share actions.
 
 ## High-Level Features
@@ -44,6 +45,7 @@ See `example.env`. Variables currently used in the project include:
 - `SUPER_ADMIN_EMAIL` (optional server-side override)
 - `RESEND_API_KEY`, `SENDER_EMAIL`
 - `OPEN_AI_API_KEY` (server-side OpenAI key for AI menu descriptions)
+- `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (optional Redis rate limiting)
 - `SKIP_VERIFY_EMAIL` (optional credentials-auth verification toggle)
 
 ## Code Layout
@@ -74,6 +76,7 @@ See `example.env`. Variables currently used in the project include:
 - Delivery completion is double-confirmed: courier records handoff with the delivery PIN, then customer or restaurant admin finalizes completion.
 - Support tickets should remain role-scoped: restaurant owners handle their restaurant reports, while app-support tickets route to the super admin.
 - Order notifications can include ETA-style phase copy, and late active-order alerts should point admins toward the order queue.
+- Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 
 ## AI Configuration Folders
 
@@ -116,7 +119,7 @@ See `example.env`. Variables currently used in the project include:
 
 ## When Modifying Auth, Payments, Email, or Courier Logic
 
-- Confirm required env vars are present (`NEXTAUTH_*`, `STRIPE_*`, `RESEND_*`, Cloudinary values).
+- Confirm required env vars are present (`NEXTAUTH_*`, `STRIPE_*`, `RESEND_*`, Cloudinary values, and optional `UPSTASH_REDIS_*` values).
 - Keep Stripe webhook handling idempotent.
 - Do not expose server secrets in client bundles.
 - Preserve courier location validation and role checks.

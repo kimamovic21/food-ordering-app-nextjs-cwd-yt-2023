@@ -15,6 +15,12 @@ import {
 } from '@/libs/coupon';
 import { createAuditLog } from '@/libs/auditLog';
 import { getRestaurantOrderingStatus } from '@/libs/restaurantAvailability';
+import {
+  createRateLimitKey,
+  createRateLimitResponse,
+  enforceRateLimit,
+  getClientIp,
+} from '@/libs/rateLimit';
 import mongoose from 'mongoose';
 import Stripe from 'stripe';
 
@@ -44,6 +50,20 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimit = await enforceRateLimit({
+    identifier: createRateLimitKey('checkout', getClientIp(req), session.user.email),
+    limit: 8,
+    namespace: 'checkout',
+    window: '5 m',
+  });
+
+  if (!rateLimit.success) {
+    return createRateLimitResponse(
+      rateLimit,
+      'Too many checkout attempts. Please wait a little before trying again.'
+    );
   }
 
   const body = await req.json();

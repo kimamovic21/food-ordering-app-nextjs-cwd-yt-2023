@@ -8,6 +8,7 @@
 - NextAuth auth flows (`libs/authOptions.ts`, `app/api/auth/**`)
 - Stripe payments (`app/api/checkout/**`, `app/api/payment-link/**`, `app/api/webhook/**`)
 - Resend email integration (`libs/sendPurchaseReceiptEmail.tsx`)
+- Upstash Redis rate limiting (`libs/rateLimit.ts`)
 - Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin completion, support tickets, and late-order alerts
 
 ## Coding Expectations
@@ -27,6 +28,7 @@
 - Keep delivery completion double-confirmed with courier PIN handoff followed by customer/admin finalization.
 - Keep support tickets scoped between restaurant support and app support.
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state.
+- Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Keep webhook logic idempotent and safe on retries.
 - Ask before schema-level changes or backfills that may impact production data.
 

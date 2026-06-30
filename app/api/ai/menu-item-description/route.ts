@@ -4,6 +4,12 @@ import {
   AI_MENU_DESCRIPTION_MAX_CHARS,
   AI_MENU_DESCRIPTION_MODEL,
 } from '@/libs/menuItemDescription';
+import {
+  createRateLimitKey,
+  createRateLimitResponse,
+  enforceRateLimit,
+  getClientIp,
+} from '@/libs/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -11,6 +17,20 @@ export async function POST(req: Request) {
   try {
     if (!(await isAdmin())) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const rateLimit = await enforceRateLimit({
+      identifier: createRateLimitKey('ai-menu-item-description', getClientIp(req)),
+      limit: 12,
+      namespace: 'ai-menu-item-description',
+      window: '1 h',
+    });
+
+    if (!rateLimit.success) {
+      return createRateLimitResponse(
+        rateLimit,
+        'Too many AI description requests. Please try again later.'
+      );
     }
 
     const data = await req.json();

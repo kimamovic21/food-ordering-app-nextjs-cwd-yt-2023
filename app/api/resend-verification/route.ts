@@ -6,6 +6,12 @@ import {
   isSkipVerifyEmail,
   sendVerificationEmail,
 } from '@/libs/authEmails';
+import {
+  createRateLimitKey,
+  createRateLimitResponse,
+  enforceRateLimit,
+  getClientIp,
+} from '@/libs/rateLimit';
 
 export async function POST(req: Request) {
   try {
@@ -16,6 +22,20 @@ export async function POST(req: Request) {
 
     if (!email) {
       return Response.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    const rateLimit = await enforceRateLimit({
+      identifier: createRateLimitKey('resend-verification', getClientIp(req), email),
+      limit: 5,
+      namespace: 'auth-resend-verification',
+      window: '15 m',
+    });
+
+    if (!rateLimit.success) {
+      return createRateLimitResponse(
+        rateLimit,
+        'Too many verification email requests. Please try again later.'
+      );
     }
 
     if (isSkipVerifyEmail()) {

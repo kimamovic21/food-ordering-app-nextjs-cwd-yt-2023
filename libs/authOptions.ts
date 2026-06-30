@@ -6,6 +6,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import mongoClientPromise from '@/libs/mongodbClient';
 import { isSkipVerifyEmail } from '@/libs/authEmails';
+import { createRateLimitKey, enforceRateLimit, getClientIp } from '@/libs/rateLimit';
 
 // Use a dedicated database for NextAuth to avoid collection conflicts
 const mongoAdapter = MongoDBAdapter(mongoClientPromise, { databaseName: 'next-auth' });
@@ -46,11 +47,22 @@ export const authOptions = {
           type: 'password',
         },
       },
-      async authorize(credentials) {
-        const email = credentials?.email;
+      async authorize(credentials, request) {
+        const email = credentials?.email?.trim().toLowerCase();
         const password = credentials?.password;
 
         if (!email || !password) return null;
+
+        const rateLimit = await enforceRateLimit({
+          identifier: createRateLimitKey('login', getClientIp(request), email),
+          limit: 10,
+          namespace: 'auth-login',
+          window: '1 m',
+        });
+
+        if (!rateLimit.success) {
+          throw new Error('RATE_LIMITED');
+        }
 
         await mongoose.connect(process.env.MONGODB_URL as string);
         const user = await User.findOne({ email });

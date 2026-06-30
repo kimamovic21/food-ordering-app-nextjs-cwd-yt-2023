@@ -5,6 +5,12 @@ import {
   notifySupportTicketCreated,
   notifySupportTicketReporterAboutStatus,
 } from '@/libs/notifications';
+import {
+  createRateLimitKey,
+  createRateLimitResponse,
+  enforceRateLimit,
+  getClientIp,
+} from '@/libs/rateLimit';
 import { Order } from '@/models/order';
 import { SupportTicket } from '@/models/supportTicket';
 import { User } from '@/models/user';
@@ -119,6 +125,20 @@ export async function POST(request: Request) {
 
   if (!user) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimit = await enforceRateLimit({
+    identifier: createRateLimitKey('support-ticket', getClientIp(request), user.email),
+    limit: 6,
+    namespace: 'support-tickets-create',
+    window: '10 m',
+  });
+
+  if (!rateLimit.success) {
+    return createRateLimitResponse(
+      rateLimit,
+      'Too many support reports. Please wait a little before sending another one.'
+    );
   }
 
   const body = await request.json();

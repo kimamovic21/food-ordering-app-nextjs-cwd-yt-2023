@@ -7,10 +7,30 @@ import {
   isSkipVerifyEmail,
   sendVerificationEmail,
 } from '@/libs/authEmails';
+import {
+  createRateLimitKey,
+  createRateLimitResponse,
+  enforceRateLimit,
+  getClientIp,
+} from '@/libs/rateLimit';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const rateLimit = await enforceRateLimit({
+      identifier: createRateLimitKey('register', getClientIp(req), email),
+      limit: 5,
+      namespace: 'auth-register',
+      window: '10 m',
+    });
+
+    if (!rateLimit.success) {
+      return createRateLimitResponse(
+        rateLimit,
+        'Too many registration attempts. Please try again later.'
+      );
+    }
 
     if (!process.env.MONGODB_URL) {
       throw new Error('MONGODB_URL is not defined in environment variables!');
