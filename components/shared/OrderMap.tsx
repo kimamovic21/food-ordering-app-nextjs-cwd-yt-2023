@@ -13,6 +13,8 @@ type OrderMapProps = {
   postalCode?: string;
   country?: string;
   customerEmail?: string;
+  className?: string;
+  heightClassName?: string;
   orderId?: string; // Optional order ID for admin view
   shouldFetchCourier?: boolean; // Set to false to only show restaurant/location without fetching courier
   enableCourierPolling?: boolean;
@@ -87,6 +89,8 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
       postalCode,
       country,
       customerEmail,
+      className = '',
+      heightClassName = 'h-[300px]',
       orderId,
       shouldFetchCourier = true,
       enableCourierPolling = true,
@@ -258,7 +262,9 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
 
     if (loading && address && city && postalCode && country) {
       return (
-        <div className='border rounded-lg p-4 h-[300px] flex items-center justify-center bg-slate-50 dark:bg-slate-900'>
+        <div
+          className={`flex items-center justify-center rounded-lg border bg-slate-50 p-4 dark:bg-slate-900 ${heightClassName} ${className}`}
+        >
           <p className='text-muted-foreground'>Loading map...</p>
         </div>
       );
@@ -266,7 +272,9 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
 
     if (error && !coordinates) {
       return (
-        <div className='border rounded-lg p-4 h-[300px] flex items-center justify-center bg-slate-50 dark:bg-slate-900'>
+        <div
+          className={`flex items-center justify-center rounded-lg border bg-slate-50 p-4 dark:bg-slate-900 ${heightClassName} ${className}`}
+        >
           <div className='text-center'>
             <p className='text-red-600 mb-2'>{error}</p>
             {address && city && postalCode && country && (
@@ -282,7 +290,9 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
     // If no coordinates and no courier location, show loading
     if (!coordinates && !courierLocation) {
       return (
-        <div className='border rounded-lg p-4 h-[300px] flex items-center justify-center bg-slate-50 dark:bg-slate-900'>
+        <div
+          className={`flex items-center justify-center rounded-lg border bg-slate-50 p-4 dark:bg-slate-900 ${heightClassName} ${className}`}
+        >
           <p className='text-muted-foreground'>Waiting for location...</p>
         </div>
       );
@@ -312,11 +322,13 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
     const hasCustomerLocation = coordinates !== null;
 
     return (
-      <div className='border rounded-lg overflow-hidden'>
+      <div
+        className={`relative z-0 overflow-hidden rounded-lg border bg-background ${heightClassName} ${className}`}
+      >
         <MapContainer
           center={mapCenter}
           zoom={mapZoom}
-          style={{ height: '300px', width: '100%' }}
+          className='relative z-0 h-full w-full'
           scrollWheelZoom={false}
         >
           <TileLayer
@@ -385,7 +397,7 @@ const OrderMap = forwardRef<OrderMapHandle, OrderMapProps>(
           )}
         </MapContainer>
         {error && (
-          <div className='bg-amber-50 border-t border-amber-200 px-3 py-2'>
+          <div className='absolute inset-x-0 bottom-0 z-[500] border-t border-amber-200 bg-amber-50/95 px-3 py-2 backdrop-blur-sm'>
             <p className='text-xs text-amber-800'>{error}</p>
           </div>
         )}

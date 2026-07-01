@@ -486,6 +486,7 @@ const CourierPage = () => {
                   else mapRefs.current.delete('courier-location');
                 }}
                 enableCourierPolling={locationPollingEnabled}
+                heightClassName='h-[460px] lg:h-[540px]'
               />
             </CardContent>
           </Card>

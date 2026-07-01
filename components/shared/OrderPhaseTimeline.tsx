@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatMillisecondsToTime } from '@/libs/useOrderElapsedTime';
@@ -17,11 +18,15 @@ type OrderPhaseTimelineProps = {
   estimatedTotalMinutes?: number | null;
 };
 
-const formatDuration = (start?: string | null, end?: string | null) => {
+const formatDuration = (
+  start: string | null | undefined,
+  end: string | null | undefined,
+  now: number
+) => {
   if (!start) return 'Not started';
 
   const startTime = new Date(start).getTime();
-  const endTime = end ? new Date(end).getTime() : Date.now();
+  const endTime = end ? new Date(end).getTime() : now;
 
   if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime < startTime) {
     return 'Not available';
@@ -59,6 +64,21 @@ const OrderPhaseTimeline = ({
   estimatedDeliveryMinutes,
   estimatedTotalMinutes,
 }: OrderPhaseTimelineProps) => {
+  const shouldTick = orderStatus !== 'completed' && orderStatus !== 'canceled' && !completedAt;
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!shouldTick) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [shouldTick]);
+
   const resolvedEstimatedTotalMinutes =
     estimatedTotalMinutes ??
     (Number(estimatedPreparationMinutes || 0) + Number(estimatedDeliveryMinutes || 0) || null);
@@ -75,30 +95,37 @@ const OrderPhaseTimeline = ({
   const phases = [
     {
       label: 'Waiting for kitchen',
-      value: formatDuration(createdAt, processingAt),
+      value: formatDuration(createdAt, processingAt, now),
       description: 'From order placement until the kitchen started preparing it.',
+      isLive: Boolean(createdAt && !processingAt && shouldTick),
     },
     {
       label: 'Kitchen preparation',
-      value: processingAt ? formatDuration(processingAt, readyAt) : 'Not started',
+      value: processingAt ? formatDuration(processingAt, readyAt, now) : 'Not started',
       description: 'From preparation start until the order was ready for pickup.',
+      isLive: Boolean(processingAt && !readyAt && shouldTick),
     },
     {
       label: 'Delivery travel',
       value: transportationAt
-        ? formatDuration(transportationAt, courierDeliveredAt)
+        ? formatDuration(transportationAt, courierDeliveredAt, now)
         : 'Not started',
       description: 'From courier assignment until courier handoff.',
+      isLive: Boolean(transportationAt && !courierDeliveredAt && shouldTick),
     },
     {
       label: 'Confirmation wait',
-      value: courierDeliveredAt ? formatDuration(courierDeliveredAt, completedAt) : 'Not started',
+      value: courierDeliveredAt
+        ? formatDuration(courierDeliveredAt, completedAt, now)
+        : 'Not started',
       description: 'From courier handoff until customer or admin confirmation.',
+      isLive: Boolean(courierDeliveredAt && !completedAt && shouldTick),
     },
     {
       label: 'Total order time',
-      value: formatDuration(createdAt, completedAt),
+      value: formatDuration(createdAt, completedAt, now),
       description: 'From order placement until final completion.',
+      isLive: shouldTick,
     },
   ];
 
@@ -112,11 +139,19 @@ const OrderPhaseTimeline = ({
               Estimated timing and actual phase durations for this order.
             </p>
           </div>
-          {orderStatus && (
-            <Badge variant='secondary' className='w-fit capitalize'>
-              {orderStatus}
-            </Badge>
-          )}
+          <div className='flex flex-wrap items-center gap-2'>
+            {shouldTick && (
+              <Badge className='w-fit gap-1 bg-green-600 text-white hover:bg-green-600'>
+                <span className='size-1.5 rounded-full bg-white' />
+                Live
+              </Badge>
+            )}
+            {orderStatus && (
+              <Badge variant='secondary' className='w-fit capitalize'>
+                {orderStatus}
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className='space-y-5'>
@@ -163,7 +198,12 @@ const OrderPhaseTimeline = ({
 
         <div className='grid gap-3 sm:grid-cols-2'>
           {phases.map((phase) => (
-            <div key={phase.label} className='rounded-lg border p-3'>
+            <div
+              key={phase.label}
+              className={`rounded-lg border p-3 ${
+                phase.isLive ? 'border-green-500/60 bg-green-500/10' : ''
+              }`}
+            >
               <p className='text-sm font-semibold'>{phase.label}</p>
               <p className='mt-1 font-mono text-lg font-bold'>{phase.value}</p>
               <p className='mt-1 text-xs text-muted-foreground'>{phase.description}</p>

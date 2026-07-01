@@ -696,16 +696,15 @@ const MyOrderDetailPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className='h-[400px] rounded-lg overflow-hidden'>
-                  <OrderMap
-                    address={order.streetAddress}
-                    city={order.city}
-                    postalCode={order.postalCode}
-                    country={order.country}
-                    customerEmail={order.email}
-                    orderId={order._id}
-                  />
-                </div>
+                <OrderMap
+                  address={order.streetAddress}
+                  city={order.city}
+                  postalCode={order.postalCode}
+                  country={order.country}
+                  customerEmail={order.email}
+                  heightClassName='h-[460px] lg:h-[540px]'
+                  orderId={order._id}
+                />
               </CardContent>
             </Card>
           )}

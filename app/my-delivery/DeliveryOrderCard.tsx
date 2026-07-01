@@ -190,6 +190,7 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
               country={order.country}
               customerEmail={order.email}
               enableCourierPolling={enableCourierPolling}
+              heightClassName='h-[460px] lg:h-[540px]'
             />
           </div>
           {/* Delivery Status */}

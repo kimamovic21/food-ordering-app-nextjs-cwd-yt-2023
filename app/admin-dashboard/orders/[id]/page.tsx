@@ -1019,17 +1019,16 @@ const OrderDetailPage = () => {
               <CardDescription>Customer&apos;s delivery address location.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className='h-[400px] rounded-lg overflow-hidden'>
-                <OrderMap
-                  ref={mapRef}
-                  address={order.streetAddress}
-                  city={order.city}
-                  postalCode={order.postalCode}
-                  country={order.country}
-                  customerEmail={order.email}
-                  orderId={order._id}
-                />
-              </div>
+              <OrderMap
+                ref={mapRef}
+                address={order.streetAddress}
+                city={order.city}
+                postalCode={order.postalCode}
+                country={order.country}
+                customerEmail={order.email}
+                heightClassName='h-[460px] lg:h-[540px]'
+                orderId={order._id}
+              />
             </CardContent>
           </Card>
         )}
@@ -1042,17 +1041,16 @@ const OrderDetailPage = () => {
               <CardDescription>Track the real-time location of the delivery.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className='h-[400px] rounded-lg overflow-hidden'>
-                <OrderMap
-                  ref={mapRef}
-                  address={order.streetAddress}
-                  city={order.city}
-                  postalCode={order.postalCode}
-                  country={order.country}
-                  customerEmail={order.email}
-                  orderId={order._id}
-                />
-              </div>
+              <OrderMap
+                ref={mapRef}
+                address={order.streetAddress}
+                city={order.city}
+                postalCode={order.postalCode}
+                country={order.country}
+                customerEmail={order.email}
+                heightClassName='h-[460px] lg:h-[540px]'
+                orderId={order._id}
+              />
             </CardContent>
           </Card>
         )}
