@@ -8,6 +8,7 @@ import { mongoConnect } from '@/libs/mongoConnect';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Gift, ShoppingBag, TrendingUp, ReceiptText } from 'lucide-react';
+import { formatAppDateTime } from '@/libs/dateFormat';
 
 type LoyaltyOrderHistory = {
   _id: string;
@@ -258,7 +259,7 @@ export default async function LoyaltyPage() {
                     <div>
                       <p className='font-semibold'>Order #{order._id.toString().slice(-6)}</p>
                       <p className='text-sm text-muted-foreground'>
-                        {date ? new Date(date).toLocaleString() : 'Completed order'}
+                        {formatAppDateTime(date, 'Completed order')}
                       </p>
                       <div className='mt-2 flex flex-wrap gap-2'>
                         {order.loyaltyTier && (

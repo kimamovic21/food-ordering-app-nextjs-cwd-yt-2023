@@ -14,6 +14,7 @@ This file provides guidance for AI assistance in this repository.
 - Email: Resend + React Email
 - AI: OpenAI SDK for server-side menu description generation
 - Rate limiting: Upstash Redis for short-lived counters on sensitive routes
+- Dates: date-fns through `libs/dateFormat.ts` for UI, email, and PDF date formatting
 - Sharing: react-share
 - Messaging: approved app-native threads with realtime unread badges and per-user message visibility
 - Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin delivery confirmation, support tickets, and late-order alerts
@@ -31,6 +32,7 @@ This file provides guidance for AI assistance in this repository.
 - Keep server secrets in server-only code (route handlers, libs), including OpenAI keys.
 - Validate API inputs and return clear error responses.
 - Use existing utility helpers when possible (libs/).
+- Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts` (`dd/MM/yyyy`, `dd/MM/yyyy HH:mm`).
 - Avoid breaking changes to API response shapes.
 - Preserve role-based access checks (admin/courier/user).
 - Preserve message access rules: no customer-to-customer chat, and order conversations must match the assigned courier or restaurant owner.

@@ -14,6 +14,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Email: Resend + React Email
 - AI: OpenAI SDK for server-side menu description generation
 - Rate limiting: Upstash Redis for short-lived counters on sensitive routes
+- Dates: date-fns through `libs/dateFormat.ts` for UI, email, and PDF date formatting
 - Sharing: react-share
 - Messaging: approved app-native threads with SSE-backed unread badges and per-user visibility
 - Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin delivery confirmation, support tickets, and late-order alerts
@@ -31,6 +32,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Keep server secrets in server-only code (route handlers, libs), including OpenAI keys.
 - Validate API inputs and return clear error responses.
 - Use existing utility helpers when possible (libs/).
+- Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts` (`dd/MM/yyyy`, `dd/MM/yyyy HH:mm`).
 - Avoid breaking API response shapes.
 - Preserve role-based access checks (admin/courier/user).
 - Preserve messaging restrictions: no customer-to-customer chat, and order conversations must match the assigned courier or restaurant owner.

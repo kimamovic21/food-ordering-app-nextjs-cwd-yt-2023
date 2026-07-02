@@ -15,6 +15,7 @@ import {
 import HeartRating from '@/components/shared/HeartRating';
 import Title from '@/components/shared/Title';
 import CourierDashboardReviewsLoading from './loading';
+import { formatAppDate } from '@/libs/dateFormat';
 
 type CourierReviewData = {
   _id: string;
@@ -49,13 +50,6 @@ const ratingOptions = [
   { label: '2 stars', value: '2' },
   { label: '1 star', value: '1' },
 ];
-
-const formatReviewDate = (value: string) =>
-  new Intl.DateTimeFormat('en', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(value));
 
 const CourierDashboardReviewsPage = () => {
   const [draftSearch, setDraftSearch] = useState('');
@@ -240,7 +234,7 @@ const CourierDashboardReviewsPage = () => {
                       {review.customer?.name || 'Anonymous customer'}
                     </h3>
                     <p className='text-xs text-muted-foreground'>
-                      Courier review • {formatReviewDate(review.createdAt)} • Order #
+                      Courier review • {formatAppDate(review.createdAt)} • Order #
                       {review.orderId.slice(-6).toUpperCase()}
                     </p>
                   </div>

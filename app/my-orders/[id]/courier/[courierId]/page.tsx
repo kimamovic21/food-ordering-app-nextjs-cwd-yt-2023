@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import HeartRating from '@/components/shared/HeartRating';
 import Title from '@/components/shared/Title';
+import { formatAppDate } from '@/libs/dateFormat';
 
 type CourierReviewItem = {
   _id: string;
@@ -35,13 +36,6 @@ type CourierReviewsResponse = {
     totalCount: number;
   };
 };
-
-const formatReviewDate = (value: string) =>
-  new Intl.DateTimeFormat('en', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(value));
 
 const CourierReviewsPage = () => {
   const params = useParams();
@@ -181,7 +175,7 @@ const CourierReviewsPage = () => {
                     <CardTitle className='text-base'>
                       {review.customer?.name || 'Anonymous customer'}
                     </CardTitle>
-                    <CardDescription>{formatReviewDate(review.createdAt)}</CardDescription>
+                    <CardDescription>{formatAppDate(review.createdAt)}</CardDescription>
                   </div>
                   <HeartRating rating={review.rating} sizeClassName='size-4' />
                 </div>

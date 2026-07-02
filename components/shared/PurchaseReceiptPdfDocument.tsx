@@ -1,5 +1,6 @@
 import React from 'react';
 import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
+import { formatAppDate } from '@/libs/dateFormat';
 
 type ReceiptItem = {
   name: string;
@@ -140,9 +141,7 @@ export default function PurchaseReceiptPdfDocument({
   specialInstructions,
   total,
 }: PurchaseReceiptPdfDocumentProps) {
-  const purchasedDate = purchasedOn
-    ? new Date(purchasedOn).toLocaleDateString()
-    : new Date().toLocaleDateString();
+  const purchasedDate = formatAppDate(purchasedOn || new Date());
 
   const itemsTotal = items.reduce(
     (sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0),

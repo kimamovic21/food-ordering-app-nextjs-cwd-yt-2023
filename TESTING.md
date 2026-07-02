@@ -30,12 +30,13 @@ Auth is a high-value and high-risk area. Testing register and login first gives 
   - restaurant availability helpers in `libs/restaurantAvailability.ts`
   - notification copy/routing helpers in `libs/notifications.ts`
   - Upstash Redis rate-limit helper behavior in `libs/rateLimit.ts`
+  - shared date-fns formatting helpers in `libs/dateFormat.ts`
 - E2E tests for:
   - register + login flow
   - profile management flow (info update, image upload/remove, account deletion)
   - checkout & payment flow (order creation, coupon application, payment webhook)
 
-Recent high-priority coverage also checks best coupon suggestion rules, restaurant closed/busy availability helpers, ETA-style notification copy, courier delivery summaries, and Redis rate-limit helper behavior.
+Recent high-priority coverage also checks best coupon suggestion rules, restaurant closed/busy availability helpers, ETA-style notification copy, courier delivery summaries, Redis rate-limit helper behavior, and app date formatting helpers.
 
 ## Folder Layout
 
@@ -86,6 +87,12 @@ Useful focused command after rate-limit changes:
 
 ```bash
 npm run test:file -- __tests__/libs/rateLimit.test.ts __tests__/auth/credentials-authorize.test.ts __tests__/api/register.route.test.ts __tests__/api/forgot-password.route.test.ts __tests__/api/support-tickets.route.test.ts __tests__/api/checkout.route.test.ts __tests__/api/ai-menu-item-description.route.test.ts
+```
+
+Useful focused command after date-format changes:
+
+```bash
+npm run test:file -- __tests__/libs/dateFormat.test.ts __tests__/libs/restaurantAvailability.test.ts
 ```
 
 ## Environment Variables

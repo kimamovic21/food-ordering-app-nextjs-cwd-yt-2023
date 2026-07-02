@@ -344,6 +344,13 @@ Examples:
 - Upstash Redis: short-lived rate-limit counters for sensitive auth, checkout, support, and AI routes.
 - Leaflet: map rendering and courier tracking UI.
 
+## Date Handling
+
+- MongoDB stores timestamp fields as `Date` values.
+- API routes should return ISO date strings or raw date fields, not UI-formatted strings.
+- UI, receipt email, and PDF receipt date formatting should go through `libs/dateFormat.ts`.
+- Main user-facing date format is `dd/MM/yyyy`; date-time format is `dd/MM/yyyy HH:mm`.
+
 ## Is This Good Practice?
 
 Yes. Keeping `ARCHITECTURE.md` and `DESCRIPTION.md` is a good practice for this kind of project because:

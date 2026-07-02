@@ -1,3 +1,5 @@
+import { formatWeekdayKey, formatWeekdayName } from '@/libs/dateFormat';
+
 export type RestaurantWorkingHour = {
   day: string;
   openTime: string;
@@ -23,8 +25,7 @@ export const normalizeDeliveryRadiusKm = (value: unknown) => {
   return Math.min(MAX_DELIVERY_RADIUS_KM, Math.max(1, radius));
 };
 
-const getDayName = (date: Date) =>
-  date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+const getDayName = (date: Date) => formatWeekdayKey(date);
 
 const dayLabel = (date: Date, baseDate: Date) => {
   if (isSameLocalDate(date, baseDate)) return 'today';
@@ -33,7 +34,7 @@ const dayLabel = (date: Date, baseDate: Date) => {
   tomorrow.setDate(tomorrow.getDate() + 1);
   if (isSameLocalDate(date, tomorrow)) return 'tomorrow';
 
-  return date.toLocaleDateString('en-US', { weekday: 'long' });
+  return formatWeekdayName(date);
 };
 
 const isSameLocalDate = (left: Date, right: Date) =>

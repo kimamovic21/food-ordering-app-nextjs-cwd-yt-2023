@@ -1,5 +1,6 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { formatAppDateTime } from '@/libs/dateFormat';
 
 type OrderInfoCardProps = {
   orderId: string;
@@ -27,17 +28,6 @@ const OrderInfoCard = ({
   taxAmount,
   deliveryFee,
 }: OrderInfoCardProps) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
   return (
     <Card className='p-6 bg-card text-card-foreground border border-border shadow-sm'>
       <h2 className='text-lg font-semibold mb-4'>Order Information</h2>
@@ -52,9 +42,9 @@ const OrderInfoCard = ({
           <p className='text-sm text-muted-foreground'>Order Date</p>
           <p
             className='font-semibold whitespace-nowrap text-sm md:text-base'
-            title={formatDate(createdAt)}
+            title={formatAppDateTime(createdAt)}
           >
-            {formatDate(createdAt)}
+            {formatAppDateTime(createdAt)}
           </p>
         </div>
         <div>

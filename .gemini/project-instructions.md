@@ -9,6 +9,7 @@
 - Stripe payments (`app/api/checkout/**`, `app/api/payment-link/**`, `app/api/webhook/**`)
 - Resend email integration (`libs/sendPurchaseReceiptEmail.tsx`)
 - Upstash Redis rate limiting (`libs/rateLimit.ts`)
+- date-fns date formatting (`libs/dateFormat.ts`)
 - Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin completion, support tickets, and late-order alerts
 
 ## Coding Expectations
@@ -16,6 +17,7 @@
 - Use incremental commits and low-risk changes.
 - Respect existing code organization and naming patterns.
 - Reuse business logic from `libs/` and existing contexts.
+- Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts`.
 - Keep strong typing and avoid implicit any.
 
 ## Risk Controls

@@ -39,6 +39,7 @@ import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import RestaurantStatistics from './RestaurantStatistics';
+import { formatAppDate } from '@/libs/dateFormat';
 
 const RestaurantLocation = dynamic(() => import('@/components/shared/RestaurantLocation'), {
   ssr: false,
@@ -576,9 +577,7 @@ const RestaurantPage = () => {
                 <div className='space-y-1'>
                   {restaurant.blockedDates.map((blocked, index) => (
                     <div key={index} className='text-sm'>
-                      <span className='font-medium'>
-                        {new Date(blocked.date).toLocaleDateString()}:
-                      </span>{' '}
+                      <span className='font-medium'>{formatAppDate(blocked.date)}:</span>{' '}
                       <span className='text-muted-foreground'>{blocked.reason}</span>
                     </div>
                   ))}

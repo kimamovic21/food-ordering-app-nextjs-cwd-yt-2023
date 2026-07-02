@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import useProfile from '@/hooks/useProfile';
+import { formatAppDateTime } from '@/libs/dateFormat';
 
 type SupportTicket = {
   _id: string;
@@ -297,7 +298,7 @@ const SupportTicketsPage = () => {
                       <CardTitle>{ticket.subject}</CardTitle>
                       <CardDescription>
                         Reported by {reporter?.name || ticket.reporterName || ticket.reporterEmail}{' '}
-                        ({ticket.reporterRole}) on {new Date(ticket.createdAt).toLocaleString()}
+                        ({ticket.reporterRole}) on {formatAppDateTime(ticket.createdAt)}
                       </CardDescription>
                     </div>
                     <div className='flex flex-wrap gap-2'>

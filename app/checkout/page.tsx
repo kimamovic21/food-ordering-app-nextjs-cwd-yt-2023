@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
+import { formatAppDate } from '@/libs/dateFormat';
 import Link from 'next/link';
 
 type ReceiptItem = {
@@ -167,7 +168,7 @@ const CheckoutContent = () => {
             <div>
               <p className='text-gray-500'>Purchased On</p>
               <p className='font-medium text-gray-900 dark:text-gray-100'>
-                {purchasedOn ? new Date(purchasedOn).toLocaleDateString() : '-'}
+                {formatAppDate(purchasedOn)}
               </p>
             </div>
           </div>

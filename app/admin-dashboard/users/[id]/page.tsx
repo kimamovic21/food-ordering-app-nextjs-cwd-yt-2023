@@ -28,6 +28,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import UserLoading from './loading';
 import useProfile from '@/hooks/useProfile';
+import { formatAppDateTime } from '@/libs/dateFormat';
 
 type UserType = {
   _id: string;
@@ -375,7 +376,7 @@ const UserDetailsPage = () => {
                     <span className='text-sm font-medium text-gray-500 dark:text-gray-400'>
                       Last Updated:
                     </span>
-                    <p className='text-base mt-1'>{new Date(user.updatedAt).toLocaleString()}</p>
+                    <p className='text-base mt-1'>{formatAppDateTime(user.updatedAt)}</p>
                   </div>
                 )}
               </div>

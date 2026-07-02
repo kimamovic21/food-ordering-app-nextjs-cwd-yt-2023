@@ -41,6 +41,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import useProfile from '@/hooks/useProfile';
+import { formatAppDateTime, formatAppTime } from '@/libs/dateFormat';
 
 type ThreadMessage = {
   _id: string;
@@ -103,22 +104,11 @@ type MessagesApiResponse = {
 };
 
 const formatDate = (dateInput?: string | null) => {
-  if (!dateInput) return '';
-  const date = new Date(dateInput);
-  return new Intl.DateTimeFormat('en', {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(date);
+  return formatAppTime(dateInput, '');
 };
 
 const formatShortDate = (dateInput?: string | null) => {
-  if (!dateInput) return '';
-  const date = new Date(dateInput);
-  return new Intl.DateTimeFormat('en', {
-    weekday: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(date);
+  return formatAppDateTime(dateInput, '');
 };
 
 const getInitials = (name?: string | null) => {

@@ -39,7 +39,7 @@ flowchart LR
 - `components/`: shared UI components and shadcn/Radix primitives.
 - `contexts/`: client-side global state for cart, notifications, and messages.
 - `hooks/`: client hooks such as profile and favorites data loading.
-- `libs/`: auth, database, notifications, messages, coupons, loyalty, email, AI, rate limiting, and helper utilities.
+- `libs/`: auth, database, notifications, messages, coupons, loyalty, email, AI, rate limiting, date formatting, and helper utilities.
 - `models/`: Mongoose schemas and MongoDB collection contracts.
 - `__tests__/`, `e2e/`, `mocks/`: Vitest unit/integration/e2e test areas.
 
@@ -289,6 +289,12 @@ Important messaging rules:
 - Resend and React Email send transactional auth and purchase receipt emails.
 - OpenAI generates menu item descriptions through a server-only API route.
 - Leaflet renders restaurant, customer, and courier map views.
+
+## Date Formatting
+
+MongoDB remains the source of truth for timestamp fields as `Date` values. API routes should serialize date fields as ISO strings or raw date values, and UI/email/PDF layers should format those values through `libs/dateFormat.ts`.
+
+User-facing dates use `dd/MM/yyyy`. User-facing date-time values use `dd/MM/yyyy HH:mm`.
 
 ## Testing Strategy
 

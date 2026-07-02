@@ -8,6 +8,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { formatAppDateTime } from '@/libs/dateFormat';
 import Link from 'next/link';
 
 type OrderType = {
@@ -32,16 +33,6 @@ type OrdersTableProps = {
 };
 
 const OrdersTable = ({ orders, loading }: OrdersTableProps) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   if (loading) {
     return <p className='text-gray-600 dark:text-gray-400'>Loading orders...</p>;
   }
@@ -74,7 +65,7 @@ const OrdersTable = ({ orders, loading }: OrdersTableProps) => {
                 {order._id.substring(0, 8)}...
               </TableCell>
               <TableCell className='p-3 text-gray-700 dark:text-gray-300'>
-                {formatDate(order.createdAt)}
+                {formatAppDateTime(order.createdAt)}
               </TableCell>
               <TableCell className='p-3 text-gray-700 dark:text-gray-300'>{order.email}</TableCell>
               <TableCell className='p-3 font-semibold text-gray-900 dark:text-gray-100'>

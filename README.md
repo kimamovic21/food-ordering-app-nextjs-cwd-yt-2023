@@ -103,6 +103,7 @@ This project uses many dependencies; below are the main packages actively used i
 - React Hook Form: [https://react-hook-form.com/](https://react-hook-form.com/)
 - Zod: [https://zod.dev/](https://zod.dev/)
 - Hookform Resolvers: [https://github.com/react-hook-form/resolvers](https://github.com/react-hook-form/resolvers)
+- date-fns: [https://date-fns.org/](https://date-fns.org/)
 
 ### Auth and Database
 
@@ -184,6 +185,13 @@ See `libs/authEmails.tsx` for token generation, hashing, and sending logic (Rese
 - Protected flows include credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Redis is not the main database. MongoDB remains the source of truth for users, orders, restaurants, messages, and tickets.
 - If Upstash env vars are missing or Redis is temporarily unavailable, `libs/rateLimit.ts` fails open so local development and critical app flows do not break.
+
+## Date Handling
+
+- MongoDB stores real `Date` values for timestamps such as `createdAt`, `updatedAt`, `completedAt`, and order phase fields.
+- API responses should serialize dates as ISO strings instead of preformatted labels.
+- UI, receipt email, and PDF receipt date formatting should use `libs/dateFormat.ts`.
+- The main app display format is `dd/MM/yyyy`; date-time displays use `dd/MM/yyyy HH:mm`.
 
 For the exact complete dependency list and versions, check package.json.
 

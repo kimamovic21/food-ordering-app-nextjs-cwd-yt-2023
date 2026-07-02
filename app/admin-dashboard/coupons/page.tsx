@@ -11,6 +11,7 @@ import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import useProfile from '@/hooks/useProfile';
 import CouponsLoading from './loading';
+import { formatAppDate } from '@/libs/dateFormat';
 
 type Coupon = {
   _id: string;
@@ -225,9 +226,7 @@ const CouponsPage = () => {
                     <div className='flex items-center justify-between gap-4 rounded-lg bg-muted/50 px-3 py-2'>
                       <span className='text-muted-foreground'>Expires</span>
                       <span className='font-semibold'>
-                        {coupon.expiresAt
-                          ? new Date(coupon.expiresAt).toLocaleDateString()
-                          : 'Never'}
+                        {formatAppDate(coupon.expiresAt, 'Never')}
                       </span>
                     </div>
                   </div>

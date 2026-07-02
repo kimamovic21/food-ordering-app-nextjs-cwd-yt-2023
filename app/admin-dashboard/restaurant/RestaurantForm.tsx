@@ -12,6 +12,7 @@ import { MapPin, Plus, Minus, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import dynamic from 'next/dynamic';
 import RestaurantImagesUpload, { ImageItem } from './RestaurantImagesUpload';
+import { formatAppDate } from '@/libs/dateFormat';
 
 const RestaurantLocation = dynamic(() => import('@/components/shared/RestaurantLocation'), {
   ssr: false,
@@ -1128,9 +1129,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
                 {formData.blockedDates.map((blocked, index) => (
                   <div key={index} className='flex justify-between items-center p-2 border rounded'>
                     <div className='flex-1'>
-                      <span className='font-medium'>
-                        {new Date(blocked.date).toLocaleDateString('en-GB')}
-                      </span>
+                      <span className='font-medium'>{formatAppDate(blocked.date)}</span>
                       {' - '}
                       <span className='text-muted-foreground'>{blocked.reason}</span>
                     </div>

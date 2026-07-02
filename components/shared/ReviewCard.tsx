@@ -4,6 +4,7 @@ import Link from 'next/link';
 import HeartRating from './HeartRating';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { formatAppDate } from '@/libs/dateFormat';
 
 export type ReviewCardData = {
   _id: string;
@@ -23,13 +24,6 @@ type ReviewCardProps = {
   review: ReviewCardData;
   mode: 'personal' | 'restaurant';
 };
-
-const formatReviewDate = (value: string) =>
-  new Intl.DateTimeFormat('en', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(value));
 
 const ReviewCard = ({ review, mode }: ReviewCardProps) => {
   const title =
@@ -60,7 +54,7 @@ const ReviewCard = ({ review, mode }: ReviewCardProps) => {
             </div>
             <p className='text-xs text-muted-foreground'>
               {mode === 'personal' ? 'Restaurant review' : 'Customer review'} •{' '}
-              {formatReviewDate(review.createdAt)}
+              {formatAppDate(review.createdAt)}
             </p>
           </div>
           <HeartRating rating={review.rating} sizeClassName='size-4' showValue={false} />

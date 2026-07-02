@@ -17,6 +17,7 @@ import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
 import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
+import { formatAppDate, formatAppTime } from '@/libs/dateFormat';
 
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), { ssr: false });
 
@@ -104,8 +105,7 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
           <div>
             <CardTitle className='text-lg'>Order #{order._id.slice(-8).toUpperCase()}</CardTitle>
             <CardDescription>
-              Placed on {new Date(order.createdAt).toLocaleDateString()} at{' '}
-              {new Date(order.createdAt).toLocaleTimeString()}
+              Placed on {formatAppDate(order.createdAt)} at {formatAppTime(order.createdAt)}
             </CardDescription>
           </div>
           <div className='flex flex-col items-end gap-2'>

@@ -10,6 +10,7 @@
 - Images: Cloudinary
 - Mapping: Leaflet + React Leaflet
 - Rate limiting: Upstash Redis for short-lived counters on sensitive routes
+- Date formatting: date-fns through `libs/dateFormat.ts`
 - Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin completion, support tickets, and late-order alerts
 
 ## Implementation Rules
@@ -17,6 +18,7 @@
 - Keep edits small and composable.
 - Preserve existing API shapes unless explicitly requested.
 - Reuse helpers in `libs/` before adding new utilities.
+- Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts`.
 - Avoid `any`; prefer explicit typing and narrow unions.
 
 ## Safety Rules

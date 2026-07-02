@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
+import { formatAppDate } from '@/libs/dateFormat';
 
 type CourierType = {
   _id: string;
@@ -152,7 +153,7 @@ const CouriersPage = () => {
                   </div>
 
                   <div className='text-xs text-muted-foreground'>
-                    Joined: {new Date(courier.createdAt).toLocaleDateString()}
+                    Joined: {formatAppDate(courier.createdAt)}
                   </div>
                 </div>
               </CardContent>

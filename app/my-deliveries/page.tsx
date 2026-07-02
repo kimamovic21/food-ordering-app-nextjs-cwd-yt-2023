@@ -9,6 +9,7 @@ import useProfile from '@/hooks/useProfile';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import MyDeliveriesLoading from './loading';
+import { formatAppDate } from '@/libs/dateFormat';
 
 type CartProduct = {
   productId: string;
@@ -225,9 +226,7 @@ const MyDeliveriesPage = () => {
                     <div className='flex items-center gap-2'>
                       <Calendar className='h-4 w-4 text-muted-foreground' />
                       <div className='text-sm'>
-                        <p className='text-muted-foreground'>
-                          {new Date(order.updatedAt).toLocaleDateString()}
-                        </p>
+                        <p className='text-muted-foreground'>{formatAppDate(order.updatedAt)}</p>
                       </div>
                     </div>
 

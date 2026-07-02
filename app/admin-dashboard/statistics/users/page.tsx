@@ -22,6 +22,7 @@ import useProfile from '@/hooks/useProfile';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import UsersStatisticsLoading from './loading';
+import { formatAppShortDate } from '@/libs/dateFormat';
 
 interface UsersStatistics {
   totalUsers: number;
@@ -113,10 +114,7 @@ const UsersStatisticsPage = () => {
       .filter((item) => new Date(item.date) >= cutoffDate)
       .map((item) => ({
         ...item,
-        displayDate: new Date(item.date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        }),
+        displayDate: formatAppShortDate(item.date),
       }));
   }, [statistics, timeRange]);
 

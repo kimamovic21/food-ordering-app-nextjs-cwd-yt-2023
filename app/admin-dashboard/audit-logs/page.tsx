@@ -21,6 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import Title from '@/components/shared/Title';
+import { formatAppDateTime } from '@/libs/dateFormat';
 
 type AuditLog = {
   _id: string;
@@ -31,14 +32,6 @@ type AuditLog = {
   entityId: string;
   metadata: Record<string, unknown>;
   createdAt: string | null;
-};
-
-const formatDate = (value: string | null) => {
-  if (!value) return 'Unknown';
-  return new Date(value).toLocaleString('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
 };
 
 const formatMetadata = (metadata: Record<string, unknown>) => {
@@ -129,7 +122,7 @@ const AuditLogsPage = () => {
                   {logs.map((log) => (
                     <TableRow key={log._id}>
                       <TableCell className='whitespace-nowrap'>
-                        {formatDate(log.createdAt)}
+                        {formatAppDateTime(log.createdAt, 'Unknown')}
                       </TableCell>
                       <TableCell className='font-medium'>{log.action}</TableCell>
                       <TableCell>

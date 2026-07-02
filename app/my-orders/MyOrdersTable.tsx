@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
+import { formatAppDateTime } from '@/libs/dateFormat';
 import Link from 'next/link';
 
 type OrderType = {
@@ -58,16 +59,6 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
   const [reorderingOrder, setReorderingOrder] = useState<string | null>(null);
   const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
   const [cancelingOrder, setCancelingOrder] = useState<string | null>(null);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   const handleFinishPayment = async (orderId: string) => {
     try {
@@ -239,7 +230,7 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
                   {order._id.substring(0, 8)}...
                 </TableCell>
                 <TableCell className='p-3 text-muted-foreground'>
-                  {formatDate(order.createdAt)}
+                  {formatAppDateTime(order.createdAt)}
                 </TableCell>
                 <TableCell className='p-3 text-muted-foreground'>{order.email}</TableCell>
                 <TableCell className='p-3 font-semibold'>${order.total.toFixed(2)}</TableCell>

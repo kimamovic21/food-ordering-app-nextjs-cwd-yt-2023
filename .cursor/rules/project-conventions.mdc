@@ -9,7 +9,7 @@ alwaysApply: true
 
 ## Project Conventions
 
-- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend, Upstash Redis.
+- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend, Upstash Redis, date-fns.
 - Prefer small, incremental changes.
 - Follow existing patterns in `app/`, `libs/`, `models/`, `components/`, and `contexts/`.
 - Avoid introducing new dependencies unless explicitly requested.
@@ -20,6 +20,7 @@ alwaysApply: true
 - Keep API response shapes backward compatible unless change is requested.
 - Use existing models in `models/` for data access.
 - Ask before introducing schema migrations or destructive data operations.
+- Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts`.
 - Preserve restaurant accepting-order logic in checkout: working hours, pause state, blocked dates, delivery radius, paid active kitchen orders, item availability, coupons, and loyalty must be checked before Stripe sessions are created.
 - Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
 - Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.

@@ -24,6 +24,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import useProfile from '@/hooks/useProfile';
 import DeliveryDetailsLoading from './loading';
+import { formatAppDateTime } from '@/libs/dateFormat';
 
 type CartProduct = {
   productId: string;
@@ -188,14 +189,14 @@ const DeliveryDetailsPage = () => {
               <Calendar className='h-4 w-4 text-muted-foreground' />
               <div>
                 <p className='text-sm text-muted-foreground'>Order Date</p>
-                <p className='font-medium'>{new Date(order.createdAt).toLocaleString()}</p>
+                <p className='font-medium'>{formatAppDateTime(order.createdAt)}</p>
               </div>
             </div>
             <div className='flex items-center gap-2'>
               <Calendar className='h-4 w-4 text-muted-foreground' />
               <div>
                 <p className='text-sm text-muted-foreground'>Delivered Date</p>
-                <p className='font-medium'>{new Date(order.updatedAt).toLocaleString()}</p>
+                <p className='font-medium'>{formatAppDateTime(order.updatedAt)}</p>
               </div>
             </div>
             <div className='flex items-center gap-2'>

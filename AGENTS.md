@@ -14,6 +14,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - AI: OpenAI SDK is used server-side for admin menu item description generation.
 - Rate limiting: Upstash Redis stores short-lived counters for sensitive auth, checkout, support, and AI routes.
 - Sharing: `react-share` is used for social share actions.
+- Dates: `date-fns` is used through `libs/dateFormat.ts` for UI, email, and PDF date formatting.
 
 ## High-Level Features
 
@@ -69,6 +70,7 @@ See `example.env`. Variables currently used in the project include:
 - API route handlers should validate inputs and use models/ for data access.
 - Keep secrets in server-side code only (Stripe, Cloudinary, Resend, OpenAI keys).
 - Avoid breaking API response shapes unless explicitly requested.
+- Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts` (`dd/MM/yyyy`, `dd/MM/yyyy HH:mm`).
 - Messaging should remain role-restricted: no customer-to-customer chat, and order threads must match the assigned courier or restaurant owner.
 - Checkout must preserve restaurant accepting-order checks: working hours, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty must be validated before creating Stripe sessions.
 - Best coupon suggestions are user-facing help only; checkout must revalidate coupons server-side.
@@ -114,6 +116,7 @@ See `example.env`. Variables currently used in the project include:
 - For auth tests, cover both success and failure behavior contracts.
 - For profile tests, cover info updates, image upload/remove, and account deletion flows.
 - For order-flow tests, cover checkout validation, best coupon suggestion, reorder validation, restaurant availability, notification copy, courier summaries, and delivery status transitions.
+- For date-format changes, cover `libs/dateFormat.ts` and any business logic that depends on weekday/date calculations.
 - Use `MONGODB_URL_TESTS` for local test database configuration when needed.
 - Keep e2e tests data-safe with explicit cleanup of created records.
 

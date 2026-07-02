@@ -17,6 +17,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import useProfile from '@/hooks/useProfile';
+import { formatAppDateTime } from '@/libs/dateFormat';
 
 type SupportTicket = {
   _id: string;
@@ -242,7 +243,7 @@ const MyReportsPage = () => {
                       </div>
                       <CardTitle>{ticket.subject}</CardTitle>
                       <CardDescription>
-                        Sent on {new Date(ticket.createdAt).toLocaleString()}
+                        Sent on {formatAppDateTime(ticket.createdAt)}
                       </CardDescription>
                     </div>
                     {orderId && (

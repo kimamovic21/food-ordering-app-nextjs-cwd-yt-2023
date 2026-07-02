@@ -12,6 +12,7 @@ import {
   Section,
   Text,
 } from '@react-email/components';
+import { formatAppDate } from '@/libs/dateFormat';
 
 type ReceiptItem = {
   name: string;
@@ -82,9 +83,7 @@ export default function PurchaseReceiptEmail({
   specialInstructions,
   total,
 }: PurchaseReceiptEmailProps) {
-  const purchasedDate = purchasedOn
-    ? new Date(purchasedOn).toLocaleDateString()
-    : new Date().toLocaleDateString();
+  const purchasedDate = formatAppDate(purchasedOn || new Date());
 
   const itemsTotal = items.reduce(
     (sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0),
