@@ -7,12 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:file": "vitest run",
     "test:api": "vitest run __tests__/api",
     "test:auth": "vitest run __tests__/auth",
-    "test:components": "vitest run __tests__/components",
+    "test:components": "vitest run --environment jsdom __tests__/components",
     "test:libs": "vitest run __tests__/libs",
     "test:models": "vitest run __tests__/models",
     "test:profile": "vitest run __tests__/api/profile.route.test.ts __tests__/api/profile-change-password.route.test.ts __tests__/api/upload-users.route.test.ts",
@@ -53,6 +55,7 @@
     "@react-email/render": "^2.0.5",
     "@react-pdf/renderer": "^4.5.1",
     "@stripe/react-stripe-js": "^5.4.1",
+    "@t3-oss/env-nextjs": "^0.13.11",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/bcrypt": "^6.0.0",
     "@types/leaflet": "^1.9.21",
@@ -97,6 +100,9 @@
   "devDependencies": {
     "@commitlint/cli": "^20.4.1",
     "@commitlint/config-conventional": "^20.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -105,6 +111,9 @@
     "eslint-config-next": "16.0.6",
     "eslint-plugin-react": "^7.33.0",
     "eslint-plugin-react-hooks": "^5.0.0",
+    "jsdom": "^29.1.1",
+    "msw": "^2.14.6",
+    "prettier": "^3.9.4",
     "vitest": "^4.1.5"
   }
 }
