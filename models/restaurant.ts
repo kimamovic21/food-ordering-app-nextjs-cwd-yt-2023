@@ -59,6 +59,13 @@ const RestaurantSchema = new Schema(
       default: 5,
       min: 0,
     },
+    minimumOrderAmount: {
+      type: Number,
+      required: true,
+      default: 10,
+      min: 1,
+      max: 100,
+    },
     averagePreparationMinutes: {
       type: Number,
       required: true,

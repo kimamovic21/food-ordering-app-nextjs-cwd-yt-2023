@@ -42,6 +42,7 @@ interface Restaurant {
   description: string;
   tax: number;
   courierFee: number;
+  minimumOrderAmount: number;
   averagePreparationMinutes: number;
   averageDeliveryMinutes: number;
   activeOrderLimit: number;

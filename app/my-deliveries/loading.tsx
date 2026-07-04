@@ -9,8 +9,8 @@ const MyDeliveriesLoading = () => {
     <div className='container mx-auto px-4 py-8 max-w-7xl'>
       <Skeleton className='mb-8 h-9 w-56' />
 
-      <div className='mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5'>
-        {[...Array(5)].map((_, idx) => (
+      <div className='mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8'>
+        {[...Array(8)].map((_, idx) => (
           <div key={idx} className='rounded-xl border bg-card p-4 shadow-sm'>
             <div className='flex items-center gap-3'>
               <Skeleton className='size-10 rounded-lg' />
@@ -21,6 +21,11 @@ const MyDeliveriesLoading = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className='mb-8 rounded-xl border bg-card p-6 shadow-sm'>
+        <Skeleton className='h-6 w-40' />
+        <Skeleton className='mt-6 h-[260px] w-full rounded-lg' />
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>

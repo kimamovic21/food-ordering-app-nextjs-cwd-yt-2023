@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
     const restaurant = await Restaurant.findById(id)
       .select(
-        'name street city postalCode country latitude longitude contact email webAddress description images workingHours blockedDates tax courierFee averagePreparationMinutes averageDeliveryMinutes activeOrderLimit deliveryRadiusKm isPaused pauseReason totalEmployees createdAt updatedAt'
+        'name street city postalCode country latitude longitude contact email webAddress description images workingHours blockedDates tax courierFee minimumOrderAmount averagePreparationMinutes averageDeliveryMinutes activeOrderLimit deliveryRadiusKm isPaused pauseReason totalEmployees createdAt updatedAt'
       )
       .lean();
 
@@ -48,6 +48,10 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
           isAcceptingOrders: orderingStatus.isAcceptingOrders,
           orderingUnavailableReason: orderingStatus.reason,
           deliveryRadiusKm: orderingStatus.deliveryRadiusKm,
+          minimumOrderAmount: Math.min(
+            100,
+            Math.max(1, Number((restaurant as any).minimumOrderAmount) || 10)
+          ),
           activeOrderLimit,
           activeKitchenOrders,
           isBusy: activeKitchenOrders >= activeOrderLimit,

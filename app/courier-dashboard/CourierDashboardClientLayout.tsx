@@ -8,8 +8,8 @@ import {
   Bell,
   Bike,
   ClipboardCheck,
+  DollarSign,
   Home,
-  LifeBuoy,
   LogOut,
   Menu,
   MessageSquareText,
@@ -95,14 +95,14 @@ const CourierDashboardClientLayout = ({ children }: { children: React.ReactNode 
       icon: ClipboardCheck,
     },
     {
+      href: '/courier-dashboard/earnings',
+      label: 'Earnings',
+      icon: DollarSign,
+    },
+    {
       href: '/courier-dashboard/reviews',
       label: 'My Ratings',
       icon: Star,
-    },
-    {
-      href: '/my-reports',
-      label: 'My Reports',
-      icon: LifeBuoy,
     },
   ];
 

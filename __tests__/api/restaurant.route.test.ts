@@ -178,6 +178,23 @@ describe('/api/restaurant route', () => {
     expect(Restaurant.create).not.toHaveBeenCalled();
   });
 
+  it('rejects minimum order amounts outside the allowed range', async () => {
+    vi.mocked(Restaurant.findOne).mockResolvedValueOnce(null as never);
+
+    const { POST } = await loadRestaurantRoute();
+    const res = await POST(
+      jsonRequest('POST', {
+        ...validRestaurantBody,
+        minimumOrderAmount: 101,
+      }) as any
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body).toEqual({ error: 'Minimum order amount must be between $1 and $100' });
+    expect(Restaurant.create).not.toHaveBeenCalled();
+  });
+
   it('deletes only an owned restaurant and cascades menu item/image cleanup', async () => {
     const restaurant = {
       _id: 'restaurant-1',

@@ -65,6 +65,9 @@ describe('GET /api/my-deliveries', () => {
           courierDeliveredAt: new Date('2026-01-01T10:20:00.000Z'),
           estimatedDeliveryMinutes: 30,
           deliveryDistanceKm: 4.2,
+          deliveryFee: 5,
+          completedAt: new Date('2026-01-01T10:25:00.000Z'),
+          updatedAt: new Date('2026-01-01T10:25:00.000Z'),
         },
         {
           _id: 'order-2',
@@ -72,6 +75,8 @@ describe('GET /api/my-deliveries', () => {
           completedAt: new Date('2026-01-01T12:00:00.000Z'),
           estimatedDeliveryMinutes: 30,
           deliveryDistanceKm: 5.8,
+          deliveryFee: 7,
+          updatedAt: new Date('2026-01-01T12:00:00.000Z'),
         },
       ]) as never
     );
@@ -90,12 +95,15 @@ describe('GET /api/my-deliveries', () => {
       completedDeliveries: 2,
       declinedAssignments: 2,
       lateDeliveries: 1,
+      totalEarnings: 12,
+      averageEarning: 6,
       averageDeliveryMinutes: 40,
       totalDistanceKm: 10,
       averageDistanceKm: 5,
       averageRating: 4.5,
       ratingCount: 4,
     });
+    expect(body.earningsChart).toEqual([{ month: 'Jan 2026', earnings: 12, deliveries: 2 }]);
     expect(Order.countDocuments).toHaveBeenCalledWith({
       courierDeclinedBy: 'courier-1',
       courierAssignmentStatus: 'declined',

@@ -355,6 +355,11 @@ const CartPage = () => {
     return Boolean(restaurant?.isBusy);
   };
 
+  const getMinimumOrderAmount = () => {
+    const restaurant = getCartRestaurant();
+    return Math.min(100, Math.max(1, Number(restaurant?.minimumOrderAmount) || 10));
+  };
+
   const isRestaurantPaused = () => {
     const restaurant = getCartRestaurant();
     return Boolean(restaurant?.isPaused);
@@ -631,6 +636,16 @@ const CartPage = () => {
         return;
       }
 
+      const minimumOrderAmount = getMinimumOrderAmount();
+      if (subtotal < minimumOrderAmount) {
+        sonnerToast.error(
+          `${getRestaurantName()} requires a minimum food subtotal of $${minimumOrderAmount.toFixed(
+            2
+          )}.`
+        );
+        return;
+      }
+
       if (!hasDeliveryLocation) {
         sonnerToast.error('Please use your current location before checkout.');
         return;
@@ -724,6 +739,11 @@ const CartPage = () => {
   const restaurantPaused = isRestaurantPaused();
   const restaurantBusy = isRestaurantBusy();
   const restaurantName = getRestaurantName();
+  const minimumOrderAmount = getMinimumOrderAmount();
+  const belowMinimumOrderAmount =
+    !multipleRestaurants && restaurantOpen && !restaurantPaused && !restaurantBusy
+      ? subtotal < minimumOrderAmount
+      : false;
   const deliveryRadiusKm = getDeliveryRadiusKm();
   const deliveryDistanceKm = getDeliveryDistanceKm();
   const missingDeliveryLocation =
@@ -772,6 +792,15 @@ const CartPage = () => {
         <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
           <p className='font-semibold text-amber-800 dark:text-amber-200'>
             {restaurantName} is very busy at the moment. Please wait a little bit and try again.
+          </p>
+        </div>
+      )}
+
+      {belowMinimumOrderAmount && (
+        <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
+          <p className='font-semibold text-amber-800 dark:text-amber-200'>
+            {restaurantName} requires a minimum food subtotal of ${minimumOrderAmount.toFixed(2)} to
+            start checkout.
           </p>
         </div>
       )}
@@ -844,6 +873,8 @@ const CartPage = () => {
             restaurantsOpen={restaurantOpen && !multipleRestaurants}
             restaurantPaused={restaurantPaused}
             restaurantBusy={restaurantBusy}
+            belowMinimumOrderAmount={belowMinimumOrderAmount}
+            minimumOrderAmount={minimumOrderAmount}
             missingDeliveryLocation={missingDeliveryLocation}
             loadingRestaurants={loadingRestaurants}
             hasUnavailableItems={unavailableItemIds.length > 0}

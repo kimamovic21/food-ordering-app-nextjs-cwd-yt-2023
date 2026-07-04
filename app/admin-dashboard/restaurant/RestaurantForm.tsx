@@ -46,6 +46,7 @@ interface RestaurantFormData {
   description: string;
   tax: number;
   courierFee: number;
+  minimumOrderAmount: number;
   averagePreparationMinutes: number;
   averageDeliveryMinutes: number;
   activeOrderLimit: number;
@@ -80,6 +81,7 @@ const formatRestaurantDataForForm = (restaurant: RestaurantFormData | undefined)
 
   return {
     ...restaurant,
+    minimumOrderAmount: restaurant.minimumOrderAmount ?? 10,
     averagePreparationMinutes: restaurant.averagePreparationMinutes ?? 25,
     averageDeliveryMinutes: restaurant.averageDeliveryMinutes ?? 20,
     activeOrderLimit: restaurant.activeOrderLimit ?? 10,
@@ -120,6 +122,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
     description: '',
     tax: 17,
     courierFee: 5,
+    minimumOrderAmount: 10,
     averagePreparationMinutes: 25,
     averageDeliveryMinutes: 20,
     activeOrderLimit: 10,
@@ -197,6 +200,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
       description: data.description,
       tax: data.tax,
       courierFee: data.courierFee,
+      minimumOrderAmount: data.minimumOrderAmount,
       averagePreparationMinutes: data.averagePreparationMinutes,
       averageDeliveryMinutes: data.averageDeliveryMinutes,
       activeOrderLimit: data.activeOrderLimit,
@@ -383,6 +387,10 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
     }
     if (formData.averagePreparationMinutes < 0 || formData.averagePreparationMinutes > 240) {
       sonnerToast.error('Average preparation time must be between 0 and 240 minutes');
+      return false;
+    }
+    if (formData.minimumOrderAmount < 1 || formData.minimumOrderAmount > 100) {
+      sonnerToast.error('Minimum order amount must be between $1 and $100');
       return false;
     }
     if (formData.averageDeliveryMinutes < 0 || formData.averageDeliveryMinutes > 240) {
@@ -832,6 +840,28 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
                   <Plus className='h-4 w-4' />
                 </Button>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor='minimumOrderAmount' className='mb-2'>
+                Minimum Order Amount *
+              </Label>
+              <div className='flex items-center gap-2'>
+                <span className='text-sm text-muted-foreground'>$</span>
+                <Input
+                  id='minimumOrderAmount'
+                  type='number'
+                  min='1'
+                  max='100'
+                  step='1'
+                  value={formData.minimumOrderAmount}
+                  onChange={(e) => handleNumberChange(e, 'minimumOrderAmount')}
+                  required
+                />
+              </div>
+              <p className='mt-1 text-xs text-muted-foreground'>
+                Checkout is blocked when the food subtotal is below this amount.
+              </p>
             </div>
 
             <div>

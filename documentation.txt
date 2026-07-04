@@ -1101,3 +1101,7 @@ Add Upstash Redis rate limiting
 Improve order maps and live timeline
 
 Standardize app date formatting
+
+Add env validation and test tooling
+
+Add restaurant minimum orders and courier earnings

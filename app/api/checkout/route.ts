@@ -296,6 +296,18 @@ export async function POST(req: Request) {
   const subtotal = roundToTwoDecimals(
     sanitizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   );
+  const minimumOrderAmount = roundToTwoDecimals(
+    Math.min(100, Math.max(1, Number((restaurant as any).minimumOrderAmount) || 10))
+  );
+
+  if (subtotal < minimumOrderAmount) {
+    return Response.json(
+      {
+        error: `Minimum order amount for this restaurant is $${minimumOrderAmount.toFixed(2)}.`,
+      },
+      { status: 400 }
+    );
+  }
 
   const normalizedCouponCode = couponCode ? normalizeCouponCode(couponCode) : '';
   const coupon = normalizedCouponCode

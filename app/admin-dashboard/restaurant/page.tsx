@@ -73,6 +73,7 @@ interface Restaurant {
   description: string;
   tax: number;
   courierFee: number;
+  minimumOrderAmount?: number;
   averagePreparationMinutes?: number;
   averageDeliveryMinutes?: number;
   activeOrderLimit?: number;
@@ -505,6 +506,12 @@ const RestaurantPage = () => {
             <div>
               <p className='text-sm text-muted-foreground mb-2'>Tax Rate</p>
               <Badge variant='secondary'>{restaurant.tax}%</Badge>
+            </div>
+            <div className='rounded-lg border p-3'>
+              <p className='text-sm text-muted-foreground'>Minimum Order</p>
+              <p className='text-lg font-semibold'>
+                ${(restaurant.minimumOrderAmount || 10).toFixed(2)}
+              </p>
             </div>
             <div className='grid gap-3 sm:grid-cols-2'>
               <div className='rounded-lg border p-3'>

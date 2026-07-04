@@ -29,6 +29,8 @@ interface OrderSummaryProps {
   restaurantsOpen: boolean;
   restaurantBusy?: boolean;
   restaurantPaused?: boolean;
+  belowMinimumOrderAmount?: boolean;
+  minimumOrderAmount?: number;
   missingDeliveryLocation?: boolean;
   loadingRestaurants: boolean;
   hasUnavailableItems?: boolean;
@@ -60,6 +62,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   restaurantsOpen,
   restaurantBusy = false,
   restaurantPaused = false,
+  belowMinimumOrderAmount = false,
+  minimumOrderAmount = 10,
   missingDeliveryLocation = false,
   loadingRestaurants,
   hasUnavailableItems = false,
@@ -187,6 +191,11 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             </Link>
           </div>
         )}
+        {belowMinimumOrderAmount && (
+          <div className='mt-2 text-xs text-center font-medium text-amber-600'>
+            Add more items to reach the ${minimumOrderAmount.toFixed(2)} minimum.
+          </div>
+        )}
       </div>
       {isLoggedIn ? (
         <Button
@@ -196,6 +205,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             !restaurantsOpen ||
             restaurantPaused ||
             restaurantBusy ||
+            belowMinimumOrderAmount ||
             missingDeliveryLocation ||
             loadingRestaurants ||
             loadingMenuAvailability ||
@@ -216,6 +226,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             'Restaurant Paused'
           ) : restaurantBusy ? (
             'Restaurant Busy'
+          ) : belowMinimumOrderAmount ? (
+            `Minimum $${minimumOrderAmount.toFixed(2)}`
           ) : missingDeliveryLocation ? (
             'Confirm Location'
           ) : loadingMenuAvailability ? (

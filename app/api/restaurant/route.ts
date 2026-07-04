@@ -45,6 +45,10 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
   const tax = typeof body.tax === 'number' ? body.tax : Number(body.tax) || 17;
   const courierFee =
     typeof body.courierFee === 'number' ? body.courierFee : Number(body.courierFee) || 5;
+  const minimumOrderAmount =
+    typeof body.minimumOrderAmount === 'number'
+      ? body.minimumOrderAmount
+      : Number(body.minimumOrderAmount) || 10;
   const averagePreparationMinutes =
     typeof body.averagePreparationMinutes === 'number'
       ? body.averagePreparationMinutes
@@ -92,6 +96,7 @@ const sanitizeRestaurantPayload = (body: Record<string, unknown>, includeId: boo
     description: body.description,
     tax: Math.min(100, Math.max(0, tax)),
     courierFee: Math.max(0, courierFee),
+    minimumOrderAmount,
     averagePreparationMinutes: Math.min(240, Math.max(0, averagePreparationMinutes)),
     averageDeliveryMinutes: Math.min(240, Math.max(0, averageDeliveryMinutes)),
     activeOrderLimit: Math.min(100, Math.max(1, activeOrderLimit)),
@@ -228,6 +233,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (payload.minimumOrderAmount < 1 || payload.minimumOrderAmount > 100) {
+      return NextResponse.json(
+        { error: 'Minimum order amount must be between $1 and $100' },
+        { status: 400 }
+      );
+    }
+
     if (!payload.images || !Array.isArray(payload.images) || payload.images.length === 0) {
       return NextResponse.json(
         { error: 'At least one restaurant image is required' },
@@ -255,6 +267,7 @@ export async function POST(req: NextRequest) {
       description: payload.description,
       tax: payload.tax,
       courierFee: payload.courierFee,
+      minimumOrderAmount: payload.minimumOrderAmount,
       averagePreparationMinutes: payload.averagePreparationMinutes,
       averageDeliveryMinutes: payload.averageDeliveryMinutes,
       activeOrderLimit: payload.activeOrderLimit,
@@ -321,6 +334,13 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    if (updateData.minimumOrderAmount < 1 || updateData.minimumOrderAmount > 100) {
+      return NextResponse.json(
+        { error: 'Minimum order amount must be between $1 and $100' },
+        { status: 400 }
+      );
+    }
+
     if (!updateData.images || !Array.isArray(updateData.images) || updateData.images.length === 0) {
       return NextResponse.json(
         { error: 'At least one restaurant image is required' },
@@ -362,6 +382,7 @@ export async function PUT(req: NextRequest) {
         isPaused: updateData.isPaused,
         deliveryRadiusKm: updateData.deliveryRadiusKm,
         activeOrderLimit: updateData.activeOrderLimit,
+        minimumOrderAmount: updateData.minimumOrderAmount,
       },
     });
 

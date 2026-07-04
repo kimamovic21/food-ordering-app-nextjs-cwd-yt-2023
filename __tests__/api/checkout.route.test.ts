@@ -337,6 +337,23 @@ describe('POST /api/checkout', () => {
     expect(stripeCreateSession).not.toHaveBeenCalled();
   });
 
+  it('rejects checkout when subtotal is below restaurant minimum order amount', async () => {
+    vi.mocked(Restaurant.findById).mockResolvedValueOnce({
+      ...openRestaurant,
+      minimumOrderAmount: 20,
+    } as never);
+
+    const POST = await loadCheckoutRoute();
+    const response = await POST(createCheckoutRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      error: 'Minimum order amount for this restaurant is $20.00.',
+    });
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
   it('rejects checkout when coupon validation fails', async () => {
     vi.mocked(Coupon.findOne).mockResolvedValueOnce({
       _id: 'coupon-1',

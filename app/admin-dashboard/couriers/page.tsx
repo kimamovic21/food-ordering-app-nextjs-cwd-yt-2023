@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import { formatAppDate } from '@/libs/dateFormat';
+import { BarChart3 } from 'lucide-react';
 
 type CourierType = {
   _id: string;
@@ -121,7 +123,7 @@ const CouriersPage = () => {
           {couriers.map((courier) => (
             <Card key={courier._id} className='hover:shadow-lg transition-shadow'>
               <CardContent className='py-4'>
-                <div className='flex items-center gap-4'>
+                <div className='flex flex-col gap-4 md:flex-row md:items-center'>
                   <Avatar className='h-12 w-12'>
                     <AvatarImage src={courier.image} alt={courier.name} />
                     <AvatarFallback>
@@ -133,7 +135,7 @@ const CouriersPage = () => {
                     </AvatarFallback>
                   </Avatar>
 
-                  <div className='flex-1'>
+                  <div className='flex-1 min-w-0'>
                     <h3 className='text-lg font-semibold'>{courier.name}</h3>
                     <p className='text-sm text-muted-foreground'>{courier.email}</p>
                   </div>
@@ -155,6 +157,16 @@ const CouriersPage = () => {
                   <div className='text-xs text-muted-foreground'>
                     Joined: {formatAppDate(courier.createdAt)}
                   </div>
+
+                  <Button
+                    type='button'
+                    variant='outline'
+                    onClick={() => router.push(`/admin-dashboard/couriers/${courier._id}`)}
+                    className='w-full md:w-auto'
+                  >
+                    <BarChart3 className='mr-2 size-4' />
+                    View stats
+                  </Button>
                 </div>
               </CardContent>
             </Card>

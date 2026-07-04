@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Calendar, MapPin, DollarSign, Clock, Star, XCircle, Route } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import useProfile from '@/hooks/useProfile';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import MyDeliveriesLoading from './loading';
 import { formatAppDate } from '@/libs/dateFormat';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 type CartProduct = {
   productId: string;
@@ -31,6 +33,7 @@ type DeliveredOrder = {
   cartProducts: CartProduct[];
   deliveryDistanceKm?: number | null;
   estimatedDeliveryMinutes?: number | null;
+  deliveryFee?: number;
   total: number;
   orderPaid: boolean;
   orderStatus: 'completed';
@@ -42,11 +45,26 @@ type CourierPerformanceSummary = {
   completedDeliveries: number;
   declinedAssignments: number;
   lateDeliveries: number;
+  totalEarnings: number;
+  averageEarning: number;
   averageDeliveryMinutes: number;
   totalDistanceKm: number;
   averageDistanceKm: number;
   averageRating: number;
   ratingCount: number;
+};
+
+type EarningsChartItem = {
+  month: string;
+  earnings: number;
+  deliveries: number;
+};
+
+const earningsChartConfig = {
+  earnings: {
+    label: 'Earnings',
+    color: 'hsl(var(--primary))',
+  },
 };
 
 const INITIAL_VISIBLE_ORDERS = 9;
@@ -60,6 +78,8 @@ const MyDeliveriesPage = () => {
     completedDeliveries: 0,
     declinedAssignments: 0,
     lateDeliveries: 0,
+    totalEarnings: 0,
+    averageEarning: 0,
     averageDeliveryMinutes: 0,
     totalDistanceKm: 0,
     averageDistanceKm: 0,
@@ -67,6 +87,7 @@ const MyDeliveriesPage = () => {
     ratingCount: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [earningsChart, setEarningsChart] = useState<EarningsChartItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [visibleOrders, setVisibleOrders] = useState(INITIAL_VISIBLE_ORDERS);
 
@@ -92,12 +113,15 @@ const MyDeliveriesPage = () => {
           completedDeliveries: Number(data.summary?.completedDeliveries) || 0,
           declinedAssignments: Number(data.summary?.declinedAssignments) || 0,
           lateDeliveries: Number(data.summary?.lateDeliveries) || 0,
+          totalEarnings: Number(data.summary?.totalEarnings) || 0,
+          averageEarning: Number(data.summary?.averageEarning) || 0,
           averageDeliveryMinutes: Number(data.summary?.averageDeliveryMinutes) || 0,
           totalDistanceKm: Number(data.summary?.totalDistanceKm) || 0,
           averageDistanceKm: Number(data.summary?.averageDistanceKm) || 0,
           averageRating: Number(data.summary?.averageRating) || 0,
           ratingCount: Number(data.summary?.ratingCount) || 0,
         });
+        setEarningsChart(Array.isArray(data.earningsChart) ? data.earningsChart : []);
         setVisibleOrders(INITIAL_VISIBLE_ORDERS);
         setError(null);
       } catch (err) {
@@ -125,6 +149,16 @@ const MyDeliveriesPage = () => {
   const hasMoreOrders = orders.length > visibleOrders;
   const displayedOrders = orders.slice(0, visibleOrders);
   const performanceCards = [
+    {
+      label: 'Total earnings',
+      value: `$${summary.totalEarnings.toFixed(2)}`,
+      icon: DollarSign,
+    },
+    {
+      label: 'Average earning',
+      value: `$${summary.averageEarning.toFixed(2)}`,
+      icon: DollarSign,
+    },
     {
       label: 'Completed deliveries',
       value: summary.completedDeliveries.toString(),
@@ -161,7 +195,7 @@ const MyDeliveriesPage = () => {
     <div className='container mx-auto px-4 py-8 max-w-7xl'>
       <Title className='mb-8'>My Deliveries</Title>
 
-      <div className='mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'>
+      <div className='mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8'>
         {performanceCards.map((card) => {
           const Icon = card.icon;
 
@@ -180,6 +214,33 @@ const MyDeliveriesPage = () => {
           );
         })}
       </div>
+
+      <Card className='mb-8'>
+        <CardHeader>
+          <CardTitle>Earnings by month</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {earningsChart.length > 0 ? (
+            <ChartContainer config={earningsChartConfig} className='h-[280px] w-full'>
+              <BarChart data={earningsChart} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                <CartesianGrid vertical={false} />
+                <XAxis dataKey='month' tickLine={false} axisLine={false} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `$${Number(value).toFixed(0)}`}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey='earnings' fill='var(--color-earnings)' radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <p className='py-10 text-center text-sm text-muted-foreground'>
+              Earnings chart appears after your first completed delivery.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {error && (
         <div className='bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg mb-6'>
@@ -233,7 +294,9 @@ const MyDeliveriesPage = () => {
                     <div className='flex items-center gap-2'>
                       <DollarSign className='h-4 w-4 text-muted-foreground' />
                       <div className='text-sm'>
-                        <p className='font-medium'>${order.total.toFixed(2)}</p>
+                        <p className='font-medium'>
+                          ${(Number(order.deliveryFee) || 0).toFixed(2)} earned
+                        </p>
                       </div>
                     </div>
 
