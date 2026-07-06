@@ -38,9 +38,45 @@ type CartItemPayload = {
   restaurantId: string;
 };
 
+type CartSize = 'small' | 'medium' | 'large' | 'single';
+
 export const runtime = 'nodejs';
 
 const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100;
+
+const normalizeCartSize = (value: unknown): CartSize | null => {
+  const size = String(value || '')
+    .trim()
+    .toLowerCase();
+
+  if (size === 'single' || size === 'small' || size === 'medium' || size === 'large') {
+    return size;
+  }
+
+  return null;
+};
+
+const getMenuItemSizePrice = (menuItem: any, requestedSize: CartSize) => {
+  const prices = [
+    { size: 'small' as const, price: Number(menuItem.priceSmall) },
+    { size: 'medium' as const, price: Number(menuItem.priceMedium) },
+    { size: 'large' as const, price: Number(menuItem.priceLarge) },
+  ].filter((entry) => Number.isFinite(entry.price) && entry.price > 0);
+
+  if (requestedSize === 'single') {
+    if (prices.length === 1) {
+      return { size: 'single' as const, price: prices[0].price };
+    }
+
+    return null;
+  }
+
+  if (menuItem.priceType === 'single' && requestedSize === 'small' && prices.length === 1) {
+    return { size: 'single' as const, price: prices[0].price };
+  }
+
+  return prices.find((entry) => entry.size === requestedSize) ?? null;
+};
 
 export async function POST(req: Request) {
   if (!stripe) {
@@ -107,24 +143,21 @@ export async function POST(req: Request) {
   const sanitizedItems = cartItems
     .map((item) => ({
       _id: String(item._id),
-      name: item.name,
-      size: item.size,
-      price: Number(item.price),
+      size: normalizeCartSize(item.size),
       quantity: Number(item.quantity),
       restaurantId: String(item.restaurantId),
     }))
     .filter((item) =>
       Boolean(
         item._id &&
-        item.name &&
         item.size &&
+        Number.isFinite(item.quantity) &&
         item.quantity > 0 &&
-        item.price > 0 &&
         item.restaurantId
       )
     );
 
-  if (sanitizedItems.length === 0) {
+  if (sanitizedItems.length !== cartItems.length || sanitizedItems.length === 0) {
     return Response.json({ error: 'Invalid cart data' }, { status: 400 });
   }
 
@@ -243,15 +276,20 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Cart contains invalid menu items' }, { status: 400 });
   }
 
-  const menuItems = await MenuItem.find({ _id: { $in: itemIds } })
-    .select('_id name restaurantId adminId isAvailable')
+  const uniqueItemIds = Array.from(new Set(sanitizedItems.map((item) => item._id))).map(
+    (id) => new mongoose.Types.ObjectId(id)
+  );
+
+  const menuItems = await MenuItem.find({ _id: { $in: uniqueItemIds } })
+    .select('_id name restaurantId adminId isAvailable priceType priceSmall priceMedium priceLarge')
     .lean();
 
-  if (menuItems.length !== itemIds.length) {
+  if (menuItems.length !== uniqueItemIds.length) {
     return Response.json({ error: 'Some menu items are no longer available' }, { status: 400 });
   }
 
   const menuItemById = new Map(menuItems.map((menuItem) => [menuItem._id.toString(), menuItem]));
+  const verifiedItems: Array<CartItemPayload & { size: CartSize }> = [];
 
   for (const cartItem of sanitizedItems) {
     const menuItem = menuItemById.get(cartItem._id);
@@ -262,7 +300,20 @@ export async function POST(req: Request) {
 
     if (menuItem.isAvailable === false) {
       return Response.json(
-        { error: `${cartItem.name || menuItem.name || 'This menu item'} is currently unavailable` },
+        { error: `${menuItem.name || 'This menu item'} is currently unavailable` },
+        { status: 400 }
+      );
+    }
+
+    const requestedSize = cartItem.size;
+    if (!requestedSize) {
+      return Response.json({ error: 'Invalid cart data' }, { status: 400 });
+    }
+
+    const sizePrice = getMenuItemSizePrice(menuItem, requestedSize);
+    if (!sizePrice) {
+      return Response.json(
+        { error: `${menuItem.name || 'This menu item'} is not available in that size` },
         { status: 400 }
       );
     }
@@ -277,6 +328,15 @@ export async function POST(req: Request) {
     if (menuItem.adminId?.toString() === user._id.toString()) {
       return Response.json({ error: 'You cannot order your own menu items' }, { status: 403 });
     }
+
+    verifiedItems.push({
+      _id: menuItem._id.toString(),
+      name: menuItem.name,
+      size: sizePrice.size,
+      price: roundToTwoDecimals(sizePrice.price),
+      quantity: cartItem.quantity,
+      restaurantId: menuItem.restaurantId.toString(),
+    });
   }
 
   // Verify loyalty discount by checking user's actual order count
@@ -294,7 +354,7 @@ export async function POST(req: Request) {
   }
 
   const subtotal = roundToTwoDecimals(
-    sanitizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    verifiedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   );
   const minimumOrderAmount = roundToTwoDecimals(
     Math.min(100, Math.max(1, Number((restaurant as any).minimumOrderAmount) || 10))
@@ -402,7 +462,7 @@ export async function POST(req: Request) {
         ? roundToTwoDecimals(orderingStatus.distanceKm)
         : null,
     specialInstructions: normalizedSpecialInstructions,
-    cartProducts: sanitizedItems.map((item) => ({
+    cartProducts: verifiedItems.map((item) => ({
       productId: item._id,
       name: item.name,
       size: item.size,
@@ -455,7 +515,7 @@ export async function POST(req: Request) {
   });
 
   // Add items to Stripe line items
-  sanitizedItems.forEach((item) => {
+  verifiedItems.forEach((item) => {
     const adjustedUnitPrice = roundToTwoDecimals(item.price * (1 - couponLineDiscountRate));
 
     stripeLineItems.push({

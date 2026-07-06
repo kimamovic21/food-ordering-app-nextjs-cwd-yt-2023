@@ -16,23 +16,33 @@ type OrderPhaseTimelineProps = {
   estimatedPreparationMinutes?: number | null;
   estimatedDeliveryMinutes?: number | null;
   estimatedTotalMinutes?: number | null;
+  durationOffsetsMinutes?: OrderPhaseDurationOffsets;
 };
+
+export type OrderPhaseDurationOffsetKey =
+  'waitingForKitchen' | 'kitchenPreparation' | 'deliveryTravel' | 'confirmationWait';
+
+export type OrderPhaseDurationOffsets = Partial<
+  Record<OrderPhaseDurationOffsetKey | 'totalOrderTime', number>
+>;
 
 const formatDuration = (
   start: string | null | undefined,
   end: string | null | undefined,
-  now: number
+  now: number,
+  offsetMinutes = 0
 ) => {
   if (!start) return 'Not started';
 
   const startTime = new Date(start).getTime();
   const endTime = end ? new Date(end).getTime() : now;
+  const offsetMilliseconds = Math.max(0, Number(offsetMinutes) || 0) * 60 * 1000;
 
   if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime < startTime) {
     return 'Not available';
   }
 
-  return formatMillisecondsToTime(endTime - startTime);
+  return formatMillisecondsToTime(endTime - startTime + offsetMilliseconds);
 };
 
 const formatEstimate = (minutes?: number | null) => {
@@ -63,6 +73,7 @@ const OrderPhaseTimeline = ({
   estimatedPreparationMinutes,
   estimatedDeliveryMinutes,
   estimatedTotalMinutes,
+  durationOffsetsMinutes,
 }: OrderPhaseTimelineProps) => {
   const shouldTick = orderStatus !== 'completed' && orderStatus !== 'canceled' && !completedAt;
   const [now, setNow] = useState(() => Date.now());
@@ -83,6 +94,19 @@ const OrderPhaseTimeline = ({
     estimatedTotalMinutes ??
     (Number(estimatedPreparationMinutes || 0) + Number(estimatedDeliveryMinutes || 0) || null);
 
+  const phaseDurationOffsets = {
+    waitingForKitchen: durationOffsetsMinutes?.waitingForKitchen ?? 0,
+    kitchenPreparation: durationOffsetsMinutes?.kitchenPreparation ?? 0,
+    deliveryTravel: durationOffsetsMinutes?.deliveryTravel ?? 0,
+    confirmationWait: durationOffsetsMinutes?.confirmationWait ?? 0,
+  };
+  const totalDurationOffset =
+    durationOffsetsMinutes?.totalOrderTime ??
+    phaseDurationOffsets.waitingForKitchen +
+      phaseDurationOffsets.kitchenPreparation +
+      phaseDurationOffsets.deliveryTravel +
+      phaseDurationOffsets.confirmationWait;
+
   const checkpoints = [
     { label: 'Placed', done: Boolean(createdAt) },
     { label: 'Kitchen started', done: Boolean(processingAt) },
@@ -95,20 +119,27 @@ const OrderPhaseTimeline = ({
   const phases = [
     {
       label: 'Waiting for kitchen',
-      value: formatDuration(createdAt, processingAt, now),
+      value: formatDuration(createdAt, processingAt, now, phaseDurationOffsets.waitingForKitchen),
       description: 'From order placement until the kitchen started preparing it.',
       isLive: Boolean(createdAt && !processingAt && shouldTick),
     },
     {
       label: 'Kitchen preparation',
-      value: processingAt ? formatDuration(processingAt, readyAt, now) : 'Not started',
+      value: processingAt
+        ? formatDuration(processingAt, readyAt, now, phaseDurationOffsets.kitchenPreparation)
+        : 'Not started',
       description: 'From preparation start until the order was ready for pickup.',
       isLive: Boolean(processingAt && !readyAt && shouldTick),
     },
     {
       label: 'Delivery travel',
       value: transportationAt
-        ? formatDuration(transportationAt, courierDeliveredAt, now)
+        ? formatDuration(
+            transportationAt,
+            courierDeliveredAt,
+            now,
+            phaseDurationOffsets.deliveryTravel
+          )
         : 'Not started',
       description: 'From courier assignment until courier handoff.',
       isLive: Boolean(transportationAt && !courierDeliveredAt && shouldTick),
@@ -116,14 +147,19 @@ const OrderPhaseTimeline = ({
     {
       label: 'Confirmation wait',
       value: courierDeliveredAt
-        ? formatDuration(courierDeliveredAt, completedAt, now)
+        ? formatDuration(
+            courierDeliveredAt,
+            completedAt,
+            now,
+            phaseDurationOffsets.confirmationWait
+          )
         : 'Not started',
       description: 'From courier handoff until customer or admin confirmation.',
       isLive: Boolean(courierDeliveredAt && !completedAt && shouldTick),
     },
     {
       label: 'Total order time',
-      value: formatDuration(createdAt, completedAt, now),
+      value: formatDuration(createdAt, completedAt, now, totalDurationOffset),
       description: 'From order placement until final completion.',
       isLive: shouldTick,
     },

@@ -201,6 +201,10 @@ describe('POST /api/checkout', () => {
             restaurantId: { toString: () => 'restaurant-1' },
             adminId: { toString: () => 'someone-else' },
             isAvailable: true,
+            priceType: 'triple',
+            priceSmall: 8,
+            priceMedium: 11,
+            priceLarge: 14.5,
           },
         ]),
       }),
@@ -256,7 +260,7 @@ describe('POST /api/checkout', () => {
           {
             _id: 'menu-item-2',
             name: 'Pasta',
-            size: 'Regular',
+            size: 'Small',
             price: 10,
             quantity: 1,
             restaurantId: 'restaurant-2',
@@ -390,6 +394,10 @@ describe('POST /api/checkout', () => {
             restaurantId: { toString: () => 'restaurant-1' },
             adminId: { toString: () => 'someone-else' },
             isAvailable: false,
+            priceType: 'triple',
+            priceSmall: 8,
+            priceMedium: 11,
+            priceLarge: 14.5,
           },
         ]),
       }),
@@ -402,6 +410,121 @@ describe('POST /api/checkout', () => {
     expect(response.status).toBe(400);
     expect(body).toEqual({ error: 'Pizza is currently unavailable' });
     expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
+  it('uses current menu item prices from the database instead of stale cart prices', async () => {
+    const POST = await loadCheckoutRoute();
+    const response = await POST(
+      createCheckoutRequest({
+        cartItems: [
+          {
+            _id: 'menu-item-1',
+            name: 'Old pizza name',
+            size: 'Large',
+            price: 1,
+            quantity: 2,
+            restaurantId: 'restaurant-1',
+          },
+        ],
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ url: 'https://checkout.stripe.com/session/test-1' });
+    expect(Order.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cartProducts: [
+          expect.objectContaining({
+            name: 'Pizza',
+            size: 'large',
+            price: 14.5,
+            quantity: 2,
+          }),
+        ],
+        total: 34,
+      })
+    );
+    expect(stripeCreateSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: expect.arrayContaining([
+          expect.objectContaining({
+            quantity: 2,
+            price_data: expect.objectContaining({
+              unit_amount: 1450,
+              product_data: { name: 'Pizza (large)' },
+            }),
+          }),
+        ]),
+      })
+    );
+  });
+
+  it('rejects checkout when cart asks for a size that the menu item no longer sells', async () => {
+    vi.mocked(MenuItem.find).mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          {
+            _id: { toString: () => 'menu-item-1' },
+            name: 'Pizza',
+            restaurantId: { toString: () => 'restaurant-1' },
+            adminId: { toString: () => 'someone-else' },
+            isAvailable: true,
+            priceType: 'single',
+            priceSmall: 8,
+            priceMedium: null,
+            priceLarge: null,
+          },
+        ]),
+      }),
+    } as never);
+
+    const POST = await loadCheckoutRoute();
+    const response = await POST(createCheckoutRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ error: 'Pizza is not available in that size' });
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
+  it('allows the same menu item to be ordered in multiple valid sizes', async () => {
+    const POST = await loadCheckoutRoute();
+    const response = await POST(
+      createCheckoutRequest({
+        cartItems: [
+          {
+            _id: 'menu-item-1',
+            name: 'Pizza',
+            size: 'Small',
+            price: 8,
+            quantity: 1,
+            restaurantId: 'restaurant-1',
+          },
+          {
+            _id: 'menu-item-1',
+            name: 'Pizza',
+            size: 'Large',
+            price: 14.5,
+            quantity: 1,
+            restaurantId: 'restaurant-1',
+          },
+        ],
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ url: 'https://checkout.stripe.com/session/test-1' });
+    expect(Order.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cartProducts: [
+          expect.objectContaining({ size: 'small', price: 8 }),
+          expect.objectContaining({ size: 'large', price: 14.5 }),
+        ],
+        total: 27.5,
+      })
+    );
   });
 
   it('rejects checkout when previous delivered order still needs confirmation', async () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef, type ChangeEvent } from 'react';
 import { useSession } from 'next-auth/react';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
@@ -19,6 +19,27 @@ import CartItems from './CartItems';
 import DeliveryInformation from './DeliveryInformation';
 import OrderSummary from './OrderSummary';
 import Title from '@/components/shared/Title';
+
+type CartValidationItem = {
+  _id: string;
+  itemKey: string;
+  status: 'valid' | 'unavailable' | 'deleted' | 'invalid_size' | 'invalid';
+  name?: string;
+  image?: string | null;
+  size?: string;
+  price?: number;
+  previousPrice?: number | null;
+  priceChanged?: boolean;
+  message?: string | null;
+};
+
+type CartValidationResponse = {
+  items: CartValidationItem[];
+  canCheckout: boolean;
+  message?: string | null;
+};
+
+const getCartItemKey = (item: { _id: string; size: string }) => `${item._id}:${item.size}`;
 
 const CartSkeleton = () => (
   <div className='max-w-7xl mx-auto py-4 sm:py-8 px-2 sm:px-4'>
@@ -91,7 +112,7 @@ const CartSkeleton = () => (
 );
 
 const CartPage = () => {
-  const { cartItems, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, clearCart } = useCart();
 
   const { data: profileData } = useProfile();
   const { status: sessionStatus } = useSession();
@@ -124,7 +145,8 @@ const CartPage = () => {
     message: string | null;
   } | null>(null);
   const [isLoadingBestCoupon, setIsLoadingBestCoupon] = useState(false);
-  const [unavailableItemIds, setUnavailableItemIds] = useState<string[]>([]);
+  const [cartValidationItems, setCartValidationItems] = useState<CartValidationItem[]>([]);
+  const [cartValidationMessage, setCartValidationMessage] = useState<string | null>(null);
   const [loadingMenuAvailability, setLoadingMenuAvailability] = useState(false);
 
   useEffect(() => {
@@ -219,42 +241,54 @@ const CartPage = () => {
     }
   }, [profileData]);
 
+  const fetchCartValidation = useCallback(async (): Promise<CartValidationResponse> => {
+    const response = await fetch('/api/cart/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cartItems }),
+    });
+    const json = (await response.json().catch(() => null)) as CartValidationResponse | null;
+
+    if (!response.ok || !json) {
+      throw new Error('Failed to validate cart items.');
+    }
+
+    return json;
+  }, [cartItems]);
+
   useEffect(() => {
     if (cartItems.length === 0) {
-      setUnavailableItemIds([]);
+      setCartValidationItems([]);
+      setCartValidationMessage(null);
       setLoadingMenuAvailability(false);
       return;
     }
 
     let cancelled = false;
-    const uniqueItemIds = Array.from(new Set(cartItems.map((item) => item._id).filter(Boolean)));
 
-    const fetchMenuAvailability = async () => {
+    const validateCart = async () => {
       setLoadingMenuAvailability(true);
 
       try {
-        const unavailableIds = await Promise.all(
-          uniqueItemIds.map(async (id) => {
-            try {
-              const response = await fetch(`/api/menu-items?_id=${encodeURIComponent(id)}`);
-              const data = await response.json().catch(() => []);
-              const menuItem = Array.isArray(data) ? data[0] : data?.item;
-
-              if (!response.ok || !menuItem || menuItem.isAvailable === false) {
-                return id;
-              }
-            } catch (error) {
-              console.error(`Failed to check menu item availability for ${id}:`, error);
-              return id;
-            }
-
-            return null;
-          })
-        );
+        const validation = await fetchCartValidation();
 
         if (!cancelled) {
-          setUnavailableItemIds(
-            unavailableIds.filter((id): id is string => typeof id === 'string' && id.length > 0)
+          setCartValidationItems(validation.items);
+          setCartValidationMessage(validation.message || null);
+        }
+      } catch (error) {
+        console.error('Failed to validate cart:', error);
+        if (!cancelled) {
+          setCartValidationItems(
+            cartItems.map((item) => ({
+              _id: item._id,
+              itemKey: getCartItemKey(item),
+              status: 'invalid',
+              message: 'We could not validate this cart item. Please try again.',
+            }))
+          );
+          setCartValidationMessage(
+            'We could not validate your cart. Please refresh and try again.'
           );
         }
       } finally {
@@ -264,12 +298,12 @@ const CartPage = () => {
       }
     };
 
-    fetchMenuAvailability();
+    validateCart();
 
     return () => {
       cancelled = true;
     };
-  }, [cartItems]);
+  }, [cartItems, fetchCartValidation]);
 
   useEffect(() => {
     if (!cartItems.length) {
@@ -298,6 +332,40 @@ const CartPage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const cartValidationByKey = useMemo(
+    () => new Map(cartValidationItems.map((item) => [item.itemKey, item])),
+    [cartValidationItems]
+  );
+  const blockingCartItems = useMemo(
+    () =>
+      cartItems.filter((item) => {
+        const validation = cartValidationByKey.get(getCartItemKey(item));
+        return validation ? validation.status !== 'valid' : false;
+      }),
+    [cartItems, cartValidationByKey]
+  );
+  const priceChangedCartItems = useMemo(
+    () =>
+      cartItems.filter((item) => {
+        const validation = cartValidationByKey.get(getCartItemKey(item));
+        return Boolean(validation?.status === 'valid' && validation.priceChanged);
+      }),
+    [cartItems, cartValidationByKey]
+  );
+  const getValidatedItemPrice = (item: (typeof cartItems)[number]) => {
+    const validation = cartValidationByKey.get(getCartItemKey(item));
+
+    if (
+      validation?.status === 'valid' &&
+      typeof validation.price === 'number' &&
+      Number.isFinite(validation.price)
+    ) {
+      return validation.price;
+    }
+
+    return typeof item.price === 'number' && Number.isFinite(item.price) ? item.price : 0;
+  };
+
   // Calculate included tax amount and delivery fee from the single restaurant
   const calculateTotals = () => {
     const restaurantId = cartItems[0]?.restaurantId;
@@ -311,7 +379,6 @@ const CartPage = () => {
       return { includedTax: 0, taxPercentage: 0, totalDeliveryFee: 0 };
     }
 
-    const subtotal = getTotalPrice();
     const includedTax = subtotal * (restaurant.tax / 100);
     const totalDeliveryFee = restaurant.courierFee || 5;
 
@@ -430,7 +497,10 @@ const CartPage = () => {
     );
   };
 
-  const subtotal = getTotalPrice();
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + getValidatedItemPrice(item) * item.quantity,
+    0
+  );
   const couponValidationError = appliedCoupon
     ? getCouponValidationError({ coupon: appliedCoupon, subtotal })
     : null;
@@ -595,7 +665,24 @@ const CartPage = () => {
         return;
       }
 
-      if (unavailableItemIds.length > 0) {
+      const latestCartValidation = await fetchCartValidation();
+      setCartValidationItems(latestCartValidation.items);
+      setCartValidationMessage(latestCartValidation.message || null);
+
+      if (!latestCartValidation.canCheckout) {
+        sonnerToast.error(
+          latestCartValidation.message || 'Remove unavailable items before checkout.',
+          {
+            style: {
+              background: '#ef4444',
+              color: 'white',
+            },
+          }
+        );
+        return;
+      }
+
+      if (blockingCartItems.length > 0) {
         sonnerToast.error('Remove unavailable items before checkout.', {
           style: {
             background: '#ef4444',
@@ -753,7 +840,12 @@ const CartPage = () => {
     !restaurantBusy &&
     !hasDeliveryLocation;
   const displayedCouponMessage = couponValidationError || couponMessage;
-  const unavailableCartItems = cartItems.filter((item) => unavailableItemIds.includes(item._id));
+  const handleRemoveBlockingCartItems = () => {
+    blockingCartItems.forEach((item) => removeFromCart(item._id, item.size));
+    sonnerToast.success('Unavailable items removed from cart', {
+      style: { background: '#22c55e', color: 'white' },
+    });
+  };
 
   return (
     <div className='max-w-7xl mx-auto py-4 sm:py-8 px-2 sm:px-4 min-h-[60vh]'>
@@ -814,13 +906,28 @@ const CartPage = () => {
         </div>
       )}
 
-      {unavailableCartItems.length > 0 && (
+      {blockingCartItems.length > 0 && (
         <div className='mb-4 rounded-lg border border-red-300 bg-red-100 p-4 dark:border-red-700 dark:bg-red-900/20'>
           <p className='font-semibold text-red-800 dark:text-red-200'>
-            Some items in your cart are currently unavailable. Remove them before checkout.
+            Some items in your cart cannot be ordered right now. Remove them before checkout.
           </p>
           <p className='mt-1 text-sm text-red-700 dark:text-red-200'>
-            {unavailableCartItems.map((item) => item.name).join(', ')}
+            {cartValidationMessage ||
+              blockingCartItems
+                .map((item) => cartValidationByKey.get(getCartItemKey(item))?.message || item.name)
+                .join(', ')}
+          </p>
+          <Button type='button' onClick={handleRemoveBlockingCartItems} className='mt-3'>
+            Remove unavailable items
+          </Button>
+        </div>
+      )}
+
+      {priceChangedCartItems.length > 0 && blockingCartItems.length === 0 && (
+        <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
+          <p className='font-semibold text-amber-800 dark:text-amber-200'>
+            Some prices changed since you added items to cart. Checkout will use current menu
+            prices.
           </p>
         </div>
       )}
@@ -832,7 +939,7 @@ const CartPage = () => {
             updateQuantity={updateQuantity}
             removeFromCart={removeFromCart}
             clearCart={clearCart}
-            unavailableItemIds={unavailableItemIds}
+            validationItems={cartValidationItems}
           />
         </div>
 
@@ -877,7 +984,7 @@ const CartPage = () => {
             minimumOrderAmount={minimumOrderAmount}
             missingDeliveryLocation={missingDeliveryLocation}
             loadingRestaurants={loadingRestaurants}
-            hasUnavailableItems={unavailableItemIds.length > 0}
+            hasUnavailableItems={blockingCartItems.length > 0}
             loadingMenuAvailability={loadingMenuAvailability}
           />
         </div>

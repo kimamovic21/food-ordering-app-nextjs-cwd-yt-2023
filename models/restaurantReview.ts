@@ -44,6 +44,7 @@ const RestaurantReviewSchema = new Schema(
 );
 
 RestaurantReviewSchema.index({ restaurantId: 1, createdAt: -1 });
+RestaurantReviewSchema.index({ orderId: 1, userId: 1, restaurantId: 1 }, { unique: true });
 RestaurantReviewSchema.index({ userId: 1, restaurantId: 1, createdAt: -1 });
 
 // In dev, Next.js hot-reloads can retain old models with stale collection names.

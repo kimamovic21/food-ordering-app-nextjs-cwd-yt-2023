@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableHeader,
@@ -22,6 +23,9 @@ import {
 import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import MyOrdersTable from './MyOrdersTable';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
+import { useCart, type CartItem } from '@/contexts/CartContext';
+import { formatAppDate } from '@/libs/dateFormat';
 
 type OrderType = {
   _id: string;
@@ -29,22 +33,30 @@ type OrderType = {
   total: number;
   paymentStatus: boolean;
   orderStatus:
-    | 'placed'
-    | 'processing'
-    | 'ready'
-    | 'transportation'
-    | 'delivered'
-    | 'completed'
-    | 'canceled';
+    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
   createdAt: string;
+};
+
+type UsualOrderType = {
+  orderId: string;
+  repeatCount: number;
+  lastOrderedAt: string;
+  itemCount: number;
+  subtotal: number;
+  items: { name: string; size: string; quantity: number }[];
+  cartItems: CartItem[];
 };
 
 const MyOrdersPage = () => {
   const [orders, setOrders] = useState<OrderType[]>([]);
+  const [usualOrder, setUsualOrder] = useState<UsualOrderType | null>(null);
+  const [loadingUsualOrder, setLoadingUsualOrder] = useState(true);
+  const [addingUsualOrder, setAddingUsualOrder] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const { data, loading } = useProfile();
+  const { replaceCart } = useCart();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -74,8 +86,43 @@ const MyOrdersPage = () => {
       }
     };
 
+    const fetchUsualOrder = async () => {
+      try {
+        setLoadingUsualOrder(true);
+        const response = await fetch('/api/my-orders/usual', { cache: 'no-store' });
+        const json = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(json?.error || 'Failed to load usual order');
+        }
+
+        setUsualOrder(json?.usualOrder || null);
+      } catch (error) {
+        console.error('Failed to load usual order', error);
+        setUsualOrder(null);
+      } finally {
+        setLoadingUsualOrder(false);
+      }
+    };
+
     fetchOrders();
+    fetchUsualOrder();
   }, [loading, data?.email, searchParams]);
+
+  const handleAddUsualOrder = async () => {
+    if (!usualOrder?.cartItems?.length) {
+      return;
+    }
+
+    try {
+      setAddingUsualOrder(true);
+      replaceCart(usualOrder.cartItems);
+      sonnerToast.success('Your usual order was added to cart');
+      router.push('/cart');
+    } finally {
+      setAddingUsualOrder(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -127,6 +174,50 @@ const MyOrdersPage = () => {
       <Title>My Orders</Title>
 
       <div className='mt-8 flex-1 flex flex-col'>
+        {loadingUsualOrder ? (
+          <Card className='mb-6 border border-border bg-card text-card-foreground shadow-sm'>
+            <CardContent className='flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between'>
+              <div className='space-y-2'>
+                <Skeleton className='h-5 w-40' />
+                <Skeleton className='h-4 w-72' />
+              </div>
+              <Skeleton className='h-10 w-32 rounded-md' />
+            </CardContent>
+          </Card>
+        ) : usualOrder ? (
+          <Card className='mb-6 border-primary/30 bg-primary/5'>
+            <CardContent className='flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between'>
+              <div className='min-w-0'>
+                <p className='text-sm font-semibold uppercase tracking-wide text-primary'>
+                  Your usual order
+                </p>
+                <h2 className='mt-1 text-xl font-bold'>
+                  {usualOrder.itemCount} item{usualOrder.itemCount === 1 ? '' : 's'} · $
+                  {usualOrder.subtotal.toFixed(2)}
+                </h2>
+                <p className='mt-1 text-sm text-muted-foreground'>
+                  Ordered {usualOrder.repeatCount} time
+                  {usualOrder.repeatCount === 1 ? '' : 's'} · last on{' '}
+                  {formatAppDate(usualOrder.lastOrderedAt)}
+                </p>
+                <p className='mt-2 line-clamp-2 text-sm text-muted-foreground'>
+                  {usualOrder.items
+                    .map((item) => `${item.quantity}x ${item.name} (${item.size})`)
+                    .join(', ')}
+                </p>
+              </div>
+              <Button
+                type='button'
+                onClick={handleAddUsualOrder}
+                disabled={addingUsualOrder}
+                className='w-full shrink-0 sm:w-auto'
+              >
+                {addingUsualOrder ? 'Adding...' : 'Order usual'}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
+
         <div className='flex-1'>
           {loadingOrders && (
             <Card className='border border-border bg-card text-card-foreground shadow-sm'>

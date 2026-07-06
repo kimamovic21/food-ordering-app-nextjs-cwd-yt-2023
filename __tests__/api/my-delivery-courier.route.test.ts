@@ -47,6 +47,7 @@ const loadLocation = async () => (await import('@/app/api/my-delivery/location/r
 const loadGetLocation = async () => (await import('@/app/api/my-delivery/location/route')).GET;
 const loadDeliveryOrdersPatch = async () =>
   (await import('@/app/api/my-delivery/orders/route')).PATCH;
+const loadSchedule = async () => await import('@/app/api/my-delivery/schedule/route');
 
 const courierUser = () => ({
   _id: { toString: () => 'courier-1' },
@@ -138,6 +139,76 @@ describe('Courier availability and location routes', () => {
     expect(res.status).toBe(200);
     expect(body).toHaveProperty('availability', true);
     expect(userDoc.save).toHaveBeenCalled();
+  });
+
+  it('updates courier working schedule', async () => {
+    const userDoc: any = {
+      email: 'c@courier.com',
+      role: 'courier',
+      courierWorkingHours: [],
+      save: vi.fn(async function save(this: any) {
+        return this;
+      }),
+    };
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'c@courier.com', role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce(userDoc as never);
+
+    const { PATCH } = await loadSchedule();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/schedule', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workingHours: [
+            { day: 'monday', startTime: '08:00', endTime: '16:00', isUnavailable: false },
+            { day: 'tuesday', startTime: '09:00', endTime: '17:00', isUnavailable: false },
+            { day: 'wednesday', startTime: '09:00', endTime: '17:00', isUnavailable: false },
+            { day: 'thursday', startTime: '09:00', endTime: '17:00', isUnavailable: false },
+            { day: 'friday', startTime: '09:00', endTime: '17:00', isUnavailable: false },
+            { day: 'saturday', startTime: '10:00', endTime: '16:00', isUnavailable: true },
+            { day: 'sunday', startTime: '10:00', endTime: '16:00', isUnavailable: true },
+          ],
+        }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.message).toBe('Courier schedule updated');
+    expect(userDoc.courierWorkingHours[0]).toEqual(
+      expect.objectContaining({ day: 'monday', startTime: '08:00', endTime: '16:00' })
+    );
+    expect(userDoc.save).toHaveBeenCalled();
+  });
+
+  it('rejects invalid courier schedule time ranges', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: 'c@courier.com', role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce({
+      email: 'c@courier.com',
+      role: 'courier',
+      save: vi.fn(),
+    } as never);
+
+    const { PATCH } = await loadSchedule();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/schedule', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workingHours: [
+            { day: 'monday', startTime: '18:00', endTime: '10:00', isUnavailable: false },
+          ],
+        }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body).toEqual({ error: 'Courier schedule start time must be before end time.' });
   });
 
   it('rejects invalid location inputs for courier', async () => {

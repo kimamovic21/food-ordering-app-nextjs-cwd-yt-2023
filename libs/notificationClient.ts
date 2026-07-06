@@ -20,7 +20,7 @@ export const resolveNotificationTargetPath = (
       return `/admin-dashboard/orders/${notification.orderId}`;
     }
 
-    return '/my-delivery';
+    return '/courier-dashboard/my-delivery';
   }
 
   if (notification.type === 'late_order' && role === 'admin' && notification.orderId) {
@@ -49,7 +49,7 @@ export const resolveNotificationTargetPath = (
   }
 
   if (role === 'courier' && notification.type === 'order_completed') {
-    return '/my-deliveries';
+    return '/courier-dashboard/my-deliveries';
   }
 
   return `/my-orders/${notification.orderId}`;

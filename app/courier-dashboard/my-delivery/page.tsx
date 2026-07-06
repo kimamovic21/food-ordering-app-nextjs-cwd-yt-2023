@@ -1,3 +1,1 @@
-'use client';
-
-export { default } from '@/app/my-delivery/page';
+export { default } from '@/app/my-delivery/CourierDeliveryPage';

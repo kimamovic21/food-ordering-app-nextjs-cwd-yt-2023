@@ -1,5 +1,19 @@
 import { model, models, Schema } from 'mongoose';
 
+const CourierWorkingHoursSchema = new Schema(
+  {
+    day: {
+      type: String,
+      required: true,
+      enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+    },
+    startTime: { type: String, required: true },
+    endTime: { type: String, required: true },
+    isUnavailable: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
 const UserSchema = new Schema(
   {
     name: { type: String, required: true },
@@ -19,6 +33,18 @@ const UserSchema = new Schema(
     passwordResetTokenHash: { type: String, default: null },
     passwordResetTokenExpiresAt: { type: Date, default: null },
     availability: { type: Boolean, default: false },
+    courierWorkingHours: {
+      type: [CourierWorkingHoursSchema],
+      default: [
+        { day: 'monday', startTime: '09:00', endTime: '17:00', isUnavailable: false },
+        { day: 'tuesday', startTime: '09:00', endTime: '17:00', isUnavailable: false },
+        { day: 'wednesday', startTime: '09:00', endTime: '17:00', isUnavailable: false },
+        { day: 'thursday', startTime: '09:00', endTime: '17:00', isUnavailable: false },
+        { day: 'friday', startTime: '09:00', endTime: '17:00', isUnavailable: false },
+        { day: 'saturday', startTime: '10:00', endTime: '16:00', isUnavailable: true },
+        { day: 'sunday', startTime: '10:00', endTime: '16:00', isUnavailable: true },
+      ],
+    },
     takenOrder: { type: Schema.Types.ObjectId, ref: 'Order', default: null },
     latitude: { type: Number, default: null },
     longitude: { type: Number, default: null },

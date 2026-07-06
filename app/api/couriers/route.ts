@@ -3,6 +3,7 @@ import { User } from '@/models/user';
 import { Order } from '@/models/order';
 import { notifyCourierAboutAssignment } from '@/libs/notifications';
 import { COURIER_OWN_ORDER_ASSIGNMENT_ERROR, isCourierOrderOwner } from '@/libs/courierAssignment';
+import { isCourierScheduledNow } from '@/libs/courierSchedule';
 import { createDeliveryPin } from '@/libs/deliveryPin';
 import mongoose from 'mongoose';
 
@@ -24,10 +25,13 @@ export async function GET(request: Request) {
   }
 
   const couriers = await User.find(filter).select(
-    'name email image availability takenOrder role createdAt'
+    'name email image availability courierWorkingHours takenOrder role createdAt'
   );
+  const scheduledCouriers = availableOnly
+    ? couriers.filter((courier: any) => isCourierScheduledNow(courier.courierWorkingHours))
+    : couriers;
 
-  return Response.json({ couriers });
+  return Response.json({ couriers: scheduledCouriers });
 }
 
 export async function PATCH(request: Request) {

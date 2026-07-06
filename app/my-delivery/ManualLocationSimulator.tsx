@@ -22,10 +22,23 @@ const ManualLocationSimulator: React.FC<ManualLocationSimulatorProps> = ({
 }) => {
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
+  const latitudeValue = latitude.trim();
+  const longitudeValue = longitude.trim();
+  const hasCoordinates = Boolean(latitudeValue && longitudeValue);
 
   const handleManualSubmit = async () => {
-    const parsedLatitude = Number(latitude.trim());
-    const parsedLongitude = Number(longitude.trim());
+    if (!hasCoordinates) {
+      sonnerToast.error('Latitude and longitude are required', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+      return;
+    }
+
+    const parsedLatitude = Number(latitudeValue);
+    const parsedLongitude = Number(longitudeValue);
 
     if (Number.isNaN(parsedLatitude) || Number.isNaN(parsedLongitude)) {
       sonnerToast.error('Latitude and longitude must be valid numbers', {
@@ -84,7 +97,7 @@ const ManualLocationSimulator: React.FC<ManualLocationSimulatorProps> = ({
       <div className='space-y-2'>
         <Button
           onClick={handleManualSubmit}
-          disabled={updating || !availability}
+          disabled={updating || !availability || !hasCoordinates}
           className='w-full bg-primary hover:bg-primary/90'
         >
           {updating ? 'Updating Location...' : 'Update Manual Location'}

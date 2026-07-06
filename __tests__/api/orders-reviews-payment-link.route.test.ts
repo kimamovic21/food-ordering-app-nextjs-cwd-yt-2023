@@ -144,6 +144,16 @@ const jsonRequest = (body: Record<string, unknown>) =>
     body: JSON.stringify(body),
   });
 
+const createOrderFindQuery = (orders: unknown[]) => {
+  const query = {
+    sort: vi.fn(() => query),
+    limit: vi.fn(() => query),
+    lean: vi.fn().mockResolvedValue(orders),
+  };
+
+  return query;
+};
+
 describe('high-priority order, review, and payment-link routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -444,6 +454,80 @@ describe('high-priority order, review, and payment-link routes', () => {
         quantity: 2,
         price: 12,
         restaurantId: 'restaurant-1',
+      }),
+    ]);
+  });
+
+  it('builds the customer usual order from the most repeated completed order pattern', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: customer.email } } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    vi.mocked(Order.find).mockReturnValueOnce(
+      createOrderFindQuery([
+        {
+          _id: { toString: () => 'order-2' },
+          userId: customer._id,
+          restaurantId: { toString: () => 'restaurant-1' },
+          completedAt: new Date('2026-07-01T10:00:00.000Z'),
+          cartProducts: [
+            {
+              productId: { toString: () => 'menu-item-1' },
+              restaurantId: { toString: () => 'restaurant-1' },
+              name: 'Old Pizza',
+              size: 'medium',
+              quantity: 2,
+              price: 9,
+            },
+          ],
+        },
+        {
+          _id: { toString: () => 'order-1' },
+          userId: customer._id,
+          restaurantId: { toString: () => 'restaurant-1' },
+          completedAt: new Date('2026-06-25T10:00:00.000Z'),
+          cartProducts: [
+            {
+              productId: { toString: () => 'menu-item-1' },
+              restaurantId: { toString: () => 'restaurant-1' },
+              name: 'Old Pizza',
+              size: 'medium',
+              quantity: 2,
+              price: 9,
+            },
+          ],
+        },
+      ]) as never
+    );
+    vi.mocked(MenuItem.find).mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          {
+            _id: { toString: () => 'menu-item-1' },
+            name: 'Pizza',
+            description: 'Fresh pizza',
+            image: 'pizza.jpg',
+            priceType: 'triple',
+            priceMedium: 12,
+            restaurantId: { toString: () => 'restaurant-1' },
+            isAvailable: true,
+          },
+        ]),
+      }),
+    } as never);
+
+    const { GET } = await import('@/app/api/my-orders/usual/route');
+    const res = await GET();
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.usualOrder.repeatCount).toBe(2);
+    expect(body.usualOrder.subtotal).toBe(24);
+    expect(body.usualOrder.cartItems).toEqual([
+      expect.objectContaining({
+        _id: 'menu-item-1',
+        name: 'Pizza',
+        size: 'medium',
+        quantity: 2,
+        price: 12,
       }),
     ]);
   });

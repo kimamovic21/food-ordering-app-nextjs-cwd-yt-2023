@@ -5,6 +5,7 @@ import { CourierReview } from '@/models/courierReview';
 import { Restaurant } from '@/models/restaurant';
 import { notifyCourierAboutAssignment } from '@/libs/notifications';
 import { COURIER_OWN_ORDER_ASSIGNMENT_ERROR, isCourierOrderOwner } from '@/libs/courierAssignment';
+import { isCourierScheduledNow } from '@/libs/courierSchedule';
 import { createDeliveryPin } from '@/libs/deliveryPin';
 import mongoose from 'mongoose';
 
@@ -47,8 +48,13 @@ export async function GET(request: Request) {
   }
 
   const couriers = await User.find(filter)
-    .select('name email image availability takenOrder role createdAt latitude longitude')
+    .select(
+      'name email image availability courierWorkingHours takenOrder role createdAt latitude longitude'
+    )
     .lean();
+  const scheduledCouriers = availableOnly
+    ? couriers.filter((courier: any) => isCourierScheduledNow(courier.courierWorkingHours))
+    : couriers;
 
   let restaurant: any = null;
   if (orderId && mongoose.Types.ObjectId.isValid(orderId)) {
@@ -61,7 +67,7 @@ export async function GET(request: Request) {
   }
 
   const ratingSummary = await CourierReview.aggregate([
-    { $match: { courierId: { $in: couriers.map((courier) => courier._id) } } },
+    { $match: { courierId: { $in: scheduledCouriers.map((courier) => courier._id) } } },
     {
       $group: {
         _id: '$courierId',
@@ -80,7 +86,7 @@ export async function GET(request: Request) {
     ])
   );
 
-  const scoredCouriers = couriers
+  const scoredCouriers = scheduledCouriers
     .map((courier: any) => {
       const rating = ratingMap.get(courier._id.toString());
       const hasDistance =
@@ -104,6 +110,7 @@ export async function GET(request: Request) {
           : null,
         averageRating: rating?.averageRating ?? 0,
         ratingCount: rating?.ratingCount ?? 0,
+        isWithinSchedule: isCourierScheduledNow(courier.courierWorkingHours),
       };
     })
     .sort((left: any, right: any) => {

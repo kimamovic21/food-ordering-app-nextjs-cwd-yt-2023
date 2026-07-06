@@ -19,17 +19,30 @@ interface CartItemsProps {
   updateQuantity: (id: string, size: string, quantity: number) => void;
   removeFromCart: (id: string, size: string) => void;
   clearCart: () => void;
-  unavailableItemIds?: string[];
+  validationItems?: CartValidationItem[];
 }
+
+type CartValidationItem = {
+  itemKey: string;
+  status: 'valid' | 'unavailable' | 'deleted' | 'invalid_size' | 'invalid';
+  name?: string;
+  image?: string | null;
+  price?: number;
+  previousPrice?: number | null;
+  priceChanged?: boolean;
+  message?: string | null;
+};
+
+const getCartItemKey = (item: CartItem) => `${item._id}:${item.size}`;
 
 const CartItems: React.FC<CartItemsProps> = ({
   cartItems,
   updateQuantity,
   removeFromCart,
   clearCart,
-  unavailableItemIds = [],
+  validationItems = [],
 }) => {
-  const unavailableItemIdSet = new Set(unavailableItemIds);
+  const validationByKey = new Map(validationItems.map((item) => [item.itemKey, item]));
 
   // Helper to show toast
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -82,14 +95,22 @@ const CartItems: React.FC<CartItemsProps> = ({
     <>
       <div className='space-y-4 mb-6 sm:mb-8'>
         {cartItems.map((item) => {
-          const isUnavailable = unavailableItemIdSet.has(item._id);
-          const safeImageSrc = item.image || Pizza;
+          const validation = validationByKey.get(getCartItemKey(item));
+          const isUnavailable = validation ? validation.status !== 'valid' : false;
+          const displayName = validation?.name || item.name;
+          const displayPrice =
+            validation?.status === 'valid' &&
+            typeof validation.price === 'number' &&
+            Number.isFinite(validation.price)
+              ? validation.price
+              : item.price;
+          const safeImageSrc = validation?.image || item.image || Pizza;
           const isRemoteImage =
             typeof safeImageSrc === 'string' &&
             (safeImageSrc.startsWith('http') || safeImageSrc.includes('cloudinary'));
           const itemPrice =
-            typeof item.price === 'number' && Number.isFinite(item.price) ? item.price : 0;
-          const isValidImageUrl = typeof item.image === 'string' && item.image.length > 0;
+            typeof displayPrice === 'number' && Number.isFinite(displayPrice) ? displayPrice : 0;
+          const isValidImageUrl = typeof safeImageSrc === 'string' && safeImageSrc.length > 0;
           return (
             <div
               key={`${item._id}-${item.size}`}
@@ -103,21 +124,21 @@ const CartItems: React.FC<CartItemsProps> = ({
                         width={80}
                         height={80}
                         src={safeImageSrc}
-                        alt={item.name}
+                        alt={displayName}
                         className='w-full h-full object-contain rounded'
                         onError={() => {
-                          console.warn(`Failed to load image: ${item.image}`);
+                          console.warn(`Failed to load image: ${safeImageSrc}`);
                         }}
                       />
                     ) : (
                       <Image
                         src={safeImageSrc}
-                        alt={item.name}
+                        alt={displayName}
                         width={80}
                         height={80}
                         className='w-full h-full object-contain rounded'
                         onError={() => {
-                          console.warn(`Failed to load image: ${item.image}`);
+                          console.warn(`Failed to load image: ${safeImageSrc}`);
                         }}
                       />
                     )
@@ -126,7 +147,7 @@ const CartItems: React.FC<CartItemsProps> = ({
                       width={80}
                       height={80}
                       src={Pizza}
-                      alt={item.name}
+                      alt={displayName}
                       className='w-full h-full object-contain rounded'
                     />
                   )}
@@ -138,7 +159,7 @@ const CartItems: React.FC<CartItemsProps> = ({
                 </div>
                 <div className='grow min-w-0'>
                   <h3 className='text-base sm:text-lg font-semibold text-foreground truncate'>
-                    {item.name}
+                    {displayName}
                   </h3>
                   {item.size !== 'single' && (
                     <p className='text-xs sm:text-sm text-muted-foreground capitalize'>
@@ -150,7 +171,16 @@ const CartItems: React.FC<CartItemsProps> = ({
                   </p>
                   {isUnavailable && (
                     <p className='mt-1 text-xs font-medium text-red-600'>
-                      This item cannot be ordered right now.
+                      {validation?.message || 'This item cannot be ordered right now.'}
+                    </p>
+                  )}
+                  {validation?.status === 'valid' && validation.priceChanged && (
+                    <p className='mt-1 text-xs font-medium text-amber-600'>
+                      Price updated
+                      {typeof validation.previousPrice === 'number'
+                        ? ` from $${validation.previousPrice.toFixed(2)}`
+                        : ''}{' '}
+                      to ${itemPrice.toFixed(2)}.
                     </p>
                   )}
                 </div>

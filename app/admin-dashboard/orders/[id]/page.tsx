@@ -19,9 +19,13 @@ import OrderInfoCard from './OrderInfoCard';
 import CustomerInfoCard from './CustomerInfoCard';
 import OrderItemsCard from './OrderItemsCard';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
-import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
+import OrderPhaseTimeline, {
+  type OrderPhaseDurationOffsetKey,
+  type OrderPhaseDurationOffsets,
+} from '@/components/shared/OrderPhaseTimeline';
 import HeartRating from '@/components/shared/HeartRating';
 import dynamic from 'next/dynamic';
+import DevOrderTimelineSimulator from './DevOrderTimelineSimulator';
 
 // Dynamic import to prevent SSR issues with Leaflet
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
@@ -76,13 +80,7 @@ type OrderDetailsType = {
   total: number;
   paymentStatus: boolean;
   orderStatus:
-    | 'placed'
-    | 'processing'
-    | 'ready'
-    | 'transportation'
-    | 'delivered'
-    | 'completed'
-    | 'canceled';
+    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
   courierId?: { _id: string; name: string; email: string; image?: string };
   courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
   createdAt: string;
@@ -149,6 +147,7 @@ const OrderDetailPage = () => {
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [showCourierSelect, setShowCourierSelect] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [timelineOffsets, setTimelineOffsets] = useState<OrderPhaseDurationOffsets>({});
   const mapRef = useRef<OrderMapHandle>(null);
   const { data: profileData, loading: profileLoading } = useProfile();
   const params = useParams();
@@ -161,6 +160,21 @@ const OrderDetailPage = () => {
     status === 'canceled'
       ? 'ready'
       : status;
+
+  useEffect(() => {
+    setTimelineOffsets({});
+  }, [orderId]);
+
+  const handleTimelineOffsetIncrement = (key: OrderPhaseDurationOffsetKey) => {
+    setTimelineOffsets((currentOffsets) => ({
+      ...currentOffsets,
+      [key]: (currentOffsets[key] ?? 0) + 1,
+    }));
+  };
+
+  const handleTimelineOffsetReset = () => {
+    setTimelineOffsets({});
+  };
 
   useEffect(() => {
     if (profileLoading || profileData?.role !== 'admin') return;
@@ -988,6 +1002,7 @@ const OrderDetailPage = () => {
             estimatedPreparationMinutes={order.estimatedPreparationMinutes}
             estimatedDeliveryMinutes={order.estimatedDeliveryMinutes}
             estimatedTotalMinutes={order.estimatedTotalMinutes}
+            durationOffsetsMinutes={timelineOffsets}
           />
         )}
 
@@ -1055,6 +1070,14 @@ const OrderDetailPage = () => {
           </Card>
         )}
       </div>
+
+      {process.env.NODE_ENV === 'development' && (
+        <DevOrderTimelineSimulator
+          offsets={timelineOffsets}
+          onIncrement={handleTimelineOffsetIncrement}
+          onReset={handleTimelineOffsetReset}
+        />
+      )}
     </section>
   );
 };
