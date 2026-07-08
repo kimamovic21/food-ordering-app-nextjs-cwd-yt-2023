@@ -168,9 +168,16 @@ const NotificationBell = ({ iconSize = 22 }: NotificationBellProps) => {
 
             <Link
               href={notificationsRoute}
-              className='block rounded-lg border border-border px-3 py-2 text-sm font-medium text-center text-primary hover:bg-muted transition-colors'
+              className='mb-2 block rounded-lg border border-border px-3 py-2 text-sm font-medium text-center text-primary hover:bg-muted transition-colors'
             >
               See all notifications
+            </Link>
+
+            <Link
+              href='/notifications/settings'
+              className='block rounded-lg border border-border px-3 py-2 text-sm font-medium text-center text-foreground hover:bg-muted transition-colors'
+            >
+              Sound settings
             </Link>
           </div>
         </div>

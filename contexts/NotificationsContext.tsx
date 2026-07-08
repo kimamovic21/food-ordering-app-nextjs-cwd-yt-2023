@@ -1,7 +1,16 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useSession } from 'next-auth/react';
+import { useSoundSettings } from '@/contexts/SoundSettingsContext';
 
 export type AppNotification = {
   _id: string;
@@ -43,14 +52,19 @@ type NotificationsProviderProps = {
 
 export const NotificationsProvider = ({ children }: NotificationsProviderProps) => {
   const { status } = useSession();
+  const { playNotificationSound } = useSoundSettings();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const previousUnreadCountRef = useRef(0);
+  const hasLoadedNotificationsRef = useRef(false);
 
   const refreshNotifications = useCallback(async () => {
     if (status !== 'authenticated') {
       setNotifications([]);
       setUnreadCount(0);
+      previousUnreadCountRef.current = 0;
+      hasLoadedNotificationsRef.current = false;
       return;
     }
 
@@ -62,19 +76,30 @@ export const NotificationsProvider = ({ children }: NotificationsProviderProps) 
       }
 
       const json = await response.json();
+      const nextUnreadCount = Number(json.unreadCount) || 0;
+
       setNotifications(Array.isArray(json.notifications) ? json.notifications : []);
-      setUnreadCount(Number(json.unreadCount) || 0);
+
+      if (hasLoadedNotificationsRef.current && nextUnreadCount > previousUnreadCountRef.current) {
+        playNotificationSound();
+      }
+
+      previousUnreadCountRef.current = nextUnreadCount;
+      hasLoadedNotificationsRef.current = true;
+      setUnreadCount(nextUnreadCount);
     } catch {
       // Do not break UI due to temporary polling failures.
     } finally {
       setLoading(false);
     }
-  }, [status]);
+  }, [playNotificationSound, status]);
 
   useEffect(() => {
     if (status !== 'authenticated') {
       setNotifications([]);
       setUnreadCount(0);
+      previousUnreadCountRef.current = 0;
+      hasLoadedNotificationsRef.current = false;
       return;
     }
 

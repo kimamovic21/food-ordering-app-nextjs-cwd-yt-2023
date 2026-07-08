@@ -58,6 +58,8 @@ const UserSchema = new Schema(
       type: [{ type: Schema.Types.ObjectId, ref: 'Restaurant' }],
       default: [],
     },
+    notificationSoundEnabled: { type: Boolean, default: false },
+    messageSoundEnabled: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

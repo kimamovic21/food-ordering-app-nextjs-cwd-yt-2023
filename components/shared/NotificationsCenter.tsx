@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Bell, Clock3, Check } from 'lucide-react';
+import { ArrowLeft, Bell, Clock3, Check, Settings } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -202,6 +202,13 @@ const NotificationsCenter = ({
         </div>
 
         <div className='flex items-center gap-3'>
+          <Button variant='outline' asChild className='rounded-full'>
+            <Link href='/notifications/settings' className='gap-2'>
+              <Settings className='h-4 w-4' />
+              Settings
+            </Link>
+          </Button>
+
           <Button
             variant='outline'
             onClick={handleMarkAllAsRead}

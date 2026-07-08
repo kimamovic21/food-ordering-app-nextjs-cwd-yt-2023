@@ -12,6 +12,7 @@ import {
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
+import { useSoundSettings } from '@/contexts/SoundSettingsContext';
 
 export type MessageSummary = {
   _id: string;
@@ -44,10 +45,13 @@ const getEventSourceUrl = () => '/api/messages/stream';
 export const MessagesProvider = ({ children }: MessagesProviderProps) => {
   const { status } = useSession();
   const pathname = usePathname();
+  const { playMessageSound } = useSoundSettings();
   const [conversations, setConversations] = useState<MessageSummary[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const currentPathRef = useRef(pathname);
+  const previousUnreadCountRef = useRef(0);
+  const hasLoadedMessagesRef = useRef(false);
 
   useEffect(() => {
     currentPathRef.current = pathname;
@@ -57,6 +61,8 @@ export const MessagesProvider = ({ children }: MessagesProviderProps) => {
     if (status !== 'authenticated') {
       setConversations([]);
       setUnreadCount(0);
+      previousUnreadCountRef.current = 0;
+      hasLoadedMessagesRef.current = false;
       return;
     }
 
@@ -68,19 +74,30 @@ export const MessagesProvider = ({ children }: MessagesProviderProps) => {
       }
 
       const json = await response.json();
+      const nextUnreadCount = Number(json.unreadCount) || 0;
+
       setConversations(Array.isArray(json.conversations) ? json.conversations : []);
-      setUnreadCount(Number(json.unreadCount) || 0);
+
+      if (hasLoadedMessagesRef.current && nextUnreadCount > previousUnreadCountRef.current) {
+        playMessageSound();
+      }
+
+      previousUnreadCountRef.current = nextUnreadCount;
+      hasLoadedMessagesRef.current = true;
+      setUnreadCount(nextUnreadCount);
     } catch {
       // Keep the UI resilient if realtime refresh fails temporarily.
     } finally {
       setLoading(false);
     }
-  }, [status]);
+  }, [playMessageSound, status]);
 
   useEffect(() => {
     if (status !== 'authenticated') {
       setConversations([]);
       setUnreadCount(0);
+      previousUnreadCountRef.current = 0;
+      hasLoadedMessagesRef.current = false;
       return;
     }
 

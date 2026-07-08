@@ -10,6 +10,7 @@ import LayoutWrapper from '../components/shared/LayoutWrapper';
 import AppContext from '@/contexts/AppContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import { MessagesProvider } from '@/contexts/MessagesContext';
+import { SoundSettingsProvider } from '@/contexts/SoundSettingsContext';
 
 const roboto = Roboto({
   variable: '--font-roboto',
@@ -61,16 +62,18 @@ const RootLayout = ({
         >
           <div className='min-h-screen flex flex-col w-full'>
             <AppContext>
-              <MessagesProvider>
-                <NotificationsProvider>
-                  <CartProvider>
-                    <LayoutWrapper>
-                      {children}
-                      <Toaster position='top-center' />
-                    </LayoutWrapper>
-                  </CartProvider>
-                </NotificationsProvider>
-              </MessagesProvider>
+              <SoundSettingsProvider>
+                <MessagesProvider>
+                  <NotificationsProvider>
+                    <CartProvider>
+                      <LayoutWrapper>
+                        {children}
+                        <Toaster position='top-center' />
+                      </LayoutWrapper>
+                    </CartProvider>
+                  </NotificationsProvider>
+                </MessagesProvider>
+              </SoundSettingsProvider>
             </AppContext>
           </div>
         </ThemeProvider>

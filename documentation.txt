@@ -1107,3 +1107,5 @@ Add env validation and test tooling
 Add restaurant minimum orders and courier earnings
 
 Improve cart validation and checkout safety
+
+Add message and notification sound settings

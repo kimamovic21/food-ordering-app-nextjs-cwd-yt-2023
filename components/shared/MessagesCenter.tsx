@@ -11,6 +11,7 @@ import {
   MoreVertical,
   Send,
   Search,
+  Settings,
   Trash2,
   X,
 } from 'lucide-react';
@@ -686,17 +687,25 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                   <CardTitle className='text-xl font-semibold tracking-tight'>{title}</CardTitle>
                   <p className='mt-1 text-sm leading-snug text-muted-foreground'>{description}</p>
                 </div>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() =>
-                    loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch })
-                  }
-                  disabled={refreshing}
-                  className='rounded-full'
-                >
-                  Refresh
-                </Button>
+                <div className='flex items-center gap-2'>
+                  <Button variant='outline' size='sm' asChild className='rounded-full'>
+                    <Link href='/messages/settings' className='gap-2'>
+                      <Settings className='h-4 w-4' />
+                      Settings
+                    </Link>
+                  </Button>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() =>
+                      loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch })
+                    }
+                    disabled={refreshing}
+                    className='rounded-full'
+                  >
+                    Refresh
+                  </Button>
+                </div>
               </div>
 
               <div className='grid grid-cols-3 gap-2 text-sm'>
