@@ -17,7 +17,7 @@ It includes:
 - notifications center with unread counts, mark-as-read actions, and role-aware routing
 - admin dashboard for users, menu items, categories, restaurants, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, route distance summaries, delivery history, and courier ratings views
-- courier workflow with assignment, availability toggle, live location sharing on maps, delivery PIN handoff, and delivery history
+- courier workflow with assignment, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
 - order timeline with preparation/delivery estimates, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
 - restaurant busy checkout protection based on each restaurant's active kitchen order limit
 - Stripe checkout/webhook flow
@@ -66,6 +66,7 @@ It includes:
 - Real-time courier location sharing
 - Leaflet map tracking with polling + manual refresh
 - Delivery PIN entry to record courier handoff before customer/admin confirmation
+- Failed-delivery cancellation request when the customer is unavailable after extended transport time
 - Route distance and estimated delivery time summaries for active and completed deliveries
 - Report-problem action for delivery issues
 - Courier-facing review and rating list for completed deliveries
@@ -155,8 +156,10 @@ This project uses many dependencies; below are the main packages actively used i
 - Checkout blocks restaurants that are closed, paused, outside delivery radius, or blocked by working hours, and surfaces the next opening time when available.
 - Checkout blocks new orders when the restaurant has reached its paid active kitchen order limit (`placed`, `processing`, or `ready` orders).
 - Cart can suggest the best public coupon for the current restaurant subtotal and let the customer apply it directly.
+- Checkout blocks customers from starting another paid active order until the previous order is completed or canceled.
 - Previous orders can be reordered into the cart only after current menu item existence, availability, restaurant ownership, and prices are rechecked.
 - Couriers record delivery handoff with a customer-visible PIN; customers or the restaurant admin then finalize delivery completion.
+- If a customer is unavailable after extended transport time, the courier can request failed-delivery cancellation; the restaurant owner or super admin must verify it before the order is canceled and the courier is released.
 - Order status notifications use phase-specific copy, including preparation and delivery ETA hints when an estimate is available.
 - Customers and couriers can report order or delivery problems; admins manage those reports from `/admin-dashboard/support-tickets`.
 - `/admin-dashboard/orders` surfaces late active-order alerts and links to `/admin-dashboard/order-queue` for the full operational view.

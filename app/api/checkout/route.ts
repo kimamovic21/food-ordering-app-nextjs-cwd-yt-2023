@@ -168,18 +168,19 @@ export async function POST(req: Request) {
     return Response.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const pendingDeliveryConfirmation = await Order.findOne({
+  const activeCustomerOrder = await Order.findOne({
     userId: user._id,
-    orderPaid: true,
-    orderStatus: 'delivered',
+    orderStatus: { $nin: ['completed', 'canceled'] },
+    $or: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
   })
-    .select('_id')
+    .select('_id orderStatus')
     .lean();
 
-  if (pendingDeliveryConfirmation) {
+  if (activeCustomerOrder) {
     return Response.json(
       {
-        error: 'Please confirm your previous delivered order before starting a new checkout.',
+        error:
+          'You already have an active order. Please wait until it is completed or canceled before starting a new checkout.',
       },
       { status: 400 }
     );

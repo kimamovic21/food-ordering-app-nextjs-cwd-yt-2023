@@ -36,7 +36,7 @@ They can:
 Important customer rules:
 
 - Customers cannot order from their own restaurant.
-- Customers cannot checkout again while a previous delivered order still needs their confirmation.
+- Customers cannot checkout again while they already have a paid active order that is not completed or canceled.
 - Customers cannot add unavailable menu items to cart or checkout with them.
 - Customers cannot checkout from restaurants that are closed, paused, outside delivery radius, blocked by date, or at active kitchen capacity.
 - Customers can only message contacts allowed by their order flow.
@@ -61,6 +61,7 @@ They can:
 - View customer delivery location.
 - View order time breakdown and estimated timing.
 - Finalize delivery when a courier has recorded handoff but the customer does not confirm.
+- Verify failed-delivery cancellation requests when a courier reports that the customer was unavailable after extended transport time.
 - View restaurant review feedback.
 - Manage restaurant support tickets.
 - Message approved users and couriers.
@@ -71,6 +72,7 @@ Important admin rules:
 - Admins cannot update unpaid order status.
 - Admins cannot mark an order as delivered. The courier must do that with the delivery PIN.
 - Admins can finalize completion only after the order is in `delivered` status.
+- Admins can cancel a transported order only after the assigned courier requests failed-delivery verification.
 - Restaurant support tickets are scoped to the admin's restaurant.
 - Active order limit blocks checkout when the restaurant has too many paid active kitchen orders.
 - Late-order alerts warn admins when an active paid order has not reached transportation after the configured threshold.
@@ -89,6 +91,7 @@ Super admin can:
 - View courier management screens.
 - Receive and manage app-support tickets.
 - Access elevated admin views protected from normal restaurant admins.
+- Verify failed-delivery cancellation for any restaurant order when restaurant ownership does not resolve the issue.
 
 Important super admin rules:
 
@@ -111,6 +114,7 @@ They can:
 - View delivery map and customer address.
 - View route distance and estimated delivery time summaries for active and completed deliveries.
 - Enter the customer's delivery PIN to record handoff.
+- Request failed-delivery cancellation after at least 30 minutes in transport when the customer is unavailable.
 - View completed delivery history.
 - View courier reviews and ratings.
 - Report delivery problems.
@@ -122,6 +126,7 @@ Important courier rules:
 - Courier handoff requires the customer-visible delivery PIN.
 - Courier delivery does not immediately complete the order. Customer or restaurant admin confirmation completes it.
 - Couriers cannot take multiple active orders when `takenOrder` is already set.
+- Failed-delivery cancellation requests keep the courier assigned until restaurant owner or super admin verification.
 
 ## Restaurant And Menu Logic
 
@@ -193,6 +198,7 @@ Checkout server rules:
 - Restaurant must currently accept orders based on schedule, pause state, blocked dates, delivery radius, and active order limit.
 - User cannot order from their own restaurant.
 - Previous delivered orders must be confirmed before starting another checkout.
+- Any paid active order must be completed or canceled before the customer can start another checkout.
 - Menu items must still be available.
 - Coupon must belong to the restaurant and satisfy date/minimum rules.
 - Best coupon suggestions are only UI help until the customer applies them and checkout validates them.
@@ -211,7 +217,7 @@ Order statuses:
 - `transportation`: courier is assigned and delivery is in progress.
 - `delivered`: courier entered delivery PIN and recorded handoff.
 - `completed`: customer or admin confirmed final delivery.
-- `canceled`: unpaid order was canceled before preparation.
+- `canceled`: unpaid order was canceled before preparation, or a failed delivery was verified by the restaurant owner or super admin.
 
 Timeline fields are stored on the order so the UI can show exact phase durations:
 
@@ -223,6 +229,8 @@ Timeline fields are stored on the order so the UI can show exact phase durations
 - `adminConfirmedDeliveryAt`
 - `completedAt`
 - `canceledAt`
+- `failedDeliveryRequestedAt`
+- `failedDeliveryVerifiedAt`
 
 Operational order monitoring:
 
@@ -246,6 +254,16 @@ Flow:
 8. If customer does not confirm, restaurant admin can finalize it.
 
 This prevents a courier from fully completing an order alone.
+
+Failed delivery flow:
+
+1. Courier starts delivery and order is in `transportation`.
+2. If the customer is unavailable after at least 30 minutes, courier requests failed-delivery cancellation.
+3. Order stays in `transportation` while the request waits for verification.
+4. Restaurant owner or super admin verifies the cancellation.
+5. Order becomes `canceled`, payment flags are marked unpaid for the app simulation, and the courier is released from `takenOrder`.
+
+Canceled failed deliveries do not count as courier earnings because courier earnings are calculated from completed orders only.
 
 Courier history and performance:
 

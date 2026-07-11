@@ -52,6 +52,9 @@ type OrderDetailsType = {
   courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
   restaurantHandedToCourierAt?: string | null;
   courierPickedUpAt?: string | null;
+  transportationAt?: string | null;
+  failedDeliveryRequestedAt?: string | null;
+  failedDeliveryReason?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -188,6 +191,34 @@ const CourierPage = () => {
     } catch (err) {
       console.error(err);
       sonnerToast.error('Failed to update assignment');
+    } finally {
+      setUpdatingAssignment(null);
+    }
+  };
+
+  const handleFailedDeliveryRequest = async (orderId: string, reason: string) => {
+    try {
+      setUpdatingAssignment(orderId);
+      const res = await fetch('/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, action: 'request-failed-delivery', reason }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        sonnerToast.error(data.error || 'Failed to request failed delivery cancellation');
+        return;
+      }
+
+      setOrders((current) =>
+        current.map((order) => (order._id === orderId ? { ...order, ...data.order } : order))
+      );
+      sonnerToast.success('Failed delivery cancellation sent for admin verification');
+    } catch (err) {
+      console.error(err);
+      sonnerToast.error('Failed to request failed delivery cancellation');
     } finally {
       setUpdatingAssignment(null);
     }
@@ -499,6 +530,7 @@ const CourierPage = () => {
               completing={completing}
               updatingAssignment={updatingAssignment}
               onAssignmentAction={handleAssignmentAction}
+              onFailedDeliveryRequest={handleFailedDeliveryRequest}
               onComplete={handleCompleteOrder}
               mapRefs={mapRefs}
               enableCourierPolling={locationPollingEnabled}

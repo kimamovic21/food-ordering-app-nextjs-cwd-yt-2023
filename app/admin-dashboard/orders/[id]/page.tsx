@@ -46,6 +46,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { COURIER_OWN_ORDER_ASSIGNMENT_ERROR, isCourierOrderOwner } from '@/libs/courierAssignment';
+import { formatAppDateTime } from '@/libs/dateFormat';
 import Image from 'next/image';
 import {
   AlertDialog,
@@ -98,6 +99,13 @@ type OrderDetailsType = {
   courierDeclinedAt?: string | null;
   restaurantHandedToCourierAt?: string | null;
   courierPickedUpAt?: string | null;
+  failedDeliveryRequestedAt?: string | null;
+  failedDeliveryRequestedBy?: string | null;
+  failedDeliveryReason?: string | null;
+  failedDeliveryVerifiedAt?: string | null;
+  failedDeliveryVerifiedBy?: string | null;
+  failedDeliveryVerifiedByRole?: 'restaurant_owner' | 'super_admin' | null;
+  canceledBy?: 'customer' | 'restaurant_owner' | 'super_admin' | null;
   canceledAt?: string | null;
   completedAt?: string | null;
   stripeSessionId?: string;
@@ -145,6 +153,7 @@ const OrderDetailPage = () => {
   const [assigningCourier, setAssigningCourier] = useState(false);
   const [handingToCourier, setHandingToCourier] = useState(false);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
+  const [verifyingFailedDelivery, setVerifyingFailedDelivery] = useState(false);
   const [showCourierSelect, setShowCourierSelect] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [timelineOffsets, setTimelineOffsets] = useState<OrderPhaseDurationOffsets>({});
@@ -452,6 +461,45 @@ const OrderDetailPage = () => {
     }
   };
 
+  const handleVerifyFailedDelivery = async () => {
+    if (!order) return;
+
+    try {
+      setVerifyingFailedDelivery(true);
+      const res = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order._id, action: 'verify-failed-delivery' }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        sonnerToast.error(data.error || 'Failed to verify failed delivery cancellation');
+        return;
+      }
+
+      setOrder((current) =>
+        current ? { ...current, ...data.order, courierId: current.courierId } : data.order
+      );
+      sonnerToast.success('Failed delivery verified. Order canceled.', {
+        style: {
+          background: '#22c55e',
+          color: 'white',
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      sonnerToast.error('Failed to verify failed delivery cancellation', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+    } finally {
+      setVerifyingFailedDelivery(false);
+    }
+  };
+
   if (profileLoading || (loading && !order)) {
     return (
       <section className='mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10'>
@@ -665,7 +713,7 @@ const OrderDetailPage = () => {
               <CardTitle>Update Order Status</CardTitle>
               <CardDescription>
                 {order.orderStatus === 'canceled'
-                  ? 'This order was canceled by the customer before payment. No preparation is needed.'
+                  ? 'This order was canceled and is no longer active. No further status updates are available.'
                   : order.orderStatus === 'completed'
                     ? 'Order delivered successfully. You are not able to update order delivery status.'
                     : order.orderStatus === 'delivered'
@@ -710,7 +758,7 @@ const OrderDetailPage = () => {
                 </Select>
                 {order.orderStatus === 'canceled' ? (
                   <p className='text-xs text-red-600'>
-                    Customer canceled this order before payment.
+                    This order was canceled and cannot be updated.
                   </p>
                 ) : !order.paymentStatus ? (
                   <p className='text-xs text-amber-600'>Payment required before changing status.</p>
@@ -770,6 +818,36 @@ const OrderDetailPage = () => {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {order.orderStatus === 'canceled' && order.canceledBy && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Cancellation Details</CardTitle>
+              <CardDescription>
+                {order.canceledBy === 'super_admin'
+                  ? 'Order canceled by super admin.'
+                  : order.canceledBy === 'restaurant_owner'
+                    ? 'Order canceled by restaurant owner after failed delivery verification.'
+                    : 'Order canceled by customer before payment.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-3 text-sm'>
+              {order.failedDeliveryReason?.trim() && (
+                <div className='rounded-lg border bg-muted/30 p-4'>
+                  <p className='font-semibold text-foreground'>Courier note</p>
+                  <p className='mt-1 whitespace-pre-wrap text-muted-foreground'>
+                    {order.failedDeliveryReason}
+                  </p>
+                </div>
+              )}
+              {order.failedDeliveryVerifiedAt && (
+                <p className='text-muted-foreground'>
+                  Failed delivery verified at {formatAppDateTime(order.failedDeliveryVerifiedAt)}.
+                </p>
+              )}
             </CardContent>
           </Card>
         )}
@@ -947,8 +1025,36 @@ const OrderDetailPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {order.courierId && (
-                <div className='space-y-3'>
+              <div className='space-y-3'>
+                {order.failedDeliveryRequestedAt && (
+                  <div className='rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950'>
+                    <p className='font-semibold text-red-900 dark:text-red-100'>
+                      Courier requested failed delivery cancellation
+                    </p>
+                    <p className='mt-2 text-sm text-red-800 dark:text-red-100/80'>
+                      Customer was unavailable after extended transport time. Verify only if this
+                      order should be canceled and the courier should be released.
+                    </p>
+                    {order.failedDeliveryReason?.trim() && (
+                      <p className='mt-3 whitespace-pre-wrap rounded-md bg-background/80 p-3 text-sm text-foreground'>
+                        {order.failedDeliveryReason}
+                      </p>
+                    )}
+                    <Button
+                      type='button'
+                      variant='destructive'
+                      onClick={handleVerifyFailedDelivery}
+                      disabled={verifyingFailedDelivery}
+                      className='mt-4 w-full sm:w-auto'
+                    >
+                      {verifyingFailedDelivery
+                        ? 'Verifying...'
+                        : 'Verify cancellation and release courier'}
+                    </Button>
+                  </div>
+                )}
+
+                {order.courierId && (
                   <div className='border rounded-lg p-4 bg-green-50 dark:bg-green-950'>
                     <p className='font-semibold text-green-900 dark:text-green-100 mb-2'>
                       Courier Assigned
@@ -971,8 +1077,8 @@ const OrderDetailPage = () => {
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </CardContent>
           </Card>
         )}

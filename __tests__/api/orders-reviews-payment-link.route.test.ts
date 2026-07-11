@@ -6,6 +6,7 @@ import { MenuItem } from '@/models/menuItem';
 import { RestaurantReview } from '@/models/restaurantReview';
 import { CourierReview } from '@/models/courierReview';
 import {
+  notifyFailedDeliveryCancellationVerified,
   notifyRestaurantAdminsAboutCanceledOrder,
   notifyUserAboutOrderStatusChange,
 } from '@/libs/notifications';
@@ -47,6 +48,7 @@ vi.mock('@/libs/mongoConnect', () => ({
 }));
 
 vi.mock('@/libs/notifications', () => ({
+  notifyFailedDeliveryCancellationVerified: vi.fn(),
   notifyCourierAboutRestaurantHandoff: vi.fn(),
   notifyRestaurantAdminsAboutCanceledOrder: vi.fn(),
   notifyUserAboutOrderStatusChange: vi.fn(),
@@ -114,6 +116,13 @@ const customer = {
   restaurantId: null,
 };
 
+const superAdmin = {
+  _id: { toString: () => 'super-admin-1' },
+  email: 'super@example.com',
+  role: 'admin',
+  restaurantId: null,
+};
+
 const paidOrderDoc = {
   _id: { toString: () => 'order-1' },
   userId: { toString: () => 'user-1' },
@@ -158,6 +167,7 @@ describe('high-priority order, review, and payment-link routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.STRIPE_SK = 'sk_test_payment_link';
+    delete process.env.SUPER_ADMIN_EMAIL;
     vi.resetModules();
   });
 
@@ -220,6 +230,106 @@ describe('high-priority order, review, and payment-link routes', () => {
     expect(res.status).toBe(400);
     expect(body).toEqual({ error: 'Canceled orders cannot be updated' });
     expect(notifyUserAboutOrderStatusChange).not.toHaveBeenCalled();
+  });
+
+  it('lets restaurant admins verify failed delivery cancellation and release courier', async () => {
+    const courierDoc = {
+      _id: { toString: () => 'courier-1' },
+      takenOrder: { toString: () => 'order-1' },
+      save: vi.fn(async function save(this: any) {
+        return this;
+      }),
+    };
+    const failedDeliveryOrderDoc = {
+      ...paidOrderDoc,
+      orderStatus: 'transportation',
+      failedDeliveryRequestedAt: new Date('2026-07-10T10:00:00.000Z'),
+      save: vi.fn(async function save(this: any) {
+        return this;
+      }),
+      toObject() {
+        return {
+          _id: this._id,
+          userId: this.userId,
+          restaurantId: this.restaurantId,
+          courierId: this.courierId,
+          orderPaid: this.orderPaid,
+          paid: this.paid,
+          orderStatus: this.orderStatus,
+          failedDeliveryVerifiedAt: this.failedDeliveryVerifiedAt,
+          failedDeliveryVerifiedBy: this.failedDeliveryVerifiedBy,
+          failedDeliveryVerifiedByRole: this.failedDeliveryVerifiedByRole,
+          canceledBy: this.canceledBy,
+          canceledAt: this.canceledAt,
+        };
+      },
+    };
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: admin.email } } as never);
+    vi.mocked(User.findOne).mockReturnValueOnce({
+      lean: vi.fn().mockResolvedValue(admin),
+    } as never);
+    vi.mocked(Order.findOne).mockResolvedValueOnce(failedDeliveryOrderDoc as never);
+    vi.mocked(User.findById).mockResolvedValueOnce(courierDoc as never);
+
+    const { PATCH } = await import('@/app/api/orders/route');
+    const res = await PATCH(jsonRequest({ id: 'order-1', action: 'verify-failed-delivery' }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.order.orderStatus).toBe('canceled');
+    expect(body.order.canceledBy).toBe('restaurant_owner');
+    expect(failedDeliveryOrderDoc.orderPaid).toBe(false);
+    expect(failedDeliveryOrderDoc.paid).toBe(false);
+    expect(courierDoc.takenOrder).toBeNull();
+    expect(courierDoc.save).toHaveBeenCalled();
+    expect(failedDeliveryOrderDoc.save).toHaveBeenCalled();
+    expect(notifyFailedDeliveryCancellationVerified).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: failedDeliveryOrderDoc.userId,
+        courierId: failedDeliveryOrderDoc.courierId,
+        restaurantId: failedDeliveryOrderDoc.restaurantId,
+        verifiedBy: 'restaurant_owner',
+      })
+    );
+  });
+
+  it('lets super admin verify failed delivery cancellation without restaurant ownership', async () => {
+    process.env.SUPER_ADMIN_EMAIL = superAdmin.email;
+    const failedDeliveryOrderDoc = {
+      ...paidOrderDoc,
+      orderStatus: 'transportation',
+      failedDeliveryRequestedAt: new Date('2026-07-10T10:00:00.000Z'),
+      save: vi.fn(async function save(this: any) {
+        return this;
+      }),
+      toObject() {
+        return {
+          _id: this._id,
+          orderPaid: this.orderPaid,
+          orderStatus: this.orderStatus,
+          failedDeliveryVerifiedByRole: this.failedDeliveryVerifiedByRole,
+          canceledBy: this.canceledBy,
+        };
+      },
+    };
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: superAdmin.email },
+    } as never);
+    vi.mocked(User.findOne).mockReturnValueOnce({
+      lean: vi.fn().mockResolvedValue(superAdmin),
+    } as never);
+    vi.mocked(Order.findOne).mockResolvedValueOnce(failedDeliveryOrderDoc as never);
+    vi.mocked(User.findById).mockResolvedValueOnce(null as never);
+
+    const { PATCH } = await import('@/app/api/orders/route');
+    const res = await PATCH(jsonRequest({ id: 'order-1', action: 'verify-failed-delivery' }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.order.canceledBy).toBe('super_admin');
+    expect(Order.findOne).toHaveBeenCalledWith({ _id: 'order-1' });
   });
 
   it('allows customers to cancel their unpaid placed orders and notifies restaurant admins', async () => {

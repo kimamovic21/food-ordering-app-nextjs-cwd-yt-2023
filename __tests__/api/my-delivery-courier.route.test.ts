@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { Order } from '@/models/order';
 import {
   notifyOrderDelivered,
+  notifyRestaurantAdminsAboutFailedDeliveryRequest,
   notifyRestaurantAdminsAboutCourierAssignmentUpdate,
   notifyUserAboutOrderStatusChange,
 } from '@/libs/notifications';
@@ -37,6 +38,7 @@ vi.mock('@/models/order', () => ({
 
 vi.mock('@/libs/notifications', () => ({
   notifyOrderDelivered: vi.fn(),
+  notifyRestaurantAdminsAboutFailedDeliveryRequest: vi.fn(),
   notifyRestaurantAdminsAboutCourierAssignmentUpdate: vi.fn(),
   notifyUserAboutOrderStatusChange: vi.fn(),
 }));
@@ -51,6 +53,7 @@ const loadSchedule = async () => await import('@/app/api/my-delivery/schedule/ro
 
 const courierUser = () => ({
   _id: { toString: () => 'courier-1' },
+  name: 'Courier One',
   email: 'c@courier.com',
   role: 'courier',
   takenOrder: 'order-1',
@@ -87,6 +90,9 @@ const assignedOrder = (overrides: Record<string, unknown> = {}) => ({
       restaurantHandedToCourierAt: this.restaurantHandedToCourierAt,
       courierPickedUpAt: this.courierPickedUpAt,
       transportationAt: this.transportationAt,
+      failedDeliveryRequestedAt: this.failedDeliveryRequestedAt,
+      failedDeliveryRequestedBy: this.failedDeliveryRequestedBy,
+      failedDeliveryReason: this.failedDeliveryReason,
     };
   },
   ...overrides,
@@ -436,6 +442,77 @@ describe('Courier availability and location routes', () => {
         userId: orderDoc.userId,
         orderId: orderDoc._id,
         orderStatus: 'transportation',
+      })
+    );
+  });
+
+  it('blocks failed delivery requests before 30 minutes in transport', async () => {
+    const userDoc = courierUser();
+    const orderDoc = assignedOrder({
+      transportationAt: new Date(Date.now() - 10 * 60 * 1000),
+    });
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: userDoc.email, role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce(userDoc as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(orderDoc as never);
+
+    const PATCH = await loadDeliveryOrdersPatch();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', action: 'request-failed-delivery' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body.error).toBe(
+      'You can request failed delivery cancellation after 30 minutes in transport.'
+    );
+    expect(orderDoc.save).not.toHaveBeenCalled();
+    expect(notifyRestaurantAdminsAboutFailedDeliveryRequest).not.toHaveBeenCalled();
+  });
+
+  it('lets couriers request failed delivery cancellation after 30 minutes in transport', async () => {
+    const userDoc = courierUser();
+    const orderDoc = assignedOrder({
+      transportationAt: new Date(Date.now() - 31 * 60 * 1000),
+    });
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: userDoc.email, role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce(userDoc as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(orderDoc as never);
+
+    const PATCH = await loadDeliveryOrdersPatch();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: 'order-1',
+          action: 'request-failed-delivery',
+          reason: 'Customer did not answer.',
+        }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.order.failedDeliveryRequestedAt).toEqual(expect.any(String));
+    expect(orderDoc.failedDeliveryRequestedBy).toBe(userDoc._id);
+    expect(orderDoc.failedDeliveryReason).toBe('Customer did not answer.');
+    expect(orderDoc.save).toHaveBeenCalled();
+    expect(notifyRestaurantAdminsAboutFailedDeliveryRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        restaurantId: orderDoc.restaurantId,
+        orderId: orderDoc._id,
+        courierName: userDoc.name,
+        reason: 'Customer did not answer.',
       })
     );
   });

@@ -272,6 +272,76 @@ export const notifyRestaurantAdminsAboutCourierAssignmentUpdate = async (params:
   });
 };
 
+export const notifyRestaurantAdminsAboutFailedDeliveryRequest = async (params: {
+  restaurantId: string | mongoose.Types.ObjectId;
+  orderId: string | mongoose.Types.ObjectId;
+  courierName?: string | null;
+  reason?: string | null;
+}) => {
+  const adminIds = await findRestaurantAdminIds(params.restaurantId);
+
+  if (adminIds.length === 0) {
+    return;
+  }
+
+  const reason = params.reason?.trim() ? ` Reason: ${params.reason.trim()}` : '';
+
+  await createNotifications({
+    recipientUserIds: adminIds,
+    type: 'order_canceled',
+    title: 'Failed delivery needs review',
+    message: `${params.courierName || 'Courier'} reported customer unavailable for order #${params.orderId.toString().slice(-6)}.${reason}`,
+    orderId: params.orderId,
+    metadata: {
+      restaurantId: params.restaurantId.toString(),
+      failedDeliveryRequested: true,
+    },
+  });
+};
+
+export const notifyFailedDeliveryCancellationVerified = async (params: {
+  userId: string | mongoose.Types.ObjectId;
+  courierId?: string | mongoose.Types.ObjectId | null;
+  restaurantId: string | mongoose.Types.ObjectId;
+  orderId: string | mongoose.Types.ObjectId;
+  verifiedBy: 'restaurant_owner' | 'super_admin';
+}) => {
+  const adminIds = await findRestaurantAdminIds(params.restaurantId);
+  const orderNumber = params.orderId.toString().slice(-6);
+  const verifierLabel = params.verifiedBy === 'super_admin' ? 'super admin' : 'restaurant owner';
+
+  await Promise.all([
+    createNotifications({
+      recipientUserIds: [params.userId],
+      type: 'order_canceled',
+      title: 'Order canceled',
+      message: `Order #${orderNumber} was canceled after a failed delivery verification by ${verifierLabel}.`,
+      orderId: params.orderId,
+      metadata: { orderStatus: 'canceled', canceledBy: params.verifiedBy },
+    }),
+    createNotifications({
+      recipientUserIds: params.courierId ? [params.courierId] : [],
+      type: 'order_canceled',
+      title: 'Failed delivery verified',
+      message: `Order #${orderNumber} was canceled by ${verifierLabel}. You can continue with another delivery.`,
+      orderId: params.orderId,
+      metadata: { orderStatus: 'canceled', canceledBy: params.verifiedBy },
+    }),
+    createNotifications({
+      recipientUserIds: adminIds,
+      type: 'order_canceled',
+      title: 'Failed delivery canceled',
+      message: `Order #${orderNumber} was canceled by ${verifierLabel} after customer unavailable verification.`,
+      orderId: params.orderId,
+      metadata: {
+        restaurantId: params.restaurantId.toString(),
+        orderStatus: 'canceled',
+        canceledBy: params.verifiedBy,
+      },
+    }),
+  ]);
+};
+
 export const notifyUserAboutOrderCompletion = async (params: {
   userId: string | mongoose.Types.ObjectId;
   orderId: string | mongoose.Types.ObjectId;

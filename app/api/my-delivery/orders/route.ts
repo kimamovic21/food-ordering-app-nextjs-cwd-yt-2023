@@ -4,11 +4,14 @@ import { Order } from '@/models/order';
 import { User } from '@/models/user';
 import {
   notifyOrderDelivered,
+  notifyRestaurantAdminsAboutFailedDeliveryRequest,
   notifyRestaurantAdminsAboutCourierAssignmentUpdate,
   notifyUserAboutOrderStatusChange,
 } from '@/libs/notifications';
 import { createDeliveryPin } from '@/libs/deliveryPin';
 import mongoose from 'mongoose';
+
+const FAILED_DELIVERY_MIN_TRANSPORT_MINUTES = 30;
 
 const normalizeOrder = (order: any) => {
   const { deliveryPin: _deliveryPin, ...safeOrder } = order;
@@ -76,7 +79,8 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'Only courier can update order status' }, { status: 403 });
   }
 
-  const { orderId, deliveryPin, action } = await request.json();
+  const requestBody = await request.json();
+  const { orderId, deliveryPin, action } = requestBody;
 
   if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
     return Response.json({ error: 'Invalid order ID' }, { status: 400 });
@@ -192,9 +196,78 @@ export async function PATCH(request: Request) {
     return Response.json({ order: normalizeOrder(order.toObject()) });
   }
 
+  if (action === 'request-failed-delivery') {
+    if (order.orderStatus !== 'transportation') {
+      return Response.json(
+        { error: 'Order must be in transportation before reporting customer unavailable' },
+        { status: 400 }
+      );
+    }
+
+    if (order.failedDeliveryRequestedAt) {
+      return Response.json(
+        { error: 'Failed delivery cancellation is already waiting for admin verification' },
+        { status: 400 }
+      );
+    }
+
+    const transportStartedAt = order.transportationAt || order.courierPickedUpAt;
+    if (!transportStartedAt) {
+      return Response.json(
+        { error: 'Delivery transport start time is missing for this order' },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date();
+    const transportMinutes = Math.floor(
+      (now.getTime() - new Date(transportStartedAt).getTime()) / 60000
+    );
+
+    if (transportMinutes < FAILED_DELIVERY_MIN_TRANSPORT_MINUTES) {
+      return Response.json(
+        {
+          error: `You can request failed delivery cancellation after ${FAILED_DELIVERY_MIN_TRANSPORT_MINUTES} minutes in transport.`,
+          remainingMinutes: FAILED_DELIVERY_MIN_TRANSPORT_MINUTES - transportMinutes,
+        },
+        { status: 400 }
+      );
+    }
+
+    const reason =
+      typeof requestBody?.reason === 'string' ? requestBody.reason.trim().slice(0, 300) : '';
+
+    order.failedDeliveryRequestedAt = now;
+    order.failedDeliveryRequestedBy = user._id;
+    order.failedDeliveryReason = reason;
+    await order.save();
+
+    if (order.restaurantId) {
+      try {
+        await notifyRestaurantAdminsAboutFailedDeliveryRequest({
+          restaurantId: order.restaurantId,
+          orderId: order._id,
+          courierName: user.name,
+          reason,
+        });
+      } catch (notificationError) {
+        console.error('Failed to create failed delivery request notification:', notificationError);
+      }
+    }
+
+    return Response.json({ order: normalizeOrder(order.toObject()) });
+  }
+
   if (order.orderStatus !== 'transportation') {
     return Response.json(
       { error: 'Order must be in transportation status to mark as delivered' },
+      { status: 400 }
+    );
+  }
+
+  if (order.failedDeliveryRequestedAt) {
+    return Response.json(
+      { error: 'Failed delivery cancellation is waiting for admin verification' },
       { status: 400 }
     );
   }

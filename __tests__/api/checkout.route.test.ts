@@ -527,10 +527,10 @@ describe('POST /api/checkout', () => {
     );
   });
 
-  it('rejects checkout when previous delivered order still needs confirmation', async () => {
+  it('rejects checkout when customer already has an active paid order', async () => {
     vi.mocked(Order.findOne).mockReturnValueOnce({
       select: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue({ _id: 'previous-order' }),
+        lean: vi.fn().mockResolvedValue({ _id: 'previous-order', orderStatus: 'transportation' }),
       }),
     } as never);
 
@@ -540,7 +540,8 @@ describe('POST /api/checkout', () => {
 
     expect(response.status).toBe(400);
     expect(body).toEqual({
-      error: 'Please confirm your previous delivered order before starting a new checkout.',
+      error:
+        'You already have an active order. Please wait until it is completed or canceled before starting a new checkout.',
     });
     expect(stripeCreateSession).not.toHaveBeenCalled();
   });

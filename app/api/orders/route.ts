@@ -3,6 +3,7 @@ import { Order } from '@/models/order';
 import { User } from '@/models/user';
 import {
   notifyCourierAboutRestaurantHandoff,
+  notifyFailedDeliveryCancellationVerified,
   notifyUserAboutOrderStatusChange,
 } from '@/libs/notifications';
 import { createAuditLog } from '@/libs/auditLog';
@@ -14,6 +15,12 @@ const normalizeOrder = (order: any) => ({
   paymentStatus: Boolean(order.orderPaid ?? order.paymentStatus ?? order.paid),
   orderStatus: order.orderStatus || 'placed',
 });
+
+const getSuperAdminEmail = () =>
+  process.env.SUPER_ADMIN_EMAIL || process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '';
+
+const isSuperAdminUser = (user: { email?: string | null }) =>
+  Boolean(getSuperAdminEmail() && user.email === getSuperAdminEmail());
 
 export async function GET(request: Request) {
   await mongoose.connect(process.env.MONGODB_URL as string);
@@ -31,7 +38,9 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!user.restaurantId) {
+  const isSuperAdmin = isSuperAdminUser(user);
+
+  if (!user.restaurantId && !isSuperAdmin) {
     return Response.json({ error: 'Admin is not assigned to a restaurant' }, { status: 403 });
   }
 
@@ -44,7 +53,10 @@ export async function GET(request: Request) {
       return Response.json({ error: 'Invalid order ID' }, { status: 400 });
     }
 
-    const order = await Order.findOne({ _id: id, restaurantId: user.restaurantId })
+    const order = await Order.findOne({
+      _id: id,
+      ...(isSuperAdmin ? {} : { restaurantId: user.restaurantId }),
+    })
       .populate('courierId', 'name email image')
       .lean();
 
@@ -59,8 +71,9 @@ export async function GET(request: Request) {
   const limit = 5;
   const skip = (page - 1) * limit;
 
-  const totalOrders = await Order.countDocuments({ restaurantId: user.restaurantId });
-  const orders = await Order.find({ restaurantId: user.restaurantId })
+  const listFilter = isSuperAdmin ? {} : { restaurantId: user.restaurantId };
+  const totalOrders = await Order.countDocuments(listFilter);
+  const orders = await Order.find(listFilter)
     .populate('courierId', 'name email image')
     .sort({ _id: -1 })
     .skip(skip)
@@ -89,7 +102,9 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!user.restaurantId) {
+  const isSuperAdmin = isSuperAdminUser(user);
+
+  if (!user.restaurantId && !isSuperAdmin) {
     return Response.json({ error: 'Admin is not assigned to a restaurant' }, { status: 403 });
   }
 
@@ -99,7 +114,7 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'Invalid order ID' }, { status: 400 });
   }
 
-  const allowedActions = ['handoff-to-courier'];
+  const allowedActions = ['handoff-to-courier', 'verify-failed-delivery'];
   if (action && !allowedActions.includes(action)) {
     return Response.json({ error: 'Invalid order action' }, { status: 400 });
   }
@@ -130,7 +145,10 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const order = await Order.findOne({ _id: id, restaurantId: user.restaurantId });
+  const order = await Order.findOne({
+    _id: id,
+    ...(isSuperAdmin ? {} : { restaurantId: user.restaurantId }),
+  });
 
   if (!order) {
     return Response.json({ error: 'Order not found' }, { status: 404 });
@@ -188,6 +206,78 @@ export async function PATCH(request: Request) {
       });
     } catch (notificationError) {
       console.error('Failed to create courier handoff notification:', notificationError);
+    }
+
+    return Response.json({ order: normalizeOrder(savedOrder.toObject()) });
+  }
+
+  if (action === 'verify-failed-delivery') {
+    if (order.orderStatus !== 'transportation') {
+      return Response.json(
+        { error: 'Only transported orders can be canceled as failed delivery' },
+        { status: 400 }
+      );
+    }
+
+    if (!order.failedDeliveryRequestedAt) {
+      return Response.json(
+        { error: 'Courier must request failed delivery cancellation first' },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date();
+    const verifiedBy = isSuperAdmin ? 'super_admin' : 'restaurant_owner';
+    const courierId = order.courierId;
+
+    (order as any).orderPaid = false;
+    (order as any).paid = false;
+    (order as any).paymentStatus = false;
+    order.orderStatus = 'canceled';
+    order.failedDeliveryVerifiedAt = now;
+    order.failedDeliveryVerifiedBy = user._id;
+    order.failedDeliveryVerifiedByRole = verifiedBy;
+    order.canceledBy = verifiedBy;
+    order.canceledAt = now;
+
+    if (courierId) {
+      const courier = await User.findById(courierId);
+      if (courier?.takenOrder?.toString() === order._id.toString()) {
+        courier.takenOrder = null;
+        await courier.save();
+      }
+    }
+
+    const savedOrder = await order.save();
+
+    await createAuditLog({
+      actor: user,
+      action: 'order.failed_delivery_canceled',
+      entityType: 'order',
+      entityId: order._id,
+      restaurantId: order.restaurantId,
+      orderId: order._id,
+      metadata: {
+        canceledBy: verifiedBy,
+        courierId: courierId?.toString() || null,
+      },
+    });
+
+    if (order.userId && order.restaurantId) {
+      try {
+        await notifyFailedDeliveryCancellationVerified({
+          userId: order.userId,
+          courierId,
+          restaurantId: order.restaurantId,
+          orderId: order._id,
+          verifiedBy,
+        });
+      } catch (notificationError) {
+        console.error(
+          'Failed to create failed delivery verification notification:',
+          notificationError
+        );
+      }
     }
 
     return Response.json({ order: normalizeOrder(savedOrder.toObject()) });

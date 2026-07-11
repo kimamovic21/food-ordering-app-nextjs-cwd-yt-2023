@@ -192,6 +192,7 @@ export async function PATCH(request: Request) {
 
     const now = new Date();
     order.orderStatus = 'canceled';
+    order.canceledBy = 'customer';
     order.canceledAt = now;
 
     await order.save();

@@ -183,8 +183,9 @@ stateDiagram-v2
   [*] --> placed
   placed --> processing: Restaurant starts kitchen work
   processing --> ready: Restaurant marks ready
-  ready --> transportation: Admin assigns courier
+  ready --> transportation: Courier accepts, restaurant hands off, courier picks up
   transportation --> delivered: Courier enters delivery PIN
+  transportation --> canceled: Failed delivery verified by owner or super admin
   delivered --> completed: Customer confirms
   delivered --> completed: Restaurant admin finalizes
   placed --> canceled: Customer cancels unpaid order
@@ -202,6 +203,8 @@ Timing fields on `Order` capture the real phase timestamps:
 - `adminConfirmedDeliveryAt`
 - `completedAt`
 - `canceledAt`
+- `failedDeliveryRequestedAt`
+- `failedDeliveryVerifiedAt`
 
 Estimate snapshots are saved on each order:
 
@@ -229,6 +232,9 @@ sequenceDiagram
 
   Admin->>API: Mark order ready
   Admin->>API: Assign available courier
+  Courier->>API: Accept assignment
+  Admin->>API: Mark handed to courier
+  Courier->>API: Mark picked up
   API->>Order: Set status transportation and transportationAt
   Courier->>API: Share live location
   Customer->>API: View map tracking
@@ -240,6 +246,8 @@ sequenceDiagram
 ```
 
 If the customer does not confirm, the restaurant owner can finalize delivery from the admin order detail page.
+
+If the customer is unavailable after at least 30 minutes in transport, the courier can request failed-delivery cancellation. The order remains in `transportation` until the restaurant owner or super admin verifies the cancellation; verification sets the order to `canceled` and releases the courier from `takenOrder`.
 
 Courier delivery views also show route distance and estimated travel time. Completed delivery history can summarize completed deliveries, declined assignments, average delivery minutes, late deliveries, ratings, and total/average route distance.
 

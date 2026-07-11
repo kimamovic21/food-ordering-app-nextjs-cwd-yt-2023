@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import type { OrderMapHandle } from '@/components/shared/OrderMap';
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
 import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
 import { formatAppDate, formatAppTime } from '@/libs/dateFormat';
@@ -45,17 +46,14 @@ type OrderDetailsType = {
   total: number;
   paymentStatus: boolean;
   orderStatus:
-    | 'placed'
-    | 'processing'
-    | 'ready'
-    | 'transportation'
-    | 'delivered'
-    | 'completed'
-    | 'canceled';
+    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
   courierId?: { _id: string; name: string; email: string; image?: string };
   courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
   restaurantHandedToCourierAt?: string | null;
   courierPickedUpAt?: string | null;
+  transportationAt?: string | null;
+  failedDeliveryRequestedAt?: string | null;
+  failedDeliveryReason?: string | null;
   createdAt: string;
   updatedAt: string;
   completedAt?: string | null;
@@ -69,6 +67,7 @@ interface DeliveryOrderCardProps {
     orderId: string,
     action: 'accept-assignment' | 'decline-assignment' | 'pick-up'
   ) => void;
+  onFailedDeliveryRequest: (orderId: string, reason: string) => void;
   onComplete: (orderId: string, deliveryPin: string) => void;
   mapRefs: React.MutableRefObject<Map<string, OrderMapHandle>>;
   enableCourierPolling?: boolean;
@@ -79,11 +78,14 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
   completing,
   updatingAssignment,
   onAssignmentAction,
+  onFailedDeliveryRequest,
   onComplete,
   mapRefs,
   enableCourierPolling = true,
 }) => {
   const [deliveryPin, setDeliveryPin] = useState('');
+  const [failedDeliveryReason, setFailedDeliveryReason] = useState('');
+  const [now, setNow] = useState(() => Date.now());
   const isPendingAssignment = order.courierAssignmentStatus === 'pending';
   const isAcceptedAssignment = order.courierAssignmentStatus === 'accepted';
   const canPickUp =
@@ -97,6 +99,28 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
     typeof order.estimatedDeliveryMinutes === 'number' && order.estimatedDeliveryMinutes > 0
       ? order.estimatedDeliveryMinutes
       : null;
+  const transportStartedAt = order.transportationAt || order.courierPickedUpAt || null;
+  const transportStartedMs = transportStartedAt ? new Date(transportStartedAt).getTime() : null;
+  const transportMinutes =
+    transportStartedMs && Number.isFinite(transportStartedMs)
+      ? Math.max(0, Math.floor((now - transportStartedMs) / 60000))
+      : 0;
+  const failedDeliveryRequestPending = Boolean(order.failedDeliveryRequestedAt);
+  const canRequestFailedDelivery =
+    isDelivering && !failedDeliveryRequestPending && transportMinutes >= 30;
+  const failedDeliveryRemainingMinutes = Math.max(0, 30 - transportMinutes);
+
+  useEffect(() => {
+    if (!isDelivering || failedDeliveryRequestPending) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setNow(Date.now());
+    }, 30000);
+
+    return () => window.clearInterval(interval);
+  }, [failedDeliveryRequestPending, isDelivering]);
 
   return (
     <Card className='hover:shadow-lg transition-shadow'>
@@ -196,22 +220,26 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
           {/* Delivery Status */}
           <div className='rounded-lg border bg-muted/40 p-4 text-sm'>
             <p className='font-semibold text-foreground'>
-              {isPendingAssignment
-                ? 'Assignment waiting for your response'
-                : canPickUp
-                  ? 'Restaurant handed this order to you'
-                  : isDelivering
-                    ? 'This order is currently being transported'
-                    : 'Waiting for restaurant handoff'}
+              {failedDeliveryRequestPending
+                ? 'Failed delivery waiting for admin verification'
+                : isPendingAssignment
+                  ? 'Assignment waiting for your response'
+                  : canPickUp
+                    ? 'Restaurant handed this order to you'
+                    : isDelivering
+                      ? 'This order is currently being transported'
+                      : 'Waiting for restaurant handoff'}
             </p>
             <p className='mt-2 text-muted-foreground'>
-              {isPendingAssignment
-                ? 'Accept it if you can deliver this order, or decline so the restaurant can choose another courier.'
-                : canPickUp
-                  ? 'Mark the order as picked up to start live delivery.'
-                  : isDelivering
-                    ? 'Ask the customer for the delivery PIN and record the delivery handoff when done.'
-                    : 'The restaurant will mark this order as handed to you before pickup.'}
+              {failedDeliveryRequestPending
+                ? 'Restaurant owner or super admin must verify this cancellation before you can continue with another delivery.'
+                : isPendingAssignment
+                  ? 'Accept it if you can deliver this order, or decline so the restaurant can choose another courier.'
+                  : canPickUp
+                    ? 'Mark the order as picked up to start live delivery.'
+                    : isDelivering
+                      ? 'Ask the customer for the delivery PIN and record the delivery handoff when done.'
+                      : 'The restaurant will mark this order as handed to you before pickup.'}
             </p>
           </div>
           <ReportProblemDialog orderId={order._id} defaultTarget='app_support' />
@@ -316,51 +344,107 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
           )}
 
           {isDelivering && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  disabled={completing === order._id}
-                  className='w-full bg-primary hover:bg-primary/90'
-                >
-                  {completing === order._id ? 'Marking as Delivered...' : 'Mark as Delivered'}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Complete Delivery</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Enter the customer&apos;s delivery PIN to record the handoff for order #
-                    {order._id.slice(-8).toUpperCase()}. The customer or restaurant admin will
-                    finish the final confirmation.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className='space-y-2'>
-                  <label htmlFor={`delivery-pin-${order._id}`} className='text-sm font-medium'>
-                    Delivery PIN
-                  </label>
-                  <Input
-                    id={`delivery-pin-${order._id}`}
-                    value={deliveryPin}
-                    onChange={(event) =>
-                      setDeliveryPin(event.target.value.replace(/\D/g, '').slice(0, 6))
-                    }
-                    inputMode='numeric'
-                    placeholder='6 digit PIN'
-                    maxLength={6}
-                  />
-                </div>
-                <div className='flex gap-3 justify-end'>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => onComplete(order._id, deliveryPin)}
-                    disabled={deliveryPin.length !== 6 || completing === order._id}
-                    className='bg-primary hover:bg-primary/90'
+            <div className='space-y-3'>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    disabled={completing === order._id || failedDeliveryRequestPending}
+                    className='w-full bg-primary hover:bg-primary/90'
                   >
-                    Confirm
-                  </AlertDialogAction>
-                </div>
-              </AlertDialogContent>
-            </AlertDialog>
+                    {completing === order._id ? 'Marking as Delivered...' : 'Mark as Delivered'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Complete Delivery</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Enter the customer&apos;s delivery PIN to record the handoff for order #
+                      {order._id.slice(-8).toUpperCase()}. The customer or restaurant admin will
+                      finish the final confirmation.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className='space-y-2'>
+                    <label htmlFor={`delivery-pin-${order._id}`} className='text-sm font-medium'>
+                      Delivery PIN
+                    </label>
+                    <Input
+                      id={`delivery-pin-${order._id}`}
+                      value={deliveryPin}
+                      onChange={(event) =>
+                        setDeliveryPin(event.target.value.replace(/\D/g, '').slice(0, 6))
+                      }
+                      inputMode='numeric'
+                      placeholder='6 digit PIN'
+                      maxLength={6}
+                    />
+                  </div>
+                  <div className='flex gap-3 justify-end'>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onComplete(order._id, deliveryPin)}
+                      disabled={deliveryPin.length !== 6 || completing === order._id}
+                      className='bg-primary hover:bg-primary/90'
+                    >
+                      Confirm
+                    </AlertDialogAction>
+                  </div>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type='button'
+                    variant='destructive'
+                    disabled={
+                      updatingAssignment === order._id ||
+                      failedDeliveryRequestPending ||
+                      !canRequestFailedDelivery
+                    }
+                    className='w-full'
+                  >
+                    {failedDeliveryRequestPending
+                      ? 'Cancellation waiting for admin'
+                      : canRequestFailedDelivery
+                        ? 'Customer unavailable'
+                        : `Customer unavailable in ${failedDeliveryRemainingMinutes} min`}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Request failed delivery cancellation?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Use this only when you have waited at the customer address for at least 30
+                      minutes and the customer is unavailable. Restaurant owner or super admin must
+                      verify this before the order is canceled.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className='space-y-2'>
+                    <label htmlFor={`failed-delivery-${order._id}`} className='text-sm font-medium'>
+                      Note for admin
+                    </label>
+                    <Textarea
+                      id={`failed-delivery-${order._id}`}
+                      value={failedDeliveryReason}
+                      onChange={(event) => setFailedDeliveryReason(event.target.value)}
+                      placeholder='Customer did not answer phone or door...'
+                      maxLength={300}
+                    />
+                  </div>
+                  <div className='flex gap-3 justify-end'>
+                    <AlertDialogCancel disabled={updatingAssignment === order._id}>
+                      Keep delivering
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onFailedDeliveryRequest(order._id, failedDeliveryReason)}
+                      disabled={updatingAssignment === order._id || !canRequestFailedDelivery}
+                    >
+                      Request cancellation
+                    </AlertDialogAction>
+                  </div>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           )}
         </div>
       </CardContent>

@@ -2,13 +2,7 @@ import type { ComponentType } from 'react';
 import { ChefHat, CheckCircle2, Clock, Truck, PackageCheck, XCircle } from 'lucide-react';
 
 export type OrderStatus =
-  | 'placed'
-  | 'processing'
-  | 'ready'
-  | 'transportation'
-  | 'delivered'
-  | 'completed'
-  | 'canceled';
+  'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
 
 type StatusTone = 'amber' | 'sky' | 'blue' | 'green' | 'red';
 
@@ -107,7 +101,7 @@ const statusContent: Record<
   },
   canceled: {
     title: 'Order canceled',
-    description: 'This order was canceled before payment and will not be prepared.',
+    description: 'This order was canceled and is no longer active.',
     subtext: 'You can place a new order whenever you are ready.',
     icon: XCircle,
     tone: 'red',
