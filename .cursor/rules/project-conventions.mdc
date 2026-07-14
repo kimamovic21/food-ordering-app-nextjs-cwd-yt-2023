@@ -34,7 +34,7 @@ alwaysApply: true
 - Preserve role checks for admin, courier, and user flows.
 - Preserve delivery double confirmation: courier PIN handoff first, then customer or restaurant admin final completion.
 - Keep support ticket visibility scoped by role and target: restaurant support to restaurant owners, app support to super admin.
-- Keep ETA-style notifications and late active-order alerts aligned with order timeline state.
+- Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.
 - Keep Stripe webhook handling idempotent.
 
 ## High-Risk Areas

@@ -1111,3 +1111,5 @@ Improve cart validation and checkout safety
 Add message and notification sound settings
 
 Add failed delivery cancellation flow
+
+Add route failed delivery notifications to admin orders

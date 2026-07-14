@@ -71,6 +71,7 @@ interface DeliveryOrderCardProps {
   onComplete: (orderId: string, deliveryPin: string) => void;
   mapRefs: React.MutableRefObject<Map<string, OrderMapHandle>>;
   enableCourierPolling?: boolean;
+  devFailedDeliveryOffsetMinutes?: number;
 }
 
 const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
@@ -82,6 +83,7 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
   onComplete,
   mapRefs,
   enableCourierPolling = true,
+  devFailedDeliveryOffsetMinutes = 0,
 }) => {
   const [deliveryPin, setDeliveryPin] = useState('');
   const [failedDeliveryReason, setFailedDeliveryReason] = useState('');
@@ -103,7 +105,11 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
   const transportStartedMs = transportStartedAt ? new Date(transportStartedAt).getTime() : null;
   const transportMinutes =
     transportStartedMs && Number.isFinite(transportStartedMs)
-      ? Math.max(0, Math.floor((now - transportStartedMs) / 60000))
+      ? Math.max(
+          0,
+          Math.floor((now - transportStartedMs) / 60000) +
+            Math.max(0, Number(devFailedDeliveryOffsetMinutes) || 0)
+        )
       : 0;
   const failedDeliveryRequestPending = Boolean(order.failedDeliveryRequestedAt);
   const canRequestFailedDelivery =

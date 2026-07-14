@@ -47,6 +47,11 @@ import { Button } from '@/components/ui/button';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { COURIER_OWN_ORDER_ASSIGNMENT_ERROR, isCourierOrderOwner } from '@/libs/courierAssignment';
 import { formatAppDateTime } from '@/libs/dateFormat';
+import {
+  getDevOrderTimeOffsetsFromStorage,
+  getDevOrderTimeSimulatorStorageKey,
+  hasDevOrderTimeOffsets,
+} from '@/libs/devOrderTimeSimulator';
 import Image from 'next/image';
 import {
   AlertDialog,
@@ -140,6 +145,8 @@ type OrderReviewType = {
   createdAt?: string;
 };
 
+type DevOrderTimeSimulatorOffsetKey = OrderPhaseDurationOffsetKey | 'failedDeliveryWait';
+
 const OrderDetailPage = () => {
   const [order, setOrder] = useState<OrderDetailsType | null>(null);
   const [review, setReview] = useState<OrderReviewType | null>(null);
@@ -171,18 +178,92 @@ const OrderDetailPage = () => {
       : status;
 
   useEffect(() => {
-    setTimelineOffsets({});
+    if (process.env.NODE_ENV !== 'development' || !orderId) {
+      setTimelineOffsets({});
+      return;
+    }
+
+    const localOffsets = getDevOrderTimeOffsetsFromStorage(orderId);
+    setTimelineOffsets(localOffsets);
+
+    if (hasDevOrderTimeOffsets(localOffsets)) {
+      void fetch('/api/dev/order-time-simulator', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, offsets: localOffsets }),
+      }).catch(() => undefined);
+    }
+
+    const loadServerOffsets = async () => {
+      try {
+        const response = await fetch(
+          `/api/dev/order-time-simulator?orderId=${encodeURIComponent(orderId)}`,
+          { cache: 'no-store' }
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const json = await response.json();
+        if (json?.offsets && hasDevOrderTimeOffsets(json.offsets)) {
+          setTimelineOffsets(json.offsets);
+        }
+      } catch {
+        // Simulator state is development-only. Ignore request failures.
+      }
+    };
+
+    void loadServerOffsets();
   }, [orderId]);
 
-  const handleTimelineOffsetIncrement = (key: OrderPhaseDurationOffsetKey) => {
-    setTimelineOffsets((currentOffsets) => ({
-      ...currentOffsets,
-      [key]: (currentOffsets[key] ?? 0) + 1,
-    }));
+  const persistTimelineOffsets = (nextOffsets: OrderPhaseDurationOffsets) => {
+    if (process.env.NODE_ENV !== 'development') {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        getDevOrderTimeSimulatorStorageKey(orderId),
+        JSON.stringify(nextOffsets)
+      );
+    } catch {
+      // Simulator state is development-only. Ignore storage failures.
+    }
+
+    void fetch('/api/dev/order-time-simulator', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, offsets: nextOffsets }),
+    }).catch(() => undefined);
+  };
+
+  const handleTimelineOffsetIncrement = (key: DevOrderTimeSimulatorOffsetKey) => {
+    setTimelineOffsets((currentOffsets) => {
+      const nextOffsets = {
+        ...currentOffsets,
+        [key]: (currentOffsets[key] ?? 0) + 1,
+      };
+
+      persistTimelineOffsets(nextOffsets);
+
+      return nextOffsets;
+    });
   };
 
   const handleTimelineOffsetReset = () => {
     setTimelineOffsets({});
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        window.localStorage.removeItem(getDevOrderTimeSimulatorStorageKey(orderId));
+      } catch {
+        // Simulator state is development-only. Ignore storage failures.
+      }
+
+      void fetch(`/api/dev/order-time-simulator?orderId=${encodeURIComponent(orderId)}`, {
+        method: 'DELETE',
+      }).catch(() => undefined);
+    }
   };
 
   useEffect(() => {

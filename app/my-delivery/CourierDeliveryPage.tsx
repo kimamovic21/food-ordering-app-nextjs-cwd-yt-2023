@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import type { OrderMapHandle } from '@/components/shared/OrderMap';
@@ -12,6 +12,11 @@ import LocationShareButton from './LocationShareButton';
 import DeliveryOrderCard from './DeliveryOrderCard';
 import ManualLocationSimulator from './ManualLocationSimulator';
 import MyDeliveryLoading from './loading';
+import {
+  getDevFailedDeliveryOffsetMinutes,
+  getDevOrderTimeOffsetsFromStorage,
+  hasDevOrderTimeOffsets,
+} from '@/libs/devOrderTimeSimulator';
 
 // Dynamic import to prevent SSR issues with Leaflet
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
@@ -72,8 +77,47 @@ const CourierPage = () => {
   const [sharingLocation, setSharingLocation] = useState(false);
   const [locationShared, setLocationShared] = useState(false);
   const [locationPollingEnabled, setLocationPollingEnabled] = useState(true);
+  const [devFailedDeliveryOffsets, setDevFailedDeliveryOffsets] = useState<Record<string, number>>(
+    {}
+  );
   const mapRefs = useRef<Map<string, OrderMapHandle>>(new Map());
   const isInitialLoadRef = useRef(true);
+
+  const refreshDevFailedDeliveryOffsets = useCallback(
+    async (nextOrders: OrderDetailsType[]) => {
+      if (!isDevelopment) {
+        return;
+      }
+
+      const entries = await Promise.all(
+        nextOrders.map(async (order) => {
+          const devOffsets = getDevOrderTimeOffsetsFromStorage(order._id);
+          let offset = getDevFailedDeliveryOffsetMinutes(devOffsets);
+
+          try {
+            const response = await fetch(
+              `/api/dev/order-time-simulator?orderId=${encodeURIComponent(order._id)}`,
+              { cache: 'no-store' }
+            );
+
+            if (response.ok) {
+              const json = await response.json();
+              if (hasDevOrderTimeOffsets(json?.offsets || {})) {
+                offset = getDevFailedDeliveryOffsetMinutes(json.offsets);
+              }
+            }
+          } catch {
+            // Simulator state is development-only. Keep local fallback.
+          }
+
+          return [order._id, offset] as const;
+        })
+      );
+
+      setDevFailedDeliveryOffsets(Object.fromEntries(entries));
+    },
+    [isDevelopment]
+  );
 
   useEffect(() => {
     if (profileLoading || profileData?.role !== 'courier') return;
@@ -93,7 +137,10 @@ const CourierPage = () => {
           throw new Error('Failed to fetch orders');
         }
         const data = await res.json();
-        setOrders(data.orders);
+        const fetchedOrders = data.orders || [];
+
+        setOrders(fetchedOrders);
+        await refreshDevFailedDeliveryOffsets(fetchedOrders);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -114,7 +161,30 @@ const CourierPage = () => {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [profileData?.role, profileLoading, profileData?.availability]);
+  }, [
+    profileData?.role,
+    profileLoading,
+    profileData?.availability,
+    refreshDevFailedDeliveryOffsets,
+  ]);
+
+  useEffect(() => {
+    if (!isDevelopment) {
+      return;
+    }
+
+    const refreshOffsets = () => {
+      void refreshDevFailedDeliveryOffsets(orders);
+    };
+    const interval = window.setInterval(refreshOffsets, 2000);
+
+    window.addEventListener('storage', refreshOffsets);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('storage', refreshOffsets);
+    };
+  }, [isDevelopment, orders, refreshDevFailedDeliveryOffsets]);
 
   const handleCompleteOrder = async (orderId: string, deliveryPin: string) => {
     try {
@@ -202,7 +272,14 @@ const CourierPage = () => {
       const res = await fetch('/api/my-delivery/orders', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, action: 'request-failed-delivery', reason }),
+        body: JSON.stringify({
+          orderId,
+          action: 'request-failed-delivery',
+          reason,
+          devFailedDeliveryOffsetMinutes: isDevelopment
+            ? (devFailedDeliveryOffsets[orderId] ?? 0)
+            : 0,
+        }),
       });
 
       const data = await res.json();
@@ -534,6 +611,7 @@ const CourierPage = () => {
               onComplete={handleCompleteOrder}
               mapRefs={mapRefs}
               enableCourierPolling={locationPollingEnabled}
+              devFailedDeliveryOffsetMinutes={devFailedDeliveryOffsets[order._id] ?? 0}
             />
           ))}
         </div>

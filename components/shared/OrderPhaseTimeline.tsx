@@ -23,7 +23,7 @@ export type OrderPhaseDurationOffsetKey =
   'waitingForKitchen' | 'kitchenPreparation' | 'deliveryTravel' | 'confirmationWait';
 
 export type OrderPhaseDurationOffsets = Partial<
-  Record<OrderPhaseDurationOffsetKey | 'totalOrderTime', number>
+  Record<OrderPhaseDurationOffsetKey | 'failedDeliveryWait' | 'totalOrderTime', number>
 >;
 
 const formatDuration = (

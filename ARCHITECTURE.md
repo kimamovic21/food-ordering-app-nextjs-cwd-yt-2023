@@ -281,6 +281,8 @@ Notifications are stored in MongoDB and polled through `NotificationsContext`. N
 
 Important notification examples include order placement, payment, order status changes, ETA-style phase updates, courier assignment, support ticket creation, late active-order warnings, and delivery completion prompts.
 
+Failed-delivery review notifications are admin-facing operational items and resolve to `/admin-dashboard/orders/[id]`; customer order notifications continue to resolve to customer order pages.
+
 Messages are app-native conversations, not open public chat. The allowed role combinations are enforced in `libs/messages.ts`.
 
 Important messaging rules:

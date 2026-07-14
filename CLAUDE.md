@@ -41,7 +41,7 @@ This file provides guidance for AI assistance in this repository.
 - Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Preserve delivery double confirmation: courier PIN handoff first, then customer or restaurant admin completion.
 - Keep support tickets role-scoped between restaurant support and app support.
-- Keep ETA-style notifications and late active-order alerts aligned with order timeline state.
+- Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Keep payment and webhook flows idempotent.
 - Keep receipt email generation in server code.

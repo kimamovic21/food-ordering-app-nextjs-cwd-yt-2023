@@ -324,7 +324,7 @@ Notification examples:
 - late active order warning
 - phase-specific ETA updates
 
-Notification routing depends on role and metadata. For example, a support ticket notification routes an admin to `/admin-dashboard/support-tickets`.
+Notification routing depends on role and metadata. For example, a support ticket notification routes an admin to `/admin-dashboard/support-tickets`, and a failed-delivery review notification routes the restaurant admin to `/admin-dashboard/orders/[id]`.
 
 ## Review And Loyalty Logic
 

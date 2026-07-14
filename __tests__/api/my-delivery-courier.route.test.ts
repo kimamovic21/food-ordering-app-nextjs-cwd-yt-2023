@@ -104,6 +104,10 @@ describe('Courier availability and location routes', () => {
     process.env.MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/test';
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('returns 401 when availability toggled without session', async () => {
     vi.mocked(getServerSession).mockResolvedValueOnce(null as never);
     const PATCH = await loadAvailability();
@@ -515,6 +519,42 @@ describe('Courier availability and location routes', () => {
         reason: 'Customer did not answer.',
       })
     );
+  });
+
+  it('allows development simulator minutes for failed delivery cancellation testing', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+
+    const userDoc = courierUser();
+    const orderDoc = assignedOrder({
+      transportationAt: new Date(Date.now() - 10 * 60 * 1000),
+    });
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: userDoc.email, role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce(userDoc as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(orderDoc as never);
+
+    const PATCH = await loadDeliveryOrdersPatch();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: 'order-1',
+          action: 'request-failed-delivery',
+          reason: 'Testing customer unavailable flow.',
+          devFailedDeliveryOffsetMinutes: 25,
+        }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.order.failedDeliveryRequestedAt).toEqual(expect.any(String));
+    expect(orderDoc.failedDeliveryReason).toBe('Testing customer unavailable flow.');
+    expect(orderDoc.save).toHaveBeenCalled();
+    expect(notifyRestaurantAdminsAboutFailedDeliveryRequest).toHaveBeenCalled();
   });
 
   it('marks assigned orders delivered with the correct PIN without exposing the PIN', async () => {

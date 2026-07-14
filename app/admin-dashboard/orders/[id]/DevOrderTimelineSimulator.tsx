@@ -10,17 +10,24 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+type DevOrderTimeSimulatorOffsetKey = OrderPhaseDurationOffsetKey | 'failedDeliveryWait';
+
 type DevOrderTimelineSimulatorProps = {
   offsets: OrderPhaseDurationOffsets;
-  onIncrement: (key: OrderPhaseDurationOffsetKey) => void;
+  onIncrement: (key: DevOrderTimeSimulatorOffsetKey) => void;
   onReset: () => void;
 };
 
-const controls: { key: OrderPhaseDurationOffsetKey; label: string }[] = [
+const controls: { key: DevOrderTimeSimulatorOffsetKey; label: string; hint?: string }[] = [
   { key: 'waitingForKitchen', label: 'Waiting for kitchen' },
   { key: 'kitchenPreparation', label: 'Kitchen preparation' },
   { key: 'deliveryTravel', label: 'Delivery travel' },
   { key: 'confirmationWait', label: 'Confirmation wait' },
+  {
+    key: 'failedDeliveryWait',
+    label: 'Customer unavailable wait',
+    hint: 'Any value unlocks the courier failed-delivery button in development.',
+  },
 ];
 
 const DevOrderTimelineSimulator = ({
@@ -59,7 +66,8 @@ const DevOrderTimelineSimulator = ({
               Dev time simulator
             </CardTitle>
             <p className='text-xs text-muted-foreground'>
-              Add simulated minutes to the order timeline without changing MongoDB data.
+              Add simulated minutes without changing MongoDB data. Delivery travel also affects the
+              failed-delivery dev check.
             </p>
           </div>
           <Button
@@ -90,6 +98,9 @@ const DevOrderTimelineSimulator = ({
               <div>
                 <p className='text-sm font-semibold'>{control.label}</p>
                 <p className='text-xs text-muted-foreground'>Simulated: +{offset} min</p>
+                {control.hint && (
+                  <p className='mt-1 text-xs text-muted-foreground'>{control.hint}</p>
+                )}
               </div>
               <Button
                 type='button'

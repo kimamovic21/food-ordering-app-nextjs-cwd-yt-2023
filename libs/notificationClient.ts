@@ -5,6 +5,8 @@ type NotificationLike = {
   orderId?: string | null;
   metadata?: {
     ticketId?: string | null;
+    failedDeliveryRequested?: boolean | null;
+    restaurantId?: string | null;
     [key: string]: unknown;
   } | null;
 };
@@ -43,7 +45,9 @@ export const resolveNotificationTargetPath = (
 
   if (
     role === 'admin' &&
-    ['order_placed', 'order_paid', 'order_completed'].includes(notification.type)
+    (['order_placed', 'order_paid', 'order_completed'].includes(notification.type) ||
+      notification.metadata?.failedDeliveryRequested ||
+      (notification.type === 'order_canceled' && notification.metadata?.restaurantId))
   ) {
     return `/admin-dashboard/orders/${notification.orderId}`;
   }

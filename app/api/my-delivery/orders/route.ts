@@ -9,6 +9,11 @@ import {
   notifyUserAboutOrderStatusChange,
 } from '@/libs/notifications';
 import { createDeliveryPin } from '@/libs/deliveryPin';
+import {
+  getDevFailedDeliveryOffsetMinutes,
+  sanitizeDevOrderTimeOffsetMinutes,
+} from '@/libs/devOrderTimeSimulator';
+import { getDevOrderTimeSimulatorOffsets } from '@/libs/devOrderTimeSimulatorStore';
 import mongoose from 'mongoose';
 
 const FAILED_DELIVERY_MIN_TRANSPORT_MINUTES = 30;
@@ -220,9 +225,19 @@ export async function PATCH(request: Request) {
     }
 
     const now = new Date();
-    const transportMinutes = Math.floor(
-      (now.getTime() - new Date(transportStartedAt).getTime()) / 60000
-    );
+    const devFailedDeliveryOffsetMinutes =
+      process.env.NODE_ENV === 'development'
+        ? Math.max(
+            sanitizeDevOrderTimeOffsetMinutes(
+              requestBody?.devFailedDeliveryOffsetMinutes ??
+                requestBody?.devDeliveryTravelOffsetMinutes
+            ),
+            getDevFailedDeliveryOffsetMinutes(getDevOrderTimeSimulatorOffsets(orderId))
+          )
+        : 0;
+    const transportMinutes =
+      Math.floor((now.getTime() - new Date(transportStartedAt).getTime()) / 60000) +
+      devFailedDeliveryOffsetMinutes;
 
     if (transportMinutes < FAILED_DELIVERY_MIN_TRANSPORT_MINUTES) {
       return Response.json(

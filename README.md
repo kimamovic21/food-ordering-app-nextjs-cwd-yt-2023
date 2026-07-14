@@ -162,6 +162,7 @@ This project uses many dependencies; below are the main packages actively used i
 - If a customer is unavailable after extended transport time, the courier can request failed-delivery cancellation; the restaurant owner or super admin must verify it before the order is canceled and the courier is released.
 - Order status notifications use phase-specific copy, including preparation and delivery ETA hints when an estimate is available.
 - Customers and couriers can report order or delivery problems; admins manage those reports from `/admin-dashboard/support-tickets`.
+- Failed-delivery review notifications route restaurant admins to `/admin-dashboard/orders/[id]`, while customer order notifications stay on customer order pages.
 - `/admin-dashboard/orders` surfaces late active-order alerts and links to `/admin-dashboard/order-queue` for the full operational view.
 
 ## Auth: Email Verification & Password Reset
