@@ -432,6 +432,11 @@ const CartPage = () => {
     return Boolean(restaurant?.isPaused);
   };
 
+  const isRestaurantAcceptingCheckout = () => {
+    const restaurant = getCartRestaurant();
+    return restaurant ? restaurant.isAcceptingOrders !== false : false;
+  };
+
   const getRestaurantUnavailableReason = () => {
     const restaurant = getCartRestaurant();
     return restaurant?.orderingUnavailableReason || null;
@@ -716,6 +721,14 @@ const CartPage = () => {
         return;
       }
 
+      if (!isRestaurantAcceptingCheckout()) {
+        sonnerToast.error(
+          getRestaurantUnavailableReason() ||
+            `${getRestaurantName()} is closing soon and is no longer accepting checkout.`
+        );
+        return;
+      }
+
       if (isRestaurantBusy()) {
         sonnerToast.error(
           `${getRestaurantName()} is very busy at the moment. Please wait a little bit and try again.`
@@ -824,11 +837,16 @@ const CartPage = () => {
   const multipleRestaurants = hasMultipleRestaurants();
   const restaurantOpen = isRestaurantOpen();
   const restaurantPaused = isRestaurantPaused();
+  const restaurantAcceptingCheckout = isRestaurantAcceptingCheckout();
   const restaurantBusy = isRestaurantBusy();
   const restaurantName = getRestaurantName();
   const minimumOrderAmount = getMinimumOrderAmount();
   const belowMinimumOrderAmount =
-    !multipleRestaurants && restaurantOpen && !restaurantPaused && !restaurantBusy
+    !multipleRestaurants &&
+    restaurantOpen &&
+    restaurantAcceptingCheckout &&
+    !restaurantPaused &&
+    !restaurantBusy
       ? subtotal < minimumOrderAmount
       : false;
   const deliveryRadiusKm = getDeliveryRadiusKm();
@@ -836,6 +854,7 @@ const CartPage = () => {
   const missingDeliveryLocation =
     !multipleRestaurants &&
     restaurantOpen &&
+    restaurantAcceptingCheckout &&
     !restaurantPaused &&
     !restaurantBusy &&
     !hasDeliveryLocation;
@@ -880,13 +899,29 @@ const CartPage = () => {
         </div>
       )}
 
-      {!multipleRestaurants && restaurantOpen && !restaurantPaused && restaurantBusy && (
-        <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
-          <p className='font-semibold text-amber-800 dark:text-amber-200'>
-            {restaurantName} is very busy at the moment. Please wait a little bit and try again.
-          </p>
-        </div>
-      )}
+      {!multipleRestaurants &&
+        restaurantOpen &&
+        !restaurantPaused &&
+        !restaurantAcceptingCheckout && (
+          <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
+            <p className='font-semibold text-amber-800 dark:text-amber-200'>
+              {getRestaurantUnavailableReason() ||
+                `${restaurantName} is closing soon and is no longer accepting checkout.`}
+            </p>
+          </div>
+        )}
+
+      {!multipleRestaurants &&
+        restaurantOpen &&
+        restaurantAcceptingCheckout &&
+        !restaurantPaused &&
+        restaurantBusy && (
+          <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
+            <p className='font-semibold text-amber-800 dark:text-amber-200'>
+              {restaurantName} is very busy at the moment. Please wait a little bit and try again.
+            </p>
+          </div>
+        )}
 
       {belowMinimumOrderAmount && (
         <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
@@ -978,6 +1013,7 @@ const CartPage = () => {
             isSubmitting={isSubmitting}
             handleCheckout={handleCheckout}
             restaurantsOpen={restaurantOpen && !multipleRestaurants}
+            restaurantAcceptingCheckout={restaurantAcceptingCheckout}
             restaurantPaused={restaurantPaused}
             restaurantBusy={restaurantBusy}
             belowMinimumOrderAmount={belowMinimumOrderAmount}

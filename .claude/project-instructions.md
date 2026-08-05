@@ -25,7 +25,7 @@
 
 - Secrets must remain server-side.
 - Treat auth, payments, and courier flows as sensitive paths.
-- Keep checkout accepting-order checks in place before Stripe sessions are created: working hours, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty.
+- Keep checkout accepting-order checks in place before Stripe sessions are created: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty.
 - Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
 - Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Keep delivery completion double-confirmed with courier PIN handoff followed by customer/admin finalization.

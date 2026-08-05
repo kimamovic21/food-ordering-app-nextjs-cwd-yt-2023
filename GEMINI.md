@@ -36,7 +36,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Avoid breaking API response shapes.
 - Preserve role-based access checks (admin/courier/user).
 - Preserve messaging restrictions: no customer-to-customer chat, and order conversations must match the assigned courier or restaurant owner.
-- Preserve checkout accepting-order checks before Stripe session creation: working hours, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty.
+- Preserve checkout accepting-order checks before Stripe session creation: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty.
 - Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
 - Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Preserve delivery double confirmation: courier PIN handoff first, then customer or restaurant admin completion.

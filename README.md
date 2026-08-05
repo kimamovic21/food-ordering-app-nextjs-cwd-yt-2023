@@ -153,7 +153,7 @@ This project uses many dependencies; below are the main packages actively used i
 
 - Restaurants can configure average preparation time, average delivery time, and an active kitchen order limit in the admin restaurant form.
 - Checkout snapshots the restaurant estimates onto each order, so order detail timelines can show expected timing alongside actual phase durations.
-- Checkout blocks restaurants that are closed, paused, outside delivery radius, or blocked by working hours, and surfaces the next opening time when available.
+- Checkout blocks restaurants that are closed, paused, outside delivery radius, blocked by working hours, or inside the final 60 minutes before closing, and surfaces the next opening time when available.
 - Checkout blocks new orders when the restaurant has reached its paid active kitchen order limit (`placed`, `processing`, or `ready` orders).
 - Cart can suggest the best public coupon for the current restaurant subtotal and let the customer apply it directly.
 - Checkout blocks customers from starting another paid active order until the previous order is completed or canceled.

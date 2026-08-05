@@ -27,6 +27,7 @@ interface OrderSummaryProps {
   isSubmitting: boolean;
   handleCheckout: () => void;
   restaurantsOpen: boolean;
+  restaurantAcceptingCheckout?: boolean;
   restaurantBusy?: boolean;
   restaurantPaused?: boolean;
   belowMinimumOrderAmount?: boolean;
@@ -60,6 +61,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   isSubmitting,
   handleCheckout,
   restaurantsOpen,
+  restaurantAcceptingCheckout = true,
   restaurantBusy = false,
   restaurantPaused = false,
   belowMinimumOrderAmount = false,
@@ -204,6 +206,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             isSubmitting ||
             !restaurantsOpen ||
             restaurantPaused ||
+            !restaurantAcceptingCheckout ||
             restaurantBusy ||
             belowMinimumOrderAmount ||
             missingDeliveryLocation ||
@@ -224,6 +227,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             'Restaurant Closed'
           ) : restaurantPaused ? (
             'Restaurant Paused'
+          ) : !restaurantAcceptingCheckout ? (
+            'Closing Soon'
           ) : restaurantBusy ? (
             'Restaurant Busy'
           ) : belowMinimumOrderAmount ? (

@@ -231,6 +231,10 @@ describe('POST /api/checkout', () => {
     });
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('returns 401 when no authenticated session is present', async () => {
     vi.mocked(getServerSession).mockResolvedValueOnce(null as never);
 
@@ -305,6 +309,26 @@ describe('POST /api/checkout', () => {
 
     expect(response.status).toBe(409);
     expect(body).toEqual({ error: 'Kitchen is catching up on current orders.' });
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
+  it('rejects checkout during the last hour before restaurant closing', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-24T21:15:00'));
+    vi.mocked(Restaurant.findById).mockResolvedValueOnce({
+      ...openRestaurant,
+      workingHours: [{ day: 'wednesday', openTime: '09:00', closeTime: '22:00', isClosed: false }],
+    } as never);
+
+    const POST = await loadCheckoutRoute();
+    const response = await POST(createCheckoutRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toEqual({
+      error:
+        'This restaurant closes soon. Orders must be placed at least 60 minutes before closing. Please try again during the next opening window.',
+    });
     expect(stripeCreateSession).not.toHaveBeenCalled();
   });
 

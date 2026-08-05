@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getClosingSoonCheckoutMessage,
   getRestaurantOrderingStatus,
   getNextOpeningSummary,
   isRestaurantOpen,
@@ -28,6 +29,29 @@ describe('restaurant availability helpers', () => {
     expect(getNextOpeningSummary(openWorkingHours, [], new Date('2026-06-24T22:00:00'))).toBe(
       'This restaurant opens Wednesday at 09:00.'
     );
+  });
+
+  it('blocks checkout during the last hour before closing while keeping the restaurant open', () => {
+    const cutoffTime = new Date('2026-06-24T20:00:00');
+    const tooLateTime = new Date('2026-06-24T20:15:00');
+
+    expect(isRestaurantOpen(openWorkingHours, [], tooLateTime)).toBe(true);
+    expect(getClosingSoonCheckoutMessage(openWorkingHours, [], cutoffTime)).toBeNull();
+    expect(getClosingSoonCheckoutMessage(openWorkingHours, [], tooLateTime)).toContain(
+      'Orders must be placed at least 60 minutes before closing'
+    );
+
+    const status = getRestaurantOrderingStatus({
+      restaurant: {
+        workingHours: openWorkingHours,
+        blockedDates: [],
+      },
+      now: tooLateTime,
+    });
+
+    expect(status.isOpen).toBe(true);
+    expect(status.isClosingSoonForCheckout).toBe(true);
+    expect(status.isAcceptingOrders).toBe(false);
   });
 
   it('normalizes delivery radius to recommended app bounds', () => {

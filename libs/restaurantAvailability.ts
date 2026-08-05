@@ -14,6 +14,7 @@ export type RestaurantBlockedDate = {
 
 export const DEFAULT_DELIVERY_RADIUS_KM = 10;
 export const MAX_DELIVERY_RADIUS_KM = 15;
+export const CHECKOUT_CUTOFF_BEFORE_CLOSE_MINUTES = 60;
 
 export const normalizeDeliveryRadiusKm = (value: unknown) => {
   const radius = Number(value);
@@ -60,6 +61,30 @@ const parseTimeForDate = (time: string, targetDate: Date) => {
   return date;
 };
 
+const getTodayWorkingHoursWindow = (
+  workingHours: RestaurantWorkingHour[] = [],
+  blockedDates: RestaurantBlockedDate[] = [],
+  targetDate = new Date()
+) => {
+  if (isBlockedOnDate(blockedDates, targetDate)) {
+    return null;
+  }
+
+  const todayHours = workingHours.find((hours) => hours.day === getDayName(targetDate));
+  if (!todayHours || todayHours.isClosed) {
+    return null;
+  }
+
+  const openTime = parseTimeForDate(todayHours.openTime, targetDate);
+  const closeTime = parseTimeForDate(todayHours.closeTime, targetDate);
+
+  if (!openTime || !closeTime) {
+    return null;
+  }
+
+  return { hours: todayHours, openTime, closeTime };
+};
+
 export const getNextOpeningSummary = (
   workingHours: RestaurantWorkingHour[] = [],
   blockedDates: RestaurantBlockedDate[] = [],
@@ -104,36 +129,40 @@ export const isRestaurantOpen = (
   blockedDates: RestaurantBlockedDate[] = [],
   targetDate = new Date()
 ) => {
-  const blockedToday = isBlockedOnDate(blockedDates, targetDate);
+  const workingHoursWindow = getTodayWorkingHoursWindow(workingHours, blockedDates, targetDate);
 
-  if (blockedToday) {
-    return false;
-  }
+  return Boolean(
+    workingHoursWindow &&
+    targetDate >= workingHoursWindow.openTime &&
+    targetDate <= workingHoursWindow.closeTime
+  );
+};
 
-  const todayHours = workingHours.find((hours) => hours.day === getDayName(targetDate));
-  if (!todayHours || todayHours.isClosed) {
-    return false;
-  }
-
-  const [openHour, openMinute] = todayHours.openTime.split(':').map(Number);
-  const [closeHour, closeMinute] = todayHours.closeTime.split(':').map(Number);
+export const getClosingSoonCheckoutMessage = (
+  workingHours: RestaurantWorkingHour[] = [],
+  blockedDates: RestaurantBlockedDate[] = [],
+  targetDate = new Date()
+) => {
+  const workingHoursWindow = getTodayWorkingHoursWindow(workingHours, blockedDates, targetDate);
 
   if (
-    !Number.isFinite(openHour) ||
-    !Number.isFinite(openMinute) ||
-    !Number.isFinite(closeHour) ||
-    !Number.isFinite(closeMinute)
+    !workingHoursWindow ||
+    targetDate < workingHoursWindow.openTime ||
+    targetDate > workingHoursWindow.closeTime
   ) {
-    return false;
+    return null;
   }
 
-  const openTime = new Date(targetDate);
-  openTime.setHours(openHour, openMinute, 0, 0);
+  const checkoutCutoffTime = new Date(workingHoursWindow.closeTime);
+  checkoutCutoffTime.setMinutes(
+    checkoutCutoffTime.getMinutes() - CHECKOUT_CUTOFF_BEFORE_CLOSE_MINUTES
+  );
 
-  const closeTime = new Date(targetDate);
-  closeTime.setHours(closeHour, closeMinute, 0, 0);
+  if (targetDate <= checkoutCutoffTime) {
+    return null;
+  }
 
-  return targetDate >= openTime && targetDate <= closeTime;
+  return `This restaurant closes soon. Orders must be placed at least ${CHECKOUT_CUTOFF_BEFORE_CLOSE_MINUTES} minutes before closing. Please try again during the next opening window.`;
 };
 
 export const isValidCoordinate = (value: unknown) => {
@@ -185,6 +214,11 @@ export const getRestaurantOrderingStatus = ({
     now
   );
   const isPaused = Boolean(restaurant?.isPaused);
+  const closingSoonMessage = getClosingSoonCheckoutMessage(
+    Array.isArray(restaurant?.workingHours) ? restaurant.workingHours : [],
+    Array.isArray(restaurant?.blockedDates) ? restaurant.blockedDates : [],
+    now
+  );
   const pauseReason =
     typeof restaurant?.pauseReason === 'string' ? restaurant.pauseReason.trim() : '';
   const hasRestaurantLocation = hasCoordinatePair(restaurant?.latitude, restaurant?.longitude);
@@ -212,6 +246,8 @@ export const getRestaurantOrderingStatus = ({
         Array.isArray(restaurant?.blockedDates) ? restaurant.blockedDates : [],
         now
       ) || 'This restaurant is not working at the moment. Please try again during open hours.';
+  } else if (closingSoonMessage) {
+    reason = closingSoonMessage;
   } else if (isWithinDeliveryRadius === false) {
     reason = `This restaurant delivers within ${deliveryRadiusKm} km. Your location is ${distanceKm?.toFixed(
       1
@@ -221,6 +257,7 @@ export const getRestaurantOrderingStatus = ({
   return {
     isOpen,
     isPaused,
+    isClosingSoonForCheckout: Boolean(closingSoonMessage),
     isAcceptingOrders: !reason,
     pauseReason,
     reason,

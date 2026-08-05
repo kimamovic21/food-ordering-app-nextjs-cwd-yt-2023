@@ -148,7 +148,7 @@ Key checks:
 - User cannot order from their own restaurant.
 - User cannot start another checkout while a previous delivered order still needs customer confirmation.
 - Menu items must still exist and be available.
-- Restaurant must currently accept orders based on working hours, pause state, blocked dates, delivery radius, and active kitchen capacity.
+- Restaurant must currently accept orders based on working hours, the 60-minute-before-closing checkout cutoff, pause state, blocked dates, delivery radius, and active kitchen capacity.
 - Restaurant active kitchen order count must be below `activeOrderLimit`.
 - Coupon and loyalty discounts are validated server-side.
 - Best coupon suggestions shown in cart are revalidated at checkout before Stripe is created.

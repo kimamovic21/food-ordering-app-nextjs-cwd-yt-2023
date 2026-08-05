@@ -38,7 +38,7 @@ Important customer rules:
 - Customers cannot order from their own restaurant.
 - Customers cannot checkout again while they already have a paid active order that is not completed or canceled.
 - Customers cannot add unavailable menu items to cart or checkout with them.
-- Customers cannot checkout from restaurants that are closed, paused, outside delivery radius, blocked by date, or at active kitchen capacity.
+- Customers cannot checkout from restaurants that are closed, paused, outside delivery radius, blocked by date, inside the final 60 minutes before closing, or at active kitchen capacity.
 - Customers can only message contacts allowed by their order flow.
 
 ## Admin / Restaurant Owner
@@ -165,7 +165,7 @@ Busy restaurant logic:
 - Checkout counts paid active kitchen orders in `placed`, `processing`, and `ready`.
 - When the count reaches the limit, checkout is blocked before Stripe session creation.
 - Cart shows a warning and disables checkout when the restaurant detail API reports `isBusy`.
-- Checkout also blocks restaurants that are paused, closed by working hours, blocked for a date, or outside the configured delivery radius.
+- Checkout also blocks restaurants that are paused, closed by working hours, inside the final 60 minutes before closing, blocked for a date, or outside the configured delivery radius.
 - When a restaurant is closed by schedule, the cart can show the next available opening time.
 
 ## Coupon And Reorder Logic
@@ -195,7 +195,7 @@ Checkout server rules:
 - Cart must contain valid items.
 - Cart must contain items from one restaurant only.
 - Restaurant must exist.
-- Restaurant must currently accept orders based on schedule, pause state, blocked dates, delivery radius, and active order limit.
+- Restaurant must currently accept orders based on schedule, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, and active order limit.
 - User cannot order from their own restaurant.
 - Previous delivered orders must be confirmed before starting another checkout.
 - Any paid active order must be completed or canceled before the customer can start another checkout.
