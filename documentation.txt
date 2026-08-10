@@ -1115,3 +1115,5 @@ Add failed delivery cancellation flow
 Add route failed delivery notifications to admin orders
 
 Add restaurant closing cutoff for checkout
+
+Restore courier schedule controls

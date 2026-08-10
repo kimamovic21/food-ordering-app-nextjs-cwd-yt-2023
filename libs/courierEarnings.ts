@@ -59,10 +59,6 @@ export const getCourierEarningsReport = async (courierId: unknown) => {
     courierDeclinedBy: courierId,
     courierAssignmentStatus: 'declined',
   });
-  const deliveryDistances = deliveredOrders
-    .map((order: any) => Number(order.deliveryDistanceKm))
-    .filter((distance) => Number.isFinite(distance) && distance > 0);
-  const totalDistanceKm = deliveryDistances.reduce((sum, distance) => sum + distance, 0);
   const totalEarnings = deliveredOrders.reduce(
     (sum: number, order: any) => sum + (Number(order.deliveryFee) || 0),
     0
@@ -121,10 +117,6 @@ export const getCourierEarningsReport = async (courierId: unknown) => {
         : 0,
       averageDeliveryMinutes: deliveryDurations.length
         ? Math.round(totalDeliveryMinutes / deliveryDurations.length)
-        : 0,
-      totalDistanceKm: Number(totalDistanceKm.toFixed(1)),
-      averageDistanceKm: deliveryDistances.length
-        ? Number((totalDistanceKm / deliveryDistances.length).toFixed(1))
         : 0,
       averageRating: Number(ratingSummary[0]?.averageRating || 0),
       ratingCount: Number(ratingSummary[0]?.ratingCount || 0),

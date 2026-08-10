@@ -20,7 +20,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 
 - Customer flows: auth, profile, menu browsing, cart/checkout, best coupon suggestion, reorder, favorites, loyalty history, reviews, approved messaging, order timelines, delivery confirmation, and support tickets.
 - Admin dashboard: users, categories, menu items, restaurants, orders, order queue, late-order alerts, couriers, support tickets, statistics, and AI-assisted menu descriptions.
-- Courier flows: assignment, availability toggle, live location sharing, delivery PIN handoff, problem reporting, tracked delivery maps, route distance summaries, and delivery history metrics.
+- Courier flows: assignment, availability toggle, live location sharing, delivery PIN handoff, problem reporting, tracked delivery maps, and delivery history metrics.
 - Restaurant operations: menu item availability, working-hours checkout protection, 60-minute-before-closing checkout cutoff, pause/blocked-date/radius checks, preparation/delivery estimates, and active order limit checks that can temporarily block checkout when the kitchen is busy.
 
 ## Local Setup

@@ -40,7 +40,6 @@ type OrderDetailsType = {
   city: string;
   country: string;
   specialInstructions?: string;
-  deliveryDistanceKm?: number | null;
   estimatedDeliveryMinutes?: number | null;
   cartProducts: CartProduct[];
   total: number;
@@ -93,10 +92,6 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
   const canPickUp =
     isAcceptedAssignment && Boolean(order.restaurantHandedToCourierAt) && !order.courierPickedUpAt;
   const isDelivering = order.orderStatus === 'transportation';
-  const deliveryDistanceKm =
-    typeof order.deliveryDistanceKm === 'number' && Number.isFinite(order.deliveryDistanceKm)
-      ? order.deliveryDistanceKm
-      : null;
   const estimatedDeliveryMinutes =
     typeof order.estimatedDeliveryMinutes === 'number' && order.estimatedDeliveryMinutes > 0
       ? order.estimatedDeliveryMinutes
@@ -250,27 +245,12 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
           </div>
           <ReportProblemDialog orderId={order._id} defaultTarget='app_support' />
 
-          {(deliveryDistanceKm !== null || estimatedDeliveryMinutes !== null) && (
+          {estimatedDeliveryMinutes !== null && (
             <div className='rounded-lg border bg-muted/20 p-4'>
-              <h3 className='font-semibold text-foreground mb-3'>Route Summary</h3>
-              <div className='grid gap-3 text-sm sm:grid-cols-2'>
-                <div>
-                  <span className='text-muted-foreground'>Restaurant to customer</span>
-                  <p className='font-medium text-foreground'>
-                    {deliveryDistanceKm !== null
-                      ? `${deliveryDistanceKm.toFixed(1)} km`
-                      : 'Not calculated'}
-                  </p>
-                </div>
-                <div>
-                  <span className='text-muted-foreground'>Estimated travel time</span>
-                  <p className='font-medium text-foreground'>
-                    {estimatedDeliveryMinutes !== null
-                      ? `${estimatedDeliveryMinutes} min`
-                      : 'Not set'}
-                  </p>
-                </div>
-              </div>
+              <h3 className='font-semibold text-foreground mb-2'>Estimated Travel Time</h3>
+              <p className='text-sm text-muted-foreground'>
+                Restaurant estimate: {estimatedDeliveryMinutes} min
+              </p>
             </div>
           )}
 

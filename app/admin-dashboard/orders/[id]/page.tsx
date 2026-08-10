@@ -983,8 +983,7 @@ const OrderDetailPage = () => {
                       <label className='text-sm font-medium'>Select Available Courier</label>
                       {couriers.length === 0 ? (
                         <p className='text-sm text-amber-600'>
-                          No available couriers at the moment. All couriers are currently delivering
-                          orders.
+                          No couriers are online, free, and scheduled to work right now.
                         </p>
                       ) : (
                         <>
@@ -1013,7 +1012,8 @@ const OrderDetailPage = () => {
                           </select>
                           <p className='text-xs text-muted-foreground'>
                             Suggested couriers are sorted by availability, current order load,
-                            distance to restaurant, then rating.
+                            distance to restaurant, then rating. Couriers outside their working
+                            schedule are hidden from this list.
                           </p>
                         </>
                       )}

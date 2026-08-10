@@ -9,8 +9,8 @@ const MyDeliveriesLoading = () => {
     <div className='container mx-auto px-4 py-8 max-w-7xl'>
       <Skeleton className='mb-8 h-9 w-56' />
 
-      <div className='mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8'>
-        {[...Array(8)].map((_, idx) => (
+      <div className='mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+        {[...Array(7)].map((_, idx) => (
           <div key={idx} className='rounded-xl border bg-card p-4 shadow-sm'>
             <div className='flex items-center gap-3'>
               <Skeleton className='size-10 rounded-lg' />

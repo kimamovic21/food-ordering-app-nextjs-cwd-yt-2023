@@ -19,7 +19,7 @@ import {
   Phone,
   CreditCard,
   Mail,
-  Route,
+  Clock,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import useProfile from '@/hooks/useProfile';
@@ -44,7 +44,6 @@ type DeliveredOrder = {
   city: string;
   country: string;
   specialInstructions?: string;
-  deliveryDistanceKm?: number | null;
   estimatedDeliveryMinutes?: number | null;
   cartProducts: CartProduct[];
   deliveryFee: number;
@@ -206,20 +205,12 @@ const DeliveryDetailsPage = () => {
                 <p className='font-medium text-lg'>${order.total.toFixed(2)}</p>
               </div>
             </div>
-            {(typeof order.deliveryDistanceKm === 'number' ||
-              typeof order.estimatedDeliveryMinutes === 'number') && (
+            {typeof order.estimatedDeliveryMinutes === 'number' && (
               <div className='flex items-center gap-2'>
-                <Route className='h-4 w-4 text-muted-foreground' />
+                <Clock className='h-4 w-4 text-muted-foreground' />
                 <div>
-                  <p className='text-sm text-muted-foreground'>Route Summary</p>
-                  <p className='font-medium'>
-                    {typeof order.deliveryDistanceKm === 'number'
-                      ? `${order.deliveryDistanceKm.toFixed(1)} km`
-                      : 'Distance not calculated'}
-                    {typeof order.estimatedDeliveryMinutes === 'number'
-                      ? ` - ${order.estimatedDeliveryMinutes} min estimate`
-                      : ''}
-                  </p>
+                  <p className='text-sm text-muted-foreground'>Estimated Travel Time</p>
+                  <p className='font-medium'>{order.estimatedDeliveryMinutes} min</p>
                 </div>
               </div>
             )}

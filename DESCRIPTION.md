@@ -112,7 +112,7 @@ They can:
 - Share live location.
 - Simulate/manual update location in development/testing flows.
 - View delivery map and customer address.
-- View route distance and estimated delivery time summaries for active and completed deliveries.
+- View estimated delivery time summaries for active and completed deliveries.
 - Enter the customer's delivery PIN to record handoff.
 - Request failed-delivery cancellation after at least 30 minutes in transport when the customer is unavailable.
 - View completed delivery history.
@@ -267,8 +267,8 @@ Canceled failed deliveries do not count as courier earnings because courier earn
 
 Courier history and performance:
 
-- Completed delivery history includes route distance and estimated delivery-time summaries.
-- Courier dashboard metrics can summarize completed deliveries, declined assignments, average delivery minutes, late deliveries, ratings, and total/average route distance.
+- Completed delivery history includes earnings, delivery-time summaries, ratings, and reliability metrics.
+- Courier dashboard metrics can summarize completed deliveries, declined assignments, average delivery minutes, late deliveries, ratings, and earnings without tracking total route mileage.
 
 ## Support Ticket Logic
 

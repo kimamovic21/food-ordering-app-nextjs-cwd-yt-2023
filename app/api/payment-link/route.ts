@@ -12,6 +12,41 @@ const stripe = stripeSecretKey
 
 const isPaid = (order: any) => Boolean(order.orderPaid ?? order.paymentStatus ?? order.paid);
 
+const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100;
+
+const createCheckoutSessionForOrder = async (order: any, request: Request, email: string) => {
+  const origin =
+    request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const total = roundToTwoDecimals(Number(order.total) || 0);
+
+  if (total <= 0) {
+    throw new Error('Order total is invalid');
+  }
+
+  return stripe!.checkout.sessions.create({
+    mode: 'payment',
+    payment_method_types: ['card'],
+    customer_email: order.email || email,
+    metadata: {
+      orderId: order._id.toString(),
+    },
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: 'usd',
+          unit_amount: Math.round(total * 100),
+          product_data: {
+            name: `Food order #${order._id.toString().slice(-6)}`,
+          },
+        },
+      },
+    ],
+    success_url: `${origin}/checkout?status=success&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/checkout?status=cancelled`,
+  });
+};
+
 export async function GET(request: Request) {
   if (!stripe) {
     return Response.json({ error: 'Stripe is not configured' }, { status: 500 });
@@ -38,7 +73,7 @@ export async function GET(request: Request) {
     return Response.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const order = await Order.findById(orderId).lean();
+  const order = await Order.findById(orderId);
 
   if (!order) {
     return Response.json({ error: 'Order not found' }, { status: 404 });
@@ -64,19 +99,43 @@ export async function GET(request: Request) {
   }
 
   if (!order.stripeSessionId) {
-    return Response.json({ error: 'No payment session found for this order' }, { status: 404 });
+    const stripeSession = await createCheckoutSessionForOrder(order, request, session.user.email);
+    order.stripeSessionId = stripeSession.id;
+    await order.save();
+
+    return Response.json({ url: stripeSession.url });
   }
 
   try {
     const stripeSession = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
 
-    if (stripeSession.status === 'expired') {
-      return Response.json({ error: 'Payment session has expired' }, { status: 400 });
+    if (stripeSession.payment_status === 'paid') {
+      (order as any).orderPaid = true;
+      (order as any).paid = true;
+      order.stripeSessionId = stripeSession.id;
+      await order.save();
+
+      return Response.json({
+        paid: true,
+        message: 'Payment was already completed. Your order has been updated.',
+      });
     }
 
-    return Response.json({ url: stripeSession.url });
+    if (stripeSession.status === 'open' && stripeSession.url) {
+      return Response.json({ url: stripeSession.url });
+    }
+
+    const newStripeSession = await createCheckoutSessionForOrder(
+      order,
+      request,
+      session.user.email
+    );
+    order.stripeSessionId = newStripeSession.id;
+    await order.save();
+
+    return Response.json({ url: newStripeSession.url });
   } catch (error) {
-    console.error('Error retrieving Stripe session:', error);
-    return Response.json({ error: 'Failed to retrieve payment session' }, { status: 500 });
+    console.error('Error retrieving or creating Stripe session:', error);
+    return Response.json({ error: 'Failed to create payment session' }, { status: 500 });
   }
 }

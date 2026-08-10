@@ -12,12 +12,14 @@ import {
 } from '@/libs/notifications';
 
 const stripeRetrieveSession = vi.fn();
+const stripeCreateSession = vi.fn();
 
 vi.mock('stripe', () => ({
   default: class StripeMock {
     checkout = {
       sessions: {
         retrieve: stripeRetrieveSession,
+        create: stripeCreateSession,
       },
     };
   },
@@ -167,6 +169,7 @@ describe('high-priority order, review, and payment-link routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.STRIPE_SK = 'sk_test_payment_link';
+    process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
     delete process.env.SUPER_ADMIN_EMAIL;
     vi.resetModules();
   });
@@ -770,17 +773,22 @@ describe('high-priority order, review, and payment-link routes', () => {
       user: { email: customer.email },
     } as never);
     vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    const orderDocument = {
+      _id: { toString: () => 'order-1' },
+      userId: customer._id,
+      restaurantId: { toString: () => 'restaurant-1' },
+      email: customer.email,
+      total: 25,
+      orderPaid: false,
+      stripeSessionId: 'cs_test_123',
+      save: vi.fn(),
+    };
     vi.mocked(Order.findById).mockReturnValueOnce({
-      lean: vi.fn().mockResolvedValue({
-        _id: 'order-1',
-        userId: customer._id,
-        restaurantId: { toString: () => 'restaurant-1' },
-        orderPaid: false,
-        stripeSessionId: 'cs_test_123',
-      }),
+      then: (resolve: (value: unknown) => unknown) => resolve(orderDocument),
     } as never);
     stripeRetrieveSession.mockResolvedValueOnce({
       status: 'open',
+      payment_status: 'unpaid',
       url: 'https://checkout.stripe.test/session',
     });
 
@@ -791,7 +799,95 @@ describe('high-priority order, review, and payment-link routes', () => {
     expect(res.status).toBe(200);
     expect(body).toEqual({ url: 'https://checkout.stripe.test/session' });
     expect(stripeRetrieveSession).toHaveBeenCalledWith('cs_test_123');
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+    expect(orderDocument.save).not.toHaveBeenCalled();
     expect(mongoose.connect).toHaveBeenCalledWith(process.env.MONGODB_URL);
+  });
+
+  it('syncs an order as paid when Stripe says the existing session is already paid', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: customer.email },
+    } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    const orderDocument = {
+      _id: { toString: () => 'order-1' },
+      userId: customer._id,
+      restaurantId: { toString: () => 'restaurant-1' },
+      email: customer.email,
+      total: 25,
+      orderPaid: false,
+      paid: false,
+      stripeSessionId: 'cs_test_paid_123',
+      save: vi.fn(),
+    };
+    vi.mocked(Order.findById).mockReturnValueOnce({
+      then: (resolve: (value: unknown) => unknown) => resolve(orderDocument),
+    } as never);
+    stripeRetrieveSession.mockResolvedValueOnce({
+      id: 'cs_test_paid_123',
+      status: 'complete',
+      payment_status: 'paid',
+      url: null,
+    });
+
+    const { GET } = await import('@/app/api/payment-link/route');
+    const res = await GET(new Request('http://localhost/api/payment-link?orderId=order-1'));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toEqual({
+      paid: true,
+      message: 'Payment was already completed. Your order has been updated.',
+    });
+    expect(orderDocument.orderPaid).toBe(true);
+    expect(orderDocument.paid).toBe(true);
+    expect(orderDocument.save).toHaveBeenCalledTimes(1);
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
+  it('creates a new Stripe session when the old payment session cannot be reused', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: customer.email },
+    } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    const orderDocument = {
+      _id: { toString: () => 'order-1' },
+      userId: customer._id,
+      restaurantId: { toString: () => 'restaurant-1' },
+      email: customer.email,
+      total: 29.03,
+      orderPaid: false,
+      stripeSessionId: 'cs_test_expired_123',
+      save: vi.fn(),
+    };
+    vi.mocked(Order.findById).mockReturnValueOnce({
+      then: (resolve: (value: unknown) => unknown) => resolve(orderDocument),
+    } as never);
+    stripeRetrieveSession.mockResolvedValueOnce({
+      status: 'expired',
+      payment_status: 'unpaid',
+      url: null,
+    });
+    stripeCreateSession.mockResolvedValueOnce({
+      id: 'cs_test_new_123',
+      url: 'https://checkout.stripe.test/new-session',
+    });
+
+    const { GET } = await import('@/app/api/payment-link/route');
+    const res = await GET(new Request('http://localhost/api/payment-link?orderId=order-1'));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ url: 'https://checkout.stripe.test/new-session' });
+    expect(stripeCreateSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: 'payment',
+        customer_email: customer.email,
+        metadata: { orderId: 'order-1' },
+      })
+    );
+    expect(orderDocument.stripeSessionId).toBe('cs_test_new_123');
+    expect(orderDocument.save).toHaveBeenCalledTimes(1);
   });
 
   it('blocks payment links for canceled orders', async () => {
@@ -800,14 +896,15 @@ describe('high-priority order, review, and payment-link routes', () => {
     } as never);
     vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
     vi.mocked(Order.findById).mockReturnValueOnce({
-      lean: vi.fn().mockResolvedValue({
-        _id: 'order-1',
-        userId: customer._id,
-        restaurantId: { toString: () => 'restaurant-1' },
-        orderPaid: false,
-        orderStatus: 'canceled',
-        stripeSessionId: 'cs_test_123',
-      }),
+      then: (resolve: (value: unknown) => unknown) =>
+        resolve({
+          _id: 'order-1',
+          userId: customer._id,
+          restaurantId: { toString: () => 'restaurant-1' },
+          orderPaid: false,
+          orderStatus: 'canceled',
+          stripeSessionId: 'cs_test_123',
+        }),
     } as never);
 
     const { GET } = await import('@/app/api/payment-link/route');

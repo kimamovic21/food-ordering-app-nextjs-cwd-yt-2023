@@ -16,7 +16,7 @@ It includes:
 - approved in-app messaging between customers, restaurant owners, admins, and couriers
 - notifications center with unread counts, mark-as-read actions, and role-aware routing
 - admin dashboard for users, menu items, categories, restaurants, couriers, orders, support tickets, and statistics
-- courier dashboard with active delivery, route distance summaries, delivery history, and courier ratings views
+- courier dashboard with active delivery, delivery history, earnings, and courier ratings views
 - courier workflow with assignment, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
 - order timeline with preparation/delivery estimates, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
 - restaurant busy checkout protection based on each restaurant's active kitchen order limit

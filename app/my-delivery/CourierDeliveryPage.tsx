@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic';
 import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import AvailabilityToggle from './AvailabilityToggle';
+import CourierScheduleCard from './CourierScheduleCard';
 import LocationShareButton from './LocationShareButton';
 import DeliveryOrderCard from './DeliveryOrderCard';
 import ManualLocationSimulator from './ManualLocationSimulator';
@@ -46,7 +47,6 @@ type OrderDetailsType = {
   city: string;
   country: string;
   specialInstructions?: string;
-  deliveryDistanceKm?: number | null;
   estimatedDeliveryMinutes?: number | null;
   cartProducts: CartProduct[];
   total: number;
@@ -559,6 +559,8 @@ const CourierPage = () => {
         togglingAvailability={togglingAvailability}
         onToggle={handleToggleAvailability}
       />
+
+      <CourierScheduleCard />
 
       <LocationShareButton
         locationShared={locationShared}

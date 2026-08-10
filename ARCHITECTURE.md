@@ -84,7 +84,7 @@ The important persistent models are:
 - `User`: account, role, profile fields, courier availability/location, restaurant ownership, favorites.
 - `Restaurant`: owner, location, contact, images, working hours, blocked dates, tax, courier fee, preparation/delivery estimates, active order limit.
 - `MenuItem`: restaurant item, category, image, prices, availability.
-- `Order`: customer delivery details, cart snapshot, payment data, restaurant fee/tax snapshots, coupon/loyalty snapshots, estimate snapshots, route distance, status timeline timestamps, courier, delivery PIN, completion state.
+- `Order`: customer delivery details, cart snapshot, payment data, restaurant fee/tax snapshots, coupon/loyalty snapshots, estimate snapshots, status timeline timestamps, courier, delivery PIN, completion state.
 - `Coupon`: restaurant-scoped discounts and validity rules.
 - `RestaurantReview` and `CourierReview`: one review per completed order flow.
 - `Notification`: role-aware notifications with read state and metadata routing.
@@ -249,7 +249,7 @@ If the customer does not confirm, the restaurant owner can finalize delivery fro
 
 If the customer is unavailable after at least 30 minutes in transport, the courier can request failed-delivery cancellation. The order remains in `transportation` until the restaurant owner or super admin verifies the cancellation; verification sets the order to `canceled` and releases the courier from `takenOrder`.
 
-Courier delivery views also show route distance and estimated travel time. Completed delivery history can summarize completed deliveries, declined assignments, average delivery minutes, late deliveries, ratings, and total/average route distance.
+Courier delivery views show estimated travel time without tracking total route mileage. Completed delivery history can summarize completed deliveries, declined assignments, average delivery minutes, late deliveries, ratings, and earnings.
 
 ## Support Ticket Flow
 
@@ -332,4 +332,4 @@ For risky areas, prefer focused route tests first:
 - restaurant availability, best coupon suggestion, and reorder validation
 - order lifecycle and delivery confirmation
 - support ticket authorization
-- courier assignment, location updates, route distance summaries, and delivery metrics
+- courier assignment, location updates, delivery metrics, and earnings summaries

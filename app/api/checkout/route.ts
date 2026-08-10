@@ -458,10 +458,6 @@ export async function POST(req: Request) {
     country,
     deliveryLatitude: hasDeliveryLocation ? normalizedDeliveryLatitude : null,
     deliveryLongitude: hasDeliveryLocation ? normalizedDeliveryLongitude : null,
-    deliveryDistanceKm:
-      typeof orderingStatus.distanceKm === 'number'
-        ? roundToTwoDecimals(orderingStatus.distanceKm)
-        : null,
     specialInstructions: normalizedSpecialInstructions,
     cartProducts: verifiedItems.map((item) => ({
       productId: item._id,
@@ -511,7 +507,6 @@ export async function POST(req: Request) {
     metadata: {
       total,
       couponCode: couponSnapshot.couponCode,
-      deliveryDistanceKm: orderingStatus.distanceKm,
     },
   });
 

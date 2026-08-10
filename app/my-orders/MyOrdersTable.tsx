@@ -36,13 +36,7 @@ type OrderType = {
   total: number;
   paymentStatus: boolean;
   orderStatus:
-    | 'placed'
-    | 'processing'
-    | 'ready'
-    | 'transportation'
-    | 'delivered'
-    | 'completed'
-    | 'canceled';
+    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
   createdAt: string;
 };
 
@@ -67,18 +61,32 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || 'Failed to get payment link');
+        sonnerToast.error(data.error || 'Failed to get payment link');
+        return;
+      }
+
+      if (data.paid) {
+        const currentOrder = orders.find((order) => order._id === orderId);
+        if (currentOrder) {
+          onOrderUpdated?.({
+            ...currentOrder,
+            paymentStatus: true,
+          });
+        } else {
+          router.refresh();
+        }
+        sonnerToast.success(data.message || 'Payment completed');
         return;
       }
 
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert('Payment link not available');
+        sonnerToast.error('Payment link not available');
       }
     } catch (error) {
       console.error('Error fetching payment link:', error);
-      alert('Failed to get payment link');
+      sonnerToast.error('Failed to get payment link');
     } finally {
       setProcessingPayment(null);
     }

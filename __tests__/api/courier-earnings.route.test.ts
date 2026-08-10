@@ -83,7 +83,6 @@ describe('GET /api/courier-earnings', () => {
           completedAt: new Date('2026-02-01T10:20:00.000Z'),
           updatedAt: new Date('2026-02-01T10:20:00.000Z'),
           estimatedDeliveryMinutes: 25,
-          deliveryDistanceKm: 4,
           deliveryFee: 6,
         },
       ]) as never
@@ -110,8 +109,6 @@ describe('GET /api/courier-earnings', () => {
       totalEarnings: 6,
       averageEarning: 6,
       averageDeliveryMinutes: 20,
-      totalDistanceKm: 4,
-      averageDistanceKm: 4,
       averageRating: 5,
       ratingCount: 2,
     });

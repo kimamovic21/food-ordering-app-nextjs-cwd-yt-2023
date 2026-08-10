@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { Calendar, Clock, DollarSign, Package, Route, Star, XCircle } from 'lucide-react';
+import { Calendar, Clock, DollarSign, Package, Star, XCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,8 +26,6 @@ type CourierEarningsSummary = {
   totalEarnings: number;
   averageEarning: number;
   averageDeliveryMinutes: number;
-  totalDistanceKm: number;
-  averageDistanceKm: number;
   averageRating: number;
   ratingCount: number;
 };
@@ -58,8 +56,6 @@ const initialSummary: CourierEarningsSummary = {
   totalEarnings: 0,
   averageEarning: 0,
   averageDeliveryMinutes: 0,
-  totalDistanceKm: 0,
-  averageDistanceKm: 0,
   averageRating: 0,
   ratingCount: 0,
 };
@@ -132,7 +128,7 @@ const CourierEarningsPanel = ({
       <div className='space-y-6'>
         <Skeleton className='h-24 w-full rounded-xl' />
         <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
-          {[...Array(8)].map((_, index) => (
+          {[...Array(6)].map((_, index) => (
             <Skeleton key={index} className='h-24 rounded-xl' />
           ))}
         </div>
@@ -161,16 +157,6 @@ const CourierEarningsPanel = ({
       label: 'Average delivery',
       value: summary.averageDeliveryMinutes ? `${summary.averageDeliveryMinutes} min` : '-',
       icon: Clock,
-    },
-    {
-      label: 'Total distance',
-      value: summary.totalDistanceKm ? `${summary.totalDistanceKm.toFixed(1)} km` : '-',
-      icon: Route,
-    },
-    {
-      label: 'Average distance',
-      value: summary.averageDistanceKm ? `${summary.averageDistanceKm.toFixed(1)} km` : '-',
-      icon: Route,
     },
     {
       label: 'Late deliveries',
