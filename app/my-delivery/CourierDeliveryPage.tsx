@@ -55,6 +55,7 @@ type OrderDetailsType = {
     'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
   courierId?: { _id: string; name: string; email: string; image?: string };
   courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
+  courierAssignmentNote?: string;
   restaurantHandedToCourierAt?: string | null;
   courierPickedUpAt?: string | null;
   transportationAt?: string | null;

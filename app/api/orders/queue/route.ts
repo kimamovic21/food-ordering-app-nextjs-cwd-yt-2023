@@ -2,6 +2,10 @@ import { getServerSession } from 'next-auth/next';
 import mongoose from 'mongoose';
 import { authOptions } from '@/libs/authOptions';
 import { notifyRestaurantAdminsAboutLateOrder } from '@/libs/notifications';
+import {
+  applyOrderAutoCancellation,
+  isReadyWithoutCourierLate,
+} from '@/libs/orderAutoCancellation';
 import { Notification } from '@/models/notification';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
@@ -38,13 +42,18 @@ export async function GET() {
     return Response.json({ error: 'Admin is not assigned to a restaurant' }, { status: 403 });
   }
 
-  const orders = await Order.find({
+  const orderDocuments = await Order.find({
     restaurantId: user.restaurantId,
     orderStatus: { $in: activeStatuses },
   })
     .populate('courierId', 'name email image')
-    .sort({ createdAt: 1 })
-    .lean();
+    .sort({ createdAt: 1 });
+
+  const orders = (
+    await Promise.all(orderDocuments.map((order) => applyOrderAutoCancellation(order)))
+  )
+    .map(({ order }) => order.toObject())
+    .filter((order) => activeStatuses.includes(order.orderStatus));
 
   const lateOrders = orders
     .map((order) => ({
@@ -54,7 +63,7 @@ export async function GET() {
     .filter(
       ({ order, minutesSincePlaced }) =>
         !['transportation', 'delivered'].includes(order.orderStatus) &&
-        minutesSincePlaced >= LATE_ORDER_THRESHOLD_MINUTES
+        (minutesSincePlaced >= LATE_ORDER_THRESHOLD_MINUTES || isReadyWithoutCourierLate(order))
     );
 
   await Promise.all(
@@ -62,7 +71,9 @@ export async function GET() {
       const existingLateNotification = await Notification.findOne({
         orderId: order._id,
         type: 'late_order',
-        'metadata.lateOrderAlert': 'placement_to_transport_120',
+        'metadata.lateOrderAlert': isReadyWithoutCourierLate(order)
+          ? 'ready_without_courier_15'
+          : 'placement_to_transport_120',
       }).lean();
 
       if (existingLateNotification) {
@@ -73,6 +84,9 @@ export async function GET() {
         restaurantId: user.restaurantId,
         orderId: order._id,
         minutesSincePlaced,
+        reason: isReadyWithoutCourierLate(order)
+          ? 'ready_without_courier'
+          : 'late_before_transport',
       });
     })
   );
@@ -81,6 +95,7 @@ export async function GET() {
     orders: orders.map((order) => ({
       ...normalizeOrder(order),
       minutesSincePlaced: getMinutesSince(order.createdAt),
+      isReadyWithoutCourierLate: isReadyWithoutCourierLate(order),
       isLateBeforeTransport: lateOrders.some(
         ({ order: lateOrder }) => lateOrder._id.toString() === order._id.toString()
       ),

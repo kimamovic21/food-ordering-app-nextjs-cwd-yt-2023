@@ -28,6 +28,7 @@ export const sanitizeDevOrderTimeOffsets = (value: unknown): OrderPhaseDurationO
     deliveryTravel: sanitizeDevOrderTimeOffsetMinutes(offsets.deliveryTravel),
     confirmationWait: sanitizeDevOrderTimeOffsetMinutes(offsets.confirmationWait),
     failedDeliveryWait: sanitizeDevOrderTimeOffsetMinutes(offsets.failedDeliveryWait),
+    readyWithoutCourierWait: sanitizeDevOrderTimeOffsetMinutes(offsets.readyWithoutCourierWait),
     totalOrderTime: sanitizeDevOrderTimeOffsetMinutes(offsets.totalOrderTime),
   };
 };

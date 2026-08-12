@@ -502,6 +502,18 @@ const CartPage = () => {
     );
   };
 
+  const handleManualDeliveryLocationUpdate = (latitude: number, longitude: number) => {
+    if (process.env.NODE_ENV !== 'development') {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      deliveryLatitude: latitude,
+      deliveryLongitude: longitude,
+    }));
+  };
+
   const subtotal = cartItems.reduce(
     (sum, item) => sum + getValidatedItemPrice(item) * item.quantity,
     0
@@ -987,6 +999,7 @@ const CartPage = () => {
             deliveryDistanceKm={deliveryDistanceKm}
             isGettingDeliveryLocation={isGettingDeliveryLocation}
             onUseCurrentLocation={handleUseCurrentLocation}
+            onManualLocationUpdate={handleManualDeliveryLocationUpdate}
           />
           <OrderSummary
             subtotal={subtotal}

@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-type DevOrderTimeSimulatorOffsetKey = OrderPhaseDurationOffsetKey | 'failedDeliveryWait';
+type DevOrderTimeSimulatorOffsetKey =
+  OrderPhaseDurationOffsetKey | 'failedDeliveryWait' | 'readyWithoutCourierWait';
 
 type DevOrderTimelineSimulatorProps = {
   offsets: OrderPhaseDurationOffsets;
@@ -27,6 +28,11 @@ const controls: { key: DevOrderTimeSimulatorOffsetKey; label: string; hint?: str
     key: 'failedDeliveryWait',
     label: 'Customer unavailable wait',
     hint: 'Any value unlocks the courier failed-delivery button in development.',
+  },
+  {
+    key: 'readyWithoutCourierWait',
+    label: 'Ready without courier',
+    hint: 'Adds time only for auto-cancel testing when an order is ready but has no courier.',
   },
 ];
 
@@ -57,8 +63,8 @@ const DevOrderTimelineSimulator = ({
   const totalOffset = controls.reduce((total, control) => total + (offsets[control.key] ?? 0), 0);
 
   return (
-    <Card className='fixed bottom-5 right-5 z-50 w-[min(92vw,380px)] border-border/80 bg-background/95 shadow-2xl backdrop-blur'>
-      <CardHeader className='space-y-3 pb-3'>
+    <Card className='fixed bottom-4 right-4 z-50 flex max-h-[calc(100vh-2rem)] w-[min(92vw,380px)] flex-col overflow-hidden border-border/80 bg-background/95 shadow-2xl backdrop-blur sm:bottom-5 sm:right-5 sm:max-h-[calc(100vh-2.5rem)]'>
+      <CardHeader className='shrink-0 space-y-3 pb-3'>
         <div className='flex items-start justify-between gap-3'>
           <div className='space-y-1'>
             <CardTitle className='flex items-center gap-2 text-base'>
@@ -66,8 +72,8 @@ const DevOrderTimelineSimulator = ({
               Dev time simulator
             </CardTitle>
             <p className='text-xs text-muted-foreground'>
-              Add simulated minutes without changing MongoDB data. Delivery travel also affects the
-              failed-delivery dev check.
+              Add simulated minutes without changing MongoDB data. Use it to test delivery timing,
+              failed-delivery checks, and ready-without-courier auto-cancel.
             </p>
           </div>
           <Button
@@ -86,7 +92,7 @@ const DevOrderTimelineSimulator = ({
           <span className='text-xs text-muted-foreground'>Total simulated: {totalOffset} min</span>
         </div>
       </CardHeader>
-      <CardContent className='space-y-3'>
+      <CardContent className='min-h-0 space-y-3 overflow-y-auto pr-3'>
         {controls.map((control) => {
           const offset = offsets[control.key] ?? 0;
 

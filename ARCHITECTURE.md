@@ -189,6 +189,8 @@ stateDiagram-v2
   delivered --> completed: Customer confirms
   delivered --> completed: Restaurant admin finalizes
   placed --> canceled: Customer cancels unpaid order
+  placed --> canceled: System auto-cancels stale unpaid order
+  ready --> canceled: System auto-cancels ready order without courier
   completed --> [*]
   canceled --> [*]
 ```
@@ -218,7 +220,11 @@ Operational monitoring builds on the same timestamps:
 
 - `/api/orders/queue` returns active paid orders grouped by lifecycle phase.
 - `/admin-dashboard/orders` surfaces late-order alerts and links admins to `/admin-dashboard/order-queue`.
+- Ready orders without a courier show an admin warning after 15 minutes.
+- Stale unpaid orders auto-cancel after 30 minutes; ready orders without a courier auto-cancel after 60 minutes.
+- System auto-cancellations mark the order unpaid, store `canceledBy: system`, add `cancellationReason`, notify customer/admins, and write an audit log.
 - ETA-style notifications reuse estimate snapshots so status changes can include useful preparation or delivery timing.
+- `OrderProgressStepper` gives customers and admins a compact visual stage tracker for placed, kitchen, transport, and delivered phases.
 
 ## Delivery And Courier Flow
 
@@ -231,7 +237,7 @@ sequenceDiagram
   participant Order
 
   Admin->>API: Mark order ready
-  Admin->>API: Assign available courier
+  Admin->>API: Assign available courier with optional courier-only note
   Courier->>API: Accept assignment
   Admin->>API: Mark handed to courier
   Courier->>API: Mark picked up

@@ -48,6 +48,7 @@ type OrderDetailsType = {
     'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
   courierId?: { _id: string; name: string; email: string; image?: string };
   courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
+  courierAssignmentNote?: string;
   restaurantHandedToCourierAt?: string | null;
   courierPickedUpAt?: string | null;
   transportationAt?: string | null;
@@ -175,6 +176,16 @@ const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
               <h3 className='font-semibold text-foreground mb-2'>Special Instructions</h3>
               <p className='whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground'>
                 {order.specialInstructions}
+              </p>
+            </div>
+          )}
+          {order.courierAssignmentNote?.trim() && (
+            <div className='rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30'>
+              <h3 className='font-semibold text-amber-900 mb-2 dark:text-amber-100'>
+                Assignment Note
+              </h3>
+              <p className='whitespace-pre-wrap text-sm leading-relaxed text-amber-900 dark:text-amber-100/90'>
+                {order.courierAssignmentNote}
               </p>
             </div>
           )}

@@ -18,7 +18,8 @@ It includes:
 - admin dashboard for users, menu items, categories, restaurants, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, and courier ratings views
 - courier workflow with assignment, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
-- order timeline with preparation/delivery estimates, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
+- order timeline with visual phase icons, preparation/delivery estimates, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
+- order safety automation for stale unpaid orders and ready orders that cannot get a courier
 - restaurant busy checkout protection based on each restaurant's active kitchen order limit
 - Stripe checkout/webhook flow
 - Cloudinary media uploads
@@ -52,7 +53,7 @@ It includes:
 - CRUD for categories, menu items, restaurants, and users
 - Menu item availability controls for temporarily unavailable or sold-out items
 - Restaurant preparation/delivery estimate settings, working-hours checkout protection, and active order limit controls
-- Courier management and order assignment
+- Courier management and order assignment with optional courier-only assignment notes
 - Order lifecycle management, late-order operational alerts, order queue, and dashboards/statistics
 - Support ticket dashboard for reported order, delivery, and app issues
 - Notifications management with order, delivery, and assignment updates
@@ -67,7 +68,7 @@ It includes:
 - Leaflet map tracking with polling + manual refresh
 - Delivery PIN entry to record courier handoff before customer/admin confirmation
 - Failed-delivery cancellation request when the customer is unavailable after extended transport time
-- Route distance and estimated delivery time summaries for active and completed deliveries
+- Estimated delivery time summaries for active and completed deliveries
 - Report-problem action for delivery issues
 - Courier-facing review and rating list for completed deliveries
 - Customer-facing courier review page from order details

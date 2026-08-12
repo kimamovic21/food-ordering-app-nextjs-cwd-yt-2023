@@ -41,7 +41,9 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { courierId, orderId } = await request.json();
+  const { courierId, orderId, courierAssignmentNote } = await request.json();
+  const assignmentNote =
+    typeof courierAssignmentNote === 'string' ? courierAssignmentNote.trim().slice(0, 300) : '';
 
   if (!courierId || !mongoose.Types.ObjectId.isValid(courierId)) {
     return Response.json({ error: 'Invalid courier ID' }, { status: 400 });
@@ -97,6 +99,7 @@ export async function PATCH(request: Request) {
   // Update order with courier and change status to transportation
   order.courierId = courierId;
   order.courierAssignmentStatus = 'pending';
+  order.courierAssignmentNote = assignmentNote;
   order.courierAssignedAt = new Date();
   order.courierAcceptedAt = null;
   order.courierDeclinedAt = null;

@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
+import OrderProgressStepper from '@/components/shared/OrderProgressStepper';
 import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
@@ -63,13 +64,7 @@ type OrderDetailsType = {
   total: number;
   paymentStatus: boolean;
   orderStatus:
-    | 'placed'
-    | 'processing'
-    | 'ready'
-    | 'transportation'
-    | 'delivered'
-    | 'completed'
-    | 'canceled';
+    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
   createdAt: string;
   processingAt?: string | null;
   readyAt?: string | null;
@@ -79,6 +74,8 @@ type OrderDetailsType = {
   adminConfirmedDeliveryAt?: string | null;
   deliveryCompletedBy?: 'customer' | 'admin' | null;
   deliveryPin?: string | null;
+  canceledBy?: 'customer' | 'restaurant_owner' | 'super_admin' | 'system' | null;
+  cancellationReason?: string | null;
   canceledAt?: string | null;
   completedAt?: string | null;
   taxPercentage?: number;
@@ -501,6 +498,26 @@ const MyOrderDetailPage = () => {
           estimatedPreparationMinutes={order.estimatedPreparationMinutes}
           estimatedDeliveryMinutes={order.estimatedDeliveryMinutes}
         />
+
+        <div className='mb-6'>
+          <OrderProgressStepper status={order.orderStatus} />
+        </div>
+
+        {order.orderStatus === 'canceled' && order.canceledBy === 'system' && (
+          <Card className='mb-6 border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'>
+            <CardHeader>
+              <CardTitle>Order canceled automatically</CardTitle>
+              <CardDescription>
+                This order was marked unpaid because the process could not continue.
+              </CardDescription>
+            </CardHeader>
+            {order.cancellationReason?.trim() && (
+              <CardContent>
+                <p className='text-sm text-muted-foreground'>{order.cancellationReason}</p>
+              </CardContent>
+            )}
+          </Card>
+        )}
 
         {order.specialInstructions?.trim() && (
           <Card className='mb-6'>

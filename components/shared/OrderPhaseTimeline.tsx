@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatMillisecondsToTime } from '@/libs/useOrderElapsedTime';
+import { cn } from '@/libs/utils';
 
 type OrderPhaseTimelineProps = {
   createdAt: string;
@@ -23,7 +24,13 @@ export type OrderPhaseDurationOffsetKey =
   'waitingForKitchen' | 'kitchenPreparation' | 'deliveryTravel' | 'confirmationWait';
 
 export type OrderPhaseDurationOffsets = Partial<
-  Record<OrderPhaseDurationOffsetKey | 'failedDeliveryWait' | 'totalOrderTime', number>
+  Record<
+    | OrderPhaseDurationOffsetKey
+    | 'failedDeliveryWait'
+    | 'readyWithoutCourierWait'
+    | 'totalOrderTime',
+    number
+  >
 >;
 
 const formatDuration = (
@@ -60,6 +67,15 @@ const formatEstimate = (minutes?: number | null) => {
   const remainingMinutes = value % 60;
 
   return remainingMinutes ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+};
+
+const getCurrentCheckpointIndex = (status?: string) => {
+  if (status === 'completed') return 5;
+  if (status === 'delivered') return 4;
+  if (status === 'transportation') return 3;
+  if (status === 'ready') return 2;
+  if (status === 'processing') return 1;
+  return 0;
 };
 
 const OrderPhaseTimeline = ({
@@ -115,6 +131,7 @@ const OrderPhaseTimeline = ({
     { label: 'Courier handoff', done: Boolean(courierDeliveredAt) },
     { label: 'Completed', done: Boolean(completedAt) || orderStatus === 'completed' },
   ];
+  const currentCheckpointIndex = getCurrentCheckpointIndex(orderStatus);
 
   const phases = [
     {
@@ -161,7 +178,7 @@ const OrderPhaseTimeline = ({
       label: 'Total order time',
       value: formatDuration(createdAt, completedAt, now, totalDurationOffset),
       description: 'From order placement until final completion.',
-      isLive: shouldTick,
+      isLive: false,
     },
   ];
 
@@ -193,41 +210,49 @@ const OrderPhaseTimeline = ({
       <CardContent className='space-y-5'>
         <div className='grid gap-3 sm:grid-cols-3'>
           <div className='rounded-lg border bg-muted/30 p-3'>
-            <p className='text-sm font-semibold'>Estimated prep</p>
-            <p className='mt-1 font-mono text-lg font-bold'>
+            <p className='text-xs font-medium uppercase text-muted-foreground'>Estimated prep</p>
+            <p className='mt-2 font-mono text-xl font-bold'>
               {formatEstimate(estimatedPreparationMinutes)}
             </p>
           </div>
           <div className='rounded-lg border bg-muted/30 p-3'>
-            <p className='text-sm font-semibold'>Estimated delivery</p>
-            <p className='mt-1 font-mono text-lg font-bold'>
+            <p className='text-xs font-medium uppercase text-muted-foreground'>
+              Estimated delivery
+            </p>
+            <p className='mt-2 font-mono text-xl font-bold'>
               {formatEstimate(estimatedDeliveryMinutes)}
             </p>
           </div>
           <div className='rounded-lg border bg-muted/30 p-3'>
-            <p className='text-sm font-semibold'>Estimated total</p>
-            <p className='mt-1 font-mono text-lg font-bold'>
+            <p className='text-xs font-medium uppercase text-muted-foreground'>Estimated total</p>
+            <p className='mt-2 font-mono text-xl font-bold'>
               {formatEstimate(resolvedEstimatedTotalMinutes)}
             </p>
           </div>
         </div>
 
-        <div className='grid gap-2 sm:grid-cols-2 lg:grid-cols-3'>
-          {checkpoints.map((checkpoint) => (
+        <div className='grid gap-2 sm:grid-cols-3 xl:grid-cols-6'>
+          {checkpoints.map((checkpoint, index) => (
             <div
               key={checkpoint.label}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-                checkpoint.done
-                  ? 'border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-100'
-                  : 'bg-muted/20 text-muted-foreground'
-              }`}
+              className={cn(
+                'flex min-h-12 items-center gap-2 rounded-lg border bg-muted/15 px-3 py-2 text-sm transition-colors',
+                index < currentCheckpointIndex && 'text-foreground',
+                index === currentCheckpointIndex &&
+                  'border-primary/60 bg-primary/10 text-foreground shadow-sm',
+                index > currentCheckpointIndex && 'text-muted-foreground opacity-70'
+              )}
             >
               <span
-                className={`size-2 rounded-full ${
-                  checkpoint.done ? 'bg-green-500' : 'bg-muted-foreground/40'
-                }`}
+                className={cn(
+                  'size-2.5 rounded-full',
+                  index <= currentCheckpointIndex ? 'bg-primary' : 'bg-muted-foreground/30'
+                )}
               />
-              {checkpoint.label}
+              <span className='truncate'>{checkpoint.label}</span>
+              {checkpoint.done && index < currentCheckpointIndex && (
+                <span className='ml-auto text-xs text-muted-foreground'>Done</span>
+              )}
             </div>
           ))}
         </div>
@@ -236,12 +261,20 @@ const OrderPhaseTimeline = ({
           {phases.map((phase) => (
             <div
               key={phase.label}
-              className={`rounded-lg border p-3 ${
-                phase.isLive ? 'border-green-500/60 bg-green-500/10' : ''
-              }`}
+              className={cn(
+                'rounded-lg border bg-muted/10 p-4',
+                phase.isLive && 'border-primary/50 bg-primary/5'
+              )}
             >
-              <p className='text-sm font-semibold'>{phase.label}</p>
-              <p className='mt-1 font-mono text-lg font-bold'>{phase.value}</p>
+              <div className='flex items-start justify-between gap-3'>
+                <p className='text-sm font-semibold'>{phase.label}</p>
+                {phase.isLive && (
+                  <Badge variant='outline' className='border-primary/40 text-primary'>
+                    Active
+                  </Badge>
+                )}
+              </div>
+              <p className='mt-2 font-mono text-xl font-bold'>{phase.value}</p>
               <p className='mt-1 text-xs text-muted-foreground'>{phase.description}</p>
             </div>
           ))}

@@ -156,6 +156,12 @@ const OrderSchema = new Schema(
       enum: ['pending', 'accepted', 'declined', null],
       default: null,
     },
+    courierAssignmentNote: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 300,
+    },
     stripeSessionId: { type: String },
     receiptEmailSentAt: { type: Date, default: null },
     deliveryPin: { type: String, default: createDeliveryPin },
@@ -193,8 +199,14 @@ const OrderSchema = new Schema(
     },
     canceledBy: {
       type: String,
-      enum: ['customer', 'restaurant_owner', 'super_admin', null],
+      enum: ['customer', 'restaurant_owner', 'super_admin', 'system', null],
       default: null,
+    },
+    cancellationReason: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 300,
     },
     canceledAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },

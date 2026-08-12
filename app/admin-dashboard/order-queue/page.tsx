@@ -21,6 +21,7 @@ type QueueOrder = {
   courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
   minutesSincePlaced: number;
   isLateBeforeTransport: boolean;
+  isReadyWithoutCourierLate?: boolean;
   cartProducts: Array<{ name: string; quantity: number; size: string }>;
   courierId?: { name: string; email: string } | null;
 };
@@ -136,7 +137,7 @@ const OrderQueuePage = () => {
                       {order.isLateBeforeTransport && (
                         <Badge className='bg-red-100 text-red-800 hover:bg-red-100'>
                           <AlertTriangle className='mr-1 size-3' />
-                          Late
+                          {order.isReadyWithoutCourierLate ? 'No courier' : 'Late'}
                         </Badge>
                       )}
                     </div>

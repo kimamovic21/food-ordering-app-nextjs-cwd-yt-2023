@@ -7,6 +7,8 @@ import {
   notifyUserAboutOrderStatusChange,
 } from '@/libs/notifications';
 import { createAuditLog } from '@/libs/auditLog';
+import { getDevOrderTimeSimulatorOffsets } from '@/libs/devOrderTimeSimulatorStore';
+import { applyOrderAutoCancellation } from '@/libs/orderAutoCancellation';
 import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth/next';
 
@@ -56,15 +58,20 @@ export async function GET(request: Request) {
     const order = await Order.findOne({
       _id: id,
       ...(isSuperAdmin ? {} : { restaurantId: user.restaurantId }),
-    })
-      .populate('courierId', 'name email image')
-      .lean();
+    }).populate('courierId', 'name email image');
 
     if (!order) {
       return Response.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    return Response.json({ order: normalizeOrder(order) });
+    const { order: normalizedDocument } = await applyOrderAutoCancellation(
+      order,
+      process.env.NODE_ENV === 'development' ? getDevOrderTimeSimulatorOffsets(id) : {}
+    );
+
+    await normalizedDocument.populate('courierId', 'name email image');
+
+    return Response.json({ order: normalizeOrder(normalizedDocument.toObject()) });
   }
 
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
@@ -77,9 +84,10 @@ export async function GET(request: Request) {
     .populate('courierId', 'name email image')
     .sort({ _id: -1 })
     .skip(skip)
-    .limit(limit)
-    .lean();
-  const normalizedOrders = orders.map(normalizeOrder);
+    .limit(limit);
+  const normalizedOrders = (
+    await Promise.all(orders.map((order) => applyOrderAutoCancellation(order)))
+  ).map(({ order }) => normalizeOrder(order.toObject()));
 
   const totalPages = Math.ceil(totalOrders / limit) || 1;
 

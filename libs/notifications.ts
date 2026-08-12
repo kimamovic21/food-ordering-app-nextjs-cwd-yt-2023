@@ -452,6 +452,7 @@ export const notifyRestaurantAdminsAboutLateOrder = async (params: {
   restaurantId: string | mongoose.Types.ObjectId;
   orderId: string | mongoose.Types.ObjectId;
   minutesSincePlaced: number;
+  reason?: 'late_before_transport' | 'ready_without_courier';
 }) => {
   const adminIds = await findRestaurantAdminIds(params.restaurantId);
 
@@ -459,16 +460,55 @@ export const notifyRestaurantAdminsAboutLateOrder = async (params: {
     return;
   }
 
+  const isReadyWithoutCourier = params.reason === 'ready_without_courier';
+
   await createNotifications({
     recipientUserIds: adminIds,
     type: 'late_order',
-    title: 'Late order warning',
-    message: `Order #${params.orderId.toString().slice(-6)} has been active for ${params.minutesSincePlaced} minutes and is not out for delivery yet.`,
+    title: isReadyWithoutCourier ? 'Courier assignment warning' : 'Late order warning',
+    message: isReadyWithoutCourier
+      ? `Order #${params.orderId.toString().slice(-6)} is ready, but no courier has been assigned for more than 15 minutes.`
+      : `Order #${params.orderId.toString().slice(-6)} has been active for ${params.minutesSincePlaced} minutes and is not out for delivery yet.`,
     orderId: params.orderId,
     metadata: {
       restaurantId: params.restaurantId.toString(),
-      lateOrderAlert: 'placement_to_transport_120',
+      lateOrderAlert: isReadyWithoutCourier
+        ? 'ready_without_courier_15'
+        : 'placement_to_transport_120',
       minutesSincePlaced: params.minutesSincePlaced,
     },
   });
+};
+
+export const notifyOrderAutoCanceled = async (params: {
+  userId?: string | mongoose.Types.ObjectId | null;
+  restaurantId?: string | mongoose.Types.ObjectId | null;
+  orderId: string | mongoose.Types.ObjectId;
+  reason: string;
+}) => {
+  const adminIds = params.restaurantId ? await findRestaurantAdminIds(params.restaurantId) : [];
+  const orderNumber = params.orderId.toString().slice(-6);
+
+  await Promise.all([
+    createNotifications({
+      recipientUserIds: params.userId ? [params.userId] : [],
+      type: 'order_canceled',
+      title: 'Order canceled automatically',
+      message: `Order #${orderNumber} was canceled automatically. ${params.reason}`,
+      orderId: params.orderId,
+      metadata: { orderStatus: 'canceled', canceledBy: 'system' },
+    }),
+    createNotifications({
+      recipientUserIds: adminIds,
+      type: 'order_canceled',
+      title: 'Order auto-canceled',
+      message: `Order #${orderNumber} was canceled automatically. ${params.reason}`,
+      orderId: params.orderId,
+      metadata: {
+        restaurantId: params.restaurantId ? params.restaurantId.toString() : null,
+        orderStatus: 'canceled',
+        canceledBy: 'system',
+      },
+    }),
+  ]);
 };

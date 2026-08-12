@@ -5,6 +5,7 @@ import { Restaurant } from '@/models/restaurant';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import { createAuditLog } from '@/libs/auditLog';
+import { applyOrderAutoCancellation } from '@/libs/orderAutoCancellation';
 import { notifyRestaurantAdminsAboutCanceledOrder } from '@/libs/notifications';
 import mongoose from 'mongoose';
 
@@ -44,15 +45,20 @@ export async function GET(request: Request) {
   }
 
   if (sessionId) {
-    const order = await Order.findOne({ userId: user._id, stripeSessionId: sessionId })
-      .populate('courierId', 'name email image')
-      .lean();
+    const order = await Order.findOne({ userId: user._id, stripeSessionId: sessionId }).populate(
+      'courierId',
+      'name email image'
+    );
 
     if (!order) {
       return Response.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    const productIds = (order.cartProducts || [])
+    const { order: normalizedDocument } = await applyOrderAutoCancellation(order);
+    await normalizedDocument.populate('courierId', 'name email image');
+    const orderObject = normalizedDocument.toObject();
+
+    const productIds = (orderObject.cartProducts || [])
       .map((item: any) => String(item.productId))
       .filter((productId: string) => mongoose.Types.ObjectId.isValid(productId))
       .map((productId: string) => new mongoose.Types.ObjectId(productId));
@@ -62,7 +68,7 @@ export async function GET(request: Request) {
       .lean();
     const imageMap = new Map(menuItems.map((item) => [item._id.toString(), item.image]));
 
-    const receiptItems = (order.cartProducts || []).map((item: any) => {
+    const receiptItems = (orderObject.cartProducts || []).map((item: any) => {
       const quantity = Number(item.quantity) || 1;
       const price = Number(item.price) || 0;
 
@@ -75,12 +81,12 @@ export async function GET(request: Request) {
       };
     });
 
-    const restaurant = await Restaurant.findById(order.restaurantId)
+    const restaurant = await Restaurant.findById(orderObject.restaurantId)
       .select('name contact email street city postalCode country')
       .lean();
 
     return Response.json({
-      order: normalizeOrder(order),
+      order: normalizeOrder(orderObject),
       receiptItems,
       restaurant: restaurant
         ? {
@@ -103,7 +109,7 @@ export async function GET(request: Request) {
       return Response.json({ error: 'Invalid order ID' }, { status: 400 });
     }
 
-    const order = await Order.findById(id).populate('courierId', 'name email image').lean();
+    const order = await Order.findById(id).populate('courierId', 'name email image');
 
     if (!order) {
       return Response.json({ error: 'Order not found' }, { status: 404 });
@@ -117,7 +123,10 @@ export async function GET(request: Request) {
       );
     }
 
-    return Response.json({ order: normalizeOrder(order) });
+    const { order: normalizedDocument } = await applyOrderAutoCancellation(order);
+    await normalizedDocument.populate('courierId', 'name email image');
+
+    return Response.json({ order: normalizeOrder(normalizedDocument.toObject()) });
   }
 
   // Fetch all orders for the current user
@@ -126,13 +135,11 @@ export async function GET(request: Request) {
   const skip = (page - 1) * limit;
 
   const totalOrders = await Order.countDocuments({ userId: user._id });
-  const orders = await Order.find({ userId: user._id })
-    .sort({ _id: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
+  const orders = await Order.find({ userId: user._id }).sort({ _id: -1 }).skip(skip).limit(limit);
 
-  const normalizedOrders = orders.map(normalizeOrder);
+  const normalizedOrders = (
+    await Promise.all(orders.map((order) => applyOrderAutoCancellation(order)))
+  ).map(({ order }) => normalizeOrder(order.toObject()));
 
   const totalPages = Math.ceil(totalOrders / limit) || 1;
 

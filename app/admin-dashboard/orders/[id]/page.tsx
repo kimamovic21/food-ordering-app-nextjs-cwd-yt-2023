@@ -23,6 +23,7 @@ import OrderPhaseTimeline, {
   type OrderPhaseDurationOffsetKey,
   type OrderPhaseDurationOffsets,
 } from '@/components/shared/OrderPhaseTimeline';
+import OrderProgressStepper from '@/components/shared/OrderProgressStepper';
 import HeartRating from '@/components/shared/HeartRating';
 import dynamic from 'next/dynamic';
 import DevOrderTimelineSimulator from './DevOrderTimelineSimulator';
@@ -44,6 +45,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { COURIER_OWN_ORDER_ASSIGNMENT_ERROR, isCourierOrderOwner } from '@/libs/courierAssignment';
 import { formatAppDateTime } from '@/libs/dateFormat';
@@ -89,6 +91,7 @@ type OrderDetailsType = {
     'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
   courierId?: { _id: string; name: string; email: string; image?: string };
   courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
+  courierAssignmentNote?: string;
   createdAt: string;
   updatedAt: string;
   processingAt?: string | null;
@@ -110,7 +113,8 @@ type OrderDetailsType = {
   failedDeliveryVerifiedAt?: string | null;
   failedDeliveryVerifiedBy?: string | null;
   failedDeliveryVerifiedByRole?: 'restaurant_owner' | 'super_admin' | null;
-  canceledBy?: 'customer' | 'restaurant_owner' | 'super_admin' | null;
+  canceledBy?: 'customer' | 'restaurant_owner' | 'super_admin' | 'system' | null;
+  cancellationReason?: string | null;
   canceledAt?: string | null;
   completedAt?: string | null;
   stripeSessionId?: string;
@@ -145,7 +149,8 @@ type OrderReviewType = {
   createdAt?: string;
 };
 
-type DevOrderTimeSimulatorOffsetKey = OrderPhaseDurationOffsetKey | 'failedDeliveryWait';
+type DevOrderTimeSimulatorOffsetKey =
+  OrderPhaseDurationOffsetKey | 'failedDeliveryWait' | 'readyWithoutCourierWait';
 
 const OrderDetailPage = () => {
   const [order, setOrder] = useState<OrderDetailsType | null>(null);
@@ -157,6 +162,7 @@ const OrderDetailPage = () => {
   const [statusError, setStatusError] = useState('');
   const [couriers, setCouriers] = useState<CourierType[]>([]);
   const [selectedCourier, setSelectedCourier] = useState<string>('');
+  const [courierAssignmentNote, setCourierAssignmentNote] = useState('');
   const [assigningCourier, setAssigningCourier] = useState(false);
   const [handingToCourier, setHandingToCourier] = useState(false);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
@@ -423,7 +429,11 @@ const OrderDetailPage = () => {
       const res = await fetch('/api/my-delivery', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courierId: selectedCourier, orderId: order._id }),
+        body: JSON.stringify({
+          courierId: selectedCourier,
+          orderId: order._id,
+          courierAssignmentNote,
+        }),
       });
 
       const data = await res.json();
@@ -442,6 +452,7 @@ const OrderDetailPage = () => {
       setOrder({ ...data.order, courierId: data.courier });
       setShowCourierSelect(false);
       setSelectedCourier('');
+      setCourierAssignmentNote('');
       setShowConfirmModal(false);
       sonnerToast.success('Courier assignment sent. Waiting for courier confirmation.', {
         style: {
@@ -706,6 +717,16 @@ const OrderDetailPage = () => {
 
   if (!order) return <div className='mt-8'>Order not found</div>;
 
+  const readyWithoutCourierMinutes =
+    order.orderStatus === 'ready' && !order.courierId && order.readyAt
+      ? Math.max(
+          0,
+          Math.floor((Date.now() - new Date(order.readyAt).getTime()) / 60000) +
+            (timelineOffsets.readyWithoutCourierWait ?? 0)
+        )
+      : 0;
+  const showReadyWithoutCourierWarning = readyWithoutCourierMinutes >= 15;
+
   return (
     <section className='mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10'>
       <Breadcrumb className='mb-6'>
@@ -737,6 +758,8 @@ const OrderDetailPage = () => {
       </div>
 
       <div className='space-y-6'>
+        <OrderProgressStepper status={order.orderStatus} />
+
         {order.specialInstructions?.trim() && (
           <Card>
             <CardHeader>
@@ -912,10 +935,20 @@ const OrderDetailPage = () => {
                   ? 'Order canceled by super admin.'
                   : order.canceledBy === 'restaurant_owner'
                     ? 'Order canceled by restaurant owner after failed delivery verification.'
-                    : 'Order canceled by customer before payment.'}
+                    : order.canceledBy === 'system'
+                      ? 'Order canceled automatically by the app.'
+                      : 'Order canceled by customer before payment.'}
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-3 text-sm'>
+              {order.cancellationReason?.trim() && (
+                <div className='rounded-lg border bg-muted/30 p-4'>
+                  <p className='font-semibold text-foreground'>Cancellation reason</p>
+                  <p className='mt-1 whitespace-pre-wrap text-muted-foreground'>
+                    {order.cancellationReason}
+                  </p>
+                </div>
+              )}
               {order.failedDeliveryReason?.trim() && (
                 <div className='rounded-lg border bg-muted/30 p-4'>
                   <p className='font-semibold text-foreground'>Courier note</p>
@@ -959,6 +992,19 @@ const OrderDetailPage = () => {
                 {confirmingDelivery ? 'Confirming...' : 'Finalize Delivery'}
               </Button>
             </CardContent>
+          </Card>
+        )}
+
+        {showReadyWithoutCourierWarning && (
+          <Card className='border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'>
+            <CardHeader>
+              <CardTitle>Courier assignment warning</CardTitle>
+              <CardDescription>
+                This order has been ready for {readyWithoutCourierMinutes} minutes, but no courier
+                has accepted it yet. If it stays without a courier for 60 minutes, the app will
+                cancel it automatically and mark it unpaid.
+              </CardDescription>
+            </CardHeader>
           </Card>
         )}
 
@@ -1015,6 +1061,27 @@ const OrderDetailPage = () => {
                             distance to restaurant, then rating. Couriers outside their working
                             schedule are hidden from this list.
                           </p>
+                          <div className='space-y-2'>
+                            <label
+                              htmlFor='courier-assignment-note'
+                              className='text-sm font-medium'
+                            >
+                              Note for courier
+                            </label>
+                            <Textarea
+                              id='courier-assignment-note'
+                              value={courierAssignmentNote}
+                              onChange={(event) =>
+                                setCourierAssignmentNote(event.target.value.slice(0, 300))
+                              }
+                              rows={3}
+                              maxLength={300}
+                              placeholder='Gate code, pickup shelf, customer note, or anything the courier should know.'
+                            />
+                            <p className='text-xs text-muted-foreground'>
+                              Visible only to the assigned courier.
+                            </p>
+                          </div>
                         </>
                       )}
                     </div>
@@ -1032,6 +1099,7 @@ const OrderDetailPage = () => {
                           onClick={() => {
                             setShowCourierSelect(false);
                             setSelectedCourier('');
+                            setCourierAssignmentNote('');
                           }}
                           className='flex-1'
                         >
@@ -1064,6 +1132,14 @@ const OrderDetailPage = () => {
                     {order.courierAssignmentStatus || 'pending'}
                   </span>
                 </p>
+                {order.courierAssignmentNote?.trim() && (
+                  <div className='mt-3 rounded-lg border bg-muted/30 p-3'>
+                    <p className='font-semibold'>Note sent to courier</p>
+                    <p className='mt-1 whitespace-pre-wrap text-muted-foreground'>
+                      {order.courierAssignmentNote}
+                    </p>
+                  </div>
+                )}
                 {order.restaurantHandedToCourierAt && (
                   <p className='mt-2 text-green-600'>Restaurant handoff recorded.</p>
                 )}

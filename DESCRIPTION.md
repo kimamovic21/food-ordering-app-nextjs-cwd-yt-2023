@@ -25,6 +25,7 @@ They can:
 - View order history and order details.
 - Reorder a previous order after current menu item prices and availability are rechecked.
 - Track order progress and live courier location when delivery starts.
+- See a visual order progress stepper for placed, kitchen, transport, and delivered stages.
 - See delivery PIN on active delivery orders.
 - Confirm final delivery after courier handoff.
 - Cancel unpaid orders while they are still in `placed` status.
@@ -56,8 +57,9 @@ They can:
 - Create and manage restaurant coupons.
 - View restaurant orders.
 - View late active-order alerts and open the order queue for lifecycle-stage monitoring.
+- See warnings when a ready order has waited too long without a courier.
 - Move paid orders from `placed` to `processing` to `ready`.
-- Assign available couriers to ready orders.
+- Assign available couriers to ready orders with optional notes visible only to the courier.
 - View customer delivery location.
 - View order time breakdown and estimated timing.
 - Finalize delivery when a courier has recorded handoff but the customer does not confirm.
@@ -127,6 +129,7 @@ Important courier rules:
 - Courier delivery does not immediately complete the order. Customer or restaurant admin confirmation completes it.
 - Couriers cannot take multiple active orders when `takenOrder` is already set.
 - Failed-delivery cancellation requests keep the courier assigned until restaurant owner or super admin verification.
+- Courier-only assignment notes can include pickup or handoff details from the restaurant.
 
 ## Restaurant And Menu Logic
 
@@ -167,6 +170,13 @@ Busy restaurant logic:
 - Cart shows a warning and disables checkout when the restaurant detail API reports `isBusy`.
 - Checkout also blocks restaurants that are paused, closed by working hours, inside the final 60 minutes before closing, blocked for a date, or outside the configured delivery radius.
 - When a restaurant is closed by schedule, the cart can show the next available opening time.
+
+Order safety automation:
+
+- Unpaid `placed` orders are automatically canceled after 30 minutes when viewed through order APIs.
+- `ready` orders without a courier are warned after 15 minutes and automatically canceled after 60 minutes.
+- Automatic cancellations mark the order as unpaid, store a system cancellation reason, notify the customer and restaurant admins, and write an audit log entry.
+- Development-only order time simulation can add minutes for timeline phases, failed-delivery testing, and ready-without-courier auto-cancel testing without editing MongoDB timestamps.
 
 ## Coupon And Reorder Logic
 

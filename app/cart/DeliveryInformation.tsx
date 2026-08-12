@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { MapPin } from 'lucide-react';
+import DevDeliveryLocationDialog from './DevDeliveryLocationDialog';
 
 interface DeliveryInformationProps {
   email: string;
@@ -21,6 +22,7 @@ interface DeliveryInformationProps {
   deliveryDistanceKm?: number | null;
   isGettingDeliveryLocation: boolean;
   onUseCurrentLocation: () => void;
+  onManualLocationUpdate: (latitude: number, longitude: number) => void;
 }
 
 const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
@@ -31,6 +33,7 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
   deliveryDistanceKm,
   isGettingDeliveryLocation,
   onUseCurrentLocation,
+  onManualLocationUpdate,
 }) => {
   const hasDeliveryLocation =
     typeof formData.deliveryLatitude === 'number' && typeof formData.deliveryLongitude === 'number';
@@ -155,6 +158,11 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
             >
               {isGettingDeliveryLocation ? 'Checking location...' : 'Use current location'}
             </Button>
+            <DevDeliveryLocationDialog
+              currentLatitude={formData.deliveryLatitude}
+              currentLongitude={formData.deliveryLongitude}
+              onManualLocationUpdate={onManualLocationUpdate}
+            />
           </div>
         </div>
       </div>

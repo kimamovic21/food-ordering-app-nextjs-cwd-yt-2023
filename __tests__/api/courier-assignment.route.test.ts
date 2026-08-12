@@ -59,13 +59,14 @@ const createObjectId = (value: string) => ({
   toString: () => value,
 });
 
-const createAssignRequest = () =>
+const createAssignRequest = (body: Record<string, unknown> = {}) =>
   new Request('http://localhost/api/my-delivery', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       courierId: 'courier-1',
       orderId: 'order-1',
+      ...body,
     }),
   });
 
@@ -80,6 +81,18 @@ const createOwnOrder = () => ({
   _id: createObjectId('order-1'),
   userId: createObjectId('courier-1'),
   orderStatus: 'ready',
+  save: vi.fn(),
+});
+
+const createAssignableOrder = () => ({
+  _id: createObjectId('order-1'),
+  userId: createObjectId('customer-1'),
+  restaurantId: createObjectId('restaurant-1'),
+  orderStatus: 'ready',
+  deliveryPin: '',
+  courierId: null,
+  courierAssignmentStatus: null,
+  courierAssignmentNote: '',
   save: vi.fn(),
 });
 
@@ -117,4 +130,35 @@ describe('courier assignment routes', () => {
       expect(notifyUserAboutOrderStatusChange).not.toHaveBeenCalled();
     }
   );
+
+  it.each([
+    [
+      'my-delivery assignment route',
+      async () => (await import('@/app/api/my-delivery/route')).PATCH,
+    ],
+    ['couriers assignment route', async () => (await import('@/app/api/couriers/route')).PATCH],
+  ])('saves a courier-only assignment note through %s', async (_label, loadPatch) => {
+    const courier = createCourier();
+    const order = createAssignableOrder();
+
+    vi.mocked(User.findById).mockResolvedValueOnce(courier as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(order as never);
+
+    const PATCH = await loadPatch();
+    const response = await PATCH(
+      createAssignRequest({
+        courierAssignmentNote: 'Use the side entrance and call before pickup.',
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(order.courierAssignmentNote).toBe('Use the side entrance and call before pickup.');
+    expect(body.order.courierAssignmentNote).toBe('Use the side entrance and call before pickup.');
+    expect(order.save).toHaveBeenCalled();
+    expect(notifyCourierAboutAssignment).toHaveBeenCalledWith({
+      courierId: 'courier-1',
+      orderId: order._id,
+    });
+  });
 });

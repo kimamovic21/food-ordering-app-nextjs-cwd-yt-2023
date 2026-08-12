@@ -31,13 +31,7 @@ type OrderType = {
   total: number;
   paymentStatus: boolean;
   orderStatus:
-    | 'placed'
-    | 'processing'
-    | 'ready'
-    | 'transportation'
-    | 'delivered'
-    | 'completed'
-    | 'canceled';
+    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
   createdAt: string;
 };
 
@@ -46,6 +40,7 @@ const OrdersPage = () => {
   const [operationalAlerts, setOperationalAlerts] = useState({
     activeOrders: 0,
     lateOrders: 0,
+    readyWithoutCourierOrders: 0,
     lateThresholdMinutes: 120,
   });
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -99,6 +94,9 @@ const OrdersPage = () => {
           setOperationalAlerts({
             activeOrders: queueOrders.length,
             lateOrders: queueOrders.filter((order: any) => order.isLateBeforeTransport).length,
+            readyWithoutCourierOrders: queueOrders.filter(
+              (order: any) => order.isReadyWithoutCourierLate
+            ).length,
             lateThresholdMinutes: Number(queueJson.lateThresholdMinutes) || 120,
           });
         }
@@ -183,8 +181,11 @@ const OrdersPage = () => {
                   {operationalAlerts.lateOrders === 1 ? '' : 's'} need attention
                 </p>
                 <p className='text-sm opacity-90'>
-                  Active for at least {operationalAlerts.lateThresholdMinutes} minutes and not out
-                  for delivery yet.
+                  {operationalAlerts.readyWithoutCourierOrders > 0
+                    ? `${operationalAlerts.readyWithoutCourierOrders} ready order${
+                        operationalAlerts.readyWithoutCourierOrders === 1 ? '' : 's'
+                      } still need a courier.`
+                    : `Active for at least ${operationalAlerts.lateThresholdMinutes} minutes and not out for delivery yet.`}
                 </p>
               </div>
             </div>
