@@ -19,6 +19,7 @@ import CartItems from './CartItems';
 import DeliveryInformation from './DeliveryInformation';
 import OrderSummary from './OrderSummary';
 import Title from '@/components/shared/Title';
+import RestaurantAvailabilityNotifyButton from '@/components/shared/RestaurantAvailabilityNotifyButton';
 
 type CartValidationItem = {
   _id: string;
@@ -852,6 +853,7 @@ const CartPage = () => {
   const restaurantAcceptingCheckout = isRestaurantAcceptingCheckout();
   const restaurantBusy = isRestaurantBusy();
   const restaurantName = getRestaurantName();
+  const cartRestaurantId = getCartRestaurantId();
   const minimumOrderAmount = getMinimumOrderAmount();
   const belowMinimumOrderAmount =
     !multipleRestaurants &&
@@ -894,20 +896,34 @@ const CartPage = () => {
       )}
 
       {!multipleRestaurants && !restaurantOpen && (
-        <div className='mb-4 p-4 bg-orange-100 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg'>
+        <div className='mb-4 space-y-3 rounded-lg border border-orange-300 bg-orange-100 p-4 dark:border-orange-700 dark:bg-orange-900/20'>
           <p className='text-orange-800 dark:text-orange-200 font-semibold'>
             {getRestaurantUnavailableReason() ||
               `${restaurantName} you want to order from is not working at the moment. Please remove items from this restaurant and try ordering from another restaurant.`}
           </p>
+          {cartRestaurantId && (
+            <RestaurantAvailabilityNotifyButton
+              restaurantId={cartRestaurantId}
+              restaurantName={restaurantName}
+              className='border-orange-400 bg-background text-foreground hover:bg-background/90'
+            />
+          )}
         </div>
       )}
 
       {!multipleRestaurants && restaurantOpen && restaurantPaused && (
-        <div className='mb-4 rounded-lg border border-orange-300 bg-orange-100 p-4 dark:border-orange-700 dark:bg-orange-900/20'>
+        <div className='mb-4 space-y-3 rounded-lg border border-orange-300 bg-orange-100 p-4 dark:border-orange-700 dark:bg-orange-900/20'>
           <p className='font-semibold text-orange-800 dark:text-orange-200'>
             {getRestaurantUnavailableReason() ||
               `${restaurantName} paused new orders for a little while. Please try again soon.`}
           </p>
+          {cartRestaurantId && (
+            <RestaurantAvailabilityNotifyButton
+              restaurantId={cartRestaurantId}
+              restaurantName={restaurantName}
+              className='border-orange-400 bg-background text-foreground hover:bg-background/90'
+            />
+          )}
         </div>
       )}
 
@@ -915,11 +931,18 @@ const CartPage = () => {
         restaurantOpen &&
         !restaurantPaused &&
         !restaurantAcceptingCheckout && (
-          <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
+          <div className='mb-4 space-y-3 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
             <p className='font-semibold text-amber-800 dark:text-amber-200'>
               {getRestaurantUnavailableReason() ||
                 `${restaurantName} is closing soon and is no longer accepting checkout.`}
             </p>
+            {cartRestaurantId && (
+              <RestaurantAvailabilityNotifyButton
+                restaurantId={cartRestaurantId}
+                restaurantName={restaurantName}
+                className='border-amber-400 bg-background text-foreground hover:bg-background/90'
+              />
+            )}
           </div>
         )}
 
@@ -928,10 +951,17 @@ const CartPage = () => {
         restaurantAcceptingCheckout &&
         !restaurantPaused &&
         restaurantBusy && (
-          <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
+          <div className='mb-4 space-y-3 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
             <p className='font-semibold text-amber-800 dark:text-amber-200'>
               {restaurantName} is very busy at the moment. Please wait a little bit and try again.
             </p>
+            {cartRestaurantId && (
+              <RestaurantAvailabilityNotifyButton
+                restaurantId={cartRestaurantId}
+                restaurantName={restaurantName}
+                className='border-amber-400 bg-background text-foreground hover:bg-background/90'
+              />
+            )}
           </div>
         )}
 

@@ -18,8 +18,8 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 
 ## High-Level Features
 
-- Customer flows: auth, profile, menu browsing, cart/checkout, best coupon suggestion, reorder, favorites, loyalty history, reviews, approved messaging, visual order tracking, order timelines, delivery confirmation, and support tickets.
-- Admin dashboard: users, categories, menu items, restaurants, orders, order queue, late-order alerts, couriers, support tickets, statistics, and AI-assisted menu descriptions.
+- Customer flows: auth, profile, menu browsing, cart/checkout, best coupon suggestion, reorder, favorite restaurant quick reorder, restaurant availability alerts, favorites, loyalty history, reviews, approved messaging, visual order tracking, order timelines, delivery confirmation, and support tickets.
+- Admin dashboard: users, categories, menu items, restaurants, restaurant reports, orders, order queue, late-order alerts, couriers, support tickets, statistics, and AI-assisted menu descriptions.
 - Courier flows: assignment with courier-only notes, availability toggle, live location sharing, delivery PIN handoff, problem reporting, tracked delivery maps, and delivery history metrics.
 - Restaurant operations: menu item availability, working-hours checkout protection, 60-minute-before-closing checkout cutoff, pause/blocked-date/radius checks, preparation/delivery estimates, and active order limit checks that can temporarily block checkout when the kitchen is busy.
 
@@ -75,6 +75,8 @@ See `example.env`. Variables currently used in the project include:
 - Checkout must preserve restaurant accepting-order checks: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty must be validated before creating Stripe sessions.
 - Best coupon suggestions are user-facing help only; checkout must revalidate coupons server-side.
 - Reorder must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
+- Restaurant quick reorder must use the same current `menu_items` rebuild rules as order reorder.
+- Restaurant report UI lives at `/admin-dashboard/restaurant-reports`; daily, weekly, and monthly reports should show zeros for empty periods and disable PDF download when there is no activity.
 - Delivery completion is double-confirmed: courier records handoff with the delivery PIN, then customer or restaurant admin finalizes completion.
 - Stale unpaid `placed` orders can auto-cancel after 30 minutes, and `ready` orders without a courier can warn after 15 minutes and auto-cancel after 60 minutes.
 - Support tickets should remain role-scoped: restaurant owners handle their restaurant reports, while app-support tickets route to the super admin.

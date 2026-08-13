@@ -33,4 +33,18 @@ describe('resolveNotificationTargetPath', () => {
       )
     ).toBe('/my-orders/6a564350622d630bb92decbc');
   });
+
+  it('routes restaurant availability notifications to the public restaurant page', () => {
+    expect(
+      resolveNotificationTargetPath(
+        {
+          type: 'restaurant_available',
+          metadata: {
+            restaurantId: '6a2185248697d815fec54978',
+          },
+        },
+        'user'
+      )
+    ).toBe('/restaurants/6a2185248697d815fec54978');
+  });
 });

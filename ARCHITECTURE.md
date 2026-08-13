@@ -66,6 +66,7 @@ flowchart TD
   Customer --> Messages["/messages"]
 
   Admin --> Restaurant["/admin-dashboard/restaurant"]
+  Admin --> Reports["/admin-dashboard/restaurant-reports"]
   Admin --> MenuItems["/admin-dashboard/menu-items"]
   Admin --> Orders["/admin-dashboard/orders"]
   Admin --> Tickets["/admin-dashboard/support-tickets"]
@@ -90,6 +91,7 @@ The important persistent models are:
 - `Notification`: role-aware notifications with read state and metadata routing.
 - `Conversation` and `Message`: approved in-app messaging threads and messages.
 - `SupportTicket`: reported order, delivery, restaurant, or app issues.
+- `RestaurantAvailabilityRequest`: customer requests to be notified when a blocked restaurant can accept orders again.
 - `Category`: menu categories managed by super admin.
 
 ```mermaid
@@ -99,8 +101,10 @@ erDiagram
   RESTAURANT ||--o{ ORDER : receives
   RESTAURANT ||--o{ COUPON : defines
   RESTAURANT ||--o{ SUPPORT_TICKET : receives
+  RESTAURANT ||--o{ RESTAURANT_AVAILABILITY_REQUEST : has
   USER ||--o{ ORDER : places
   USER ||--o{ NOTIFICATION : receives
+  USER ||--o{ RESTAURANT_AVAILABILITY_REQUEST : requests
   USER ||--o{ SUPPORT_TICKET : reports
   USER ||--o{ MESSAGE : sends
   USER ||--o{ CONVERSATION : participates
@@ -153,6 +157,8 @@ Key checks:
 - Coupon and loyalty discounts are validated server-side.
 - Best coupon suggestions shown in cart are revalidated at checkout before Stripe is created.
 - Reorders rebuild cart items from current `menu_items` records so deleted, unavailable, cross-restaurant, or changed-price items cannot silently proceed.
+- Restaurant details and favorite restaurant cards can quick reorder the latest previous order from that restaurant using the same current `menu_items` validation.
+- Customers can request back-online notifications for restaurants blocked by closed, paused, closing-soon, or busy checkout states.
 
 ```mermaid
 sequenceDiagram
@@ -289,6 +295,8 @@ Important notification examples include order placement, payment, order status c
 
 Failed-delivery review notifications are admin-facing operational items and resolve to `/admin-dashboard/orders/[id]`; customer order notifications continue to resolve to customer order pages.
 
+Restaurant availability notifications are customer-facing and resolve to `/restaurants/[id]`. Waiting requests are stored in `restaurant_availability_requests` and marked notified after the restaurant can accept orders again.
+
 Messages are app-native conversations, not open public chat. The allowed role combinations are enforced in `libs/messages.ts`.
 
 Important messaging rules:
@@ -305,6 +313,19 @@ Important messaging rules:
 - Resend and React Email send transactional auth and purchase receipt emails.
 - OpenAI generates menu item descriptions through a server-only API route.
 - Leaflet renders restaurant, customer, and courier map views.
+
+## Restaurant Reports
+
+Restaurant owners can open `/admin-dashboard/restaurant-reports` to generate daily, weekly, and monthly summaries from existing order data.
+
+Reports include:
+
+- order counts by paid, unpaid, completed, canceled, and active state
+- gross paid revenue, net revenue, canceled value, average order value, tax, delivery fees, coupon discounts, and loyalty discounts
+- payment, completion, and cancellation percentages
+- top sold menu items for the selected period
+
+Empty periods return zeros for counts, money, and percentages. The PDF download button is disabled in the UI for empty periods, and the PDF API also rejects empty exports.
 
 ## Date Formatting
 

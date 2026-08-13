@@ -10,6 +10,7 @@ type NotificationType =
   | 'courier_assigned'
   | 'order_completed'
   | 'order_canceled'
+  | 'restaurant_available'
   | 'support_ticket'
   | 'late_order';
 
@@ -511,4 +512,20 @@ export const notifyOrderAutoCanceled = async (params: {
       },
     }),
   ]);
+};
+
+export const notifyUsersAboutRestaurantAvailable = async (params: {
+  userIds: Array<string | mongoose.Types.ObjectId>;
+  restaurantId: string | mongoose.Types.ObjectId;
+  restaurantName: string;
+}) => {
+  await createNotifications({
+    recipientUserIds: params.userIds,
+    type: 'restaurant_available',
+    title: 'Restaurant is accepting orders',
+    message: `${params.restaurantName} is back online and accepting orders again.`,
+    metadata: {
+      restaurantId: params.restaurantId.toString(),
+    },
+  });
 };

@@ -17,7 +17,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Dates: date-fns through `libs/dateFormat.ts` for UI, email, and PDF date formatting
 - Sharing: react-share
 - Messaging: approved app-native threads with SSE-backed unread badges and per-user visibility
-- Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin delivery confirmation, support tickets, and late-order alerts
+- Order operations: best coupon suggestion, reorder validation, favorite restaurant quick reorder, restaurant accepting-order checks, restaurant availability alerts, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin delivery confirmation, support tickets, and late-order alerts
 
 ## Goals For AI Assistance
 
@@ -39,6 +39,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Preserve checkout accepting-order checks before Stripe session creation: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty.
 - Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
 - Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
+- Restaurant reports live at `/admin-dashboard/restaurant-reports` and generate daily, weekly, and monthly summaries/PDFs from order data.
 - Preserve delivery double confirmation: courier PIN handoff first, then customer or restaurant admin completion.
 - Keep support tickets role-scoped between restaurant support and app support.
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.

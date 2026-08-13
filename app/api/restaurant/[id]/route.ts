@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { getRestaurantOrderingStatus } from '@/libs/restaurantAvailability';
+import { notifyWaitingUsersIfRestaurantAcceptingOrders } from '@/libs/restaurantAvailabilityRequests';
 import { getRestaurantRatingSummaries } from '@/libs/reviewSummary';
 import { Order } from '@/models/order';
 import { Restaurant } from '@/models/restaurant';
@@ -34,6 +35,12 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
       $or: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
     });
     const isBusy = activeKitchenOrders >= activeOrderLimit;
+
+    await notifyWaitingUsersIfRestaurantAcceptingOrders({
+      restaurantId: restaurant._id,
+      restaurantName: restaurant.name,
+      isAcceptingOrders: orderingStatus.isAcceptingOrders && !isBusy,
+    });
 
     return NextResponse.json(
       {

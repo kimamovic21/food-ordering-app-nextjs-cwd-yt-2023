@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
 import { MenuItem } from '@/models/menuItem';
+import { Restaurant } from '@/models/restaurant';
 import { RestaurantReview } from '@/models/restaurantReview';
 import { CourierReview } from '@/models/courierReview';
 import {
@@ -58,6 +59,11 @@ vi.mock('@/libs/notifications', () => ({
 
 vi.mock('@/libs/auditLog', () => ({
   createAuditLog: vi.fn(),
+}));
+
+vi.mock('@/libs/restaurantAvailabilityRequests', () => ({
+  notifyWaitingUsersIfRestaurantAcceptingOrders: vi.fn(),
+  notifyWaitingUsersIfRestaurantCanAcceptOrders: vi.fn(),
 }));
 
 vi.mock('@/models/user', () => ({
@@ -689,6 +695,76 @@ describe('high-priority order, review, and payment-link routes', () => {
 
     expect(res.status).toBe(400);
     expect(body).toEqual({ error: 'Pizza is currently unavailable.' });
+  });
+
+  it('builds quick reorder cart items from the latest restaurant order', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: customer.email } } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    vi.mocked(Restaurant.findById).mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          _id: { toString: () => 'restaurant-1' },
+          name: 'Pizza Hub',
+        }),
+      }),
+    } as never);
+    vi.mocked(Order.findOne).mockReturnValueOnce({
+      sort: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          _id: { toString: () => 'order-2' },
+          userId: customer._id,
+          restaurantId: { toString: () => 'restaurant-1' },
+          cartProducts: [
+            {
+              productId: { toString: () => 'menu-item-1' },
+              restaurantId: { toString: () => 'restaurant-1' },
+              name: 'Old Burger',
+              size: 'single',
+              quantity: 1,
+              price: 8,
+            },
+          ],
+        }),
+      }),
+    } as never);
+    vi.mocked(MenuItem.find).mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          {
+            _id: { toString: () => 'menu-item-1' },
+            name: 'Classic Burger',
+            description: 'Fresh burger',
+            image: 'burger.jpg',
+            priceType: 'single',
+            priceSmall: 9.5,
+            restaurantId: { toString: () => 'restaurant-1' },
+            isAvailable: true,
+          },
+        ]),
+      }),
+    } as never);
+
+    const { POST } = await import('@/app/api/restaurants/[id]/quick-reorder/route');
+    const res = await POST(
+      new Request('http://localhost/api/restaurants/restaurant-1/quick-reorder'),
+      {
+        params: Promise.resolve({ id: 'restaurant-1' }),
+      }
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.restaurantName).toBe('Pizza Hub');
+    expect(body.cartItems).toEqual([
+      expect.objectContaining({
+        _id: 'menu-item-1',
+        name: 'Classic Burger',
+        size: 'single',
+        quantity: 1,
+        price: 9.5,
+        restaurantId: 'restaurant-1',
+      }),
+    ]);
   });
 
   it('allows restaurant review only for a paid completed order owned by the user', async () => {

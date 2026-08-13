@@ -39,6 +39,10 @@ export const resolveNotificationTargetPath = (
     return notification.orderId ? `/my-orders/${notification.orderId}` : '/notifications';
   }
 
+  if (notification.type === 'restaurant_available' && notification.metadata?.restaurantId) {
+    return `/restaurants/${notification.metadata.restaurantId}`;
+  }
+
   if (!notification.orderId) {
     return null;
   }

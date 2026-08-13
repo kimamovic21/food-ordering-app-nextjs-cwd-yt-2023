@@ -7,6 +7,8 @@ import { User } from '@/models/user';
 import { MenuItem } from '@/models/menuItem';
 import { Order } from '@/models/order';
 import { createAuditLog } from '@/libs/auditLog';
+import { getRestaurantOrderingStatus } from '@/libs/restaurantAvailability';
+import { notifyWaitingUsersIfRestaurantAcceptingOrders } from '@/libs/restaurantAvailabilityRequests';
 import cloudinary from '@/libs/cloudinary';
 
 type BlockedDateInput = {
@@ -385,6 +387,15 @@ export async function PUT(req: NextRequest) {
         minimumOrderAmount: updateData.minimumOrderAmount,
       },
     });
+
+    if (updatedRestaurant) {
+      const orderingStatus = getRestaurantOrderingStatus({ restaurant: updatedRestaurant });
+      await notifyWaitingUsersIfRestaurantAcceptingOrders({
+        restaurantId: updatedRestaurant._id,
+        restaurantName: updatedRestaurant.name,
+        isAcceptingOrders: orderingStatus.isAcceptingOrders,
+      });
+    }
 
     return NextResponse.json({ restaurant: updatedRestaurant }, { status: 200 });
   } catch (error) {

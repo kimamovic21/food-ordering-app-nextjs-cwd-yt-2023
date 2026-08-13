@@ -7,6 +7,7 @@ import { authOptions } from '@/libs/authOptions';
 import { createAuditLog } from '@/libs/auditLog';
 import { applyOrderAutoCancellation } from '@/libs/orderAutoCancellation';
 import { notifyRestaurantAdminsAboutCanceledOrder } from '@/libs/notifications';
+import { notifyWaitingUsersIfRestaurantCanAcceptOrders } from '@/libs/restaurantAvailabilityRequests';
 import mongoose from 'mongoose';
 
 const normalizeOrder = (order: any) => ({
@@ -203,6 +204,7 @@ export async function PATCH(request: Request) {
     order.canceledAt = now;
 
     await order.save();
+    await notifyWaitingUsersIfRestaurantCanAcceptOrders(order.restaurantId);
 
     await createAuditLog({
       actor: user,
@@ -242,6 +244,7 @@ export async function PATCH(request: Request) {
   order.completedAt = now;
 
   await order.save();
+  await notifyWaitingUsersIfRestaurantCanAcceptOrders(order.restaurantId);
 
   await createAuditLog({
     actor: user,

@@ -9,6 +9,7 @@ import {
 import { createAuditLog } from '@/libs/auditLog';
 import { getDevOrderTimeSimulatorOffsets } from '@/libs/devOrderTimeSimulatorStore';
 import { applyOrderAutoCancellation } from '@/libs/orderAutoCancellation';
+import { notifyWaitingUsersIfRestaurantCanAcceptOrders } from '@/libs/restaurantAvailabilityRequests';
 import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth/next';
 
@@ -197,6 +198,8 @@ export async function PATCH(request: Request) {
     order.restaurantHandedToCourierAt = new Date();
     const savedOrder = await order.save();
 
+    await notifyWaitingUsersIfRestaurantCanAcceptOrders(order.restaurantId);
+
     await createAuditLog({
       actor: user,
       action: 'order.handed_to_courier',
@@ -257,6 +260,7 @@ export async function PATCH(request: Request) {
     }
 
     const savedOrder = await order.save();
+    await notifyWaitingUsersIfRestaurantCanAcceptOrders(order.restaurantId);
 
     await createAuditLog({
       actor: user,
@@ -316,6 +320,10 @@ export async function PATCH(request: Request) {
   }
 
   const savedOrder = await order.save();
+
+  if (['completed', 'canceled'].includes(orderStatus)) {
+    await notifyWaitingUsersIfRestaurantCanAcceptOrders(order.restaurantId);
+  }
 
   if (previousStatus !== orderStatus) {
     await createAuditLog({

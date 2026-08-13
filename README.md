@@ -11,11 +11,12 @@ It includes:
 - customer authentication, profile management, cart, checkout, and order history
 - restaurant browsing with search/filter/sort/pagination and shareable URLs
 - favorites for meals and restaurants
+- restaurant availability alerts when checkout is blocked by closed, paused, closing-soon, or busy restaurants
 - loyalty rewards with delivery fee discounts and loyalty history
 - ratings and review flows
 - approved in-app messaging between customers, restaurant owners, admins, and couriers
 - notifications center with unread counts, mark-as-read actions, and role-aware routing
-- admin dashboard for users, menu items, categories, restaurants, couriers, orders, support tickets, and statistics
+- admin dashboard for users, menu items, categories, restaurants, restaurant reports, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, and courier ratings views
 - courier workflow with assignment, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
 - order timeline with visual phase icons, preparation/delivery estimates, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
@@ -35,13 +36,13 @@ It includes:
 - Profile editing (name, phone, address, avatar)
 - Menu and restaurant discovery with filtering/sorting/search
 - Menu item availability indicators with disabled ordering for sold-out items
-- Cart, checkout, best coupon suggestion, busy/closed restaurant checks, and order tracking
+- Cart, checkout, best coupon suggestion, busy/closed restaurant checks, restaurant availability alerts, and order tracking
 - Favorites for menu items and restaurants
 - Loyalty tiers and automatic delivery-fee discounts
 - Personal review management and restaurant review pages
 - Per-order courier reviews and ratings (optional, one submission per order)
 - Order details with courier information, order timeline estimates, delivery PIN visibility, customer delivery confirmation, and a public courier review page for customers
-- Reorder previous orders from order history or order details after current menu item availability and prices are revalidated
+- Reorder previous orders from order history, order details, restaurant details, or favorite restaurants after current menu item availability and prices are revalidated
 - Report-problem action on order details, creating support tickets for restaurant support or app support
 - Social sharing actions for restaurant/menu pages
 - Message inbox at `/messages` and direct thread view at `/messages/[participantId]`
@@ -55,6 +56,7 @@ It includes:
 - Restaurant preparation/delivery estimate settings, working-hours checkout protection, and active order limit controls
 - Courier management and order assignment with optional courier-only assignment notes
 - Order lifecycle management, late-order operational alerts, order queue, and dashboards/statistics
+- Restaurant reports at `/admin-dashboard/restaurant-reports` with daily, weekly, and monthly summaries plus PDF downloads when there is activity
 - Support ticket dashboard for reported order, delivery, and app issues
 - Notifications management with order, delivery, and assignment updates
 - Messaging center with delivery/seen states, inline editing, and per-user delete behavior
@@ -159,12 +161,15 @@ This project uses many dependencies; below are the main packages actively used i
 - Cart can suggest the best public coupon for the current restaurant subtotal and let the customer apply it directly.
 - Checkout blocks customers from starting another paid active order until the previous order is completed or canceled.
 - Previous orders can be reordered into the cart only after current menu item existence, availability, restaurant ownership, and prices are rechecked.
+- Favorite restaurants and restaurant detail pages can rebuild the latest previous order from that restaurant into the cart.
+- Customers can request a notification when a closed, paused, closing-soon, or busy restaurant starts accepting orders again.
 - Couriers record delivery handoff with a customer-visible PIN; customers or the restaurant admin then finalize delivery completion.
 - If a customer is unavailable after extended transport time, the courier can request failed-delivery cancellation; the restaurant owner or super admin must verify it before the order is canceled and the courier is released.
 - Order status notifications use phase-specific copy, including preparation and delivery ETA hints when an estimate is available.
 - Customers and couriers can report order or delivery problems; admins manage those reports from `/admin-dashboard/support-tickets`.
 - Failed-delivery review notifications route restaurant admins to `/admin-dashboard/orders/[id]`, while customer order notifications stay on customer order pages.
 - `/admin-dashboard/orders` surfaces late active-order alerts and links to `/admin-dashboard/order-queue` for the full operational view.
+- `/admin-dashboard/restaurant-reports` generates daily, weekly, and monthly restaurant performance summaries from order data and can download the same report as a PDF when the selected period has traffic.
 
 ## Auth: Email Verification & Password Reset
 

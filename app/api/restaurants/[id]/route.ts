@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { getRestaurantOrderingStatus } from '@/libs/restaurantAvailability';
+import { notifyWaitingUsersIfRestaurantAcceptingOrders } from '@/libs/restaurantAvailabilityRequests';
 import { getRestaurantRatingSummaries } from '@/libs/reviewSummary';
 import { Order } from '@/models/order';
 import { Restaurant } from '@/models/restaurant';
@@ -37,6 +38,13 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       orderStatus: { $in: ['placed', 'processing', 'ready'] },
       $or: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
     });
+    const isBusy = activeKitchenOrders >= activeOrderLimit;
+
+    await notifyWaitingUsersIfRestaurantAcceptingOrders({
+      restaurantId: restaurant._id,
+      restaurantName: restaurant.name,
+      isAcceptingOrders: orderingStatus.isAcceptingOrders && !isBusy,
+    });
 
     return NextResponse.json(
       {
@@ -54,7 +62,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
           ),
           activeOrderLimit,
           activeKitchenOrders,
-          isBusy: activeKitchenOrders >= activeOrderLimit,
+          isBusy,
           averageRating: rating?.averageRating ?? 0,
           ratingCount: rating?.ratingCount ?? 0,
         },

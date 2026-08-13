@@ -7,6 +7,7 @@ import {
   BarChart3,
   Bell,
   ClipboardList,
+  FileText,
   Home,
   List,
   LifeBuoy,
@@ -151,6 +152,12 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
       icon: Utensils,
     },
     {
+      href: '/admin-dashboard/restaurant-reports',
+      label: 'Reports',
+      superAdminOnly: false,
+      icon: FileText,
+    },
+    {
       href: '/admin-dashboard/menu-items',
       label: 'Menu Items',
       superAdminOnly: false,
@@ -194,6 +201,14 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
 
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: '/' });
+  };
+
+  const isActivePath = (href: string) => {
+    if (href === '/admin-dashboard') {
+      return pathname === href;
+    }
+
+    return pathname === href || Boolean(pathname?.startsWith(`${href}/`));
   };
 
   const renderNewBadge = (count: number, isActive: boolean) => {
@@ -346,10 +361,7 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
             .map((link) => {
               const Icon = link.icon;
               const isOrdersLink = link.href === '/admin-dashboard/orders';
-              const isActive =
-                link.href === '/admin-dashboard'
-                  ? pathname === '/admin-dashboard'
-                  : pathname?.startsWith(link.href);
+              const isActive = isActivePath(link.href);
 
               return (
                 <Link

@@ -11,6 +11,8 @@ import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import ShareActions from '@/components/shared/ShareActions';
+import RestaurantAvailabilityNotifyButton from '@/components/shared/RestaurantAvailabilityNotifyButton';
+import RestaurantQuickReorderButton from '@/components/shared/RestaurantQuickReorderButton';
 import HeartRating from '@/components/shared/HeartRating';
 import useFavorites from '@/hooks/useFavorites';
 import RestaurantDetailsLoading from './loading';
@@ -61,6 +63,9 @@ interface RestaurantDetails {
   workingHours: WorkingHour[];
   blockedDates: BlockedDate[];
   isOpen: boolean;
+  isAcceptingOrders?: boolean;
+  orderingUnavailableReason?: string | null;
+  isBusy?: boolean;
   averageRating: number;
   ratingCount: number;
 }
@@ -227,6 +232,12 @@ const RestaurantDetailsPage = () => {
             <Badge variant={restaurant.isOpen ? 'default' : 'secondary'}>
               {restaurant.isOpen ? 'Open now' : 'Currently closed'}
             </Badge>
+            {(restaurant.isAcceptingOrders === false || restaurant.isBusy) && (
+              <RestaurantAvailabilityNotifyButton
+                restaurantId={restaurant._id}
+                restaurantName={restaurant.name}
+              />
+            )}
             <FavoriteToggleButton
               type='restaurant'
               targetId={restaurant._id}
@@ -247,7 +258,24 @@ const RestaurantDetailsPage = () => {
               ? `${distanceKm.toFixed(1)} km from your current location`
               : locationError || 'Distance unavailable without your location.'}
         </p>
-        <div>
+        {(restaurant.isAcceptingOrders === false || restaurant.isBusy) && (
+          <div className='rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-900 dark:bg-amber-950/30'>
+            <p className='font-semibold text-amber-900 dark:text-amber-100'>
+              {restaurant.orderingUnavailableReason ||
+                (restaurant.isBusy
+                  ? `${restaurant.name} is very busy at the moment.`
+                  : `${restaurant.name} is not accepting orders right now.`)}
+            </p>
+            <p className='mt-1 text-amber-800 dark:text-amber-100/80'>
+              Ask the app to notify you when ordering is available again.
+            </p>
+          </div>
+        )}
+        <div className='flex flex-wrap gap-3'>
+          <RestaurantQuickReorderButton
+            restaurantId={restaurant._id}
+            restaurantName={restaurant.name}
+          />
           <Link href={`/restaurants/${restaurant._id}/reviews`}>
             <Button variant='outline'>Show all reviews and ratings</Button>
           </Link>

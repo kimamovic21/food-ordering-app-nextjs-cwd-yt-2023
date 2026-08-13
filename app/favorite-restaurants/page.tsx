@@ -13,6 +13,7 @@ import Title from '@/components/shared/Title';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import ShareActions from '@/components/shared/ShareActions';
 import HeartRating from '@/components/shared/HeartRating';
+import RestaurantQuickReorderButton from '@/components/shared/RestaurantQuickReorderButton';
 import useFavorites from '@/hooks/useFavorites';
 
 interface FavoriteRestaurant {
@@ -194,6 +195,11 @@ const FavoriteRestaurantsPage = () => {
                 <ShareActions
                   url={`${typeof window !== 'undefined' ? window.location.origin : ''}/restaurants/${restaurant._id}`}
                   title={`Check out this restaurant: ${restaurant.name}`}
+                />
+                <RestaurantQuickReorderButton
+                  restaurantId={restaurant._id}
+                  restaurantName={restaurant.name}
+                  className='w-full'
                 />
               </CardContent>
             </Card>

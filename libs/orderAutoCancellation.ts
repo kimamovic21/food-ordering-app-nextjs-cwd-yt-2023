@@ -3,6 +3,7 @@ import type { HydratedDocument } from 'mongoose';
 import type { OrderPhaseDurationOffsets } from '@/components/shared/OrderPhaseTimeline';
 import { createAuditLog } from '@/libs/auditLog';
 import { notifyOrderAutoCanceled } from '@/libs/notifications';
+import { notifyWaitingUsersIfRestaurantCanAcceptOrders } from '@/libs/restaurantAvailabilityRequests';
 
 export const UNPAID_ORDER_AUTO_CANCEL_MINUTES = 30;
 export const READY_WITHOUT_COURIER_AUTO_CANCEL_MINUTES = 60;
@@ -53,6 +54,8 @@ const markOrderCanceledBySystem = async (order: OrderDocument, reason: string) =
   } catch (notificationError) {
     console.error('Failed to create auto-cancel notifications:', notificationError);
   }
+
+  await notifyWaitingUsersIfRestaurantCanAcceptOrders(order.restaurantId);
 
   return order;
 };

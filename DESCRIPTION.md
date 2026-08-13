@@ -24,6 +24,7 @@ They can:
 - Checkout through Stripe.
 - View order history and order details.
 - Reorder a previous order after current menu item prices and availability are rechecked.
+- Quickly order again from restaurant details or favorite restaurant cards based on the latest previous order from that restaurant.
 - Track order progress and live courier location when delivery starts.
 - See a visual order progress stepper for placed, kitchen, transport, and delivered stages.
 - See delivery PIN on active delivery orders.
@@ -33,6 +34,7 @@ They can:
 - Review restaurants and couriers after completed paid orders.
 - Report a problem for an order.
 - Use approved message threads.
+- Request a notification when a restaurant is closed, paused, closing soon, or too busy to accept checkout.
 
 Important customer rules:
 
@@ -62,6 +64,8 @@ They can:
 - Assign available couriers to ready orders with optional notes visible only to the courier.
 - View customer delivery location.
 - View order time breakdown and estimated timing.
+- View daily, weekly, and monthly restaurant reports at `/admin-dashboard/restaurant-reports`.
+- Download a PDF report when the selected period has order activity.
 - Finalize delivery when a courier has recorded handoff but the customer does not confirm.
 - Verify failed-delivery cancellation requests when a courier reports that the customer was unavailable after extended transport time.
 - View restaurant review feedback.
@@ -170,6 +174,7 @@ Busy restaurant logic:
 - Cart shows a warning and disables checkout when the restaurant detail API reports `isBusy`.
 - Checkout also blocks restaurants that are paused, closed by working hours, inside the final 60 minutes before closing, blocked for a date, or outside the configured delivery radius.
 - When a restaurant is closed by schedule, the cart can show the next available opening time.
+- Customers can request a back-online notification from restaurant details or cart warning states. Waiting requests are marked notified once the restaurant can accept orders again.
 
 Order safety automation:
 
@@ -190,6 +195,7 @@ Coupons:
 Reorder:
 
 - Customers can reorder from `/my-orders` and `/my-orders/[id]`.
+- Customers can quick reorder the latest previous order from a restaurant on `/restaurants/[id]` and `/favorite-restaurants`.
 - Reorder rebuilds the cart from current `menu_items` data instead of trusting the old order snapshot.
 - Deleted, unavailable, invalid, cross-restaurant, or price-mismatched items are blocked or refreshed before checkout.
 - Reorder replaces the current cart and sends the customer back to `/cart`.
@@ -361,6 +367,13 @@ Examples:
 - completed/unsuccessful orders
 - user counts
 - restaurant statistics
+- restaurant owner reports at `/admin-dashboard/restaurant-reports` with daily, weekly, and monthly order, revenue, rate, discount, tax, fee, and top-item summaries
+
+Restaurant report rules:
+
+- Reports are generated from existing order data for the selected period.
+- Empty periods show zeros for money, counts, and percentages.
+- PDF download is disabled for empty periods because there is no traffic to export.
 
 ## External Services
 
