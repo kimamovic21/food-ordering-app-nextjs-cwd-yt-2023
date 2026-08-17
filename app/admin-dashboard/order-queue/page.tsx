@@ -10,6 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import useProfile from '@/hooks/useProfile';
+import {
+  APP_NOTIFICATION_REALTIME_EVENT,
+  getNotificationRealtimePayload,
+  isOrderRelatedRealtimePayload,
+} from '@/libs/realtimeClient';
 
 type QueueOrder = {
   _id: string;
@@ -64,7 +69,21 @@ const OrderQueuePage = () => {
     if (!profileLoading && isAdmin) {
       void fetchQueue();
       const interval = setInterval(fetchQueue, 15000);
-      return () => clearInterval(interval);
+
+      const handleRealtimeOrderUpdate = (event: Event) => {
+        const payload = getNotificationRealtimePayload(event);
+
+        if (isOrderRelatedRealtimePayload(payload)) {
+          void fetchQueue();
+        }
+      };
+
+      window.addEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
+
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
+      };
     }
   }, [fetchQueue, isAdmin, profileLoading]);
 

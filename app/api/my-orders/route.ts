@@ -6,7 +6,10 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import { createAuditLog } from '@/libs/auditLog';
 import { applyOrderAutoCancellation } from '@/libs/orderAutoCancellation';
-import { notifyRestaurantAdminsAboutCanceledOrder } from '@/libs/notifications';
+import {
+  notifyRestaurantAdminsAboutCanceledOrder,
+  notifyUserAboutOrderCompletion,
+} from '@/libs/notifications';
 import { notifyWaitingUsersIfRestaurantCanAcceptOrders } from '@/libs/restaurantAvailabilityRequests';
 import mongoose from 'mongoose';
 
@@ -245,6 +248,15 @@ export async function PATCH(request: Request) {
 
   await order.save();
   await notifyWaitingUsersIfRestaurantCanAcceptOrders(order.restaurantId);
+
+  try {
+    await notifyUserAboutOrderCompletion({
+      userId: order.userId,
+      orderId: order._id,
+    });
+  } catch (notificationError) {
+    console.error('Failed to create order completion notification:', notificationError);
+  }
 
   await createAuditLog({
     actor: user,

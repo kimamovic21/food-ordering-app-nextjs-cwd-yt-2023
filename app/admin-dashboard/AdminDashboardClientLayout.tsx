@@ -32,6 +32,11 @@ import { useMessages } from '@/contexts/MessagesContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
 import NotificationBell from '@/components/shared/NotificationBell';
 import Link from 'next/link';
+import {
+  APP_NOTIFICATION_REALTIME_EVENT,
+  getNotificationRealtimePayload,
+  isOrderRelatedRealtimePayload,
+} from '@/libs/realtimeClient';
 
 const AdminDashboardLayoutSkeleton = () => {
   return (
@@ -132,9 +137,20 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
     fetchActiveOrdersCount();
     const interval = setInterval(fetchActiveOrdersCount, 10000);
 
+    const handleRealtimeOrderUpdate = (event: Event) => {
+      const payload = getNotificationRealtimePayload(event);
+
+      if (isOrderRelatedRealtimePayload(payload)) {
+        void fetchActiveOrdersCount();
+      }
+    };
+
+    window.addEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
+
     return () => {
       isMounted = false;
       clearInterval(interval);
+      window.removeEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
     };
   }, [loading, isAdmin]);
 

@@ -5,6 +5,7 @@ import {
   READY_WITHOUT_COURIER_AUTO_CANCEL_MINUTES,
   UNPAID_ORDER_AUTO_CANCEL_MINUTES,
 } from '@/libs/orderAutoCancellation';
+import { notifyWaitingUsersIfRestaurantCanAcceptOrders } from '@/libs/restaurantAvailabilityRequests';
 
 vi.mock('@/libs/auditLog', () => ({
   createAuditLog: vi.fn(),
@@ -12,6 +13,10 @@ vi.mock('@/libs/auditLog', () => ({
 
 vi.mock('@/libs/notifications', () => ({
   notifyOrderAutoCanceled: vi.fn(),
+}));
+
+vi.mock('@/libs/restaurantAvailabilityRequests', () => ({
+  notifyWaitingUsersIfRestaurantCanAcceptOrders: vi.fn(),
 }));
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60 * 1000);
@@ -64,6 +69,7 @@ describe('order auto cancellation', () => {
         orderId: order._id,
       })
     );
+    expect(notifyWaitingUsersIfRestaurantCanAcceptOrders).toHaveBeenCalledWith(order.restaurantId);
   });
 
   it('cancels ready orders when no courier is assigned within the pickup window', async () => {

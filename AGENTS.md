@@ -81,6 +81,7 @@ See `example.env`. Variables currently used in the project include:
 - Stale unpaid `placed` orders can auto-cancel after 30 minutes, and `ready` orders without a courier can warn after 15 minutes and auto-cancel after 60 minutes.
 - Support tickets should remain role-scoped: restaurant owners handle their restaurant reports, while app-support tickets route to the super admin.
 - Order notifications can include ETA-style phase copy, late active-order alerts should point admins toward the order queue, and failed-delivery review notifications should point restaurant admins to `/admin-dashboard/orders/[id]`.
+- Realtime updates use SSE with polling fallback: `/api/messages/stream` and `/api/notifications/stream` push events only to the signed-in participant/recipient, and clients should still refresh existing JSON endpoints as the source of truth.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 
 ## AI Configuration Folders

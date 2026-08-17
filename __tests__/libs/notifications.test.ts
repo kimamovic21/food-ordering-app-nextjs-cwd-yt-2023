@@ -1,5 +1,11 @@
 import mongoose from 'mongoose';
-import { notifySupportTicketCreated, notifyUserAboutOrderStatusChange } from '@/libs/notifications';
+import {
+  createNotifications,
+  notifySupportTicketCreated,
+  notifyUserAboutOrderCompletion,
+  notifyUserAboutOrderStatusChange,
+} from '@/libs/notifications';
+import { subscribeToNotificationEvents } from '@/libs/notificationEvents';
 import { Notification } from '@/models/notification';
 import { User } from '@/models/user';
 
@@ -153,6 +159,65 @@ describe('notification helpers', () => {
         isRead: false,
         readAt: null,
         metadata: { orderStatus: 'transportation' },
+      }),
+    ]);
+  });
+
+  it('invites the customer to review after an order is completed', async () => {
+    await notifyUserAboutOrderCompletion({
+      userId: restaurantAdminId,
+      orderId,
+    });
+
+    expect(Notification.insertMany).toHaveBeenCalledWith([
+      expect.objectContaining({
+        recipientUserId: expect.objectContaining({
+          toString: expect.any(Function),
+        }),
+        type: 'order_completed',
+        title: 'Order completed',
+        message: `Your order #${orderId.toString().slice(-6)} is completed. Feel free to rate the restaurant, your order, and the courier when you have a moment.`,
+        orderId,
+        metadata: { orderStatus: 'completed', reviewPrompt: true },
+        isRead: false,
+        readAt: null,
+      }),
+    ]);
+  });
+
+  it('emits realtime events when notifications are created', async () => {
+    const events: unknown[] = [];
+    const unsubscribe = subscribeToNotificationEvents((event) => events.push(event));
+    const notificationId = new mongoose.Types.ObjectId('64a000000000000000000006');
+
+    vi.mocked(Notification.insertMany).mockResolvedValueOnce([
+      {
+        _id: notificationId,
+        recipientUserId: new mongoose.Types.ObjectId(restaurantAdminId),
+      },
+    ] as never);
+
+    await createNotifications({
+      recipientUserIds: [restaurantAdminId],
+      type: 'order_paid',
+      title: 'Paid',
+      message: 'Order paid',
+      orderId,
+      metadata: { restaurantId: restaurantId.toString() },
+    });
+
+    unsubscribe();
+
+    expect(events).toEqual([
+      expect.objectContaining({
+        type: 'notification-created',
+        recipientUserId: restaurantAdminId,
+        notificationId: notificationId.toString(),
+        notificationType: 'order_paid',
+        orderId: orderId.toString(),
+        title: 'Paid',
+        message: 'Order paid',
+        metadata: { restaurantId: restaurantId.toString() },
       }),
     ]);
   });

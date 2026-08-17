@@ -41,6 +41,11 @@ import OrderProgressStepper from '@/components/shared/OrderProgressStepper';
 import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
+import {
+  APP_NOTIFICATION_REALTIME_EVENT,
+  getNotificationRealtimePayload,
+  isOrderRelatedRealtimePayload,
+} from '@/libs/realtimeClient';
 
 type CartProduct = {
   productId: string;
@@ -198,7 +203,20 @@ const MyOrderDetailPage = () => {
         fetchOrder();
       }, 10000);
 
-      return () => clearInterval(pollInterval);
+      const handleRealtimeOrderUpdate = (event: Event) => {
+        const payload = getNotificationRealtimePayload(event);
+
+        if (isOrderRelatedRealtimePayload(payload, orderId)) {
+          void fetchOrder();
+        }
+      };
+
+      window.addEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
+
+      return () => {
+        clearInterval(pollInterval);
+        window.removeEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
+      };
     }
   }, [orderId, profileData?.email, profileLoading, router]);
 

@@ -18,6 +18,11 @@ import {
   getDevOrderTimeOffsetsFromStorage,
   hasDevOrderTimeOffsets,
 } from '@/libs/devOrderTimeSimulator';
+import {
+  APP_NOTIFICATION_REALTIME_EVENT,
+  getNotificationRealtimePayload,
+  isOrderRelatedRealtimePayload,
+} from '@/libs/realtimeClient';
 
 // Dynamic import to prevent SSR issues with Leaflet
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
@@ -161,7 +166,20 @@ const CourierPage = () => {
       fetchOrders(false);
     }, 10000);
 
-    return () => clearInterval(interval);
+    const handleRealtimeDeliveryUpdate = (event: Event) => {
+      const payload = getNotificationRealtimePayload(event);
+
+      if (isOrderRelatedRealtimePayload(payload)) {
+        void fetchOrders(false);
+      }
+    };
+
+    window.addEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeDeliveryUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeDeliveryUpdate);
+    };
   }, [
     profileData?.role,
     profileLoading,

@@ -237,9 +237,13 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const hasLoadedMessagesRef = useRef(false);
 
-  const participantId = params?.participantId;
-  const isConversationRoute = Boolean(participantId);
+  const routeParticipantId = params?.participantId;
+  const queryParticipantId = searchParams.get('participantId');
+  const participantId = routeParticipantId || queryParticipantId;
+  const isConversationRoute = Boolean(routeParticipantId);
+  const hasInlineConversation = !isConversationRoute && Boolean(participantId);
   const orderId = searchParams.get('orderId');
   const context = searchParams.get('context');
   const selectedThread = data?.selectedConversation;
@@ -292,6 +296,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
         }
 
         const json = (await response.json()) as MessagesApiResponse;
+        hasLoadedMessagesRef.current = true;
         setData((prev) => {
           if (appendContacts && prev) {
             return {
@@ -325,7 +330,11 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
       return;
     }
 
-    loadMessages({ showLoading: true, contactPage: 1, searchTerm: '' });
+    loadMessages({
+      showLoading: !hasLoadedMessagesRef.current,
+      contactPage: 1,
+      searchTerm: '',
+    });
   }, [participantId, orderId, context, profileLoading, profileData?._id, loadMessages]);
 
   useEffect(() => {
@@ -680,7 +689,11 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
         }`}
       >
         {!isConversationRoute && (
-          <Card className='flex h-full min-h-0 min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur'>
+          <Card
+            className={`h-full min-h-0 min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur ${
+              hasInlineConversation ? 'hidden lg:flex' : 'flex'
+            }`}
+          >
             <CardHeader className='space-y-3 border-b border-border/60 bg-linear-to-br from-foreground/5 to-transparent pb-3'>
               <div className='flex items-start justify-between gap-4'>
                 <div>
@@ -758,6 +771,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                       <Link
                         key={`${getContactId(contact)}-${contact.href}`}
                         href={contact.href}
+                        scroll={false}
                         className='flex min-w-[180px] items-center gap-3 rounded-2xl border border-border/60 bg-muted/40 px-3 py-3 transition-colors hover:border-primary/40 hover:bg-muted'
                       >
                         <Avatar className='h-10 w-10 border border-border/60'>
@@ -807,6 +821,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                         <Link
                           key={conversation._id}
                           href={contact?.href || '/messages'}
+                          scroll={false}
                           className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors hover:border-primary/40 hover:bg-muted/40 ${
                             selectedThread?.conversation?._id === conversation._id
                               ? 'border-primary/40 bg-primary/5'
@@ -861,10 +876,14 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                     <div className='flex items-center gap-3'>
                       <Link
                         href='/messages'
-                        className='inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 transition-colors hover:bg-muted lg:hidden'
+                        scroll={false}
+                        className={`inline-flex h-10 items-center justify-center rounded-full border border-border/60 transition-colors hover:bg-muted ${
+                          hasInlineConversation ? 'gap-2 px-3' : 'w-10 lg:hidden'
+                        }`}
                         aria-label='Back to inbox'
                       >
                         <ArrowLeft className='h-4 w-4' />
+                        {hasInlineConversation && <span className='text-sm font-medium'>Back</span>}
                       </Link>
                       <Avatar className='h-12 w-12 border border-border/60'>
                         <AvatarImage
@@ -892,7 +911,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                       <button
                         type='button'
                         data-slot='button'
-                        className='inline-flex h-8 w-8 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-red-500 shadow-none transition-colors hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40'
+                        className='inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-red-500 shadow-none transition-colors hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40'
                         aria-label={`Delete conversation with ${activeContact?.name || 'this person'}`}
                         onClick={() => setDeleteDialogOpen(true)}
                       >
@@ -1003,7 +1022,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                                           setMessageMenuId(null);
                                           void handleDeleteMessage(message._id);
                                         }}
-                                        className='flex w-full items-center justify-start gap-2 rounded-xl border-0 bg-transparent px-3 py-2 text-left text-sm font-medium text-red-600 shadow-none hover:bg-red-50 dark:hover:bg-red-950/40'
+                                        className='flex w-full cursor-pointer items-center justify-start gap-2 rounded-xl border-0 bg-transparent px-3 py-2 text-left text-sm font-medium text-red-600 shadow-none hover:bg-red-50 dark:hover:bg-red-950/40'
                                       >
                                         <Trash2 className='h-4 w-4' />
                                         Delete
@@ -1124,7 +1143,9 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                       variant='outline'
                       className='rounded-full'
                     >
-                      <Link href={contact.href}>{contact.name}</Link>
+                      <Link href={contact.href} scroll={false}>
+                        {contact.name}
+                      </Link>
                     </Button>
                   ))}
                 </div>

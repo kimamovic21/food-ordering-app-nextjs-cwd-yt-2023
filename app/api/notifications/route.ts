@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { authOptions } from '@/libs/authOptions';
 import { User } from '@/models/user';
 import { Notification } from '@/models/notification';
+import { emitNotificationEvent } from '@/libs/notificationEvents';
 
 const getCurrentUser = async () => {
   const session = await getServerSession(authOptions);
@@ -87,6 +88,12 @@ export async function PATCH(request: Request) {
   const unreadCount = await Notification.countDocuments({
     recipientUserId: user._id,
     isRead: false,
+  });
+
+  emitNotificationEvent({
+    type: 'notifications-read',
+    recipientUserId: user._id.toString(),
+    unreadCount,
   });
 
   return Response.json({ success: true, unreadCount });

@@ -19,6 +19,7 @@ flowchart LR
   OpenAI[OpenAI Menu Description]
   Redis[Upstash Redis Rate Limits]
   Maps[Leaflet Maps]
+  SSE[SSE Streams]
 
   Browser --> NextApp
   NextApp --> Api
@@ -30,6 +31,8 @@ flowchart LR
   Api --> OpenAI
   Api --> Redis
   Browser --> Maps
+  Browser --> SSE
+  SSE --> Api
   Stripe --> Api
 ```
 
@@ -289,7 +292,7 @@ Rules:
 
 ## Notifications And Messaging
 
-Notifications are stored in MongoDB and polled through `NotificationsContext`. Notification routing is role-aware through `libs/notificationClient.ts`.
+Notifications are stored in MongoDB and loaded through `NotificationsContext`. Notification routing is role-aware through `libs/notificationClient.ts`.
 
 Important notification examples include order placement, payment, order status changes, ETA-style phase updates, courier assignment, support ticket creation, late active-order warnings, and delivery completion prompts.
 
@@ -306,6 +309,32 @@ Important messaging rules:
 - Couriers can message admins.
 - Admins can message approved contacts.
 - Conversations and messages are persisted in MongoDB.
+
+## Realtime Updates
+
+The app uses SSE for lightweight server-to-browser updates. It does not require new npm packages, extra environment variables, or a third-party realtime service.
+
+SSE endpoints:
+
+- `/api/messages/stream`: emits message-created, message-updated, hidden, and read events for the signed-in participant.
+- `/api/notifications/stream`: emits notification-created and read-state events for the signed-in recipient.
+
+```mermaid
+sequenceDiagram
+  participant Browser
+  participant Stream as SSE Stream
+  participant API
+  participant Mongo
+
+  Browser->>Stream: EventSource connection
+  API->>Mongo: Create notification/message
+  API->>Stream: Emit in-memory event
+  Stream-->>Browser: Push event for matching user
+  Browser->>API: Refresh existing JSON endpoint
+  API->>Mongo: Read source of truth
+```
+
+SSE is used as an instant refresh signal, while MongoDB remains the source of truth. Existing polling stays as fallback on notifications, messages, order details, admin order list/queue, and courier active delivery screens.
 
 ## Media, Email, AI, And Maps
 

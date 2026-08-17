@@ -54,6 +54,11 @@ import {
   getDevOrderTimeSimulatorStorageKey,
   hasDevOrderTimeOffsets,
 } from '@/libs/devOrderTimeSimulator';
+import {
+  APP_NOTIFICATION_REALTIME_EVENT,
+  getNotificationRealtimePayload,
+  isOrderRelatedRealtimePayload,
+} from '@/libs/realtimeClient';
 import Image from 'next/image';
 import {
   AlertDialog,
@@ -319,7 +324,20 @@ const OrderDetailPage = () => {
         fetchOrder(false);
       }, 10000);
 
-      return () => clearInterval(interval);
+      const handleRealtimeOrderUpdate = (event: Event) => {
+        const payload = getNotificationRealtimePayload(event);
+
+        if (isOrderRelatedRealtimePayload(payload, orderId)) {
+          void fetchOrder(false);
+        }
+      };
+
+      window.addEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
+
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
+      };
     }
   }, [orderId, profileData?.role, profileLoading]);
 
