@@ -23,6 +23,11 @@ import {
 } from '@/components/ui/table';
 import Title from '@/components/shared/Title';
 import useProfile from '@/hooks/useProfile';
+import {
+  APP_NOTIFICATION_REALTIME_EVENT,
+  getNotificationRealtimePayload,
+  isOrderRelatedRealtimePayload,
+} from '@/libs/realtimeClient';
 import OrdersTable from './OrdersTable';
 
 type OrderType = {
@@ -118,7 +123,20 @@ const OrdersPage = () => {
       fetchOrders(false);
     }, 10000);
 
-    return () => clearInterval(interval);
+    const handleRealtimeOrderUpdate = (event: Event) => {
+      const payload = getNotificationRealtimePayload(event);
+
+      if (isOrderRelatedRealtimePayload(payload)) {
+        void fetchOrders(false);
+      }
+    };
+
+    window.addEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
+    };
   }, [loading, data?.role, searchParams]);
 
   if (loading) {

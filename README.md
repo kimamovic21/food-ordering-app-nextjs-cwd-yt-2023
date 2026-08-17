@@ -16,6 +16,7 @@ It includes:
 - ratings and review flows
 - approved in-app messaging between customers, restaurant owners, admins, and couriers
 - notifications center with unread counts, mark-as-read actions, and role-aware routing
+- SSE-backed live refresh for notifications, order status screens, courier assignment, and admin order queues with polling kept as fallback
 - admin dashboard for users, menu items, categories, restaurants, restaurant reports, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, and courier ratings views
 - courier workflow with assignment, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
@@ -58,7 +59,7 @@ It includes:
 - Order lifecycle management, late-order operational alerts, order queue, and dashboards/statistics
 - Restaurant reports at `/admin-dashboard/restaurant-reports` with daily, weekly, and monthly summaries plus PDF downloads when there is activity
 - Support ticket dashboard for reported order, delivery, and app issues
-- Notifications management with order, delivery, and assignment updates
+- Notifications management with SSE-backed order, delivery, and assignment updates
 - Messaging center with delivery/seen states, inline editing, and per-user delete behavior
 - Payment link endpoint and Stripe webhook handling
 
@@ -151,6 +152,15 @@ This project uses many dependencies; below are the main packages actively used i
 - Access rules: customers can only chat with their assigned courier or restaurant owner for an order; admins can chat with other admins and couriers; customer-to-customer chat stays blocked.
 - Realtime: the implementation uses server-sent events plus polling so unread badges and open threads update quickly without a third-party chat service.
 - Security: messages are stored in MongoDB with app-level authorization and transport/session security. End-to-end encryption is intentionally not enabled here because the app needs role-based operational visibility and moderation; if strict E2E is required later, treat it as a separate product decision.
+
+### Realtime Updates
+
+- SSE routes are implemented with browser-native `EventSource`, so no extra npm package or external realtime account is required.
+- `/api/messages/stream` pushes message events to the signed-in participant.
+- `/api/notifications/stream` pushes notification events only to the signed-in recipient.
+- Notifications remain stored in MongoDB as the source of truth; SSE only tells the UI to refresh sooner.
+- Polling remains in place as a fallback for notifications, messages, order details, courier delivery, and admin order views if an SSE connection drops or a serverless instance cannot share in-memory events.
+- Order status, courier assignment, paid-order, canceled-order, late-order, support-ticket, and restaurant-availability notifications can trigger instant UI refreshes on relevant screens.
 
 ### Order Flow And Restaurant Capacity
 

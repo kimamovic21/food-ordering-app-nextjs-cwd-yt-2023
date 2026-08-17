@@ -102,8 +102,8 @@ export const isDirectConversationAllowed = (
 };
 
 export const buildMessageHref = (contact: MessageContact) => {
-  const base = `/messages/${contact.userId}`;
   const params = new URLSearchParams();
+  params.set('participantId', contact.userId);
 
   if (contact.orderId) {
     params.set('orderId', contact.orderId);
@@ -114,7 +114,7 @@ export const buildMessageHref = (contact: MessageContact) => {
   }
 
   const query = params.toString();
-  return query ? `${base}?${query}` : base;
+  return query ? `/messages?${query}` : '/messages';
 };
 
 const buildContactFromProfile = (

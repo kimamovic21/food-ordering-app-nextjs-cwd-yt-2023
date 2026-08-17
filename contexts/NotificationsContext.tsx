@@ -11,6 +11,10 @@ import {
 } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSoundSettings } from '@/contexts/SoundSettingsContext';
+import {
+  dispatchNotificationRealtimeEvent,
+  type AppNotificationRealtimePayload,
+} from '@/libs/realtimeClient';
 
 export type AppNotification = {
   _id: string;
@@ -21,6 +25,7 @@ export type AppNotification = {
     | 'courier_assigned'
     | 'order_completed'
     | 'order_canceled'
+    | 'restaurant_available'
     | 'support_ticket'
     | 'late_order';
   title: string;
@@ -49,6 +54,8 @@ const NotificationsContext = createContext<NotificationsContextValue | undefined
 type NotificationsProviderProps = {
   children: React.ReactNode;
 };
+
+const getEventSourceUrl = () => '/api/notifications/stream';
 
 export const NotificationsProvider = ({ children }: NotificationsProviderProps) => {
   const { status } = useSession();
@@ -104,6 +111,7 @@ export const NotificationsProvider = ({ children }: NotificationsProviderProps) 
     }
 
     let mounted = true;
+    let eventSource: EventSource | null = null;
 
     const load = async () => {
       if (!mounted) {
@@ -118,9 +126,33 @@ export const NotificationsProvider = ({ children }: NotificationsProviderProps) 
       load();
     }, 10000);
 
+    try {
+      eventSource = new EventSource(getEventSourceUrl());
+      eventSource.onmessage = async (event) => {
+        try {
+          const payload = JSON.parse(event.data) as AppNotificationRealtimePayload;
+
+          if (payload?.type === 'ready') {
+            return;
+          }
+
+          dispatchNotificationRealtimeEvent(payload);
+          await refreshNotifications();
+        } catch {
+          await refreshNotifications();
+        }
+      };
+      eventSource.onerror = () => {
+        // Polling remains active as a fallback if the SSE connection drops.
+      };
+    } catch {
+      eventSource = null;
+    }
+
     return () => {
       mounted = false;
       clearInterval(interval);
+      eventSource?.close();
     };
   }, [status, refreshNotifications]);
 

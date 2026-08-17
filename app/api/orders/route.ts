@@ -4,6 +4,7 @@ import { User } from '@/models/user';
 import {
   notifyCourierAboutRestaurantHandoff,
   notifyFailedDeliveryCancellationVerified,
+  notifyUserAboutOrderCompletion,
   notifyUserAboutOrderStatusChange,
 } from '@/libs/notifications';
 import { createAuditLog } from '@/libs/auditLog';
@@ -339,17 +340,24 @@ export async function PATCH(request: Request) {
 
   if (previousStatus !== orderStatus && order.userId) {
     try {
-      await notifyUserAboutOrderStatusChange({
-        userId: order.userId,
-        orderId: order._id,
-        orderStatus,
-        estimatedMinutes:
-          orderStatus === 'processing'
-            ? order.estimatedPreparationMinutes
-            : orderStatus === 'ready'
-              ? order.estimatedDeliveryMinutes
-              : null,
-      });
+      if (orderStatus === 'completed') {
+        await notifyUserAboutOrderCompletion({
+          userId: order.userId,
+          orderId: order._id,
+        });
+      } else {
+        await notifyUserAboutOrderStatusChange({
+          userId: order.userId,
+          orderId: order._id,
+          orderStatus,
+          estimatedMinutes:
+            orderStatus === 'processing'
+              ? order.estimatedPreparationMinutes
+              : orderStatus === 'ready'
+                ? order.estimatedDeliveryMinutes
+                : null,
+        });
+      }
     } catch (notificationError) {
       console.error('Failed to create order status notification:', notificationError);
     }

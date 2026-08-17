@@ -1,5 +1,6 @@
 import 'server-only';
 import mongoose from 'mongoose';
+import { emitNotificationEvent } from '@/libs/notificationEvents';
 import { Notification } from '@/models/notification';
 import { User } from '@/models/user';
 
@@ -21,6 +22,11 @@ type CreateNotificationInput = {
   message: string;
   orderId?: string | mongoose.Types.ObjectId | null;
   metadata?: Record<string, unknown> | null;
+};
+
+type CreatedNotification = {
+  _id?: mongoose.Types.ObjectId;
+  recipientUserId: mongoose.Types.ObjectId;
 };
 
 const toObjectId = (value: string | mongoose.Types.ObjectId) =>
@@ -50,18 +56,40 @@ export const createNotifications = async ({
   const orderObjectId =
     orderId && mongoose.Types.ObjectId.isValid(orderId.toString()) ? toObjectId(orderId) : null;
 
-  await Notification.insertMany(
-    uniqueRecipientIds.map((recipientId) => ({
-      recipientUserId: toObjectId(recipientId),
-      type,
+  const notificationPayloads = uniqueRecipientIds.map((recipientId) => ({
+    recipientUserId: toObjectId(recipientId),
+    type,
+    title,
+    message,
+    orderId: orderObjectId,
+    metadata,
+    isRead: false,
+    readAt: null,
+  }));
+
+  const insertedNotifications = (await Notification.insertMany(
+    notificationPayloads
+  )) as CreatedNotification[];
+  const fallbackRealtimeNotifications: CreatedNotification[] = notificationPayloads.map(
+    ({ recipientUserId }) => ({ recipientUserId })
+  );
+  const realtimeNotifications: CreatedNotification[] =
+    Array.isArray(insertedNotifications) && insertedNotifications.length > 0
+      ? insertedNotifications
+      : fallbackRealtimeNotifications;
+
+  realtimeNotifications.forEach((notification) => {
+    emitNotificationEvent({
+      type: 'notification-created',
+      recipientUserId: notification.recipientUserId.toString(),
+      notificationId: notification._id?.toString?.(),
+      notificationType: type,
+      orderId: orderObjectId ? orderObjectId.toString() : null,
       title,
       message,
-      orderId: orderObjectId,
       metadata,
-      isRead: false,
-      readAt: null,
-    }))
-  );
+    });
+  });
 };
 
 const humanStatusMap: Record<string, string> = {
@@ -347,12 +375,15 @@ export const notifyUserAboutOrderCompletion = async (params: {
   userId: string | mongoose.Types.ObjectId;
   orderId: string | mongoose.Types.ObjectId;
 }) => {
+  const orderNumber = params.orderId.toString().slice(-6);
+
   await createNotifications({
     recipientUserIds: [params.userId],
     type: 'order_completed',
-    title: 'Order delivered',
-    message: `Your order #${params.orderId.toString().slice(-6)} has been marked as delivered.`,
+    title: 'Order completed',
+    message: `Your order #${orderNumber} is completed. Feel free to rate the restaurant, your order, and the courier when you have a moment.`,
     orderId: params.orderId,
+    metadata: { orderStatus: 'completed', reviewPrompt: true },
   });
 };
 

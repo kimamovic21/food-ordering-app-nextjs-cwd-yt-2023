@@ -342,6 +342,17 @@ Notification examples:
 
 Notification routing depends on role and metadata. For example, a support ticket notification routes an admin to `/admin-dashboard/support-tickets`, and a failed-delivery review notification routes the restaurant admin to `/admin-dashboard/orders/[id]`.
 
+## Realtime Logic
+
+The app uses server-sent events for lightweight live updates without extra npm packages, service accounts, or new environment variables.
+
+Realtime routes:
+
+- `/api/messages/stream`: pushes message events to the signed-in participant.
+- `/api/notifications/stream`: pushes notification events to the signed-in recipient.
+
+SSE events are treated as refresh signals only. MongoDB and the existing JSON APIs remain the source of truth, so notifications, messages, order details, admin order lists, order queue, and courier delivery screens keep polling as a fallback when a stream drops or a serverless instance cannot share in-memory events.
+
 ## Review And Loyalty Logic
 
 Reviews:

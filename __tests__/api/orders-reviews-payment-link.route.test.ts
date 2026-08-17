@@ -9,6 +9,7 @@ import { CourierReview } from '@/models/courierReview';
 import {
   notifyFailedDeliveryCancellationVerified,
   notifyRestaurantAdminsAboutCanceledOrder,
+  notifyUserAboutOrderCompletion,
   notifyUserAboutOrderStatusChange,
 } from '@/libs/notifications';
 
@@ -54,6 +55,7 @@ vi.mock('@/libs/notifications', () => ({
   notifyFailedDeliveryCancellationVerified: vi.fn(),
   notifyCourierAboutRestaurantHandoff: vi.fn(),
   notifyRestaurantAdminsAboutCanceledOrder: vi.fn(),
+  notifyUserAboutOrderCompletion: vi.fn(),
   notifyUserAboutOrderStatusChange: vi.fn(),
 }));
 
@@ -220,6 +222,29 @@ describe('high-priority order, review, and payment-link routes', () => {
         orderStatus: 'ready',
       })
     );
+  });
+
+  it('emits a review prompt notification when an admin completes a delivered order', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: admin.email } } as never);
+    vi.mocked(User.findOne).mockReturnValueOnce({
+      lean: vi.fn().mockResolvedValue(admin),
+    } as never);
+    vi.mocked(Order.findOne).mockResolvedValueOnce({
+      ...paidOrderDoc,
+      orderStatus: 'delivered',
+    } as never);
+
+    const { PATCH } = await import('@/app/api/orders/route');
+    const res = await PATCH(jsonRequest({ id: 'order-1', orderStatus: 'completed' }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.order.orderStatus).toBe('completed');
+    expect(notifyUserAboutOrderCompletion).toHaveBeenCalledWith({
+      userId: paidOrderDoc.userId,
+      orderId: paidOrderDoc._id,
+    });
+    expect(notifyUserAboutOrderStatusChange).not.toHaveBeenCalled();
   });
 
   it('blocks restaurant admins from updating canceled orders', async () => {
@@ -451,6 +476,10 @@ describe('high-priority order, review, and payment-link routes', () => {
     expect(body.order.customerConfirmedDeliveryAt).toEqual(expect.any(String));
     expect(body.order.completedAt).toEqual(expect.any(String));
     expect(deliveredOrderDoc.save).toHaveBeenCalled();
+    expect(notifyUserAboutOrderCompletion).toHaveBeenCalledWith({
+      userId: deliveredOrderDoc.userId,
+      orderId: deliveredOrderDoc._id,
+    });
   });
 
   it.each(['placed', 'processing', 'ready', 'transportation', 'completed', 'canceled'])(
