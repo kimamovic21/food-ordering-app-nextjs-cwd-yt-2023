@@ -1123,3 +1123,5 @@ Improve order timeline adn dev testing controls
 Add restaurant reports and availability alerts
 
 SSE live updates and smoother messaging
+
+Add Sentry monitoring

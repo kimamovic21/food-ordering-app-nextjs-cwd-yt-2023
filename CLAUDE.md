@@ -130,6 +130,9 @@ Keep these in sync with example.env and usage in code:
 - OPEN_AI_API_KEY
 - UPSTASH_REDIS_REST_URL
 - UPSTASH_REDIS_REST_TOKEN
+- NEXT_PUBLIC_SENTRY_DSN
+- SENTRY_DSN
+- SENTRY_AUTH_TOKEN
 
 Optional server-side override used in auth flow:
 

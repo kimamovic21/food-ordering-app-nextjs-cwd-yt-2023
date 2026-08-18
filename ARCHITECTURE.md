@@ -20,6 +20,7 @@ flowchart LR
   Redis[Upstash Redis Rate Limits]
   Maps[Leaflet Maps]
   SSE[SSE Streams]
+  Sentry[Sentry Monitoring]
 
   Browser --> NextApp
   NextApp --> Api
@@ -33,6 +34,8 @@ flowchart LR
   Browser --> Maps
   Browser --> SSE
   SSE --> Api
+  Browser --> Sentry
+  Api --> Sentry
   Stripe --> Api
 ```
 
@@ -342,6 +345,18 @@ SSE is used as an instant refresh signal, while MongoDB remains the source of tr
 - Resend and React Email send transactional auth and purchase receipt emails.
 - OpenAI generates menu item descriptions through a server-only API route.
 - Leaflet renders restaurant, customer, and courier map views.
+
+## Observability
+
+Sentry is configured for browser, Node.js server, and edge runtimes.
+
+- `instrumentation-client.ts`: browser errors, tracing, route transitions, and privacy-masked Session Replay.
+- `sentry.server.config.ts`: server/API/App Router runtime errors and traces.
+- `sentry.edge.config.ts`: edge runtime errors and traces.
+- `instrumentation.ts`: loads the correct runtime config and exports `onRequestError`.
+- `app/global-error.tsx`: captures root App Router render errors that Next.js catches before global handlers.
+
+Production source maps are uploaded through `withSentryConfig` in `next.config.ts` when `SENTRY_AUTH_TOKEN` is available during build. Keep `SENTRY_AUTH_TOKEN` secret; `NEXT_PUBLIC_SENTRY_DSN` is intentionally public for browser events.
 
 ## Restaurant Reports
 

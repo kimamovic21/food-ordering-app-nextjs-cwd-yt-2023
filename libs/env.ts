@@ -27,10 +27,13 @@ export const env = createEnv({
     OPEN_AI_API_KEY: optionalString,
     UPSTASH_REDIS_REST_URL: optionalUrl,
     UPSTASH_REDIS_REST_TOKEN: optionalString,
+    SENTRY_DSN: optionalUrl,
+    SENTRY_AUTH_TOKEN: optionalString,
   },
   client: {
     NEXT_PUBLIC_APP_URL: optionalUrl,
     NEXT_PUBLIC_SUPER_ADMIN_EMAIL: optionalEmail,
+    NEXT_PUBLIC_SENTRY_DSN: optionalUrl,
   },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
@@ -54,6 +57,9 @@ export const env = createEnv({
     OPEN_AI_API_KEY: process.env.OPEN_AI_API_KEY,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+    SENTRY_DSN: process.env.SENTRY_DSN,
+    SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
   },
   emptyStringAsUndefined: true,
 });

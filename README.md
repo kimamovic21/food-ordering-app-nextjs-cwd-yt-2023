@@ -28,6 +28,7 @@ It includes:
 - email purchase receipts with Resend + React Email
 - AI-assisted menu item descriptions for admin create/edit flows
 - Upstash Redis-backed rate limiting for sensitive auth, checkout, support, and AI endpoints
+- Sentry error monitoring, tracing, and privacy-masked Session Replay for production debugging
 
 ## Key Features
 
@@ -140,6 +141,18 @@ This project uses many dependencies; below are the main packages actively used i
 - react-share: [https://www.npmjs.com/package/react-share](https://www.npmjs.com/package/react-share)
 - OpenAI SDK: [https://platform.openai.com/docs/libraries](https://platform.openai.com/docs/libraries)
 
+### Observability
+
+- Sentry Next.js SDK: [https://docs.sentry.io/platforms/javascript/guides/nextjs/](https://docs.sentry.io/platforms/javascript/guides/nextjs/)
+
+### Sentry Monitoring
+
+- Sentry is configured through `instrumentation-client.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `instrumentation.ts`.
+- `app/global-error.tsx` captures root App Router render errors.
+- `/sentry-example-page` and `/api/sentry-example` are development-only verification helpers.
+- Client replay is privacy-conservative: text and inputs are masked and media is blocked.
+- Production source maps require `SENTRY_AUTH_TOKEN` at build time so stack traces point back to original TypeScript/TSX files.
+
 ### AI Menu Description Assistant
 
 - Admin menu item create and edit forms include a sparkles action on the description field.
@@ -239,6 +252,9 @@ Copy example.env into .env and set all values.
 - OPEN_AI_API_KEY: OpenAI API key for server-side AI menu description generation
 - UPSTASH_REDIS_REST_URL: Upstash Redis REST endpoint for rate limiting
 - UPSTASH_REDIS_REST_TOKEN: Upstash Redis REST token for rate limiting
+- NEXT_PUBLIC_SENTRY_DSN: public Sentry DSN used by browser monitoring
+- SENTRY_DSN: Sentry DSN used by server and edge monitoring
+- SENTRY_AUTH_TOKEN: build-time Sentry token for source map upload; keep this secret and set it only in local/CI/Vercel env
 
 Note: some flows also support SUPER_ADMIN_EMAIL on server side, while UI checks NEXT_PUBLIC_SUPER_ADMIN_EMAIL.
 
@@ -252,6 +268,7 @@ Note: some flows also support SUPER_ADMIN_EMAIL on server side, while UI checks 
 - React Email docs: [https://react.email/](https://react.email/)
 - OpenAI API: [https://platform.openai.com/docs](https://platform.openai.com/docs)
 - Upstash Redis: [https://upstash.com/redis](https://upstash.com/redis)
+- Sentry: [https://sentry.io/](https://sentry.io/)
 
 ## Available Scripts
 

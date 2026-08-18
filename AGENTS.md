@@ -15,6 +15,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - Rate limiting: Upstash Redis stores short-lived counters for sensitive auth, checkout, support, and AI routes.
 - Sharing: `react-share` is used for social share actions.
 - Dates: `date-fns` is used through `libs/dateFormat.ts` for UI, email, and PDF date formatting.
+- Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`.
 
 ## High-Level Features
 
@@ -48,6 +49,8 @@ See `example.env`. Variables currently used in the project include:
 - `OPEN_AI_API_KEY` (server-side OpenAI key for AI menu descriptions)
 - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (optional Redis rate limiting)
 - `SKIP_VERIFY_EMAIL` (optional credentials-auth verification toggle)
+- `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN` (optional Sentry monitoring)
+- `SENTRY_AUTH_TOKEN` (optional build-time source map upload token; secret, never expose client-side)
 
 ## Code Layout
 
@@ -82,6 +85,7 @@ See `example.env`. Variables currently used in the project include:
 - Support tickets should remain role-scoped: restaurant owners handle their restaurant reports, while app-support tickets route to the super admin.
 - Order notifications can include ETA-style phase copy, late active-order alerts should point admins toward the order queue, and failed-delivery review notifications should point restaurant admins to `/admin-dashboard/orders/[id]`.
 - Realtime updates use SSE with polling fallback: `/api/messages/stream` and `/api/notifications/stream` push events only to the signed-in participant/recipient, and clients should still refresh existing JSON endpoints as the source of truth.
+- Keep Sentry instrumentation files intact. Sentry DSNs are allowed in browser config, but `SENTRY_AUTH_TOKEN` is a build secret used for source maps and must stay out of client code.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 
 ## AI Configuration Folders
