@@ -395,6 +395,7 @@ Restaurant report rules:
 - OpenAI: server-side menu description generation.
 - Upstash Redis: short-lived rate-limit counters for sensitive auth, checkout, support, and AI routes.
 - Leaflet: map rendering and courier tracking UI.
+- Sentry: error monitoring, tracing, and privacy-masked Session Replay across browser, server, and edge runtimes.
 
 ## Date Handling
 
