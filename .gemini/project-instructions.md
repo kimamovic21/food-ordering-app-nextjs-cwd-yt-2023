@@ -6,6 +6,7 @@
 - Tailwind CSS 4 and shadcn/ui components
 - MongoDB via Mongoose (`models/`)
 - NextAuth auth flows (`libs/authOptions.ts`, `app/api/auth/**`)
+- TanStack Query client data cache for cache/refetch/invalidation flows
 - Stripe payments (`app/api/checkout/**`, `app/api/payment-link/**`, `app/api/webhook/**`)
 - Resend email integration (`libs/sendPurchaseReceiptEmail.tsx`)
 - Upstash Redis rate limiting (`libs/rateLimit.ts`)
@@ -17,6 +18,7 @@
 - Use incremental commits and low-risk changes.
 - Respect existing code organization and naming patterns.
 - Reuse business logic from `libs/` and existing contexts.
+- Use TanStack Query for client-side server state that benefits from cache, refetch, invalidation, or polling. Keep shared keys in `libs/queryKeys.ts`.
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts`.
 - Keep strong typing and avoid implicit any.
 
@@ -31,6 +33,7 @@
 - Keep support tickets scoped between restaurant support and app support.
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.
 - Keep SSE realtime updates role-scoped and fallback-friendly; streams should signal clients to refresh existing source-of-truth JSON endpoints.
+- Prefer invalidating TanStack Query keys from SSE handlers instead of manually duplicating cached server state.
 - Keep Sentry instrumentation files and env vars aligned; `SENTRY_AUTH_TOKEN` is secret and only for source map uploads during builds.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Keep webhook logic idempotent and safe on retries.

@@ -33,6 +33,27 @@ export const sanitizeDevOrderTimeOffsets = (value: unknown): OrderPhaseDurationO
   };
 };
 
+export const getOrderTimelineTotalOffsetMinutes = (
+  offsets: OrderPhaseDurationOffsets | null | undefined
+) => {
+  if (!offsets) {
+    return 0;
+  }
+
+  const explicitTotalOffset = sanitizeDevOrderTimeOffsetMinutes(offsets.totalOrderTime);
+
+  if (explicitTotalOffset > 0) {
+    return explicitTotalOffset;
+  }
+
+  return (
+    sanitizeDevOrderTimeOffsetMinutes(offsets.waitingForKitchen) +
+    sanitizeDevOrderTimeOffsetMinutes(offsets.kitchenPreparation) +
+    sanitizeDevOrderTimeOffsetMinutes(offsets.deliveryTravel) +
+    sanitizeDevOrderTimeOffsetMinutes(offsets.confirmationWait)
+  );
+};
+
 export const getDevFailedDeliveryOffsetMinutes = (offsets: OrderPhaseDurationOffsets) =>
   (offsets.failedDeliveryWait ?? 0) > 0 ? 30 : (offsets.deliveryTravel ?? 0);
 

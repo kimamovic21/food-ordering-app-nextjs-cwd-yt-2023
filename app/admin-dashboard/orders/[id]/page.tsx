@@ -52,6 +52,7 @@ import { formatAppDateTime } from '@/libs/dateFormat';
 import {
   getDevOrderTimeOffsetsFromStorage,
   getDevOrderTimeSimulatorStorageKey,
+  getOrderTimelineTotalOffsetMinutes,
   hasDevOrderTimeOffsets,
 } from '@/libs/devOrderTimeSimulator';
 import {
@@ -744,6 +745,7 @@ const OrderDetailPage = () => {
         )
       : 0;
   const showReadyWithoutCourierWarning = readyWithoutCourierMinutes >= 15;
+  const totalTimelineOffsetMinutes = getOrderTimelineTotalOffsetMinutes(timelineOffsets);
 
   return (
     <section className='mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10'>
@@ -770,6 +772,7 @@ const OrderDetailPage = () => {
           <OrderElapsedTime
             createdAt={order.createdAt}
             completedAt={order.completedAt || order.canceledAt}
+            durationOffsetMinutes={totalTimelineOffsetMinutes}
             isCompleted={order.orderStatus === 'completed' || order.orderStatus === 'canceled'}
           />
         </div>

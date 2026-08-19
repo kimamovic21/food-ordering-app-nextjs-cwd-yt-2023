@@ -4,7 +4,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 
 ## Project Summary
 
-- Frontend: Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, Radix, Recharts.
+- Frontend: Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, Radix, Recharts, and TanStack Query.
 - Backend: Next.js route handlers in app/api with Mongoose models in models/.
 - Auth: NextAuth with MongoDB adapter and Google OAuth.
 - Payments: Stripe Checkout, payment-link endpoint, and webhook processing.
@@ -14,6 +14,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - AI: OpenAI SDK is used server-side for admin menu item description generation.
 - Rate limiting: Upstash Redis stores short-lived counters for sensitive auth, checkout, support, and AI routes.
 - Sharing: `react-share` is used for social share actions.
+- Client data cache: TanStack Query powers global message and notification unread state.
 - Dates: `date-fns` is used through `libs/dateFormat.ts` for UI, email, and PDF date formatting.
 - Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`.
 
@@ -85,6 +86,7 @@ See `example.env`. Variables currently used in the project include:
 - Support tickets should remain role-scoped: restaurant owners handle their restaurant reports, while app-support tickets route to the super admin.
 - Order notifications can include ETA-style phase copy, late active-order alerts should point admins toward the order queue, and failed-delivery review notifications should point restaurant admins to `/admin-dashboard/orders/[id]`.
 - Realtime updates use SSE with polling fallback: `/api/messages/stream` and `/api/notifications/stream` push events only to the signed-in participant/recipient, and clients should still refresh existing JSON endpoints as the source of truth.
+- TanStack Query should be used for client-side server data that benefits from cache, refetch, invalidation, or polling. Keep query keys in `libs/queryKeys.ts`; use SSE events to invalidate query keys instead of duplicating source-of-truth state.
 - Keep Sentry instrumentation files intact. Sentry DSNs are allowed in browser config, but `SENTRY_AUTH_TOKEN` is a build secret used for source maps and must stay out of client code.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 

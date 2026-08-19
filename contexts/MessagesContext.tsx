@@ -1,18 +1,12 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useSoundSettings } from '@/contexts/SoundSettingsContext';
+import { queryKeys } from '@/libs/queryKeys';
 
 export type MessageSummary = {
   _id: string;
@@ -40,80 +34,99 @@ type MessagesProviderProps = {
   children: React.ReactNode;
 };
 
+type MessagesApiResponse = {
+  conversations: MessageSummary[];
+  unreadCount: number;
+};
+
+const EMPTY_CONVERSATIONS: MessageSummary[] = [];
 const getEventSourceUrl = () => '/api/messages/stream';
+
+const fetchMessages = async (): Promise<MessagesApiResponse> => {
+  const response = await fetch('/api/messages', { cache: 'no-store' });
+
+  if (!response.ok) {
+    throw new Error('Failed to load messages');
+  }
+
+  const json = await response.json();
+
+  return {
+    conversations: Array.isArray(json.conversations) ? json.conversations : [],
+    unreadCount: Number(json.unreadCount) || 0,
+  };
+};
 
 export const MessagesProvider = ({ children }: MessagesProviderProps) => {
   const { status } = useSession();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { playMessageSound } = useSoundSettings();
-  const [conversations, setConversations] = useState<MessageSummary[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
   const currentPathRef = useRef(pathname);
   const previousUnreadCountRef = useRef(0);
   const hasLoadedMessagesRef = useRef(false);
+  const isAuthenticated = status === 'authenticated';
+
+  const {
+    data: messagesData,
+    isLoading: isMessagesLoading,
+    isSuccess: hasLoadedMessages,
+    refetch: refetchMessages,
+  } = useQuery({
+    enabled: isAuthenticated,
+    queryFn: fetchMessages,
+    queryKey: queryKeys.messages.summary(),
+    refetchInterval: 10000,
+  });
+
+  const conversations = messagesData?.conversations ?? EMPTY_CONVERSATIONS;
+  const unreadCount = messagesData?.unreadCount ?? 0;
+  const loading = isAuthenticated && isMessagesLoading;
 
   useEffect(() => {
     currentPathRef.current = pathname;
   }, [pathname]);
 
   const refreshMessages = useCallback(async () => {
-    if (status !== 'authenticated') {
-      setConversations([]);
-      setUnreadCount(0);
+    if (!isAuthenticated) {
       previousUnreadCountRef.current = 0;
       hasLoadedMessagesRef.current = false;
       return;
     }
 
-    try {
-      setLoading(true);
-      const response = await fetch('/api/messages', { cache: 'no-store' });
-      if (!response.ok) {
-        return;
-      }
-
-      const json = await response.json();
-      const nextUnreadCount = Number(json.unreadCount) || 0;
-
-      setConversations(Array.isArray(json.conversations) ? json.conversations : []);
-
-      if (hasLoadedMessagesRef.current && nextUnreadCount > previousUnreadCountRef.current) {
-        playMessageSound();
-      }
-
-      previousUnreadCountRef.current = nextUnreadCount;
-      hasLoadedMessagesRef.current = true;
-      setUnreadCount(nextUnreadCount);
-    } catch {
-      // Keep the UI resilient if realtime refresh fails temporarily.
-    } finally {
-      setLoading(false);
-    }
-  }, [playMessageSound, status]);
+    await refetchMessages();
+  }, [isAuthenticated, refetchMessages]);
 
   useEffect(() => {
-    if (status !== 'authenticated') {
-      setConversations([]);
-      setUnreadCount(0);
+    if (!isAuthenticated) {
       previousUnreadCountRef.current = 0;
       hasLoadedMessagesRef.current = false;
+      queryClient.removeQueries({ queryKey: queryKeys.messages.all });
       return;
     }
 
-    let mounted = true;
+    if (!hasLoadedMessages) {
+      return;
+    }
+
+    if (hasLoadedMessagesRef.current && unreadCount > previousUnreadCountRef.current) {
+      playMessageSound();
+    }
+
+    previousUnreadCountRef.current = unreadCount;
+    hasLoadedMessagesRef.current = true;
+  }, [hasLoadedMessages, isAuthenticated, playMessageSound, queryClient, unreadCount]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     let eventSource: EventSource | null = null;
 
-    const load = async () => {
-      if (!mounted) {
-        return;
-      }
-      await refreshMessages();
+    const refreshQuery = async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.messages.all });
     };
-
-    load();
-
-    const interval = setInterval(load, 10000);
 
     try {
       eventSource = new EventSource(getEventSourceUrl());
@@ -126,7 +139,7 @@ export const MessagesProvider = ({ children }: MessagesProviderProps) => {
             isIncoming?: boolean;
           };
 
-          await refreshMessages();
+          await refreshQuery();
 
           if (
             payload?.type === 'message-created' &&
@@ -136,7 +149,7 @@ export const MessagesProvider = ({ children }: MessagesProviderProps) => {
             sonnerToast.info('New message received');
           }
         } catch {
-          await refreshMessages();
+          await refreshQuery();
         }
       };
     } catch {
@@ -144,11 +157,9 @@ export const MessagesProvider = ({ children }: MessagesProviderProps) => {
     }
 
     return () => {
-      mounted = false;
-      clearInterval(interval);
       eventSource?.close();
     };
-  }, [status, refreshMessages]);
+  }, [isAuthenticated, queryClient]);
 
   const value = useMemo(
     () => ({

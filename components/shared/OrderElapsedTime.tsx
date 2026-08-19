@@ -6,6 +6,7 @@ import { Clock } from 'lucide-react';
 interface OrderElapsedTimeProps {
   createdAt: string;
   completedAt?: string | null;
+  durationOffsetMinutes?: number;
   isCompleted?: boolean;
   showIcon?: boolean;
 }
@@ -13,10 +14,11 @@ interface OrderElapsedTimeProps {
 const OrderElapsedTime: React.FC<OrderElapsedTimeProps> = ({
   createdAt,
   completedAt,
+  durationOffsetMinutes = 0,
   isCompleted = false,
   showIcon = true,
 }) => {
-  const elapsedTime = useOrderElapsedTime(createdAt, completedAt);
+  const elapsedTime = useOrderElapsedTime(createdAt, completedAt, durationOffsetMinutes);
 
   return (
     <div className='flex items-center gap-2'>

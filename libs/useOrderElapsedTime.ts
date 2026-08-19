@@ -6,13 +6,18 @@ import { useEffect, useState, useCallback } from 'react';
  * @param completedAt - Order completion timestamp (when marked as delivered)
  * @returns Formatted elapsed time string (HH:MM:SS or MM:SS)
  */
-export function useOrderElapsedTime(createdAt: string, completedAt?: string | null): string {
+export function useOrderElapsedTime(
+  createdAt: string,
+  completedAt?: string | null,
+  durationOffsetMinutes = 0
+): string {
   const [elapsedTime, setElapsedTime] = useState<string>('00:00');
 
   const calculateElapsed = useCallback(() => {
     const start = new Date(createdAt).getTime();
     const end = completedAt ? new Date(completedAt).getTime() : Date.now();
-    const elapsedMs = end - start;
+    const offsetMs = Math.max(0, Number(durationOffsetMinutes) || 0) * 60 * 1000;
+    const elapsedMs = end - start + offsetMs;
 
     if (elapsedMs < 0) return '00:00';
 
@@ -26,7 +31,7 @@ export function useOrderElapsedTime(createdAt: string, completedAt?: string | nu
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }, [createdAt, completedAt]);
+  }, [createdAt, completedAt, durationOffsetMinutes]);
 
   useEffect(() => {
     // Set initial value by calling the callback

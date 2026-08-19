@@ -1125,3 +1125,5 @@ Add restaurant reports and availability alerts
 SSE live updates and smoother messaging
 
 Add Sentry monitoring
+
+Add TanStack Query caching and polish order UI
