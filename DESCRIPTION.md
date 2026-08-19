@@ -353,6 +353,8 @@ Realtime routes:
 
 SSE events are treated as refresh signals only. MongoDB and the existing JSON APIs remain the source of truth, so notifications, messages, order details, admin order lists, order queue, and courier delivery screens keep polling as a fallback when a stream drops or a serverless instance cannot share in-memory events.
 
+Global message and notification unread state is cached with TanStack Query. SSE handlers invalidate the matching query keys, then the existing API routes reload the latest data.
+
 ## Review And Loyalty Logic
 
 Reviews:
@@ -395,6 +397,7 @@ Restaurant report rules:
 - OpenAI: server-side menu description generation.
 - Upstash Redis: short-lived rate-limit counters for sensitive auth, checkout, support, and AI routes.
 - Leaflet: map rendering and courier tracking UI.
+- TanStack Query: client-side server-data cache for global message and notification unread state.
 - Sentry: error monitoring, tracing, and privacy-masked Session Replay across browser, server, and edge runtimes.
 
 ## Date Handling

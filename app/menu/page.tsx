@@ -59,6 +59,49 @@ const toCategorySlug = (value: string) =>
 
 const isObjectId = (value: string) => /^[a-f0-9]{24}$/i.test(value);
 
+const preloadImage = (src: string) =>
+  new Promise<void>((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve();
+      return;
+    }
+
+    const image = new window.Image();
+    let isSettled = false;
+
+    const finish = () => {
+      if (isSettled) {
+        return;
+      }
+
+      isSettled = true;
+      window.clearTimeout(timeout);
+      resolve();
+    };
+
+    const timeout = window.setTimeout(finish, 2500);
+
+    image.onload = finish;
+    image.onerror = finish;
+    image.src = src;
+
+    if (image.complete) {
+      finish();
+    }
+  });
+
+const preloadMenuItemImages = async (items: MenuItemType[]) => {
+  const imageUrls = Array.from(
+    new Set(
+      items
+        .map((item) => item.image)
+        .filter((image): image is string => Boolean(image && image.trim().length > 0))
+    )
+  );
+
+  await Promise.all(imageUrls.map((imageUrl) => preloadImage(imageUrl)));
+};
+
 const MenuPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -225,7 +268,11 @@ const MenuPage = () => {
       try {
         const response = await fetch(`/api/menu-items?groupBy=category&perCategory=3`);
         const data = await response.json();
-        setCategorySummaries(Array.isArray(data?.categories) ? data.categories : []);
+        const summaries: CategorySummary[] = Array.isArray(data?.categories) ? data.categories : [];
+        const summaryItems = summaries.flatMap((summary) => summary.items);
+
+        await preloadMenuItemImages(summaryItems);
+        setCategorySummaries(summaries);
       } catch (error) {
         console.error('Error fetching menu summaries:', error);
         setCategorySummaries([]);
@@ -262,8 +309,14 @@ const MenuPage = () => {
         });
         const data = await response.json();
 
-        const items = Array.isArray(data?.items) ? data.items : [];
+        const items: MenuItemType[] = Array.isArray(data?.items) ? data.items : [];
         const total = typeof data?.total === 'number' ? data.total : 0;
+
+        await preloadMenuItemImages(items);
+
+        if (controller.signal.aborted) {
+          return;
+        }
 
         setTotalResults(total);
         setResults((prev) => (page === 1 ? items : [...prev, ...items]));

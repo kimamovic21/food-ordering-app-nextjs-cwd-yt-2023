@@ -17,6 +17,7 @@ It includes:
 - approved in-app messaging between customers, restaurant owners, admins, and couriers
 - notifications center with unread counts, mark-as-read actions, and role-aware routing
 - SSE-backed live refresh for notifications, order status screens, courier assignment, and admin order queues with polling kept as fallback
+- TanStack Query caching for global message and notification unread state
 - admin dashboard for users, menu items, categories, restaurants, restaurant reports, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, and courier ratings views
 - courier workflow with assignment, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
@@ -97,19 +98,29 @@ This project uses many dependencies; below are the main packages actively used i
 - Tailwind CSS: [https://tailwindcss.com/](https://tailwindcss.com/)
 - Radix UI: [https://www.radix-ui.com/](https://www.radix-ui.com/)
 - shadcn/ui: [https://ui.shadcn.com/](https://ui.shadcn.com/)
+- TanStack Query: [https://tanstack.com/query/latest](https://tanstack.com/query/latest)
 - Lucide React: [https://lucide.dev/](https://lucide.dev/)
 - React Icons: [https://react-icons.github.io/react-icons/](https://react-icons.github.io/react-icons/)
 - Sonner: [https://sonner.emilkowal.ski/](https://sonner.emilkowal.ski/)
 - Recharts: [https://recharts.org/](https://recharts.org/)
 - Embla Carousel: [https://www.embla-carousel.com/](https://www.embla-carousel.com/)
 - dnd-kit: [https://dndkit.com/](https://dndkit.com/)
+- next-themes: [https://github.com/pacocoursey/next-themes](https://github.com/pacocoursey/next-themes)
+- @react-pdf/renderer: [https://react-pdf.org/](https://react-pdf.org/)
 
 ### Forms and Validation
 
 - React Hook Form: [https://react-hook-form.com/](https://react-hook-form.com/)
 - Zod: [https://zod.dev/](https://zod.dev/)
 - Hookform Resolvers: [https://github.com/react-hook-form/resolvers](https://github.com/react-hook-form/resolvers)
+- T3 Env: [https://env.t3.gg/](https://env.t3.gg/)
 - date-fns: [https://date-fns.org/](https://date-fns.org/)
+
+### Styling Utilities
+
+- class-variance-authority: [https://cva.style/docs](https://cva.style/docs)
+- clsx: [https://github.com/lukeed/clsx](https://github.com/lukeed/clsx)
+- tailwind-merge: [https://github.com/dcastil/tailwind-merge](https://github.com/dcastil/tailwind-merge)
 
 ### Auth and Database
 
@@ -145,6 +156,13 @@ This project uses many dependencies; below are the main packages actively used i
 
 - Sentry Next.js SDK: [https://docs.sentry.io/platforms/javascript/guides/nextjs/](https://docs.sentry.io/platforms/javascript/guides/nextjs/)
 
+### Testing
+
+- Vitest: [https://vitest.dev/](https://vitest.dev/)
+- Testing Library React: [https://testing-library.com/docs/react-testing-library/intro/](https://testing-library.com/docs/react-testing-library/intro/)
+- MSW: [https://mswjs.io/](https://mswjs.io/)
+- jsdom: [https://github.com/jsdom/jsdom](https://github.com/jsdom/jsdom)
+
 ### Sentry Monitoring
 
 - Sentry is configured through `instrumentation-client.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `instrumentation.ts`.
@@ -172,8 +190,18 @@ This project uses many dependencies; below are the main packages actively used i
 - `/api/messages/stream` pushes message events to the signed-in participant.
 - `/api/notifications/stream` pushes notification events only to the signed-in recipient.
 - Notifications remain stored in MongoDB as the source of truth; SSE only tells the UI to refresh sooner.
+- Global message and notification badges use TanStack Query through `components/shared/TanStackQueryProvider.tsx` and shared keys in `libs/queryKeys.ts`.
+- SSE events invalidate the relevant TanStack Query keys, then the existing JSON endpoints return the authoritative data.
 - Polling remains in place as a fallback for notifications, messages, order details, courier delivery, and admin order views if an SSE connection drops or a serverless instance cannot share in-memory events.
 - Order status, courier assignment, paid-order, canceled-order, late-order, support-ticket, and restaurant-availability notifications can trigger instant UI refreshes on relevant screens.
+
+### TanStack Query
+
+- `components/shared/TanStackQueryProvider.tsx` creates the client-side `QueryClient` used by app-level providers.
+- `libs/queryKeys.ts` stores shared query keys so cache invalidation stays consistent.
+- Global messages and notifications use TanStack Query for server-state caching, background refetch, and SSE-driven invalidation.
+- Existing route handlers remain the source of truth. TanStack Query should not replace API authorization, MongoDB validation, checkout validation, or webhook idempotency.
+- Prefer TanStack Query for future client screens with server data that needs loading state, refetching, cache invalidation, polling, or window-focus refresh.
 
 ### Order Flow And Restaurant Capacity
 

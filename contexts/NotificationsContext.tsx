@@ -1,16 +1,10 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSoundSettings } from '@/contexts/SoundSettingsContext';
+import { queryKeys } from '@/libs/queryKeys';
 import {
   dispatchNotificationRealtimeEvent,
   type AppNotificationRealtimePayload,
@@ -55,76 +49,93 @@ type NotificationsProviderProps = {
   children: React.ReactNode;
 };
 
+type NotificationsApiResponse = {
+  notifications: AppNotification[];
+  unreadCount: number;
+};
+
+const EMPTY_NOTIFICATIONS: AppNotification[] = [];
 const getEventSourceUrl = () => '/api/notifications/stream';
+
+const fetchNotifications = async (): Promise<NotificationsApiResponse> => {
+  const response = await fetch('/api/notifications?limit=12', { cache: 'no-store' });
+
+  if (!response.ok) {
+    throw new Error('Failed to load notifications');
+  }
+
+  const json = await response.json();
+
+  return {
+    notifications: Array.isArray(json.notifications) ? json.notifications : [],
+    unreadCount: Number(json.unreadCount) || 0,
+  };
+};
 
 export const NotificationsProvider = ({ children }: NotificationsProviderProps) => {
   const { status } = useSession();
+  const queryClient = useQueryClient();
   const { playNotificationSound } = useSoundSettings();
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
   const previousUnreadCountRef = useRef(0);
   const hasLoadedNotificationsRef = useRef(false);
+  const isAuthenticated = status === 'authenticated';
+
+  const {
+    data: notificationsData,
+    isLoading: isNotificationsLoading,
+    isSuccess: hasLoadedNotifications,
+    refetch: refetchNotifications,
+  } = useQuery({
+    enabled: isAuthenticated,
+    queryFn: fetchNotifications,
+    queryKey: queryKeys.notifications.list(),
+    refetchInterval: 10000,
+  });
+
+  const notifications = notificationsData?.notifications ?? EMPTY_NOTIFICATIONS;
+  const unreadCount = notificationsData?.unreadCount ?? 0;
+  const loading = isAuthenticated && isNotificationsLoading;
 
   const refreshNotifications = useCallback(async () => {
-    if (status !== 'authenticated') {
-      setNotifications([]);
-      setUnreadCount(0);
+    if (!isAuthenticated) {
       previousUnreadCountRef.current = 0;
       hasLoadedNotificationsRef.current = false;
       return;
     }
 
-    try {
-      setLoading(true);
-      const response = await fetch('/api/notifications?limit=12', { cache: 'no-store' });
-      if (!response.ok) {
-        return;
-      }
-
-      const json = await response.json();
-      const nextUnreadCount = Number(json.unreadCount) || 0;
-
-      setNotifications(Array.isArray(json.notifications) ? json.notifications : []);
-
-      if (hasLoadedNotificationsRef.current && nextUnreadCount > previousUnreadCountRef.current) {
-        playNotificationSound();
-      }
-
-      previousUnreadCountRef.current = nextUnreadCount;
-      hasLoadedNotificationsRef.current = true;
-      setUnreadCount(nextUnreadCount);
-    } catch {
-      // Do not break UI due to temporary polling failures.
-    } finally {
-      setLoading(false);
-    }
-  }, [playNotificationSound, status]);
+    await refetchNotifications();
+  }, [isAuthenticated, refetchNotifications]);
 
   useEffect(() => {
-    if (status !== 'authenticated') {
-      setNotifications([]);
-      setUnreadCount(0);
+    if (!isAuthenticated) {
       previousUnreadCountRef.current = 0;
       hasLoadedNotificationsRef.current = false;
+      queryClient.removeQueries({ queryKey: queryKeys.notifications.all });
       return;
     }
 
-    let mounted = true;
+    if (!hasLoadedNotifications) {
+      return;
+    }
+
+    if (hasLoadedNotificationsRef.current && unreadCount > previousUnreadCountRef.current) {
+      playNotificationSound();
+    }
+
+    previousUnreadCountRef.current = unreadCount;
+    hasLoadedNotificationsRef.current = true;
+  }, [hasLoadedNotifications, isAuthenticated, playNotificationSound, queryClient, unreadCount]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     let eventSource: EventSource | null = null;
 
-    const load = async () => {
-      if (!mounted) {
-        return;
-      }
-      await refreshNotifications();
+    const refreshQuery = async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
     };
-
-    load();
-
-    const interval = setInterval(() => {
-      load();
-    }, 10000);
 
     try {
       eventSource = new EventSource(getEventSourceUrl());
@@ -137,37 +148,50 @@ export const NotificationsProvider = ({ children }: NotificationsProviderProps) 
           }
 
           dispatchNotificationRealtimeEvent(payload);
-          await refreshNotifications();
+          await refreshQuery();
         } catch {
-          await refreshNotifications();
+          await refreshQuery();
         }
       };
       eventSource.onerror = () => {
-        // Polling remains active as a fallback if the SSE connection drops.
+        // TanStack Query polling remains active as a fallback if the SSE connection drops.
       };
     } catch {
       eventSource = null;
     }
 
     return () => {
-      mounted = false;
-      clearInterval(interval);
       eventSource?.close();
     };
-  }, [status, refreshNotifications]);
+  }, [isAuthenticated, queryClient]);
 
   const updateReadState = useCallback(
     async (notificationId: string, action: 'mark-read' | 'mark-unread') => {
-      setNotifications((prev) =>
-        prev.map((notification) =>
-          notification._id === notificationId
-            ? {
-                ...notification,
-                isRead: action === 'mark-read',
-                readAt: action === 'mark-read' ? new Date().toISOString() : null,
-              }
-            : notification
-        )
+      queryClient.setQueryData<NotificationsApiResponse>(
+        queryKeys.notifications.list(),
+        (current) => {
+          if (!current) {
+            return current;
+          }
+
+          const nextNotifications = current.notifications.map((notification) =>
+            notification._id === notificationId
+              ? {
+                  ...notification,
+                  isRead: action === 'mark-read',
+                  readAt: action === 'mark-read' ? new Date().toISOString() : null,
+                }
+              : notification
+          );
+          const nextUnreadCount = nextNotifications.filter(
+            (notification) => !notification.isRead
+          ).length;
+
+          return {
+            notifications: nextNotifications,
+            unreadCount: nextUnreadCount,
+          };
+        }
       );
 
       const response = await fetch('/api/notifications', {
@@ -182,9 +206,15 @@ export const NotificationsProvider = ({ children }: NotificationsProviderProps) 
       }
 
       const json = await response.json();
-      setUnreadCount(Number(json.unreadCount) || 0);
+      queryClient.setQueryData<NotificationsApiResponse>(
+        queryKeys.notifications.list(),
+        (current) => ({
+          notifications: current?.notifications ?? [],
+          unreadCount: Number(json.unreadCount) || 0,
+        })
+      );
     },
-    [refreshNotifications]
+    [queryClient, refreshNotifications]
   );
 
   const markAsRead = useCallback(
@@ -197,14 +227,18 @@ export const NotificationsProvider = ({ children }: NotificationsProviderProps) 
   const markAllAsRead = useCallback(async () => {
     const readAt = new Date().toISOString();
 
-    setNotifications((prev) =>
-      prev.map((notification) => ({
-        ...notification,
-        isRead: true,
-        readAt: notification.readAt || readAt,
-      }))
+    queryClient.setQueryData<NotificationsApiResponse>(
+      queryKeys.notifications.list(),
+      (current) => ({
+        notifications:
+          current?.notifications.map((notification) => ({
+            ...notification,
+            isRead: true,
+            readAt: notification.readAt || readAt,
+          })) ?? [],
+        unreadCount: 0,
+      })
     );
-    setUnreadCount(0);
 
     const response = await fetch('/api/notifications', {
       method: 'PATCH',
@@ -218,8 +252,14 @@ export const NotificationsProvider = ({ children }: NotificationsProviderProps) 
     }
 
     const json = await response.json();
-    setUnreadCount(Number(json.unreadCount) || 0);
-  }, [refreshNotifications]);
+    queryClient.setQueryData<NotificationsApiResponse>(
+      queryKeys.notifications.list(),
+      (current) => ({
+        notifications: current?.notifications ?? [],
+        unreadCount: Number(json.unreadCount) || 0,
+      })
+    );
+  }, [queryClient, refreshNotifications]);
 
   const value = useMemo(
     () => ({

@@ -7,9 +7,10 @@ import {
   getDevOrderTimeSimulatorOffsets,
   setDevOrderTimeSimulatorOffsets,
 } from '@/libs/devOrderTimeSimulatorStore';
+import { Order } from '@/models/order';
 import { User } from '@/models/user';
 
-const ensureDevelopmentUser = async () => {
+const ensureDevelopmentUser = async (allowedRoles = ['admin', 'courier']) => {
   if (process.env.NODE_ENV !== 'development') {
     return { error: Response.json({ error: 'Not found' }, { status: 404 }) };
   }
@@ -25,7 +26,7 @@ const ensureDevelopmentUser = async () => {
 
   const user = await User.findOne({ email }).select('_id role').lean();
 
-  if (!user || !['admin', 'courier'].includes(user.role)) {
+  if (!user || !allowedRoles.includes(user.role)) {
     return { error: Response.json({ error: 'Unauthorized' }, { status: 403 }) };
   }
 
@@ -39,12 +40,22 @@ const getOrderIdFromRequest = (request: Request) => {
 };
 
 export async function GET(request: Request) {
-  const auth = await ensureDevelopmentUser();
-  if ('error' in auth) return auth.error;
-
   const orderId = getOrderIdFromRequest(request);
   if (!orderId) {
     return Response.json({ error: 'Missing orderId' }, { status: 400 });
+  }
+
+  const auth = await ensureDevelopmentUser(['admin', 'courier', 'user']);
+  if ('error' in auth) return auth.error;
+
+  if (!['admin', 'courier'].includes(auth.user.role)) {
+    const order = mongoose.Types.ObjectId.isValid(orderId)
+      ? await Order.exists({ _id: orderId, userId: auth.user._id })
+      : null;
+
+    if (!order) {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
   }
 
   return Response.json({ offsets: getDevOrderTimeSimulatorOffsets(orderId) });

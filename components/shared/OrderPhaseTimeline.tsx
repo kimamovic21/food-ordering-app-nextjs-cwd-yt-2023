@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatMillisecondsToTime } from '@/libs/useOrderElapsedTime';
 import { cn } from '@/libs/utils';
+import { getOrderTimelineTotalOffsetMinutes } from '@/libs/devOrderTimeSimulator';
 
 type OrderPhaseTimelineProps = {
   createdAt: string;
@@ -116,12 +117,7 @@ const OrderPhaseTimeline = ({
     deliveryTravel: durationOffsetsMinutes?.deliveryTravel ?? 0,
     confirmationWait: durationOffsetsMinutes?.confirmationWait ?? 0,
   };
-  const totalDurationOffset =
-    durationOffsetsMinutes?.totalOrderTime ??
-    phaseDurationOffsets.waitingForKitchen +
-      phaseDurationOffsets.kitchenPreparation +
-      phaseDurationOffsets.deliveryTravel +
-      phaseDurationOffsets.confirmationWait;
+  const totalDurationOffset = getOrderTimelineTotalOffsetMinutes(durationOffsetsMinutes);
 
   const checkpoints = [
     { label: 'Placed', done: Boolean(createdAt) },

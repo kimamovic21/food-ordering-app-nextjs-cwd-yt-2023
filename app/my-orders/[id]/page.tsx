@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -36,11 +36,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
+import OrderPhaseTimeline, {
+  type OrderPhaseDurationOffsets,
+} from '@/components/shared/OrderPhaseTimeline';
 import OrderProgressStepper from '@/components/shared/OrderProgressStepper';
 import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
+import {
+  getDevOrderTimeOffsetsFromStorage,
+  getDevOrderTimeSimulatorStorageKey,
+  getOrderTimelineTotalOffsetMinutes,
+} from '@/libs/devOrderTimeSimulator';
 import {
   APP_NOTIFICATION_REALTIME_EVENT,
   getNotificationRealtimePayload,
@@ -117,10 +124,9 @@ const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
   ),
 });
 
-import { useRef } from 'react';
-
 const MyOrderDetailPage = () => {
   const [order, setOrder] = useState<OrderDetailsType | null>(null);
+  const [timelineOffsets, setTimelineOffsets] = useState<OrderPhaseDurationOffsets>({});
   const [restaurantReview, setRestaurantReview] = useState<OrderReviewType | null>(null);
   const [courierReview, setCourierReview] = useState<OrderReviewType | null>(null);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
@@ -136,6 +142,51 @@ const MyOrderDetailPage = () => {
   const { replaceCart } = useCart();
   const orderId = params?.id as string;
   const isFirstLoad = useRef(true);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development' || !orderId) {
+      setTimelineOffsets({});
+      return;
+    }
+
+    const loadTimelineOffsets = () => {
+      setTimelineOffsets(getDevOrderTimeOffsetsFromStorage(orderId));
+    };
+
+    loadTimelineOffsets();
+
+    const loadServerOffsets = async () => {
+      try {
+        const response = await fetch(
+          `/api/dev/order-time-simulator?orderId=${encodeURIComponent(orderId)}`,
+          { cache: 'no-store' }
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const json = await response.json();
+        setTimelineOffsets(json?.offsets ?? {});
+      } catch {
+        // Simulator state is development-only. Ignore request failures.
+      }
+    };
+
+    void loadServerOffsets();
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === getDevOrderTimeSimulatorStorageKey(orderId)) {
+        loadTimelineOffsets();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [orderId]);
 
   useEffect(() => {
     if (profileLoading || !profileData?.email) return;
@@ -455,6 +506,8 @@ const MyOrderDetailPage = () => {
     }
   };
 
+  const totalTimelineOffsetMinutes = getOrderTimelineTotalOffsetMinutes(timelineOffsets);
+
   return (
     <section className='mt-8'>
       <div className='mt-8 max-w-[1600px] mx-auto px-4'>
@@ -479,6 +532,7 @@ const MyOrderDetailPage = () => {
             <OrderElapsedTime
               createdAt={order.createdAt}
               completedAt={order.completedAt || order.canceledAt}
+              durationOffsetMinutes={totalTimelineOffsetMinutes}
               isCompleted={order.orderStatus === 'completed' || order.orderStatus === 'canceled'}
             />
             <Button
@@ -757,6 +811,7 @@ const MyOrderDetailPage = () => {
               estimatedPreparationMinutes={order.estimatedPreparationMinutes}
               estimatedDeliveryMinutes={order.estimatedDeliveryMinutes}
               estimatedTotalMinutes={order.estimatedTotalMinutes}
+              durationOffsetsMinutes={timelineOffsets}
             />
           </div>
         )}

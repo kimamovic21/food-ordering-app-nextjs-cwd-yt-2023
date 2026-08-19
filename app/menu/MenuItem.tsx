@@ -164,42 +164,24 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
 
   return (
     <>
-      <Card className='p-0 overflow-hidden hover:shadow-lg transition-shadow flex flex-col'>
+      <Card className='flex h-full min-h-[21rem] flex-col overflow-hidden p-0 transition-shadow hover:shadow-lg'>
         <Link
           href={href || `/menu/${displayItem._id}`}
-          className='relative flex h-40 items-center justify-center bg-muted p-4 text-center transition-colors hover:bg-muted/80'
+          className='relative flex h-44 shrink-0 items-center justify-center overflow-hidden bg-muted p-4 text-center transition-colors hover:bg-muted/80'
         >
-          {displayItem.image &&
-          typeof displayItem.image === 'string' &&
-          displayItem.image.startsWith('http') ? (
-            isRemoteImage ? (
-              <Image
-                src={displayItem.image}
-                alt={displayItem.name}
-                width={140}
-                height={140}
-                className='mx-auto h-40 w-auto object-contain'
-                onError={() => {
-                  console.warn(`Failed to load image: ${displayItem.image}`);
-                }}
-              />
-            ) : (
-              <Image
-                src={displayItem.image}
-                alt={displayItem.name}
-                width={140}
-                height={140}
-                className='mx-auto'
-                onError={() => {
-                  console.warn(`Failed to load image: ${displayItem.image}`);
-                }}
-              />
-            )
-          ) : (
-            <div className='flex items-center justify-center h-40 text-muted-foreground text-sm'>
-              No image available
-            </div>
-          )}
+          <div className='relative h-full w-full'>
+            <Image
+              src={imageUrl}
+              alt={displayItem.name}
+              fill
+              sizes='(min-width: 1024px) 25vw, (min-width: 768px) 40vw, 85vw'
+              className='object-contain'
+              unoptimized={isRemoteImage}
+              onError={() => {
+                console.warn(`Failed to load image: ${imageUrl}`);
+              }}
+            />
+          </div>
           {!isAvailable && (
             <div className='absolute inset-0 flex items-center justify-center bg-black/65 text-white'>
               <span className='rounded-full border border-white/40 bg-black/40 px-4 py-2 text-sm font-semibold'>
@@ -209,7 +191,7 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
           )}
         </Link>
 
-        <div className='p-4 flex flex-col flex-1'>
+        <div className='flex flex-1 flex-col p-4'>
           <div className='mb-2 flex justify-center'>
             <Badge
               variant={isAvailable ? 'outline' : 'destructive'}
@@ -234,7 +216,7 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
             />
           </div>
 
-          <div className='flex gap-2 mt-4'>
+          <div className='mt-auto flex gap-2 pt-4'>
             <Button
               onClick={handleAddToCart}
               className='flex-1'

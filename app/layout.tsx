@@ -11,6 +11,7 @@ import AppContext from '@/contexts/AppContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import { MessagesProvider } from '@/contexts/MessagesContext';
 import { SoundSettingsProvider } from '@/contexts/SoundSettingsContext';
+import TanStackQueryProvider from '@/components/shared/TanStackQueryProvider';
 
 const roboto = Roboto({
   variable: '--font-roboto',
@@ -63,16 +64,18 @@ const RootLayout = ({
           <div className='min-h-screen flex flex-col w-full'>
             <AppContext>
               <SoundSettingsProvider>
-                <MessagesProvider>
-                  <NotificationsProvider>
-                    <CartProvider>
-                      <LayoutWrapper>
-                        {children}
-                        <Toaster position='top-center' />
-                      </LayoutWrapper>
-                    </CartProvider>
-                  </NotificationsProvider>
-                </MessagesProvider>
+                <TanStackQueryProvider>
+                  <MessagesProvider>
+                    <NotificationsProvider>
+                      <CartProvider>
+                        <LayoutWrapper>
+                          {children}
+                          <Toaster position='top-center' />
+                        </LayoutWrapper>
+                      </CartProvider>
+                    </NotificationsProvider>
+                  </MessagesProvider>
+                </TanStackQueryProvider>
               </SoundSettingsProvider>
             </AppContext>
           </div>

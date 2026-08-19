@@ -36,15 +36,23 @@ const MenuPageSkeleton = ({
 
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                 {Array.from({ length: cardsPerSection }).map((_, cardIndex) => (
-                  <Card key={cardIndex} className='p-0 overflow-hidden flex flex-col'>
-                    <div className='relative h-40 p-4 bg-muted'>
-                      <Skeleton className='mx-auto h-32 w-32 rounded-full' />
+                  <Card
+                    key={cardIndex}
+                    className='flex h-full min-h-[21rem] flex-col overflow-hidden p-0'
+                  >
+                    <div className='relative h-44 shrink-0 bg-muted p-4'>
+                      <Skeleton className='mx-auto h-full w-36 rounded-full' />
                     </div>
 
-                    <div className='p-4 flex flex-col flex-1'>
-                      <Skeleton className='h-7 w-3/4 mb-4' />
+                    <div className='flex flex-1 flex-col p-4'>
+                      <Skeleton className='mx-auto mb-2 h-6 w-20 rounded-full' />
+                      <Skeleton className='mx-auto h-7 w-3/4' />
+                      <Skeleton className='mx-auto mt-3 h-4 w-28' />
 
-                      <Skeleton className='h-12 w-full mt-4' />
+                      <div className='mt-auto flex gap-2 pt-4'>
+                        <Skeleton className='h-11 flex-1 rounded-md' />
+                        <Skeleton className='h-11 w-11 rounded-md' />
+                      </div>
                     </div>
                   </Card>
                 ))}

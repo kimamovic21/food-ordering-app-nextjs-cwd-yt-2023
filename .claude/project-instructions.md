@@ -3,6 +3,7 @@
 ## Technical Context
 
 - Framework: Next.js 16 App Router + React 19 + TypeScript
+- Client data cache: TanStack Query
 - Data layer: MongoDB with Mongoose models in `models/`
 - Auth: NextAuth with MongoDB adapter and Google OAuth
 - Payments: Stripe checkout + payment link + webhook routes
@@ -18,6 +19,7 @@
 - Keep edits small and composable.
 - Preserve existing API shapes unless explicitly requested.
 - Reuse helpers in `libs/` before adding new utilities.
+- Use TanStack Query for client-side server state that benefits from cache, refetch, invalidation, or polling. Keep shared keys in `libs/queryKeys.ts`.
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts`.
 - Avoid `any`; prefer explicit typing and narrow unions.
 
@@ -32,6 +34,7 @@
 - Keep support tickets scoped between restaurant support and app support.
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.
 - Keep SSE realtime updates role-scoped and fallback-friendly; streams should signal clients to refresh existing source-of-truth JSON endpoints.
+- Prefer invalidating TanStack Query keys from SSE handlers instead of manually duplicating cached server state.
 - Keep Sentry instrumentation files and env vars aligned; `SENTRY_AUTH_TOKEN` is secret and only for source map uploads during builds.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Keep webhook and async job processing idempotent.

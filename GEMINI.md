@@ -6,6 +6,7 @@ This file provides project context and coding guidance for Gemini tools.
 
 - Framework: Next.js 16 App Router (TypeScript)
 - UI: Tailwind CSS 4, shadcn/ui, Radix
+- Client data cache: TanStack Query
 - Auth: NextAuth with MongoDB adapter
 - DB: MongoDB via Mongoose
 - Payments: Stripe
@@ -44,6 +45,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Keep support tickets role-scoped between restaurant support and app support.
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.
 - Keep SSE realtime updates lightweight: `/api/messages/stream` and `/api/notifications/stream` should only signal relevant signed-in users, while polling fallback and existing JSON endpoints remain the source of truth.
+- Use TanStack Query for client-side server state that needs cache, refetch, invalidation, or polling. Keep shared keys in `libs/queryKeys.ts` and let SSE invalidate cached queries instead of duplicating source-of-truth state.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Keep payment and webhook flows idempotent.
 - Keep receipt email generation in server code.

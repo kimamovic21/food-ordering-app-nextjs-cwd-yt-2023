@@ -20,9 +20,12 @@ flowchart LR
   Redis[Upstash Redis Rate Limits]
   Maps[Leaflet Maps]
   SSE[SSE Streams]
+  Query[TanStack Query Cache]
   Sentry[Sentry Monitoring]
 
   Browser --> NextApp
+  Browser --> Query
+  Query --> Api
   NextApp --> Api
   Api --> Mongo
   Api --> Stripe
@@ -337,7 +340,9 @@ sequenceDiagram
   API->>Mongo: Read source of truth
 ```
 
-SSE is used as an instant refresh signal, while MongoDB remains the source of truth. Existing polling stays as fallback on notifications, messages, order details, admin order list/queue, and courier active delivery screens.
+SSE is used as an instant refresh signal, while MongoDB remains the source of truth. Global message and notification unread state is cached through TanStack Query and refreshed by invalidating shared keys from `libs/queryKeys.ts`.
+
+Existing polling stays as fallback on notifications, messages, order details, admin order list/queue, and courier active delivery screens. When an SSE stream drops, active TanStack Query observers continue to poll their existing JSON endpoints.
 
 ## Media, Email, AI, And Maps
 
