@@ -31,6 +31,7 @@ import useProfile from '@/hooks/useProfile';
 import { useMessages } from '@/contexts/MessagesContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
 import NotificationBell from '@/components/shared/NotificationBell';
+import CommandPaletteTrigger from '@/components/shared/CommandPaletteTrigger';
 import Link from 'next/link';
 import {
   APP_NOTIFICATION_REALTIME_EVENT,
@@ -292,6 +293,8 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
             <span>Go back to home</span>
           </Link>
 
+          <CommandPaletteTrigger className='mt-2 w-full justify-start rounded-lg' />
+
           <Link
             href='/notifications'
             onClick={() => setIsSidebarOpen(false)}
@@ -335,6 +338,11 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
             <Home size={18} />
             <span>Go back to home</span>
           </Link>
+
+          <CommandPaletteTrigger
+            className='md:hidden w-full justify-start rounded-lg'
+            onOpen={() => setIsSidebarOpen(false)}
+          />
 
           {/* Notifications Link - Always directly under Home */}
           <Link

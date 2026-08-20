@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import CommandPaletteTrigger from '@/components/shared/CommandPaletteTrigger';
 import useProfile from '@/hooks/useProfile';
 import { useMessages } from '@/contexts/MessagesContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
@@ -182,6 +183,8 @@ const CourierDashboardClientLayout = ({ children }: { children: React.ReactNode 
             <span>Go back to home</span>
           </Link>
 
+          <CommandPaletteTrigger className='mt-2 w-full justify-start rounded-xl' />
+
           <Link
             href='/notifications'
             onClick={() => setIsSidebarOpen(false)}
@@ -225,6 +228,11 @@ const CourierDashboardClientLayout = ({ children }: { children: React.ReactNode 
             <Home size={18} />
             <span>Go back to home</span>
           </Link>
+
+          <CommandPaletteTrigger
+            className='xl:hidden w-full justify-start rounded-xl'
+            onOpen={() => setIsSidebarOpen(false)}
+          />
 
           <Link
             href='/notifications'

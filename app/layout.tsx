@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { Analytics } from '@vercel/analytics/next';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { Roboto, Roboto_Mono } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { CartProvider } from '@/contexts/CartContext';
@@ -12,6 +14,8 @@ import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import { MessagesProvider } from '@/contexts/MessagesContext';
 import { SoundSettingsProvider } from '@/contexts/SoundSettingsContext';
 import TanStackQueryProvider from '@/components/shared/TanStackQueryProvider';
+import AppErrorBoundary from '@/components/shared/AppErrorBoundary';
+import AppCommandPalette from '@/components/shared/AppCommandPalette';
 
 const roboto = Roboto({
   variable: '--font-roboto',
@@ -61,24 +65,30 @@ const RootLayout = ({
           enableSystem
           disableTransitionOnChange
         >
-          <div className='min-h-screen flex flex-col w-full'>
-            <AppContext>
-              <SoundSettingsProvider>
-                <TanStackQueryProvider>
-                  <MessagesProvider>
-                    <NotificationsProvider>
-                      <CartProvider>
-                        <LayoutWrapper>
-                          {children}
-                          <Toaster position='top-center' />
-                        </LayoutWrapper>
-                      </CartProvider>
-                    </NotificationsProvider>
-                  </MessagesProvider>
-                </TanStackQueryProvider>
-              </SoundSettingsProvider>
-            </AppContext>
-          </div>
+          <NuqsAdapter>
+            <div className='min-h-screen flex flex-col w-full'>
+              <AppContext>
+                <SoundSettingsProvider>
+                  <TanStackQueryProvider>
+                    <MessagesProvider>
+                      <NotificationsProvider>
+                        <CartProvider>
+                          <AppErrorBoundary>
+                            <LayoutWrapper>
+                              {children}
+                              <Toaster position='top-center' />
+                              <AppCommandPalette />
+                              <Analytics />
+                            </LayoutWrapper>
+                          </AppErrorBoundary>
+                        </CartProvider>
+                      </NotificationsProvider>
+                    </MessagesProvider>
+                  </TanStackQueryProvider>
+                </SoundSettingsProvider>
+              </AppContext>
+            </div>
+          </NuqsAdapter>
         </ThemeProvider>
       </body>
     </html>

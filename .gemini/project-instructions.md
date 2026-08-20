@@ -7,6 +7,10 @@
 - MongoDB via Mongoose (`models/`)
 - NextAuth auth flows (`libs/authOptions.ts`, `app/api/auth/**`)
 - TanStack Query client data cache for cache/refetch/invalidation flows
+- nuqs URL state for shareable filters/search/sort/pagination
+- cmdk for command palette and searchable action-menu patterns
+- react-error-boundary for localized client component fallbacks
+- Vercel Web Analytics for production traffic insights
 - Stripe payments (`app/api/checkout/**`, `app/api/payment-link/**`, `app/api/webhook/**`)
 - Resend email integration (`libs/sendPurchaseReceiptEmail.tsx`)
 - Upstash Redis rate limiting (`libs/rateLimit.ts`)
@@ -19,6 +23,9 @@
 - Respect existing code organization and naming patterns.
 - Reuse business logic from `libs/` and existing contexts.
 - Use TanStack Query for client-side server state that benefits from cache, refetch, invalidation, or polling. Keep shared keys in `libs/queryKeys.ts`.
+- `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed filters, sorting, search, selected ticket links, report periods, and pagination when the state should survive refresh/share.
+- `components/shared/AppCommandPalette.tsx` uses `cmdk`; add important new routes/actions there when adding major navigation surfaces.
+- `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client recovery, not API validation.
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts`.
 - Keep strong typing and avoid implicit any.
 

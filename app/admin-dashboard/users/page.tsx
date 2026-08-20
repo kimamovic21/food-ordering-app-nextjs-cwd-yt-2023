@@ -1,7 +1,8 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { parseAsInteger, useQueryState } from 'nuqs';
 import {
   Pagination,
   PaginationContent,
@@ -31,10 +32,10 @@ type UserType = {
 const UsersPage = () => {
   const [users, setUsers] = useState<UserType[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
-  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [pageQuery, setPageQuery] = useQueryState('page', parseAsInteger.withDefault(1));
+  const page = Math.max(1, pageQuery);
   const { data, loading } = useProfile();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const isSuperAdmin =
     data?.role === 'admin' && data?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
@@ -47,13 +48,10 @@ const UsersPage = () => {
       return;
     }
 
-    const currentPage = Math.max(1, parseInt(searchParams?.get('page') || '1', 10));
-    setPage(currentPage);
-
     const fetchUsers = async () => {
       try {
         setLoadingUsers(true);
-        const res = await fetch(`/api/users?page=${currentPage}`);
+        const res = await fetch(`/api/users?page=${page}`);
         const json = await res.json();
 
         // Add 500ms delay before showing users
@@ -69,7 +67,7 @@ const UsersPage = () => {
     };
 
     fetchUsers();
-  }, [loading, isSuperAdmin, searchParams, router]);
+  }, [loading, isSuperAdmin, page, router]);
 
   if (loading || loadingUsers) {
     return <UsersLoading />;
@@ -99,7 +97,7 @@ const UsersPage = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     const prev = Math.max(1, page - 1);
-                    router.push(`/admin-dashboard/users?page=${prev}`);
+                    void setPageQuery(prev);
                   }}
                   aria-disabled={page <= 1}
                   className={page <= 1 ? 'pointer-events-none opacity-50' : ''}
@@ -116,7 +114,7 @@ const UsersPage = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     const next = Math.min(totalPages, page + 1);
-                    router.push(`/admin-dashboard/users?page=${next}`);
+                    void setPageQuery(next);
                   }}
                   aria-disabled={page >= totalPages}
                   className={page >= totalPages ? 'pointer-events-none opacity-50' : ''}

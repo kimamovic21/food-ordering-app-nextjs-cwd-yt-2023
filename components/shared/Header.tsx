@@ -33,6 +33,7 @@ import useProfile from '@/hooks/useProfile';
 import ModeToggle from '../theme/ModeToggle';
 import NotificationBell from './NotificationBell';
 import MessageBell from './MessageBell';
+import CommandPaletteTrigger from './CommandPaletteTrigger';
 
 const DEFAULT_PROFILE_IMAGE = '/user-default-image.webp';
 
@@ -235,6 +236,7 @@ const Header = () => {
           ) : (
             <>
               <ModeToggle />
+              <CommandPaletteTrigger showLabel={false} className='h-9 rounded-md px-2.5' />
               {status === 'authenticated' && <MessageBell iconSize={26} />}
               {status === 'authenticated' && <NotificationBell iconSize={26} />}
               <Link
@@ -370,12 +372,10 @@ const Header = () => {
               Cart {totalItems > 0 && `(${totalItems})`}
             </Link>
 
-            {status === 'authenticated' && (
-              <div className='flex items-center justify-start'>
-                <MessageBell iconSize={20} />
-                <span className='ml-2 text-sm text-muted-foreground'>Messages</span>
-              </div>
-            )}
+            <CommandPaletteTrigger
+              className='w-full justify-start'
+              onOpen={() => setMobileOpen(false)}
+            />
 
             {status === 'authenticated' && (
               <div className='flex items-center justify-start'>

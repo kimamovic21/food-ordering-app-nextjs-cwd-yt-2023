@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import { CheckCircle2, ExternalLink, RefreshCw } from 'lucide-react';
 import Title from '@/components/shared/Title';
 import { Badge } from '@/components/ui/badge';
@@ -70,6 +70,9 @@ const statusLabels = {
   resolved: 'Resolved',
 };
 
+const statusFilterOptions = ['all', 'open', 'in_review', 'resolved'] as const;
+type StatusFilter = (typeof statusFilterOptions)[number];
+
 const categoryLabels: Record<string, string> = {
   order_issue: 'Order issue',
   delivery_issue: 'Delivery issue',
@@ -96,11 +99,13 @@ const getId = (value: string | { _id: string } | null | undefined) =>
 
 const SupportTicketsPage = () => {
   const { data: profileData, loading: profileLoading } = useProfile();
-  const searchParams = useSearchParams();
-  const highlightedTicketId = searchParams.get('ticketId') || '';
+  const [{ status: statusFilter, ticketId }, setTicketQuery] = useQueryStates({
+    status: parseAsStringLiteral(statusFilterOptions).withDefault('all'),
+    ticketId: parseAsString.withDefault(''),
+  });
+  const highlightedTicketId = ticketId.trim();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all');
   const [updatingTicketId, setUpdatingTicketId] = useState<string | null>(null);
   const [responseNotes, setResponseNotes] = useState<Record<string, string>>({});
 
@@ -218,7 +223,12 @@ const SupportTicketsPage = () => {
           </p>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              void setTicketQuery({ status: value as StatusFilter });
+            }}
+          >
             <SelectTrigger className='w-[160px]'>
               <SelectValue />
             </SelectTrigger>

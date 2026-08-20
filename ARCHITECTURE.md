@@ -22,6 +22,7 @@ flowchart LR
   SSE[SSE Streams]
   Query[TanStack Query Cache]
   Sentry[Sentry Monitoring]
+  Analytics[Vercel Web Analytics]
 
   Browser --> NextApp
   Browser --> Query
@@ -38,6 +39,7 @@ flowchart LR
   Browser --> SSE
   SSE --> Api
   Browser --> Sentry
+  Browser --> Analytics
   Api --> Sentry
   Stripe --> Api
 ```
@@ -51,6 +53,18 @@ flowchart LR
 - `libs/`: auth, database, notifications, messages, coupons, loyalty, email, AI, rate limiting, date formatting, and helper utilities.
 - `models/`: Mongoose schemas and MongoDB collection contracts.
 - `__tests__/`, `e2e/`, `mocks/`: Vitest unit/integration/e2e test areas.
+
+## Client UX Shell
+
+`app/layout.tsx` mounts the cross-cutting client tools used by the frontend:
+
+- `NuqsAdapter` enables URL-backed client state through `nuqs`.
+- `AppCommandPalette` uses `cmdk` for global route/action search from the header or `Ctrl/Cmd + K`.
+- `AppErrorBoundary` uses `react-error-boundary` and sends caught render errors to Sentry.
+- `Analytics` from `@vercel/analytics/next` records production traffic on Vercel.
+- `sharp` is installed for Next.js image optimization and is used automatically by the framework.
+
+`nuqs` is currently used where refreshed or shared URLs should preserve UI state: public menu filters, restaurant menu filters, restaurants search/page, customer orders, customer reports, admin orders, admin users, admin menu items, support ticket filters, and restaurant report period/date filters.
 
 ## Application Areas
 
@@ -362,6 +376,8 @@ Sentry is configured for browser, Node.js server, and edge runtimes.
 - `app/global-error.tsx`: captures root App Router render errors that Next.js catches before global handlers.
 
 Production source maps are uploaded through `withSentryConfig` in `next.config.ts` when `SENTRY_AUTH_TOKEN` is available during build. Keep `SENTRY_AUTH_TOKEN` secret; `NEXT_PUBLIC_SENTRY_DSN` is intentionally public for browser events.
+
+Vercel Web Analytics is mounted in `app/layout.tsx` through `@vercel/analytics/next`. It tracks production traffic and route usage, while Sentry remains responsible for errors, traces, and replay debugging.
 
 ## Restaurant Reports
 

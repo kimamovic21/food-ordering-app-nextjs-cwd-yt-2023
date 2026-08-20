@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { parseAsInteger, useQueryState } from 'nuqs';
 import { AlertTriangle } from 'lucide-react';
 import {
   Pagination,
@@ -49,13 +50,13 @@ const OrdersPage = () => {
     lateThresholdMinutes: 120,
   });
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [noRestaurant, setNoRestaurant] = useState(false);
   const { data, loading } = useProfile();
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const [pageQuery, setPageQuery] = useQueryState('page', parseAsInteger.withDefault(1));
+  const page = Math.max(1, pageQuery);
 
   useEffect(() => {
     if (loading) return;
@@ -64,15 +65,12 @@ const OrdersPage = () => {
       return;
     }
 
-    const currentPage = Math.max(1, parseInt(searchParams?.get('page') || '1', 10));
-    setPage(currentPage);
-
     const fetchOrders = async (showLoading = true) => {
       try {
         if (showLoading) {
           setLoadingOrders(true);
         }
-        const res = await fetch(`/api/orders?page=${currentPage}`);
+        const res = await fetch(`/api/orders?page=${page}`);
 
         if (!res.ok) {
           const errorData = await res.json();
@@ -137,7 +135,7 @@ const OrdersPage = () => {
       clearInterval(interval);
       window.removeEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
     };
-  }, [loading, data?.role, searchParams]);
+  }, [loading, data?.role, page]);
 
   if (loading) {
     return (
@@ -303,7 +301,7 @@ const OrdersPage = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         const prev = Math.max(1, page - 1);
-                        router.push(`/admin-dashboard/orders?page=${prev}`);
+                        void setPageQuery(prev);
                       }}
                       aria-disabled={page <= 1}
                       className={page <= 1 ? 'pointer-events-none opacity-50' : ''}
@@ -320,7 +318,7 @@ const OrdersPage = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         const next = Math.min(totalPages, page + 1);
-                        router.push(`/admin-dashboard/orders?page=${next}`);
+                        void setPageQuery(next);
                       }}
                       aria-disabled={page >= totalPages}
                       className={page >= totalPages ? 'pointer-events-none opacity-50' : ''}

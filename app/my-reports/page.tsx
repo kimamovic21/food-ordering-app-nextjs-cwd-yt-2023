@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import Title from '@/components/shared/Title';
 import { Badge } from '@/components/ui/badge';
@@ -57,6 +58,9 @@ const statusLabels = {
   resolved: 'Resolved',
 };
 
+const statusFilterOptions = ['all', 'open', 'in_review', 'resolved'] as const;
+type StatusFilter = (typeof statusFilterOptions)[number];
+
 const categoryLabels: Record<string, string> = {
   order_issue: 'Order issue',
   delivery_issue: 'Delivery issue',
@@ -87,7 +91,10 @@ const MyReportsPage = () => {
   const { data: profileData, loading: profileLoading } = useProfile();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useQueryState(
+    'status',
+    parseAsStringLiteral(statusFilterOptions).withDefault('all')
+  );
 
   const fetchTickets = useCallback(async () => {
     if (!profileData?.email) {
@@ -167,7 +174,12 @@ const MyReportsPage = () => {
           </p>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              void setStatusFilter(value as StatusFilter);
+            }}
+          >
             <SelectTrigger className='w-[160px]'>
               <SelectValue />
             </SelectTrigger>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { parseAsString, useQueryState } from 'nuqs';
 import { Button } from '@/components/ui/button';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import useProfile from '@/hooks/useProfile';
@@ -43,7 +44,8 @@ const MenuItemsListPage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchInput, setSearchInput] = useState('');
-  const [activeSearch, setActiveSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useQueryState('q', parseAsString.withDefault(''));
+  const activeSearch = searchQuery.trim();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Immediately clear data when user changes
@@ -52,11 +54,14 @@ const MenuItemsListPage = () => {
       setMenuItems([]);
       setCategories([]);
       setSearchInput('');
-      setActiveSearch('');
       setIsLoading(true);
       setCurrentUserId(data?._id || null);
     }
   }, [data?._id, currentUserId]);
+
+  useEffect(() => {
+    setSearchInput(activeSearch);
+  }, [activeSearch]);
 
   const fetchData = useCallback(async () => {
     const startTime = Date.now();
@@ -183,19 +188,12 @@ const MenuItemsListPage = () => {
 
   const handleSearch = () => {
     const trimmedSearch = searchInput.trim();
-    setActiveSearch(trimmedSearch);
-
-    if (trimmedSearch) {
-      router.push(`/admin-dashboard/menu-items?q=${encodeURIComponent(trimmedSearch)}`);
-    } else {
-      router.push('/admin-dashboard/menu-items');
-    }
+    void setSearchQuery(trimmedSearch || null);
   };
 
   const handleReset = () => {
     setSearchInput('');
-    setActiveSearch('');
-    router.push('/admin-dashboard/menu-items');
+    void setSearchQuery(null);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import { Download, FileText, RefreshCcw, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,7 @@ const periodOptions: Array<{ value: RestaurantReportPeriod; label: string }> = [
   { value: 'weekly', label: 'Weekly report' },
   { value: 'monthly', label: 'Monthly report' },
 ];
+const reportPeriodValues = periodOptions.map((option) => option.value);
 
 const formatMoney = (value: number) => `$${(Number(value) || 0).toFixed(2)}`;
 const formatPercent = (value: number) => `${(Number(value) || 0).toFixed(2)}%`;
@@ -41,8 +43,11 @@ const metricCards = (report: RestaurantReportSummary) => [
 ];
 
 const RestaurantReportsPage = () => {
-  const [period, setPeriod] = useState<RestaurantReportPeriod>('daily');
-  const [date, setDate] = useState(todayInputValue);
+  const defaultReportDate = useMemo(todayInputValue, []);
+  const [{ period, date }, setReportQuery] = useQueryStates({
+    period: parseAsStringLiteral(reportPeriodValues).withDefault('daily'),
+    date: parseAsString.withDefault(defaultReportDate),
+  });
   const [data, setData] = useState<ReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -127,7 +132,9 @@ const RestaurantReportsPage = () => {
               Report type
               <select
                 value={period}
-                onChange={(event) => setPeriod(event.target.value as RestaurantReportPeriod)}
+                onChange={(event) => {
+                  void setReportQuery({ period: event.target.value as RestaurantReportPeriod });
+                }}
                 className='h-11 w-full rounded-md border border-input bg-background px-3 text-sm'
               >
                 {periodOptions.map((option) => (
@@ -142,7 +149,9 @@ const RestaurantReportsPage = () => {
               <input
                 type='date'
                 value={date}
-                onChange={(event) => setDate(event.target.value)}
+                onChange={(event) => {
+                  void setReportQuery({ date: event.target.value || null });
+                }}
                 className='h-11 w-full rounded-md border border-input bg-background px-3 text-sm'
               />
             </label>

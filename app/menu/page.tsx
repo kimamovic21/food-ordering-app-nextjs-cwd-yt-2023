@@ -1,7 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryStates,
+} from 'nuqs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -45,8 +51,8 @@ interface CategorySummary {
   total: number;
 }
 
-type SortOption = 'price_asc' | 'price_desc' | 'newest' | 'oldest';
-
+const SORT_OPTIONS = ['price_asc', 'price_desc', 'newest', 'oldest'] as const;
+type SortOption = (typeof SORT_OPTIONS)[number];
 const DEFAULT_SORT: SortOption = 'newest';
 
 const toCategorySlug = (value: string) =>
@@ -103,8 +109,24 @@ const preloadMenuItemImages = async (items: MenuItemType[]) => {
 };
 
 const MenuPage = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [
+    {
+      q: searchQuery,
+      categories: categoryQuery,
+      sort: sortBy,
+      minPrice: minPriceQuery,
+      maxPrice: maxPriceQuery,
+      page: pageQuery,
+    },
+    setMenuQuery,
+  ] = useQueryStates({
+    q: parseAsString.withDefault(''),
+    categories: parseAsArrayOf(parseAsString, ',').withDefault([]),
+    sort: parseAsStringLiteral(SORT_OPTIONS).withDefault(DEFAULT_SORT),
+    minPrice: parseAsString.withDefault(''),
+    maxPrice: parseAsString.withDefault(''),
+    page: parseAsInteger.withDefault(1),
+  });
   const [categories, setCategories] = useState<Category[]>([]);
   const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -112,21 +134,17 @@ const MenuPage = () => {
   const [isResultsLoading, setIsResultsLoading] = useState(false);
   const [results, setResults] = useState<MenuItemType[]>([]);
   const [totalResults, setTotalResults] = useState(0);
-  const [page, setPage] = useState(1);
+  const page = Math.max(1, pageQuery);
+  const activeSearch = searchQuery.trim();
+  const minPrice = minPriceQuery.trim();
+  const maxPrice = maxPriceQuery.trim();
   const [searchInput, setSearchInput] = useState('');
-  const [activeSearch, setActiveSearch] = useState('');
 
   // Pending filters (what user is selecting)
   const [pendingSelectedCategories, setPendingSelectedCategories] = useState<string[]>([]);
   const [pendingSortBy, setPendingSortBy] = useState<SortOption>(DEFAULT_SORT);
   const [pendingMinPrice, setPendingMinPrice] = useState('');
   const [pendingMaxPrice, setPendingMaxPrice] = useState('');
-
-  // Applied filters (what triggers fetch)
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<SortOption>(DEFAULT_SORT);
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
 
   const pageSize = 10;
 
@@ -135,9 +153,35 @@ const MenuPage = () => {
     return Object.fromEntries(entries);
   }, [categories]);
 
+  const selectedCategories = useMemo(() => {
+    const resolvedCategories = categoryQuery
+      .map((value) => {
+        const trimmedValue = value.trim();
+
+        if (!trimmedValue) {
+          return '';
+        }
+
+        if (isObjectId(trimmedValue)) {
+          const match = categories.find((category) => category._id === trimmedValue);
+          return match ? toCategorySlug(match.name) : trimmedValue;
+        }
+
+        return toCategorySlug(trimmedValue);
+      })
+      .filter(Boolean);
+
+    return Array.from(new Set(resolvedCategories));
+  }, [categories, categoryQuery]);
+  const selectedCategoryKey = selectedCategories.join(',');
+  const selectedCategoryValues = useMemo(
+    () => (selectedCategoryKey ? selectedCategoryKey.split(',') : []),
+    [selectedCategoryKey]
+  );
+
   const isResultsView =
     activeSearch.length > 0 ||
-    selectedCategories.length > 0 ||
+    selectedCategoryValues.length > 0 ||
     minPrice.length > 0 ||
     maxPrice.length > 0 ||
     sortBy !== DEFAULT_SORT;
@@ -146,41 +190,34 @@ const MenuPage = () => {
     () =>
       JSON.stringify({
         activeSearch,
-        selectedCategories: [...selectedCategories].sort(),
+        selectedCategories: [...selectedCategoryValues].sort(),
         minPrice,
         maxPrice,
         sortBy,
       }),
-    [activeSearch, selectedCategories, minPrice, maxPrice, sortBy]
+    [activeSearch, selectedCategoryValues, minPrice, maxPrice, sortBy]
   );
+  const menuQueryString = useMemo(() => {
+    const params = new URLSearchParams();
+
+    if (activeSearch) params.set('q', activeSearch);
+    if (selectedCategoryValues.length > 0) {
+      params.set('categories', selectedCategoryValues.join(','));
+    }
+    if (sortBy !== DEFAULT_SORT) params.set('sort', sortBy);
+    if (minPrice) params.set('minPrice', minPrice);
+    if (maxPrice) params.set('maxPrice', maxPrice);
+    if (page > 1) params.set('page', String(page));
+
+    return params.toString();
+  }, [activeSearch, maxPrice, minPrice, page, selectedCategoryValues, sortBy]);
   const lastFilterKeyRef = useRef(filterKey);
-
-  // Define updateQueryParams before any useEffect that uses it
-  const updateQueryParams = useCallback(
-    (updates: Record<string, string | string[] | null>) => {
-      const params = new URLSearchParams(searchParams?.toString() || '');
-
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) {
-          params.delete(key);
-          return;
-        }
-
-        params.set(key, Array.isArray(value) ? value.join(',') : value);
-      });
-
-      const queryString = params.toString();
-      router.replace(queryString ? `/menu?${queryString}` : '/menu', { scroll: false });
-    },
-    [searchParams, router]
-  );
 
   const getMenuItemPath = useCallback(
     (itemId: string) => {
-      const queryString = searchParams?.toString();
-      return queryString ? `/menu/${itemId}?${queryString}` : `/menu/${itemId}`;
+      return menuQueryString ? `/menu/${itemId}?${menuQueryString}` : `/menu/${itemId}`;
     },
-    [searchParams]
+    [menuQueryString]
   );
 
   useEffect(() => {
@@ -199,52 +236,18 @@ const MenuPage = () => {
   }, []);
 
   useEffect(() => {
-    const query = searchParams?.get('q') || '';
-    const categoriesParam = searchParams?.get('categories') || '';
-    const sortParam = (searchParams?.get('sort') || DEFAULT_SORT) as SortOption;
-    const minPriceParam = searchParams?.get('minPrice') || '';
-    const maxPriceParam = searchParams?.get('maxPrice') || '';
-    const pageParam = Number(searchParams?.get('page') || '1');
+    setSearchInput(activeSearch);
+    setPendingSelectedCategories(selectedCategoryValues);
+    setPendingSortBy(sortBy);
+    setPendingMinPrice(minPrice);
+    setPendingMaxPrice(maxPrice);
+  }, [activeSearch, maxPrice, minPrice, selectedCategoryValues, sortBy]);
 
-    const rawCategories = categoriesParam
-      ? categoriesParam
-          .split(',')
-          .filter(Boolean)
-          .map((value) => value.trim())
-      : [];
-
-    const resolvedCategories = rawCategories.map((value) => {
-      if (isObjectId(value)) {
-        const match = categories.find((category) => category._id === value);
-        return match ? toCategorySlug(match.name) : value;
-      }
-
-      return toCategorySlug(value);
-    });
-
-    // Remove duplicates from resolvedCategories
-    const uniqueCategories = Array.from(new Set(resolvedCategories));
-
-    setSearchInput(query);
-    setActiveSearch(query);
-    setSelectedCategories(uniqueCategories);
-    setPendingSelectedCategories(uniqueCategories);
-    setSortBy(
-      ['price_asc', 'price_desc', 'newest', 'oldest'].includes(sortParam) ? sortParam : DEFAULT_SORT
-    );
-    setPendingSortBy(
-      ['price_asc', 'price_desc', 'newest', 'oldest'].includes(sortParam) ? sortParam : DEFAULT_SORT
-    );
-    setMinPrice(minPriceParam);
-    setPendingMinPrice(minPriceParam);
-    setMaxPrice(maxPriceParam);
-    setPendingMaxPrice(maxPriceParam);
-    setPage(Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1);
-
-    if (rawCategories.some(isObjectId) && categories.length > 0) {
-      updateQueryParams({ categories: resolvedCategories });
+  useEffect(() => {
+    if (categoryQuery.some(isObjectId) && categories.length > 0) {
+      void setMenuQuery({ categories: selectedCategoryValues });
     }
-  }, [searchParams, categories, updateQueryParams]);
+  }, [categories.length, categoryQuery, selectedCategoryValues, setMenuQuery]);
 
   useEffect(() => {
     if (!isResultsView) {
@@ -300,7 +303,9 @@ const MenuPage = () => {
         params.set('sort', sortBy);
 
         if (activeSearch) params.set('q', activeSearch);
-        if (selectedCategories.length > 0) params.set('categories', selectedCategories.join(','));
+        if (selectedCategoryValues.length > 0) {
+          params.set('categories', selectedCategoryValues.join(','));
+        }
         if (minPrice) params.set('minPrice', minPrice);
         if (maxPrice) params.set('maxPrice', maxPrice);
 
@@ -333,20 +338,16 @@ const MenuPage = () => {
     fetchResults();
 
     return () => controller.abort();
-  }, [isResultsView, activeSearch, selectedCategories, minPrice, maxPrice, sortBy, page]);
+  }, [isResultsView, activeSearch, selectedCategoryValues, minPrice, maxPrice, sortBy, page]);
 
   const handleSearch = () => {
     const trimmedSearch = searchInput.trim();
-    setActiveSearch(trimmedSearch);
-    setPage(1);
-    updateQueryParams({ q: trimmedSearch || null, page: '1' });
+    void setMenuQuery({ q: trimmedSearch || null, page: 1 });
   };
 
   const handleResetSearch = () => {
     setSearchInput('');
-    setActiveSearch('');
-    setPage(1);
-    updateQueryParams({ q: null, page: '1' });
+    void setMenuQuery({ q: null, page: 1 });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -356,17 +357,12 @@ const MenuPage = () => {
   };
 
   const handleApplyFilters = () => {
-    setSelectedCategories(pendingSelectedCategories);
-    setSortBy(pendingSortBy);
-    setMinPrice(pendingMinPrice);
-    setMaxPrice(pendingMaxPrice);
-    setPage(1);
-    updateQueryParams({
+    void setMenuQuery({
       categories: pendingSelectedCategories.length > 0 ? pendingSelectedCategories : null,
       sort: pendingSortBy === DEFAULT_SORT ? null : pendingSortBy,
       minPrice: pendingMinPrice || null,
       maxPrice: pendingMaxPrice || null,
-      page: '1',
+      page: 1,
     });
   };
 
@@ -387,58 +383,44 @@ const MenuPage = () => {
     setPendingSortBy(DEFAULT_SORT);
     setPendingMinPrice('');
     setPendingMaxPrice('');
-    setSelectedCategories([]);
-    setSortBy(DEFAULT_SORT);
-    setMinPrice('');
-    setMaxPrice('');
-    setPage(1);
-    updateQueryParams({
+    void setMenuQuery({
       categories: null,
       sort: null,
       minPrice: null,
       maxPrice: null,
-      page: '1',
+      page: 1,
     });
   };
 
   const handleClearAll = () => {
     setSearchInput('');
-    setActiveSearch('');
     setPendingSelectedCategories([]);
     setPendingSortBy(DEFAULT_SORT);
     setPendingMinPrice('');
     setPendingMaxPrice('');
-    setSelectedCategories([]);
-    setSortBy(DEFAULT_SORT);
-    setMinPrice('');
-    setMaxPrice('');
-    setPage(1);
-    updateQueryParams({
+    void setMenuQuery({
       q: null,
       categories: null,
       sort: null,
       minPrice: null,
       maxPrice: null,
-      page: '1',
+      page: 1,
     });
   };
 
   const handleViewMoreCategory = (categorySlug: string) => {
     setPendingSelectedCategories([categorySlug]);
-    setSelectedCategories([categorySlug]);
-    setPage(1);
-    updateQueryParams({ categories: [categorySlug], page: '1' });
+    void setMenuQuery({ categories: [categorySlug], page: 1 });
   };
 
   const handleLoadMore = () => {
     if (results.length >= totalResults) return;
     const nextPage = page + 1;
-    setPage(nextPage);
-    updateQueryParams({ page: String(nextPage) });
+    void setMenuQuery({ page: nextPage });
   };
 
   const hasActiveFilters =
-    selectedCategories.length > 0 ||
+    selectedCategoryValues.length > 0 ||
     minPrice.length > 0 ||
     maxPrice.length > 0 ||
     sortBy !== DEFAULT_SORT;
@@ -487,7 +469,7 @@ const MenuPage = () => {
                 {(activeSearch || hasActiveFilters) && (
                   <div className='flex flex-wrap items-center gap-2 text-sm'>
                     {activeSearch && <Badge variant='secondary'>Search: {activeSearch}</Badge>}
-                    {selectedCategories.map((categorySlug) => (
+                    {selectedCategoryValues.map((categorySlug) => (
                       <Badge key={categorySlug} variant='secondary'>
                         {categoryNameBySlug[categorySlug] || categorySlug}
                       </Badge>

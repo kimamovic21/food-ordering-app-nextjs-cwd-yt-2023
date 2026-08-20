@@ -12,7 +12,8 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { parseAsInteger, useQueryState } from 'nuqs';
 import {
   Pagination,
   PaginationContent,
@@ -53,23 +54,20 @@ const MyOrdersPage = () => {
   const [loadingUsualOrder, setLoadingUsualOrder] = useState(true);
   const [addingUsualOrder, setAddingUsualOrder] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [pageQuery, setPageQuery] = useQueryState('page', parseAsInteger.withDefault(1));
+  const page = Math.max(1, pageQuery);
   const { data, loading } = useProfile();
   const { replaceCart } = useCart();
-  const searchParams = useSearchParams();
   const router = useRouter();
 
   useEffect(() => {
     if (loading || !data?.email) return;
 
-    const currentPage = Math.max(1, parseInt(searchParams?.get('page') || '1', 10));
-    setPage(currentPage);
-
     const fetchOrders = async () => {
       try {
         setLoadingOrders(true);
-        const res = await fetch(`/api/my-orders?page=${currentPage}`);
+        const res = await fetch(`/api/my-orders?page=${page}`);
 
         if (!res.ok) {
           throw new Error('Failed to fetch orders');
@@ -107,7 +105,7 @@ const MyOrdersPage = () => {
 
     fetchOrders();
     fetchUsualOrder();
-  }, [loading, data?.email, searchParams]);
+  }, [loading, data?.email, page]);
 
   const handleAddUsualOrder = async () => {
     if (!usualOrder?.cartItems?.length) {
@@ -281,7 +279,7 @@ const MyOrdersPage = () => {
                     onClick={(e) => {
                       e.preventDefault();
                       const prev = Math.max(1, page - 1);
-                      router.push(`/my-orders?page=${prev}`);
+                      void setPageQuery(prev);
                     }}
                     aria-disabled={page <= 1}
                     className={page <= 1 ? 'pointer-events-none opacity-50' : ''}
@@ -298,7 +296,7 @@ const MyOrdersPage = () => {
                     onClick={(e) => {
                       e.preventDefault();
                       const next = Math.min(totalPages, page + 1);
-                      router.push(`/my-orders?page=${next}`);
+                      void setPageQuery(next);
                     }}
                     aria-disabled={page >= totalPages}
                     className={page >= totalPages ? 'pointer-events-none opacity-50' : ''}

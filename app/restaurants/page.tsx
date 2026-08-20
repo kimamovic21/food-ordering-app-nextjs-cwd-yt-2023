@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,15 +39,17 @@ interface RestaurantListItem {
 const PAGE_SIZE = 9;
 
 const RestaurantsPage = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [{ page: pageQuery, q: searchQuery }, setRestaurantQuery] = useQueryStates({
+    page: parseAsInteger.withDefault(1),
+    q: parseAsString.withDefault(''),
+  });
 
   const [restaurants, setRestaurants] = useState<RestaurantListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
-  const [page, setPage] = useState(1);
+  const page = Math.max(1, pageQuery);
+  const activeSearch = searchQuery.trim();
   const [searchInput, setSearchInput] = useState('');
-  const [activeSearch, setActiveSearch] = useState('');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(
     null
   );
@@ -56,13 +58,8 @@ const RestaurantsPage = () => {
   const { data: favorites, setRestaurantFavorite } = useFavorites();
 
   useEffect(() => {
-    const query = (searchParams?.get('q') || '').trim();
-    const pageParam = Number(searchParams?.get('page') || '1');
-
-    setSearchInput(query);
-    setActiveSearch(query);
-    setPage(Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1);
-  }, [searchParams]);
+    setSearchInput(activeSearch);
+  }, [activeSearch]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -147,11 +144,11 @@ const RestaurantsPage = () => {
     );
   }, []);
 
-  const updateQueryParams = (nextPage: number, nextQuery: string) => {
+  const getRestaurantsHref = (nextPage: number) => {
     const params = new URLSearchParams();
 
-    if (nextQuery.trim()) {
-      params.set('q', nextQuery.trim());
+    if (activeSearch) {
+      params.set('q', activeSearch);
     }
 
     if (nextPage > 1) {
@@ -159,21 +156,17 @@ const RestaurantsPage = () => {
     }
 
     const queryString = params.toString();
-    router.push(queryString ? `/restaurants?${queryString}` : '/restaurants');
+    return queryString ? `/restaurants?${queryString}` : '/restaurants';
   };
 
   const handleSearch = () => {
     const nextQuery = searchInput.trim();
-    setActiveSearch(nextQuery);
-    setPage(1);
-    updateQueryParams(1, nextQuery);
+    void setRestaurantQuery({ q: nextQuery || null, page: 1 });
   };
 
   const handleClear = () => {
     setSearchInput('');
-    setActiveSearch('');
-    setPage(1);
-    updateQueryParams(1, '');
+    void setRestaurantQuery({ q: null, page: 1 });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -184,8 +177,7 @@ const RestaurantsPage = () => {
 
   const goToPage = (nextPage: number) => {
     const validPage = Math.max(1, Math.min(totalPages, nextPage));
-    setPage(validPage);
-    updateQueryParams(validPage, activeSearch);
+    void setRestaurantQuery({ page: validPage });
   };
 
   return (
@@ -337,9 +329,7 @@ const RestaurantsPage = () => {
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
-                      href={`/restaurants?page=${Math.max(1, page - 1)}${
-                        activeSearch ? `&q=${encodeURIComponent(activeSearch)}` : ''
-                      }`}
+                      href={getRestaurantsHref(Math.max(1, page - 1))}
                       onClick={(e) => {
                         e.preventDefault();
                         goToPage(page - 1);
@@ -355,9 +345,7 @@ const RestaurantsPage = () => {
 
                   <PaginationItem>
                     <PaginationNext
-                      href={`/restaurants?page=${Math.min(totalPages, page + 1)}${
-                        activeSearch ? `&q=${encodeURIComponent(activeSearch)}` : ''
-                      }`}
+                      href={getRestaurantsHref(Math.min(totalPages, page + 1))}
                       onClick={(e) => {
                         e.preventDefault();
                         goToPage(page + 1);

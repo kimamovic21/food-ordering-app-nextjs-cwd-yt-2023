@@ -4,6 +4,10 @@
 
 - Framework: Next.js 16 App Router + React 19 + TypeScript
 - Client data cache: TanStack Query
+- URL state: nuqs
+- Command UI: cmdk
+- Client error fallback: react-error-boundary
+- Analytics: Vercel Web Analytics
 - Data layer: MongoDB with Mongoose models in `models/`
 - Auth: NextAuth with MongoDB adapter and Google OAuth
 - Payments: Stripe checkout + payment link + webhook routes
@@ -20,6 +24,9 @@
 - Preserve existing API shapes unless explicitly requested.
 - Reuse helpers in `libs/` before adding new utilities.
 - Use TanStack Query for client-side server state that benefits from cache, refetch, invalidation, or polling. Keep shared keys in `libs/queryKeys.ts`.
+- `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed filters, sorting, search, selected ticket links, report periods, and pagination when the state should survive refresh/share.
+- `components/shared/AppCommandPalette.tsx` uses `cmdk`; add important new routes/actions there when adding major navigation surfaces.
+- `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client recovery, not API validation.
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts`.
 - Avoid `any`; prefer explicit typing and narrow unions.
 
