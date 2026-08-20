@@ -1127,3 +1127,5 @@ SSE live updates and smoother messaging
 Add Sentry monitoring
 
 Add TanStack Query caching and polish order UI
+
+Add command palette and URL state utilities

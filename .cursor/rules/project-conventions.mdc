@@ -9,7 +9,7 @@ alwaysApply: true
 
 ## Project Conventions
 
-- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend, Upstash Redis, date-fns, TanStack Query.
+- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend, Upstash Redis, date-fns, TanStack Query, nuqs, cmdk, Vercel Web Analytics, Sentry.
 - Prefer small, incremental changes.
 - Follow existing patterns in `app/`, `libs/`, `models/`, `components/`, and `contexts/`.
 - Avoid introducing new dependencies unless explicitly requested.
@@ -27,6 +27,7 @@ alwaysApply: true
 - Preserve order timing fields and snapshots for preparation/delivery estimates and timeline UI.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Use TanStack Query for client-side server state that needs cache, refetch, invalidation, or polling. Keep shared keys in `libs/queryKeys.ts`.
+- `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed filters, sorting, search, selected ticket links, report periods, and pagination when users should be able to refresh or share the same view.
 
 ## Security And Integrations
 
@@ -38,6 +39,8 @@ alwaysApply: true
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.
 - Keep SSE realtime updates lightweight and role-scoped. Use streams as refresh signals, keep polling fallback, and read final data from existing JSON APIs.
 - Prefer invalidating TanStack Query keys from SSE handlers instead of manually duplicating cached server state.
+- `components/shared/AppCommandPalette.tsx` uses `cmdk`; add important new routes/actions there when adding major navigation surfaces.
+- `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client recovery, not API validation.
 - Keep Sentry instrumentation files intact. `NEXT_PUBLIC_SENTRY_DSN` is public, but `SENTRY_AUTH_TOKEN` is a build-time secret for source maps and must never enter client code.
 - Keep Stripe webhook handling idempotent.
 

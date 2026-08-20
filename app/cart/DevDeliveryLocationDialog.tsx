@@ -17,28 +17,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 type DevDeliveryLocationDialogProps = {
-  currentLatitude: number | null;
-  currentLongitude: number | null;
   onManualLocationUpdate: (latitude: number, longitude: number) => void;
 };
 
-const DevDeliveryLocationDialog = ({
-  currentLatitude,
-  currentLongitude,
-  onManualLocationUpdate,
-}: DevDeliveryLocationDialogProps) => {
+const DevDeliveryLocationDialog = ({ onManualLocationUpdate }: DevDeliveryLocationDialogProps) => {
   const [open, setOpen] = useState(false);
-  const [latitude, setLatitude] = useState(
-    typeof currentLatitude === 'number' ? String(currentLatitude) : ''
-  );
-  const [longitude, setLongitude] = useState(
-    typeof currentLongitude === 'number' ? String(currentLongitude) : ''
-  );
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) {
-      setLatitude(typeof currentLatitude === 'number' ? String(currentLatitude) : '');
-      setLongitude(typeof currentLongitude === 'number' ? String(currentLongitude) : '');
+      setLatitude('');
+      setLongitude('');
     }
 
     setOpen(nextOpen);
@@ -102,7 +92,7 @@ const DevDeliveryLocationDialog = ({
               id='dev-delivery-latitude'
               value={latitude}
               onChange={(event) => setLatitude(event.target.value)}
-              placeholder='43.8563'
+              placeholder='Enter test latitude'
               inputMode='decimal'
             />
           </div>
@@ -112,7 +102,7 @@ const DevDeliveryLocationDialog = ({
               id='dev-delivery-longitude'
               value={longitude}
               onChange={(event) => setLongitude(event.target.value)}
-              placeholder='18.4131'
+              placeholder='Enter test longitude'
               inputMode='decimal'
             />
           </div>

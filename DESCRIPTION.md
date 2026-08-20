@@ -398,7 +398,12 @@ Restaurant report rules:
 - Upstash Redis: short-lived rate-limit counters for sensitive auth, checkout, support, and AI routes.
 - Leaflet: map rendering and courier tracking UI.
 - TanStack Query: client-side server-data cache for global message and notification unread state.
+- nuqs: URL-backed client state for shareable filters, search, sort, selected ticket links, periods, and pagination across menu, restaurant, orders, users, reports, and support pages.
+- cmdk: global command palette for quick route and action navigation from the header or `Ctrl/Cmd + K`.
+- sharp: Next.js production image optimization dependency used automatically by the framework.
+- react-error-boundary: app-shell client fallback UI with Sentry capture for recoverable render crashes.
 - Sentry: error monitoring, tracing, and privacy-masked Session Replay across browser, server, and edge runtimes.
+- Vercel Web Analytics: production traffic and route analytics mounted in the root layout.
 
 ## Date Handling
 

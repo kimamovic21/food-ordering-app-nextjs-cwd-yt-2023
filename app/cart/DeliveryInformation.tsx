@@ -158,11 +158,7 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
             >
               {isGettingDeliveryLocation ? 'Checking location...' : 'Use current location'}
             </Button>
-            <DevDeliveryLocationDialog
-              currentLatitude={formData.deliveryLatitude}
-              currentLongitude={formData.deliveryLongitude}
-              onManualLocationUpdate={onManualLocationUpdate}
-            />
+            <DevDeliveryLocationDialog onManualLocationUpdate={onManualLocationUpdate} />
           </div>
         </div>
       </div>

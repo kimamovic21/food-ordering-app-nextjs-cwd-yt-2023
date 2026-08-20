@@ -33,8 +33,6 @@ type SendPurchaseReceiptEmailArgs = {
   total: number;
 };
 
-const DEFAULT_RECEIVER_EMAIL = 'imamovic.kerim@gmail.com';
-
 export async function sendPurchaseReceiptEmail({
   orderId,
   customerEmail,
@@ -51,7 +49,7 @@ export async function sendPurchaseReceiptEmail({
 }: SendPurchaseReceiptEmailArgs) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.SENDER_EMAIL || 'onboarding@resend.dev';
-  const to = process.env.RESEND_RECEIVER_EMAIL || DEFAULT_RECEIVER_EMAIL;
+  const to = process.env.RESEND_RECEIVER_EMAIL || customerEmail;
 
   if (!apiKey) {
     return { sent: false, reason: 'missing_api_key' as const };

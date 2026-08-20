@@ -5,18 +5,22 @@ This file provides guidance for AI assistance in this repository.
 ## Project Context
 
 - Framework: Next.js 16 App Router (TypeScript)
-- UI: Tailwind CSS 4, shadcn/ui, Radix
+- UI: Tailwind CSS 4, shadcn/ui, Radix, cmdk
 - Client data cache: TanStack Query
 - Auth: NextAuth with MongoDB adapter
 - DB: MongoDB via Mongoose
 - Payments: Stripe
 - Images: Cloudinary
+- Image optimization: sharp for Next.js production image handling
 - Maps: Leaflet
 - Email: Resend + React Email
 - AI: OpenAI SDK for server-side menu description generation
 - Rate limiting: Upstash Redis for short-lived counters on sensitive routes
 - Dates: date-fns through `libs/dateFormat.ts` for UI, email, and PDF date formatting
 - Sharing: react-share
+- URL state: nuqs for shareable search/filter/sort/pagination state
+- Client recovery: react-error-boundary for localized interactive fallbacks
+- Analytics: Vercel Web Analytics mounted in the root layout
 - Messaging: approved app-native threads with realtime unread badges and per-user message visibility
 - Order operations: best coupon suggestion, reorder validation, favorite restaurant quick reorder, restaurant accepting-order checks, restaurant availability alerts, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin delivery confirmation, support tickets, and late-order alerts
 
@@ -46,6 +50,9 @@ This file provides guidance for AI assistance in this repository.
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.
 - Keep SSE realtime updates lightweight: `/api/messages/stream` and `/api/notifications/stream` should only signal relevant signed-in users, while polling fallback and existing JSON endpoints remain the source of truth.
 - Use TanStack Query for client-side server state that needs cache, refetch, invalidation, or polling. Keep shared keys in `libs/queryKeys.ts` and let SSE invalidate cached queries instead of duplicating source-of-truth state.
+- `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed filters, sorting, pagination, selected ticket links, periods, and other shareable client state.
+- `components/shared/AppCommandPalette.tsx` uses `cmdk`; add important new routes/actions there when adding major navigation surfaces.
+- `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client-side recovery, not API validation.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Keep payment and webhook flows idempotent.
 - Keep receipt email generation in server code.
@@ -128,6 +135,7 @@ Keep these in sync with example.env and usage in code:
 - NEXT_PUBLIC_SUPER_ADMIN_EMAIL
 - RESEND_API_KEY
 - SENDER_EMAIL
+- RESEND_RECEIVER_EMAIL
 - SKIP_VERIFY_EMAIL
 - OPEN_AI_API_KEY
 - UPSTASH_REDIS_REST_URL

@@ -4,11 +4,12 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 
 ## Project Summary
 
-- Frontend: Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, Radix, Recharts, and TanStack Query.
+- Frontend: Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, Radix, Recharts, TanStack Query, nuqs, cmdk, and react-error-boundary.
 - Backend: Next.js route handlers in app/api with Mongoose models in models/.
 - Auth: NextAuth with MongoDB adapter and Google OAuth.
 - Payments: Stripe Checkout, payment-link endpoint, and webhook processing.
 - Images: Cloudinary uploads for user and menu media.
+- Image optimization: `sharp` is installed for Next.js production image optimization.
 - Maps: Leaflet and React Leaflet for courier and delivery tracking.
 - Email: Resend + React Email (`react-email`, `@react-email/components`, `@react-email/render`) for purchase receipts.
 - AI: OpenAI SDK is used server-side for admin menu item description generation.
@@ -16,7 +17,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - Sharing: `react-share` is used for social share actions.
 - Client data cache: TanStack Query powers global message and notification unread state.
 - Dates: `date-fns` is used through `libs/dateFormat.ts` for UI, email, and PDF date formatting.
-- Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`.
+- Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`; Vercel Web Analytics is mounted from `@vercel/analytics/next` in `app/layout.tsx`.
 
 ## High-Level Features
 
@@ -46,7 +47,7 @@ See `example.env`. Variables currently used in the project include:
 - `STRIPE_PK`, `STRIPE_SK`, `STRIPE_WEBHOOK_SECRET`
 - `NEXT_PUBLIC_SUPER_ADMIN_EMAIL` (UI checks)
 - `SUPER_ADMIN_EMAIL` (optional server-side override)
-- `RESEND_API_KEY`, `SENDER_EMAIL`
+- `RESEND_API_KEY`, `SENDER_EMAIL`, optional `RESEND_RECEIVER_EMAIL`
 - `OPEN_AI_API_KEY` (server-side OpenAI key for AI menu descriptions)
 - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (optional Redis rate limiting)
 - `SKIP_VERIFY_EMAIL` (optional credentials-auth verification toggle)
@@ -73,6 +74,7 @@ See `example.env`. Variables currently used in the project include:
 - Keep components small and focused; prefer composition from shared components.
 - API route handlers should validate inputs and use models/ for data access.
 - Keep secrets in server-side code only (Stripe, Cloudinary, Resend, OpenAI keys).
+- Do not hardcode personal addresses, phone numbers, or private receiver emails; use neutral fixtures or env vars such as `RESEND_RECEIVER_EMAIL`.
 - Avoid breaking API response shapes unless explicitly requested.
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts` (`dd/MM/yyyy`, `dd/MM/yyyy HH:mm`).
 - Messaging should remain role-restricted: no customer-to-customer chat, and order threads must match the assigned courier or restaurant owner.
@@ -87,6 +89,9 @@ See `example.env`. Variables currently used in the project include:
 - Order notifications can include ETA-style phase copy, late active-order alerts should point admins toward the order queue, and failed-delivery review notifications should point restaurant admins to `/admin-dashboard/orders/[id]`.
 - Realtime updates use SSE with polling fallback: `/api/messages/stream` and `/api/notifications/stream` push events only to the signed-in participant/recipient, and clients should still refresh existing JSON endpoints as the source of truth.
 - TanStack Query should be used for client-side server data that benefits from cache, refetch, invalidation, or polling. Keep query keys in `libs/queryKeys.ts`; use SSE events to invalidate query keys instead of duplicating source-of-truth state.
+- `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed client state such as filters, sort, search, selected ticket links, periods, and pagination when shareable URLs matter.
+- `components/shared/AppCommandPalette.tsx` uses `cmdk`; add new important routes/actions there when adding major navigation surfaces.
+- `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it as client recovery, not API validation.
 - Keep Sentry instrumentation files intact. Sentry DSNs are allowed in browser config, but `SENTRY_AUTH_TOKEN` is a build secret used for source maps and must stay out of client code.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 

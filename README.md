@@ -18,6 +18,7 @@ It includes:
 - notifications center with unread counts, mark-as-read actions, and role-aware routing
 - SSE-backed live refresh for notifications, order status screens, courier assignment, and admin order queues with polling kept as fallback
 - TanStack Query caching for global message and notification unread state
+- Vercel Web Analytics for production traffic insights
 - admin dashboard for users, menu items, categories, restaurants, restaurant reports, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, and courier ratings views
 - courier workflow with assignment, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
@@ -99,6 +100,8 @@ This project uses many dependencies; below are the main packages actively used i
 - Radix UI: [https://www.radix-ui.com/](https://www.radix-ui.com/)
 - shadcn/ui: [https://ui.shadcn.com/](https://ui.shadcn.com/)
 - TanStack Query: [https://tanstack.com/query/latest](https://tanstack.com/query/latest)
+- nuqs: [https://nuqs.dev/](https://nuqs.dev/)
+- cmdk: [https://cmdk.paco.me/](https://cmdk.paco.me/)
 - Lucide React: [https://lucide.dev/](https://lucide.dev/)
 - React Icons: [https://react-icons.github.io/react-icons/](https://react-icons.github.io/react-icons/)
 - Sonner: [https://sonner.emilkowal.ski/](https://sonner.emilkowal.ski/)
@@ -107,6 +110,7 @@ This project uses many dependencies; below are the main packages actively used i
 - dnd-kit: [https://dndkit.com/](https://dndkit.com/)
 - next-themes: [https://github.com/pacocoursey/next-themes](https://github.com/pacocoursey/next-themes)
 - @react-pdf/renderer: [https://react-pdf.org/](https://react-pdf.org/)
+- react-error-boundary: [https://www.npmjs.com/package/react-error-boundary](https://www.npmjs.com/package/react-error-boundary)
 
 ### Forms and Validation
 
@@ -140,6 +144,7 @@ This project uses many dependencies; below are the main packages actively used i
 ### Images and Maps
 
 - Cloudinary: [https://cloudinary.com/](https://cloudinary.com/)
+- sharp: [https://sharp.pixelplumbing.com/](https://sharp.pixelplumbing.com/)
 - Leaflet: [https://leafletjs.com/](https://leafletjs.com/)
 - React Leaflet: [https://react-leaflet.js.org/](https://react-leaflet.js.org/)
 
@@ -155,6 +160,7 @@ This project uses many dependencies; below are the main packages actively used i
 ### Observability
 
 - Sentry Next.js SDK: [https://docs.sentry.io/platforms/javascript/guides/nextjs/](https://docs.sentry.io/platforms/javascript/guides/nextjs/)
+- Vercel Web Analytics: [https://vercel.com/docs/analytics](https://vercel.com/docs/analytics)
 
 ### Testing
 
@@ -203,6 +209,14 @@ This project uses many dependencies; below are the main packages actively used i
 - Existing route handlers remain the source of truth. TanStack Query should not replace API authorization, MongoDB validation, checkout validation, or webhook idempotency.
 - Prefer TanStack Query for future client screens with server data that needs loading state, refetching, cache invalidation, polling, or window-focus refresh.
 
+### Frontend Utility Packages
+
+- `nuqs` is mounted through `NuqsAdapter` in `app/layout.tsx` and is used for URL-backed search, filters, sorting, period filters, selected ticket links, and pagination on menu, restaurant, reports, orders, users, and support views.
+- `cmdk` powers the global app command palette in `components/shared/AppCommandPalette.tsx`. Open it from the header search button or with `Ctrl/Cmd + K`.
+- `react-error-boundary` powers `components/shared/AppErrorBoundary.tsx`, which wraps the main app shell and reports caught client render errors to Sentry.
+- `sharp` is installed so Next.js image optimization has the recommended production image processor available. It is used automatically by Next.js and should not be imported directly in app components.
+- `@vercel/analytics` is mounted in `app/layout.tsx` with `<Analytics />`. It does not need a project env var for normal Vercel deployments and complements Sentry by tracking product traffic instead of application errors.
+
 ### Order Flow And Restaurant Capacity
 
 - Restaurants can configure average preparation time, average delivery time, and an active kitchen order limit in the admin restaurant form.
@@ -226,7 +240,7 @@ This project uses many dependencies; below are the main packages actively used i
 
 - Overview: Credentials-based accounts now require email verification when `SKIP_VERIFY_EMAIL` is `false` (recommended for local development). In production you can set `SKIP_VERIFY_EMAIL=true` to skip verification for legacy or migration scenarios.
 - Scope: This applies only to `provider: 'credentials'` users. OAuth users (Google) are automatically marked verified and are not subject to verification or password reset flows.
-- Env vars used: `RESEND_API_KEY`, `SENDER_EMAIL`, `SKIP_VERIFY_EMAIL`, and optional Upstash Redis variables for rate limiting.
+- Env vars used: `RESEND_API_KEY`, `SENDER_EMAIL`, optional `RESEND_RECEIVER_EMAIL`, `SKIP_VERIFY_EMAIL`, and optional Upstash Redis variables for rate limiting.
 - Endpoints (server):
   - `POST /api/register` — creates a credentials user and (when required) issues a verification token and sends an email.
   - `POST /api/verify-email` — accepts `{ token }` and marks the user verified when token is valid.
@@ -276,6 +290,7 @@ Copy example.env into .env and set all values.
 - NEXT_PUBLIC_SUPER_ADMIN_EMAIL: super admin email used for elevated UI/actions
 - RESEND_API_KEY: Resend API key for transactional emails
 - SENDER_EMAIL: sender identity for outgoing purchase receipt emails
+- RESEND_RECEIVER_EMAIL: optional local/test receiver override for purchase receipt emails; when omitted, receipts go to the order customer email
 - SKIP_VERIFY_EMAIL: when true, skips email verification for credential sign-ups and legacy accounts
 - OPEN_AI_API_KEY: OpenAI API key for server-side AI menu description generation
 - UPSTASH_REDIS_REST_URL: Upstash Redis REST endpoint for rate limiting
