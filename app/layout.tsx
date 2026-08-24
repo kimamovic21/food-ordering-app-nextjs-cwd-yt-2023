@@ -68,8 +68,8 @@ const RootLayout = ({
           <NuqsAdapter>
             <div className='min-h-screen flex flex-col w-full'>
               <AppContext>
-                <SoundSettingsProvider>
-                  <TanStackQueryProvider>
+                <TanStackQueryProvider>
+                  <SoundSettingsProvider>
                     <MessagesProvider>
                       <NotificationsProvider>
                         <CartProvider>
@@ -84,8 +84,8 @@ const RootLayout = ({
                         </CartProvider>
                       </NotificationsProvider>
                     </MessagesProvider>
-                  </TanStackQueryProvider>
-                </SoundSettingsProvider>
+                  </SoundSettingsProvider>
+                </TanStackQueryProvider>
               </AppContext>
             </div>
           </NuqsAdapter>

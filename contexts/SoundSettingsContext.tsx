@@ -1,8 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+import { queryKeys } from '@/libs/queryKeys';
 
 type SoundOptions = {
   force?: boolean;
@@ -22,6 +24,82 @@ const SoundSettingsContext = createContext<SoundSettingsContextValue | undefined
 
 type SoundSettingsProviderProps = {
   children: ReactNode;
+};
+
+type NotificationSoundSettingsResponse = {
+  notificationSoundEnabled: boolean;
+};
+
+type MessageSoundSettingsResponse = {
+  messageSoundEnabled: boolean;
+};
+
+type MutationContext<TSettings> = {
+  previousSettings?: TSettings;
+};
+
+const fetchNotificationSoundSettings = async (): Promise<NotificationSoundSettingsResponse> => {
+  const response = await fetch('/api/notifications/settings', { cache: 'no-store' });
+  const json = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(json?.error || 'Failed to load notification sound settings');
+  }
+
+  return {
+    notificationSoundEnabled: Boolean(json?.notificationSoundEnabled),
+  };
+};
+
+const fetchMessageSoundSettings = async (): Promise<MessageSoundSettingsResponse> => {
+  const response = await fetch('/api/messages/settings', { cache: 'no-store' });
+  const json = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(json?.error || 'Failed to load message sound settings');
+  }
+
+  return {
+    messageSoundEnabled: Boolean(json?.messageSoundEnabled),
+  };
+};
+
+const updateNotificationSoundSettings = async (
+  notificationSoundEnabled: boolean
+): Promise<NotificationSoundSettingsResponse> => {
+  const response = await fetch('/api/notifications/settings', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ notificationSoundEnabled }),
+  });
+  const json = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(json?.error || 'Failed to update notification sound settings');
+  }
+
+  return {
+    notificationSoundEnabled: Boolean(json?.notificationSoundEnabled),
+  };
+};
+
+const updateMessageSoundSettings = async (
+  messageSoundEnabled: boolean
+): Promise<MessageSoundSettingsResponse> => {
+  const response = await fetch('/api/messages/settings', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messageSoundEnabled }),
+  });
+  const json = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(json?.error || 'Failed to update message sound settings');
+  }
+
+  return {
+    messageSoundEnabled: Boolean(json?.messageSoundEnabled),
+  };
 };
 
 const shouldPlaySound = (force?: boolean) => {
@@ -79,41 +157,98 @@ const playGeneratedNotificationTone = () => {
 
 export const SoundSettingsProvider = ({ children }: SoundSettingsProviderProps) => {
   const { status } = useSession();
-  const [notificationSoundEnabled, setNotificationSoundEnabled] = useState(false);
-  const [messageSoundEnabled, setMessageSoundEnabled] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const isAuthenticated = status === 'authenticated';
 
-  const refreshSettings = useCallback(async () => {
-    if (status !== 'authenticated') {
-      setNotificationSoundEnabled(false);
-      setMessageSoundEnabled(false);
-      return;
-    }
+  const notificationSoundQuery = useQuery({
+    queryFn: fetchNotificationSoundSettings,
+    queryKey: queryKeys.soundSettings.notifications(),
+    enabled: isAuthenticated,
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
-    try {
-      setLoading(true);
-      const [notificationsResult, messagesResult] = await Promise.allSettled([
-        fetch('/api/notifications/settings', { cache: 'no-store' }),
-        fetch('/api/messages/settings', { cache: 'no-store' }),
-      ]);
+  const messageSoundQuery = useQuery({
+    queryFn: fetchMessageSoundSettings,
+    queryKey: queryKeys.soundSettings.messages(),
+    enabled: isAuthenticated,
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
-      if (notificationsResult.status === 'fulfilled' && notificationsResult.value.ok) {
-        const notificationsJson = await notificationsResult.value.json().catch(() => null);
-        setNotificationSoundEnabled(Boolean(notificationsJson?.notificationSoundEnabled));
+  const notificationSoundMutation = useMutation<
+    NotificationSoundSettingsResponse,
+    Error,
+    boolean,
+    MutationContext<NotificationSoundSettingsResponse>
+  >({
+    mutationFn: updateNotificationSoundSettings,
+    onError: (_error, _enabled, context) => {
+      if (context?.previousSettings) {
+        queryClient.setQueryData(queryKeys.soundSettings.notifications(), context.previousSettings);
       }
+    },
+    onMutate: async (enabled) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.soundSettings.notifications() });
+      const previousSettings = queryClient.getQueryData<NotificationSoundSettingsResponse>(
+        queryKeys.soundSettings.notifications()
+      );
 
-      if (messagesResult.status === 'fulfilled' && messagesResult.value.ok) {
-        const messagesJson = await messagesResult.value.json().catch(() => null);
-        setMessageSoundEnabled(Boolean(messagesJson?.messageSoundEnabled));
+      queryClient.setQueryData(queryKeys.soundSettings.notifications(), {
+        notificationSoundEnabled: enabled,
+      });
+
+      return { previousSettings };
+    },
+    onSuccess: (settings) => {
+      queryClient.setQueryData(queryKeys.soundSettings.notifications(), settings);
+    },
+  });
+
+  const messageSoundMutation = useMutation<
+    MessageSoundSettingsResponse,
+    Error,
+    boolean,
+    MutationContext<MessageSoundSettingsResponse>
+  >({
+    mutationFn: updateMessageSoundSettings,
+    onError: (_error, _enabled, context) => {
+      if (context?.previousSettings) {
+        queryClient.setQueryData(queryKeys.soundSettings.messages(), context.previousSettings);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [status]);
+    },
+    onMutate: async (enabled) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.soundSettings.messages() });
+      const previousSettings = queryClient.getQueryData<MessageSoundSettingsResponse>(
+        queryKeys.soundSettings.messages()
+      );
+
+      queryClient.setQueryData(queryKeys.soundSettings.messages(), {
+        messageSoundEnabled: enabled,
+      });
+
+      return { previousSettings };
+    },
+    onSuccess: (settings) => {
+      queryClient.setQueryData(queryKeys.soundSettings.messages(), settings);
+    },
+  });
 
   useEffect(() => {
-    void refreshSettings();
-  }, [refreshSettings]);
+    if (!isAuthenticated) {
+      queryClient.removeQueries({ queryKey: queryKeys.soundSettings.all });
+    }
+  }, [isAuthenticated, queryClient]);
+
+  const notificationSoundEnabled = isAuthenticated
+    ? Boolean(notificationSoundQuery.data?.notificationSoundEnabled)
+    : false;
+  const messageSoundEnabled = isAuthenticated
+    ? Boolean(messageSoundQuery.data?.messageSoundEnabled)
+    : false;
+  const loading =
+    status === 'loading' ||
+    (isAuthenticated && (notificationSoundQuery.isLoading || messageSoundQuery.isLoading));
 
   const playSound = useCallback((enabled: boolean, options?: SoundOptions) => {
     if (!enabled || !shouldPlaySound(options?.force)) {
@@ -139,54 +274,24 @@ export const SoundSettingsProvider = ({ children }: SoundSettingsProviderProps) 
 
   const updateNotificationSoundEnabled = useCallback(
     async (enabled: boolean) => {
-      const previousValue = notificationSoundEnabled;
-      setNotificationSoundEnabled(enabled);
-
-      const response = await fetch('/api/notifications/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notificationSoundEnabled: enabled }),
-      });
-
-      if (!response.ok) {
-        setNotificationSoundEnabled(previousValue);
-        throw new Error('Failed to update notification sound settings');
-      }
-
-      const json = await response.json().catch(() => null);
-      setNotificationSoundEnabled(Boolean(json?.notificationSoundEnabled));
+      await notificationSoundMutation.mutateAsync(enabled);
 
       if (enabled) {
         playGeneratedNotificationTone();
       }
     },
-    [notificationSoundEnabled]
+    [notificationSoundMutation]
   );
 
   const updateMessageSoundEnabled = useCallback(
     async (enabled: boolean) => {
-      const previousValue = messageSoundEnabled;
-      setMessageSoundEnabled(enabled);
-
-      const response = await fetch('/api/messages/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageSoundEnabled: enabled }),
-      });
-
-      if (!response.ok) {
-        setMessageSoundEnabled(previousValue);
-        throw new Error('Failed to update message sound settings');
-      }
-
-      const json = await response.json().catch(() => null);
-      setMessageSoundEnabled(Boolean(json?.messageSoundEnabled));
+      await messageSoundMutation.mutateAsync(enabled);
 
       if (enabled) {
         playGeneratedNotificationTone();
       }
     },
-    [messageSoundEnabled]
+    [messageSoundMutation]
   );
 
   const value = useMemo(

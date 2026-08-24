@@ -17,7 +17,7 @@ It includes:
 - approved in-app messaging between customers, restaurant owners, admins, and couriers
 - notifications center with unread counts, mark-as-read actions, and role-aware routing
 - SSE-backed live refresh for notifications, order status screens, courier assignment, and admin order queues with polling kept as fallback
-- TanStack Query caching for global message and notification unread state
+- TanStack Query caching for shared profile data, sound settings, and global message/notification unread state
 - Vercel Web Analytics for production traffic insights
 - admin dashboard for users, menu items, categories, restaurants, restaurant reports, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, and courier ratings views
@@ -205,7 +205,7 @@ This project uses many dependencies; below are the main packages actively used i
 
 - `components/shared/TanStackQueryProvider.tsx` creates the client-side `QueryClient` used by app-level providers.
 - `libs/queryKeys.ts` stores shared query keys so cache invalidation stays consistent.
-- Global messages and notifications use TanStack Query for server-state caching, background refetch, and SSE-driven invalidation.
+- Shared profile data, notification/message sound settings, and global messages/notifications use TanStack Query for server-state caching, background refetch, optimistic updates, and SSE-driven invalidation where applicable.
 - Existing route handlers remain the source of truth. TanStack Query should not replace API authorization, MongoDB validation, checkout validation, or webhook idempotency.
 - Prefer TanStack Query for future client screens with server data that needs loading state, refetching, cache invalidation, polling, or window-focus refresh.
 
