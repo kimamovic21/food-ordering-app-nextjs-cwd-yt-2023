@@ -20,9 +20,10 @@
 ## Coding Expectations
 
 - Use incremental commits and low-risk changes.
+- Before implementing a new feature or non-trivial app logic, create or switch to a dedicated local feature branch from `main` unless the user explicitly asks to work on the current branch.
 - Respect existing code organization and naming patterns.
 - Reuse business logic from `libs/` and existing contexts.
-- Use TanStack Query for client-side server state that benefits from cache, refetch, invalidation, or polling. Keep shared keys in `libs/queryKeys.ts`.
+- Use TanStack Query for client-side server state that benefits from cache, refetch, invalidation, optimistic updates, or polling. Keep shared keys in `libs/queryKeys.ts`.
 - `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed filters, sorting, search, selected ticket links, report periods, and pagination when the state should survive refresh/share.
 - `components/shared/AppCommandPalette.tsx` uses `cmdk`; add important new routes/actions there when adding major navigation surfaces.
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client recovery, not API validation.

@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import SonnerToastComponent, { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import type { ExtendedUser } from '@/types/user';
+import type { ProfileData } from '@/hooks/useProfile';
+import { queryKeys } from '@/libs/queryKeys';
 import Title from '@/components/shared/Title';
 import UserProfileForm from './UserProfileForm';
 import UserProfileImage from './UserProfileImage';
@@ -25,6 +28,7 @@ const ProfilePage = () => {
   const session = useSession();
   const { status } = session;
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [userName, setUserName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -155,6 +159,10 @@ const ProfilePage = () => {
       }
 
       const updatedUser = await profileRes.json();
+      const nextCachedUser: ProfileData = {
+        ...updatedUser,
+        image: nextImageUrl || FALLBACK_IMAGE,
+      };
 
       await session.update({
         ...session.data,
@@ -170,6 +178,7 @@ const ProfilePage = () => {
         },
       });
 
+      queryClient.setQueryData(queryKeys.profile.detail(), nextCachedUser);
       setImageUrl(nextImageUrl || FALLBACK_IMAGE);
       setSelectedImageFile(null);
       setPreviewUrl(null);
@@ -212,6 +221,8 @@ const ProfilePage = () => {
         const message = await deleteRes.text();
         throw new Error(message || 'Failed to delete account.');
       }
+
+      queryClient.removeQueries({ queryKey: queryKeys.profile.all });
 
       // Sign out the user after successful account deletion
       await signOut({ callbackUrl: '/login' });

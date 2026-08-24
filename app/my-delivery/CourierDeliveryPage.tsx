@@ -1,11 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import type { OrderMapHandle } from '@/components/shared/OrderMap';
 import dynamic from 'next/dynamic';
+import type { ProfileData } from '@/hooks/useProfile';
 import useProfile from '@/hooks/useProfile';
+import { queryKeys } from '@/libs/queryKeys';
 import Title from '@/components/shared/Title';
 import AvailabilityToggle from './AvailabilityToggle';
 import CourierScheduleCard from './CourierScheduleCard';
@@ -72,6 +75,7 @@ type OrderDetailsType = {
 
 const CourierPage = () => {
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const queryClient = useQueryClient();
   const { data: profileData, loading: profileLoading } = useProfile();
   const [orders, setOrders] = useState<OrderDetailsType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -341,6 +345,9 @@ const CourierPage = () => {
       }
 
       setAvailability(data.availability);
+      queryClient.setQueryData<ProfileData | null>(queryKeys.profile.detail(), (current) =>
+        current ? { ...current, availability: Boolean(data.availability) } : current
+      );
       sonnerToast.success(data.message, {
         style: {
           background: '#22c55e',
