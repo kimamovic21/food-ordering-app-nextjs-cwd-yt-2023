@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
@@ -27,14 +28,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,6 +36,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import useProfile from '@/hooks/useProfile';
 import { formatAppDateTime, formatAppTime } from '@/libs/dateFormat';
+import { queryKeys } from '@/libs/queryKeys';
 
 type ThreadMessage = {
   _id: string;
@@ -104,6 +98,50 @@ type MessagesApiResponse = {
   selectedConversation: SelectedThread | null;
 };
 
+type MessagesCenterQueryParams = {
+  context?: string | null;
+  isAdminSearchEnabled: boolean;
+  orderId?: string | null;
+  page?: number;
+  participantId?: string | null;
+  searchTerm?: string;
+};
+
+const buildMessagesCenterUrl = ({
+  context,
+  isAdminSearchEnabled,
+  orderId,
+  page = 1,
+  participantId,
+  searchTerm = '',
+}: MessagesCenterQueryParams) => {
+  const query = new URLSearchParams();
+
+  if (participantId) query.set('participantId', participantId);
+  if (orderId) query.set('orderId', orderId);
+  if (context) query.set('context', context);
+  if (isAdminSearchEnabled && searchTerm.trim()) {
+    query.set('search', searchTerm.trim());
+    query.set('page', String(page));
+    query.set('limit', '10');
+  }
+
+  return `/api/messages${query.toString() ? `?${query.toString()}` : ''}`;
+};
+
+const fetchMessagesCenter = async (
+  params: MessagesCenterQueryParams
+): Promise<MessagesApiResponse> => {
+  const response = await fetch(buildMessagesCenterUrl(params), { cache: 'no-store' });
+  const json = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(json?.error || 'Failed to load messages');
+  }
+
+  return json as MessagesApiResponse;
+};
+
 const formatDate = (dateInput?: string | null) => {
   return formatAppTime(dateInput, '');
 };
@@ -125,71 +163,55 @@ const getInitials = (name?: string | null) => {
 const getContactId = (contact?: ConversationContact | null) =>
   contact?._id || contact?.userId || '';
 
-const conversationCanvasClass =
-  'mx-auto w-full max-w-full lg:w-[calc(100vw-5rem)] lg:max-w-[1840px] 2xl:w-[calc(100vw-6rem)] 2xl:max-w-[1920px]';
-const messagesGridHeightClass =
-  'min-h-[72vh] lg:h-[calc(100dvh-11rem)] lg:min-h-[560px] lg:max-h-[760px]';
-const conversationGridHeightClass =
-  'min-h-[68vh] lg:h-[calc(100dvh-15rem)] lg:min-h-[500px] lg:max-h-[720px]';
+const messagesShellHeightClass = 'min-h-[72vh] lg:h-full lg:min-h-0';
+const messagesSectionClass =
+  'relative mx-auto mt-8 h-auto min-h-[calc(100vh-8rem)] w-full max-w-full overflow-hidden px-0 lg:h-[calc(100dvh-10rem)] lg:min-h-[620px]';
+const messagesShellClass = `${messagesShellHeightClass} flex w-full max-w-full flex-col items-stretch gap-5 overflow-hidden lg:flex-row xl:gap-6`;
+const messagesSidebarClass =
+  'flex h-full min-h-0 w-full max-w-full min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur lg:w-[24rem] lg:shrink-0 xl:w-[34rem]';
+const messagesThreadCardClass =
+  'h-full w-full max-w-full min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur lg:flex-1';
 
-const MessagesLoadingSkeleton = ({ conversationOnly }: { conversationOnly: boolean }) => (
-  <section className='relative mx-auto mt-8 min-h-[calc(100vh-8rem)] w-full max-w-[1920px] px-3 sm:px-5 lg:px-6 2xl:px-8'>
-    {conversationOnly && (
-      <div className='mb-4'>
-        <Skeleton className='h-5 w-72 rounded-full' />
-      </div>
-    )}
-
-    <div
-      className={`grid w-full items-stretch gap-5 xl:gap-6 ${
-        conversationOnly
-          ? `${conversationCanvasClass} ${conversationGridHeightClass} lg:grid-cols-[minmax(0,1fr)]`
-          : `${messagesGridHeightClass} lg:grid-cols-[minmax(400px,520px)_minmax(520px,1fr)] 2xl:grid-cols-[560px_minmax(720px,1fr)]`
-      }`}
-    >
-      {!conversationOnly && (
-        <Card className='min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur'>
-          <CardHeader className='space-y-4 border-b border-border/60 pb-4'>
-            <div className='flex items-start justify-between gap-4'>
-              <div className='space-y-3'>
-                <Skeleton className='h-8 w-44' />
-                <Skeleton className='h-4 w-80 max-w-full' />
-                <Skeleton className='h-4 w-64 max-w-full' />
-              </div>
-              <Skeleton className='h-10 w-24 rounded-full' />
-            </div>
-            <div className='grid grid-cols-3 gap-3'>
-              <Skeleton className='h-24 rounded-2xl' />
-              <Skeleton className='h-24 rounded-2xl' />
-              <Skeleton className='h-24 rounded-2xl' />
-            </div>
-          </CardHeader>
-          <CardContent className='flex min-h-0 flex-1 flex-col gap-5 p-4'>
+const MessagesLoadingSkeleton = () => (
+  <section className={messagesSectionClass}>
+    <div className={messagesShellClass}>
+      <Card className={messagesSidebarClass}>
+        <CardHeader className='space-y-4 border-b border-border/60 pb-4'>
+          <div className='flex items-start justify-between gap-4'>
             <div className='space-y-3'>
-              <Skeleton className='h-4 w-32' />
-              <Skeleton className='h-20 rounded-2xl' />
-              <div className='flex gap-2 overflow-hidden'>
-                <Skeleton className='h-20 min-w-48 rounded-2xl' />
-                <Skeleton className='h-20 min-w-48 rounded-2xl' />
-              </div>
+              <Skeleton className='h-8 w-44' />
+              <Skeleton className='h-4 w-80 max-w-full' />
+              <Skeleton className='h-4 w-64 max-w-full' />
             </div>
-            <Separator />
-            <div className='space-y-3'>
-              <Skeleton className='h-4 w-20' />
-              <Skeleton className='h-20 rounded-2xl' />
-              <Skeleton className='h-20 rounded-2xl' />
-              <Skeleton className='h-20 rounded-2xl' />
+            <Skeleton className='h-10 w-24 rounded-full' />
+          </div>
+          <div className='grid grid-cols-3 gap-3'>
+            <Skeleton className='h-24 rounded-2xl' />
+            <Skeleton className='h-24 rounded-2xl' />
+            <Skeleton className='h-24 rounded-2xl' />
+          </div>
+        </CardHeader>
+        <CardContent className='flex min-h-0 flex-1 flex-col gap-5 p-4'>
+          <div className='space-y-3'>
+            <Skeleton className='h-4 w-32' />
+            <Skeleton className='h-20 rounded-2xl' />
+            <div className='flex gap-2 overflow-hidden'>
+              <Skeleton className='h-20 min-w-48 rounded-2xl' />
+              <Skeleton className='h-20 min-w-48 rounded-2xl' />
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+          <Separator />
+          <div className='space-y-3'>
+            <Skeleton className='h-4 w-20' />
+            <Skeleton className='h-20 rounded-2xl' />
+            <Skeleton className='h-20 rounded-2xl' />
+            <Skeleton className='h-20 rounded-2xl' />
+          </div>
+        </CardContent>
+      </Card>
 
-      <Card className='w-full min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur'>
-        <div
-          className={`flex h-full min-w-0 flex-col lg:min-h-0 ${
-            conversationOnly ? 'min-h-[68vh]' : 'min-h-[72vh]'
-          }`}
-        >
+      <Card className={messagesThreadCardClass}>
+        <div className='flex h-full min-h-[72vh] min-w-0 flex-col lg:min-h-0'>
           <CardHeader className='border-b border-border/60 pb-4'>
             <div className='flex items-center justify-between gap-4'>
               <div className='flex items-center gap-3'>
@@ -220,206 +242,117 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
   const params = useParams<{ participantId?: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: profileData, loading: profileLoading } = useProfile();
-  const [data, setData] = useState<MessagesApiResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [optimisticMessages, setOptimisticMessages] = useState<ThreadMessage[]>([]);
   const [messageMenuId, setMessageMenuId] = useState<string | null>(null);
   const [contactSearch, setContactSearch] = useState('');
+  const [activeContactSearch, setActiveContactSearch] = useState('');
+  const [extraContacts, setExtraContacts] = useState<ConversationContact[]>([]);
   const [contactPage, setContactPage] = useState(1);
   const [contactHasMore, setContactHasMore] = useState(false);
   const [contactLoadingMore, setContactLoadingMore] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
-  const hasLoadedMessagesRef = useRef(false);
 
   const routeParticipantId = params?.participantId;
   const queryParticipantId = searchParams.get('participantId');
   const participantId = routeParticipantId || queryParticipantId;
-  const isConversationRoute = Boolean(routeParticipantId);
-  const hasInlineConversation = !isConversationRoute && Boolean(participantId);
   const orderId = searchParams.get('orderId');
-  const context = searchParams.get('context');
-  const selectedThread = data?.selectedConversation;
+  const contextParam = searchParams.get('context');
+  const context =
+    contextParam === 'direct' || contextParam === 'order' || contextParam === 'restaurant'
+      ? contextParam
+      : null;
   const currentUserId = profileData?._id;
   const isAdminSearchEnabled = profileData?.role === 'admin';
 
-  const loadMessages = useCallback(
-    async (options?: {
-      showLoading?: boolean;
-      contactPage?: number;
-      appendContacts?: boolean;
-      searchTerm?: string;
-    }) => {
-      const showLoading = options?.showLoading ?? true;
-      const requestedPage = options?.contactPage ?? 1;
-      const appendContacts = options?.appendContacts ?? false;
-      const searchTerm = options?.searchTerm ?? '';
-
-      if (profileLoading || !profileData?._id) {
-        return;
-      }
-
-      try {
-        if (showLoading) {
-          setLoading(true);
-        } else {
-          setRefreshing(true);
-        }
-
-        const query = new URLSearchParams();
-        if (participantId) query.set('participantId', participantId);
-        if (orderId) query.set('orderId', orderId);
-        if (context) query.set('context', context);
-        if (isAdminSearchEnabled && searchTerm.trim()) {
-          query.set('search', searchTerm.trim());
-          query.set('page', String(requestedPage));
-          query.set('limit', '10');
-        }
-
-        const response = await fetch(
-          `/api/messages${query.toString() ? `?${query.toString()}` : ''}`,
-          {
-            cache: 'no-store',
-          }
-        );
-
-        if (!response.ok) {
-          const json = await response.json().catch(() => null);
-          throw new Error(json?.error || 'Failed to load messages');
-        }
-
-        const json = (await response.json()) as MessagesApiResponse;
-        hasLoadedMessagesRef.current = true;
-        setData((prev) => {
-          if (appendContacts && prev) {
-            return {
-              ...json,
-              contactSuggestions: [...prev.contactSuggestions, ...(json.contactSuggestions || [])],
-            };
-          }
-
-          return json;
-        });
-        setContactHasMore(Boolean(json.contactHasMore));
-        setContactPage(Number(json.contactPage) || requestedPage);
-        setError(null);
-
-        if (json.selectedConversation?.messages) {
-          setOptimisticMessages([]);
-        }
-      } catch (fetchError) {
-        console.error(fetchError);
-        setError(fetchError instanceof Error ? fetchError.message : 'Failed to load messages');
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [context, isAdminSearchEnabled, orderId, participantId, profileData?._id, profileLoading]
+  const centerQueryParams = useMemo(
+    () => ({
+      context: context || '',
+      orderId: orderId || '',
+      participantId: participantId || '',
+      search: isAdminSearchEnabled ? activeContactSearch.trim() : '',
+    }),
+    [activeContactSearch, context, isAdminSearchEnabled, orderId, participantId]
   );
 
-  useEffect(() => {
-    if (profileLoading || !profileData?._id) {
-      return;
-    }
+  const {
+    data,
+    error: messagesError,
+    isFetching,
+    isLoading,
+  } = useQuery({
+    enabled: !profileLoading && Boolean(profileData?._id),
+    placeholderData: (previousData) => previousData,
+    queryFn: () =>
+      fetchMessagesCenter({
+        context,
+        isAdminSearchEnabled,
+        orderId,
+        page: 1,
+        participantId,
+        searchTerm: activeContactSearch,
+      }),
+    queryKey: queryKeys.messages.center(centerQueryParams),
+    refetchInterval: 5000,
+  });
 
-    loadMessages({
-      showLoading: !hasLoadedMessagesRef.current,
-      contactPage: 1,
-      searchTerm: '',
-    });
-  }, [participantId, orderId, context, profileLoading, profileData?._id, loadMessages]);
-
-  useEffect(() => {
-    if (profileLoading || !profileData?._id) {
-      return;
-    }
-
-    const shouldAutoRefreshContacts = !(
-      isAdminSearchEnabled &&
-      contactSearch.trim() &&
-      contactPage > 1
-    );
-
-    if (!shouldAutoRefreshContacts) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch });
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [
-    profileLoading,
-    profileData?._id,
-    loadMessages,
-    contactPage,
-    contactSearch,
-    isAdminSearchEnabled,
-  ]);
+  const selectedThread = data?.selectedConversation;
+  const loading = profileLoading || (!data && isLoading);
+  const refreshing = Boolean(data && isFetching);
+  const error =
+    messagesError instanceof Error
+      ? messagesError.message
+      : messagesError
+        ? 'Failed to load messages'
+        : null;
 
   useEffect(() => {
     if (!isAdminSearchEnabled) {
       setContactSearch('');
+      setActiveContactSearch('');
       setContactHasMore(false);
       setContactPage(1);
       return;
     }
 
-    if (searchDebounceRef.current) {
-      clearTimeout(searchDebounceRef.current);
-    }
-
-    searchDebounceRef.current = setTimeout(() => {
-      loadMessages({
-        showLoading: false,
-        contactPage: 1,
-        appendContacts: false,
-        searchTerm: contactSearch,
-      });
+    const debounceId = window.setTimeout(() => {
+      setActiveContactSearch(contactSearch);
     }, 300);
 
     return () => {
-      if (searchDebounceRef.current) {
-        clearTimeout(searchDebounceRef.current);
-      }
+      window.clearTimeout(debounceId);
     };
-  }, [contactSearch, isAdminSearchEnabled, loadMessages]);
+  }, [contactSearch, isAdminSearchEnabled]);
 
   useEffect(() => {
-    const conversationId = selectedThread?.conversation?._id;
-    if (!conversationId || !currentUserId) {
+    setExtraContacts([]);
+    setContactPage(1);
+  }, [activeContactSearch, context, isAdminSearchEnabled, orderId, participantId]);
+
+  useEffect(() => {
+    if (!data) {
       return;
     }
 
-    const eventSource = new EventSource('/api/messages/stream');
-    eventSource.onmessage = async (event) => {
-      try {
-        const payload = JSON.parse(event.data) as {
-          conversationId?: string;
-          senderUserId?: string;
-          recipientUserId?: string;
-          type?: string;
-        };
+    setContactHasMore(Boolean(data.contactHasMore));
+    setContactPage((currentPage) => Math.max(currentPage, Number(data.contactPage) || 1));
 
-        if (payload.conversationId === conversationId) {
-          await loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch });
-        }
-      } catch {
-        await loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch });
-      }
-    };
-
-    return () => eventSource.close();
-  }, [selectedThread?.conversation?._id, currentUserId, loadMessages, contactPage, contactSearch]);
+    if (!sending && data.selectedConversation?.messages) {
+      setOptimisticMessages([]);
+    }
+  }, [
+    data,
+    data?.contactHasMore,
+    data?.contactPage,
+    data?.selectedConversation?.conversation?._id,
+    data?.selectedConversation?.messages,
+    sending,
+  ]);
 
   useEffect(() => {
     const conversationId = selectedThread?.conversation?._id;
@@ -431,14 +364,12 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'mark-seen', conversationId }),
-    }).then(() => loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch }));
+    }).then(() => queryClient.invalidateQueries({ queryKey: queryKeys.messages.all }));
   }, [
     selectedThread?.conversation?._id,
     selectedThread?.messages?.length,
     currentUserId,
-    loadMessages,
-    contactPage,
-    contactSearch,
+    queryClient,
   ]);
 
   const visibleMessages = useMemo(() => {
@@ -456,7 +387,25 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
     );
   }, [selectedThread?.messages, optimisticMessages]);
 
-  const visibleContacts = data?.contactSuggestions || [];
+  const visibleContacts = useMemo(() => {
+    const contacts = [...(data?.contactSuggestions || []), ...extraContacts];
+    const seenContacts = new Set<string>();
+
+    return contacts.filter((contact) => {
+      const key = getContactId(contact) || contact.href;
+
+      if (seenContacts.has(key)) {
+        return false;
+      }
+
+      seenContacts.add(key);
+      return true;
+    });
+  }, [data?.contactSuggestions, extraContacts]);
+
+  const refreshMessages = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.messages.all });
+  }, [queryClient]);
 
   const handleLoadMoreContacts = async () => {
     if (!isAdminSearchEnabled || !contactHasMore || contactLoadingMore) {
@@ -465,12 +414,29 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
 
     try {
       setContactLoadingMore(true);
-      await loadMessages({
-        showLoading: false,
-        contactPage: contactPage + 1,
-        appendContacts: true,
-        searchTerm: contactSearch,
+      const nextPage = contactPage + 1;
+      const nextData = await queryClient.fetchQuery({
+        queryFn: () =>
+          fetchMessagesCenter({
+            context,
+            isAdminSearchEnabled,
+            orderId,
+            page: nextPage,
+            participantId,
+            searchTerm: activeContactSearch,
+          }),
+        queryKey: queryKeys.messages.centerPage({
+          ...centerQueryParams,
+          page: nextPage,
+        }),
       });
+
+      setExtraContacts((currentContacts) => [
+        ...currentContacts,
+        ...(nextData.contactSuggestions || []),
+      ]);
+      setContactHasMore(Boolean(nextData.contactHasMore));
+      setContactPage(Number(nextData.contactPage) || nextPage);
     } finally {
       setContactLoadingMore(false);
     }
@@ -532,8 +498,8 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
         throw new Error(json.error || 'Failed to send message');
       }
 
+      await refreshMessages();
       setOptimisticMessages((prev) => prev.filter((message) => message._id !== tempId));
-      await loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch });
     } catch (sendError) {
       console.error(sendError);
       setOptimisticMessages((prev) => prev.filter((message) => message._id !== tempId));
@@ -569,7 +535,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
         throw new Error('Failed to delete message');
       }
 
-      await loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch });
+      await refreshMessages();
     } catch (deleteError) {
       console.error(deleteError);
       sonnerToast.error('Failed to delete message');
@@ -604,7 +570,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
 
       setDraft('');
       setEditingMessageId(null);
-      await loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch });
+      await refreshMessages();
     } catch (editError) {
       console.error(editError);
       sonnerToast.error('Failed to edit message');
@@ -632,7 +598,7 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
 
       setDraft('');
       setEditingMessageId(null);
-      await loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch });
+      await refreshMessages();
       router.push('/messages');
     } catch (hideError) {
       console.error(hideError);
@@ -657,218 +623,180 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
       : selectedThread?.contextType === 'order'
         ? `Order thread ${selectedThread.orderId?.slice(-6) || ''}`
         : 'Conversation';
-  const breadcrumbConversationLabel = activeContact?.name
-    ? `Conversation with ${activeContact.name}`
-    : 'Conversation';
-
   if (loading) {
-    return <MessagesLoadingSkeleton conversationOnly={isConversationRoute} />;
+    return <MessagesLoadingSkeleton />;
   }
 
   return (
-    <section className='relative mx-auto mt-8 min-h-[calc(100vh-8rem)] w-full max-w-[1920px] px-3 sm:px-5 lg:px-6 2xl:px-8'>
-      {isConversationRoute && (
-        <Breadcrumb className={`mb-4 ${conversationCanvasClass}`}>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href='/messages'>All messages</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{breadcrumbConversationLabel}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      )}
-
-      <div
-        className={`grid w-full items-stretch gap-5 xl:gap-6 ${
-          isConversationRoute
-            ? `${conversationCanvasClass} ${conversationGridHeightClass} lg:grid-cols-[minmax(0,1fr)]`
-            : `${messagesGridHeightClass} lg:grid-cols-[minmax(400px,520px)_minmax(520px,1fr)] 2xl:grid-cols-[560px_minmax(720px,1fr)]`
-        }`}
-      >
-        {!isConversationRoute && (
-          <Card
-            className={`h-full min-h-0 min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur ${
-              hasInlineConversation ? 'hidden lg:flex' : 'flex'
-            }`}
-          >
-            <CardHeader className='space-y-3 border-b border-border/60 bg-linear-to-br from-foreground/5 to-transparent pb-3'>
-              <div className='flex items-start justify-between gap-4'>
-                <div>
-                  <CardTitle className='text-xl font-semibold tracking-tight'>{title}</CardTitle>
-                  <p className='mt-1 text-sm leading-snug text-muted-foreground'>{description}</p>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <Button variant='outline' size='sm' asChild className='rounded-full'>
-                    <Link href='/messages/settings' className='gap-2'>
-                      <Settings className='h-4 w-4' />
-                      Settings
-                    </Link>
-                  </Button>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() =>
-                      loadMessages({ showLoading: false, contactPage, searchTerm: contactSearch })
-                    }
-                    disabled={refreshing}
-                    className='rounded-full'
-                  >
-                    Refresh
-                  </Button>
-                </div>
+    <section className={messagesSectionClass}>
+      <div className={messagesShellClass}>
+        <Card className={messagesSidebarClass}>
+          <CardHeader className='space-y-3 border-b border-border/60 bg-linear-to-br from-foreground/5 to-transparent pb-3'>
+            <div className='flex items-start justify-between gap-4'>
+              <div>
+                <CardTitle className='text-xl font-semibold tracking-tight'>{title}</CardTitle>
+                <p className='mt-1 text-sm leading-snug text-muted-foreground'>{description}</p>
               </div>
+              <div className='flex items-center gap-2'>
+                <Button variant='outline' size='sm' asChild className='rounded-full'>
+                  <Link href='/messages/settings' className='gap-2'>
+                    <Settings className='h-4 w-4' />
+                    Settings
+                  </Link>
+                </Button>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => void refreshMessages()}
+                  disabled={refreshing}
+                  className='rounded-full'
+                >
+                  Refresh
+                </Button>
+              </div>
+            </div>
 
-              <div className='grid grid-cols-3 gap-2 text-sm'>
-                <div className='rounded-2xl border border-border/60 bg-background px-3 py-2'>
-                  <p className='text-muted-foreground text-xs uppercase tracking-[0.2em]'>Unread</p>
-                  <p className='mt-1 text-2xl font-bold'>{data?.unreadCount || 0}</p>
-                </div>
-                <div className='rounded-2xl border border-border/60 bg-background px-3 py-2'>
-                  <p className='text-muted-foreground text-xs uppercase tracking-[0.2em]'>
-                    Threads
+            <div className='grid grid-cols-3 gap-2 text-sm'>
+              <div className='rounded-2xl border border-border/60 bg-background px-3 py-2'>
+                <p className='text-muted-foreground text-xs uppercase tracking-[0.2em]'>Unread</p>
+                <p className='mt-1 text-2xl font-bold'>{data?.unreadCount || 0}</p>
+              </div>
+              <div className='rounded-2xl border border-border/60 bg-background px-3 py-2'>
+                <p className='text-muted-foreground text-xs uppercase tracking-[0.2em]'>Threads</p>
+                <p className='mt-1 text-2xl font-bold'>{totalConversations}</p>
+              </div>
+              <div className='rounded-2xl border border-border/60 bg-background px-3 py-2'>
+                <p className='text-muted-foreground text-xs uppercase tracking-[0.2em]'>Open</p>
+                <p className='mt-1 text-2xl font-bold'>{activeUnread}</p>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className='flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto p-4'>
+            <div className='shrink-0'>
+              <div className='mb-2 flex items-center justify-between'>
+                <h2 className='text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground'>
+                  {isAdminSearchEnabled ? 'Search users' : 'Quick contacts'}
+                </h2>
+                <MessageSquarePlus className='h-4 w-4 text-muted-foreground' />
+              </div>
+              {isAdminSearchEnabled && (
+                <div className='mb-3 rounded-2xl border border-border/60 bg-background p-2'>
+                  <div className='relative'>
+                    <Search className='pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                    <Input
+                      value={contactSearch}
+                      onChange={(event) => setContactSearch(event.target.value)}
+                      autoComplete='off'
+                      placeholder='Search users by name or email'
+                      className='h-11 rounded-2xl pl-10'
+                    />
+                  </div>
+                  <p className='mt-1 px-1 text-xs text-muted-foreground'>
+                    Search all users, then load more results in pages of 10.
                   </p>
-                  <p className='mt-1 text-2xl font-bold'>{totalConversations}</p>
                 </div>
-                <div className='rounded-2xl border border-border/60 bg-background px-3 py-2'>
-                  <p className='text-muted-foreground text-xs uppercase tracking-[0.2em]'>Open</p>
-                  <p className='mt-1 text-2xl font-bold'>{activeUnread}</p>
-                </div>
-              </div>
-            </CardHeader>
+              )}
 
-            <CardContent className='flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto p-4'>
-              <div className='shrink-0'>
-                <div className='mb-2 flex items-center justify-between'>
-                  <h2 className='text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground'>
-                    {isAdminSearchEnabled ? 'Search users' : 'Quick contacts'}
-                  </h2>
-                  <MessageSquarePlus className='h-4 w-4 text-muted-foreground' />
+              <div className='space-y-2'>
+                <div className='flex max-w-full min-w-0 gap-2 overflow-x-auto pb-1'>
+                  {visibleContacts.slice(0, 8).map((contact) => (
+                    <Link
+                      key={`${getContactId(contact)}-${contact.href}`}
+                      href={contact.href}
+                      scroll={false}
+                      className='flex w-[180px] shrink-0 items-center gap-3 rounded-2xl border border-border/60 bg-muted/40 px-3 py-3 transition-colors hover:border-primary/40 hover:bg-muted'
+                    >
+                      <Avatar className='h-10 w-10 border border-border/60'>
+                        <AvatarImage src={contact.image || undefined} alt={contact.name} />
+                        <AvatarFallback>{getInitials(contact.name)}</AvatarFallback>
+                      </Avatar>
+                      <div className='min-w-0'>
+                        <p className='truncate text-sm font-medium'>{contact.name}</p>
+                        <p className='truncate text-xs text-muted-foreground'>{contact.role}</p>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-                {isAdminSearchEnabled && (
-                  <div className='mb-3 rounded-2xl border border-border/60 bg-background p-2'>
-                    <div className='relative'>
-                      <Search className='pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-                      <Input
-                        value={contactSearch}
-                        onChange={(event) => setContactSearch(event.target.value)}
-                        autoComplete='off'
-                        placeholder='Search users by name or email'
-                        className='h-11 rounded-2xl pl-10'
-                      />
-                    </div>
-                    <p className='mt-1 px-1 text-xs text-muted-foreground'>
-                      Search all users, then load more results in pages of 10.
-                    </p>
+
+                {isAdminSearchEnabled && contactHasMore && (
+                  <div className='flex justify-center pt-1'>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      className='rounded-full px-4'
+                      onClick={handleLoadMoreContacts}
+                      disabled={contactLoadingMore}
+                    >
+                      {contactLoadingMore ? 'Loading...' : 'Load more'}
+                    </Button>
                   </div>
                 )}
+              </div>
+            </div>
 
-                <div className='space-y-2'>
-                  <div className='flex gap-2 overflow-x-auto pb-1'>
-                    {visibleContacts.slice(0, 8).map((contact) => (
-                      <Link
-                        key={`${getContactId(contact)}-${contact.href}`}
-                        href={contact.href}
-                        scroll={false}
-                        className='flex min-w-[180px] items-center gap-3 rounded-2xl border border-border/60 bg-muted/40 px-3 py-3 transition-colors hover:border-primary/40 hover:bg-muted'
-                      >
-                        <Avatar className='h-10 w-10 border border-border/60'>
-                          <AvatarImage src={contact.image || undefined} alt={contact.name} />
-                          <AvatarFallback>{getInitials(contact.name)}</AvatarFallback>
-                        </Avatar>
-                        <div className='min-w-0'>
-                          <p className='truncate text-sm font-medium'>{contact.name}</p>
-                          <p className='truncate text-xs text-muted-foreground'>{contact.role}</p>
-                        </div>
-                      </Link>
-                    ))}
+            <Separator className='shrink-0' />
+
+            <div className='flex min-h-[220px] flex-1 flex-col space-y-2 overflow-hidden'>
+              <h2 className='text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground'>
+                Inbox
+              </h2>
+              <div className='min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto pr-1'>
+                {(data?.conversations || []).length === 0 ? (
+                  <div className='rounded-2xl border border-dashed border-border/70 px-4 py-8 text-center text-sm text-muted-foreground'>
+                    No conversations yet. Pick a contact to start the first thread.
                   </div>
-
-                  {isAdminSearchEnabled && contactHasMore && (
-                    <div className='flex justify-center pt-1'>
-                      <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        className='rounded-full px-4'
-                        onClick={handleLoadMoreContacts}
-                        disabled={contactLoadingMore}
+                ) : (
+                  (data?.conversations || []).map((conversation) => {
+                    const contact = conversation.contact;
+                    return (
+                      <Link
+                        key={conversation._id}
+                        href={contact?.href || '/messages'}
+                        scroll={false}
+                        className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors hover:border-primary/40 hover:bg-muted/40 ${
+                          selectedThread?.conversation?._id === conversation._id
+                            ? 'border-primary/40 bg-primary/5'
+                            : 'border-border/60 bg-background'
+                        }`}
                       >
-                        {contactLoadingMore ? 'Loading...' : 'Load more'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <Separator className='shrink-0' />
-
-              <div className='flex min-h-[220px] flex-1 flex-col space-y-2 overflow-hidden'>
-                <h2 className='text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground'>
-                  Inbox
-                </h2>
-                <div className='min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto pr-1'>
-                  {(data?.conversations || []).length === 0 ? (
-                    <div className='rounded-2xl border border-dashed border-border/70 px-4 py-8 text-center text-sm text-muted-foreground'>
-                      No conversations yet. Pick a contact to start the first thread.
-                    </div>
-                  ) : (
-                    (data?.conversations || []).map((conversation) => {
-                      const contact = conversation.contact;
-                      return (
-                        <Link
-                          key={conversation._id}
-                          href={contact?.href || '/messages'}
-                          scroll={false}
-                          className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors hover:border-primary/40 hover:bg-muted/40 ${
-                            selectedThread?.conversation?._id === conversation._id
-                              ? 'border-primary/40 bg-primary/5'
-                              : 'border-border/60 bg-background'
-                          }`}
-                        >
-                          <Avatar className='h-11 w-11 border border-border/60'>
-                            <AvatarImage
-                              src={contact?.image || undefined}
-                              alt={contact?.name || 'Contact'}
-                            />
-                            <AvatarFallback>{getInitials(contact?.name)}</AvatarFallback>
-                          </Avatar>
-                          <div className='min-w-0 flex-1'>
-                            <div className='flex items-center justify-between gap-2'>
-                              <p className='truncate font-medium'>
-                                {contact?.name || 'Conversation'}
-                              </p>
-                              <span className='text-[11px] text-muted-foreground'>
-                                {formatDate(conversation.lastMessageAt)}
-                              </span>
-                            </div>
-                            <p className='mt-1 truncate text-sm text-muted-foreground'>
-                              {conversation.lastMessageText || 'No messages yet'}
+                        <Avatar className='h-11 w-11 border border-border/60'>
+                          <AvatarImage
+                            src={contact?.image || undefined}
+                            alt={contact?.name || 'Contact'}
+                          />
+                          <AvatarFallback>{getInitials(contact?.name)}</AvatarFallback>
+                        </Avatar>
+                        <div className='min-w-0 flex-1'>
+                          <div className='flex items-center justify-between gap-2'>
+                            <p className='truncate font-medium'>
+                              {contact?.name || 'Conversation'}
                             </p>
+                            <span className='text-[11px] text-muted-foreground'>
+                              {formatDate(conversation.lastMessageAt)}
+                            </span>
                           </div>
-                          {conversation.unreadCount > 0 && (
-                            <Badge className='rounded-full px-2 py-0.5'>
-                              {conversation.unreadCount}
-                            </Badge>
-                          )}
-                        </Link>
-                      );
-                    })
-                  )}
-                </div>
+                          <p className='mt-1 truncate text-sm text-muted-foreground'>
+                            {conversation.lastMessageText || 'No messages yet'}
+                          </p>
+                        </div>
+                        {conversation.unreadCount > 0 && (
+                          <Badge className='rounded-full px-2 py-0.5'>
+                            {conversation.unreadCount}
+                          </Badge>
+                        )}
+                      </Link>
+                    );
+                  })
+                )}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
 
-        <Card className='w-full min-w-0 overflow-hidden border-border/70 bg-background/90 backdrop-blur'>
-          <div
-            className={`flex h-full min-w-0 flex-col lg:min-h-0 ${
-              isConversationRoute ? 'min-h-[68vh]' : 'min-h-[72vh]'
-            }`}
-          >
+        <Card className={messagesThreadCardClass}>
+          <div className='flex h-full min-h-[72vh] min-w-0 flex-col lg:min-h-0'>
             {hasSelectedContact ? (
               <>
                 <CardHeader className='border-b border-border/60 bg-linear-to-br from-foreground/5 to-transparent pb-4'>
@@ -877,13 +805,11 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                       <Link
                         href='/messages'
                         scroll={false}
-                        className={`inline-flex h-10 items-center justify-center rounded-full border border-border/60 transition-colors hover:bg-muted ${
-                          hasInlineConversation ? 'gap-2 px-3' : 'w-10 lg:hidden'
-                        }`}
+                        className='inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-border/60 px-3 text-sm font-medium transition-colors hover:bg-muted'
                         aria-label='Back to inbox'
                       >
                         <ArrowLeft className='h-4 w-4' />
-                        {hasInlineConversation && <span className='text-sm font-medium'>Back</span>}
+                        <span>Back</span>
                       </Link>
                       <Avatar className='h-12 w-12 border border-border/60'>
                         <AvatarImage
@@ -1130,13 +1056,13 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
                   Pick a conversation to start messaging
                 </h2>
                 <p className='mt-3 max-w-xl text-sm text-muted-foreground'>
-                  {data?.contactSuggestions?.length
+                  {visibleContacts.length
                     ? 'Choose a restaurant owner, courier, or admin from the left panel. Only approved role combinations can chat here.'
                     : 'You do not have any available contacts yet. Once you place an order or get assigned to one, conversations will appear here.'}
                 </p>
 
                 <div className='mt-8 flex flex-wrap justify-center gap-3'>
-                  {data?.contactSuggestions?.slice(0, 4).map((contact) => (
+                  {visibleContacts.slice(0, 4).map((contact) => (
                     <Button
                       key={`${getContactId(contact)}-${contact.href}`}
                       asChild

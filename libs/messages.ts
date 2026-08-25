@@ -154,6 +154,38 @@ const mapUserProfile = (user: any): MessageProfile => ({
   restaurantId: user.restaurantId ? user.restaurantId.toString() : null,
 });
 
+export const dedupeMessageContacts = (contacts: MessageContact[]) => {
+  const contactMap = new Map<string, MessageContact>();
+
+  for (const contact of contacts) {
+    if (!contact.userId || contactMap.has(contact.userId)) {
+      continue;
+    }
+
+    contactMap.set(contact.userId, contact);
+  }
+
+  return Array.from(contactMap.values());
+};
+
+export const buildUnavailableMessageContact = (params: {
+  userId: string;
+  contextType: 'direct' | 'restaurant' | 'order';
+  orderId?: string | null;
+  restaurantId?: string | null;
+}): MessageContact => ({
+  userId: params.userId,
+  name: 'User not available',
+  image: null,
+  role: 'user',
+  href: '/messages',
+  title: 'User not available',
+  subtitle: 'This account no longer exists.',
+  contextType: params.contextType === 'direct' ? 'direct' : 'order',
+  orderId: params.orderId || null,
+  restaurantId: params.restaurantId || null,
+});
+
 export const resolveMessageContacts = async (currentUser: {
   _id: mongoose.Types.ObjectId;
   role: MessageRole;
@@ -191,7 +223,7 @@ export const resolveMessageContacts = async (currentUser: {
       );
     }
 
-    return contacts;
+    return dedupeMessageContacts(contacts);
   }
 
   if (currentUser.role === 'courier') {
@@ -201,6 +233,7 @@ export const resolveMessageContacts = async (currentUser: {
         .select('userId restaurantId courierId orderStatus createdAt')
         .populate('userId', messageUserSelect)
         .populate({ path: 'restaurantId', select: 'ownerId name' })
+        .sort({ createdAt: -1 })
         .lean(),
     ]);
 
@@ -230,13 +263,14 @@ export const resolveMessageContacts = async (currentUser: {
       );
     }
 
-    return contacts;
+    return dedupeMessageContacts(contacts);
   }
 
   const customerOrders = await Order.find({ userId: currentUser._id })
     .select('courierId restaurantId orderStatus createdAt')
     .populate('courierId', messageUserSelect)
     .populate({ path: 'restaurantId', select: 'ownerId name' })
+    .sort({ createdAt: -1 })
     .lean();
 
   for (const order of customerOrders as any[]) {
@@ -271,7 +305,7 @@ export const resolveMessageContacts = async (currentUser: {
     }
   }
 
-  return contacts;
+  return dedupeMessageContacts(contacts);
 };
 
 export const searchAdminMessageContacts = async (params: {
@@ -508,7 +542,19 @@ export const buildConversationSummary = async (params: {
       .map((id: mongoose.Types.ObjectId) => id.toString())
       .find((id: string) => id !== params.currentUserId.toString());
 
-    const contact = participantId ? profileMap.get(participantId) || null : null;
+    const orderId = conversation.orderId ? conversation.orderId.toString() : null;
+    const restaurantId = conversation.restaurantId ? conversation.restaurantId.toString() : null;
+    const profileContact = participantId ? profileMap.get(participantId) || null : null;
+    const contact = profileContact
+      ? null
+      : participantId
+        ? buildUnavailableMessageContact({
+            userId: participantId,
+            contextType: conversation.contextType,
+            orderId,
+            restaurantId,
+          })
+        : null;
 
     return {
       _id: conversation._id.toString(),
@@ -517,42 +563,40 @@ export const buildConversationSummary = async (params: {
       ),
       participantKey: conversation.participantKey,
       contextType: conversation.contextType,
-      orderId: conversation.orderId ? conversation.orderId.toString() : null,
-      restaurantId: conversation.restaurantId ? conversation.restaurantId.toString() : null,
+      orderId,
+      restaurantId,
       lastMessageText: conversation.lastMessageText || '',
       lastMessageAt: conversation.lastMessageAt ? conversation.lastMessageAt.toISOString() : null,
       lastMessageSenderId: conversation.lastMessageSenderId
         ? conversation.lastMessageSenderId.toString()
         : null,
       unreadCount: unreadMap.get(conversation._id.toString()) || 0,
-      contact: contact
+      contact: profileContact
         ? {
-            ...contact,
-            userId: contact._id,
+            ...profileContact,
+            userId: profileContact._id,
             href: buildMessageHref({
-              userId: contact._id,
-              name: contact.name,
-              image: contact.image,
-              role: contact.role,
+              userId: profileContact._id,
+              name: profileContact.name,
+              image: profileContact.image,
+              role: profileContact.role,
               href: '',
-              title: contact.name,
+              title: profileContact.name,
               subtitle: '',
               contextType: conversation.contextType === 'direct' ? 'direct' : 'order',
-              orderId: conversation.orderId ? conversation.orderId.toString() : undefined,
-              restaurantId: conversation.restaurantId
-                ? conversation.restaurantId.toString()
-                : undefined,
+              orderId: orderId || undefined,
+              restaurantId: restaurantId || undefined,
             }),
-            title: contact.name,
+            title: profileContact.name,
             subtitle:
               conversation.contextType === 'direct'
-                ? `Direct chat · ${contact.role}`
-                : `Order ${String(conversation.orderId || '').slice(-6)}`,
+                ? `Direct chat · ${profileContact.role}`
+                : `Order ${String(orderId || '').slice(-6)}`,
             contextType: conversation.contextType === 'direct' ? 'direct' : 'order',
-            orderId: conversation.orderId ? conversation.orderId.toString() : null,
-            restaurantId: conversation.restaurantId ? conversation.restaurantId.toString() : null,
+            orderId,
+            restaurantId,
           }
-        : null,
+        : contact,
     } satisfies ConversationSummary;
   });
 };

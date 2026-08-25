@@ -205,7 +205,7 @@ This project uses many dependencies; below are the main packages actively used i
 
 - `components/shared/TanStackQueryProvider.tsx` creates the client-side `QueryClient` used by app-level providers.
 - `libs/queryKeys.ts` stores shared query keys so cache invalidation stays consistent.
-- Shared profile data, notification/message sound settings, and global messages/notifications use TanStack Query for server-state caching, background refetch, optimistic updates, and SSE-driven invalidation where applicable.
+- Shared profile data, notification/message sound settings, message inbox/thread views, and global messages/notifications use TanStack Query for server-state caching, background refetch, optimistic updates, and SSE-driven invalidation where applicable.
 - Existing route handlers remain the source of truth. TanStack Query should not replace API authorization, MongoDB validation, checkout validation, or webhook idempotency.
 - Prefer TanStack Query for future client screens with server data that needs loading state, refetching, cache invalidation, polling, or window-focus refresh.
 

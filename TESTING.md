@@ -31,7 +31,7 @@ Auth is a high-value and high-risk area. Testing register and login first gives 
   - notification copy/routing helpers in `libs/notifications.ts`
   - Upstash Redis rate-limit helper behavior in `libs/rateLimit.ts`
   - shared date-fns formatting helpers in `libs/dateFormat.ts`
-  - TanStack Query provider, shared query keys, profile hook cache behavior, and sound settings cache/mutation behavior
+  - TanStack Query provider, shared query keys, profile hook cache behavior, sound settings cache/mutation behavior, and message center query rendering
 - E2E tests for:
   - register + login flow
   - profile management flow (info update, image upload/remove, account deletion)
