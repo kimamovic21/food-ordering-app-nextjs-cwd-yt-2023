@@ -10,6 +10,42 @@ describe('queryKeys', () => {
   it('keeps message keys grouped for broad invalidation', () => {
     expect(queryKeys.messages.all).toEqual(['messages']);
     expect(queryKeys.messages.summary()).toEqual(['messages', 'summary']);
+    expect(
+      queryKeys.messages.center({
+        context: 'direct',
+        orderId: '',
+        participantId: 'user-1',
+        search: '',
+      })
+    ).toEqual([
+      'messages',
+      'center',
+      {
+        context: 'direct',
+        orderId: '',
+        participantId: 'user-1',
+        search: '',
+      },
+    ]);
+    expect(
+      queryKeys.messages.centerPage({
+        context: 'direct',
+        orderId: '',
+        page: 2,
+        participantId: 'user-1',
+        search: 'john',
+      })
+    ).toEqual([
+      'messages',
+      'center-page',
+      {
+        context: 'direct',
+        orderId: '',
+        page: 2,
+        participantId: 'user-1',
+        search: 'john',
+      },
+    ]);
   });
 
   it('keeps profile keys grouped for broad invalidation', () => {

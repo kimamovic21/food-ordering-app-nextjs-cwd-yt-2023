@@ -353,7 +353,7 @@ Realtime routes:
 
 SSE events are treated as refresh signals only. MongoDB and the existing JSON APIs remain the source of truth, so notifications, messages, order details, admin order lists, order queue, and courier delivery screens keep polling as a fallback when a stream drops or a serverless instance cannot share in-memory events.
 
-Global profile data, notification/message sound settings, and message/notification unread state are cached with TanStack Query. SSE handlers invalidate the matching query keys, then the existing API routes reload the latest data.
+Global profile data, notification/message sound settings, message inbox/thread views, and message/notification unread state are cached with TanStack Query. SSE handlers invalidate the matching query keys, then the existing API routes reload the latest data.
 
 ## Review And Loyalty Logic
 
@@ -397,7 +397,7 @@ Restaurant report rules:
 - OpenAI: server-side menu description generation.
 - Upstash Redis: short-lived rate-limit counters for sensitive auth, checkout, support, and AI routes.
 - Leaflet: map rendering and courier tracking UI.
-- TanStack Query: client-side server-data cache for shared profile data, notification/message sound settings, and global message/notification unread state.
+- TanStack Query: client-side server-data cache for shared profile data, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
 - nuqs: URL-backed client state for shareable filters, search, sort, selected ticket links, periods, and pagination across menu, restaurant, orders, users, reports, and support pages.
 - cmdk: global command palette for quick route and action navigation from the header or `Ctrl/Cmd + K`.
 - sharp: Next.js production image optimization dependency used automatically by the framework.

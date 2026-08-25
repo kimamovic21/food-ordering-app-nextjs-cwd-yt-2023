@@ -18,7 +18,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const contentClassName = isDashboardRoute
     ? 'fixed inset-0 h-dvh w-dvw overflow-hidden'
     : isMessagesRoute
-      ? 'max-w-[1840px] mx-auto p-4 mt-16'
+      ? 'w-full max-w-7xl mx-auto p-4 mt-16'
       : 'max-w-7xl mx-auto p-4 mt-16';
 
   useEffect(() => {

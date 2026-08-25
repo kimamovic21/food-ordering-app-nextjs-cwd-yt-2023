@@ -15,7 +15,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - AI: OpenAI SDK is used server-side for admin menu item description generation.
 - Rate limiting: Upstash Redis stores short-lived counters for sensitive auth, checkout, support, and AI routes.
 - Sharing: `react-share` is used for social share actions.
-- Client data cache: TanStack Query powers shared profile data, notification/message sound settings, and global message/notification unread state.
+- Client data cache: TanStack Query powers shared profile data, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
 - Dates: `date-fns` is used through `libs/dateFormat.ts` for UI, email, and PDF date formatting.
 - Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`; Vercel Web Analytics is mounted from `@vercel/analytics/next` in `app/layout.tsx`.
 

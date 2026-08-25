@@ -50,7 +50,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Keep support tickets role-scoped between restaurant support and app support.
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.
 - Keep SSE realtime updates lightweight: `/api/messages/stream` and `/api/notifications/stream` should only signal relevant signed-in users, while polling fallback and existing JSON endpoints remain the source of truth.
-- Use TanStack Query for client-side server state that needs cache, refetch, invalidation, optimistic updates, or polling. Keep shared keys in `libs/queryKeys.ts` and let SSE invalidate cached queries instead of duplicating source-of-truth state.
+- Use TanStack Query for client-side server state that needs cache, refetch, invalidation, optimistic updates, or polling. Message inbox/thread views should stay cached through shared keys in `libs/queryKeys.ts`, and SSE should invalidate cached queries instead of duplicating source-of-truth state.
 - `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed filters, sorting, pagination, selected ticket links, periods, and other shareable client state.
 - `components/shared/AppCommandPalette.tsx` uses `cmdk`; add important new routes/actions there when adding major navigation surfaces.
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client-side recovery, not API validation.
