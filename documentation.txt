@@ -1133,3 +1133,5 @@ Add command palette and URL state utilities
 Expand tanstack query caching
 
 Improve messages center with query caching
+
+Cache favorites with TanStack Query

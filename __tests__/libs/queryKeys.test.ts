@@ -53,6 +53,13 @@ describe('queryKeys', () => {
     expect(queryKeys.profile.detail()).toEqual(['profile', 'detail']);
   });
 
+  it('keeps favorite keys grouped for broad invalidation', () => {
+    expect(queryKeys.favorites.all).toEqual(['favorites']);
+    expect(queryKeys.favorites.ids()).toEqual(['favorites', 'ids']);
+    expect(queryKeys.favorites.menuItems()).toEqual(['favorites', 'menu-items']);
+    expect(queryKeys.favorites.restaurants()).toEqual(['favorites', 'restaurants']);
+  });
+
   it('keeps sound setting keys grouped for broad invalidation', () => {
     expect(queryKeys.soundSettings.all).toEqual(['sound-settings']);
     expect(queryKeys.soundSettings.messages()).toEqual(['sound-settings', 'messages']);

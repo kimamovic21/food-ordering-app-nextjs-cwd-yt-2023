@@ -15,7 +15,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - AI: OpenAI SDK is used server-side for admin menu item description generation.
 - Rate limiting: Upstash Redis stores short-lived counters for sensitive auth, checkout, support, and AI routes.
 - Sharing: `react-share` is used for social share actions.
-- Client data cache: TanStack Query powers shared profile data, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
+- Client data cache: TanStack Query powers shared profile data, favorite IDs/lists, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
 - Dates: `date-fns` is used through `libs/dateFormat.ts` for UI, email, and PDF date formatting.
 - Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`; Vercel Web Analytics is mounted from `@vercel/analytics/next` in `app/layout.tsx`.
 
@@ -89,7 +89,7 @@ See `example.env`. Variables currently used in the project include:
 - Support tickets should remain role-scoped: restaurant owners handle their restaurant reports, while app-support tickets route to the super admin.
 - Order notifications can include ETA-style phase copy, late active-order alerts should point admins toward the order queue, and failed-delivery review notifications should point restaurant admins to `/admin-dashboard/orders/[id]`.
 - Realtime updates use SSE with polling fallback: `/api/messages/stream` and `/api/notifications/stream` push events only to the signed-in participant/recipient, and clients should still refresh existing JSON endpoints as the source of truth.
-- TanStack Query should be used for client-side server data that benefits from cache, refetch, invalidation, optimistic updates, or polling. Keep query keys in `libs/queryKeys.ts`; use SSE events to invalidate query keys instead of duplicating source-of-truth state.
+- TanStack Query should be used for client-side server data that benefits from cache, refetch, invalidation, optimistic updates, or polling. Keep query keys in `libs/queryKeys.ts`; use `queryKeys.favorites` for favorite ID/list invalidation and SSE events to invalidate query keys instead of duplicating source-of-truth state.
 - `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed client state such as filters, sort, search, selected ticket links, periods, and pagination when shareable URLs matter.
 - `components/shared/AppCommandPalette.tsx` uses `cmdk`; add new important routes/actions there when adding major navigation surfaces.
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it as client recovery, not API validation.

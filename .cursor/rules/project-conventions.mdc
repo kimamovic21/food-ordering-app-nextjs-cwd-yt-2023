@@ -27,7 +27,7 @@ alwaysApply: true
 - Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Preserve order timing fields and snapshots for preparation/delivery estimates and timeline UI.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
-- Use TanStack Query for client-side server state that needs cache, refetch, invalidation, optimistic updates, or polling. Keep message inbox/thread views and shared keys in `libs/queryKeys.ts`.
+- Use TanStack Query for client-side server state that needs cache, refetch, invalidation, optimistic updates, or polling. Keep message inbox/thread views, favorite ID/list views, and shared keys in `libs/queryKeys.ts`.
 - `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed filters, sorting, search, selected ticket links, report periods, and pagination when users should be able to refresh or share the same view.
 
 ## Security And Integrations
