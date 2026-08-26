@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import Title from '@/components/shared/Title';
 import MenuItem from '@/app/menu/MenuItem';
+import Title from '@/components/shared/Title';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { queryKeys } from '@/libs/queryKeys';
 import FavoriteMealsLoading from './loading';
 
 interface FavoriteMenuItem {
@@ -19,64 +20,55 @@ interface FavoriteMenuItem {
   priceMedium: number | null;
   priceLarge: number | null;
   restaurantId: string | { _id: string; name?: string };
+  isAvailable?: boolean;
+  restaurantAverageRating?: number;
+  restaurantRatingCount?: number;
 }
+
+type FavoriteMealsResponse = {
+  items: FavoriteMenuItem[];
+};
+
+const fetchFavoriteMeals = async (): Promise<FavoriteMealsResponse> => {
+  const response = await fetch('/api/favorites/menu-items', { cache: 'no-store' });
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to fetch favorite meals');
+  }
+
+  return {
+    items: Array.isArray(data?.items) ? data.items : [],
+  };
+};
 
 const FavoriteMealsPage = () => {
   const { status } = useSession();
-  const [items, setItems] = useState<FavoriteMenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isAuthenticated = status === 'authenticated';
 
-  useEffect(() => {
-    if (status === 'loading') {
-      setLoading(true);
-      return;
-    }
+  const favoriteMealsQuery = useQuery({
+    enabled: isAuthenticated,
+    gcTime: 10 * 60 * 1000,
+    queryFn: fetchFavoriteMeals,
+    queryKey: queryKeys.favorites.menuItems(),
+    staleTime: 60 * 1000,
+  });
 
-    if (status !== 'authenticated') {
-      setLoading(false);
-      return;
-    }
-
-    const fetchFavorites = async () => {
-      try {
-        setLoading(true);
-        setErrorMessage(null);
-        const response = await fetch('/api/favorites/menu-items', { cache: 'no-store' });
-        const raw = await response.text();
-        let data: { items?: FavoriteMenuItem[]; error?: string } = {};
-
-        if (raw) {
-          try {
-            data = JSON.parse(raw) as { items?: FavoriteMenuItem[]; error?: string };
-          } catch {
-            throw new Error('Favorites API returned invalid JSON');
-          }
-        }
-
-        if (!response.ok) {
-          throw new Error(data?.error || 'Failed to fetch favorite meals');
-        }
-
-        setItems(Array.isArray(data.items) ? data.items : []);
-      } catch (error) {
-        console.error('Failed to load favorite meals:', error);
-        setItems([]);
-        setErrorMessage(error instanceof Error ? error.message : 'Failed to load favorite meals');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFavorites();
-  }, [status]);
+  const items = favoriteMealsQuery.data?.items || [];
+  const isLoading = status === 'loading' || (isAuthenticated && favoriteMealsQuery.isLoading);
+  const errorMessage =
+    favoriteMealsQuery.error instanceof Error
+      ? favoriteMealsQuery.error.message
+      : favoriteMealsQuery.error
+        ? 'Failed to load favorite meals'
+        : null;
 
   if (status === 'unauthenticated') {
     return (
       <section className='mt-8'>
         <Title>Favorite Meals</Title>
         <Card className='mt-6'>
-          <CardContent className='py-10 text-center space-y-4'>
+          <CardContent className='space-y-4 py-10 text-center'>
             <p className='text-muted-foreground'>Please login to see your favorite meals.</p>
             <Link href='/login'>
               <Button>Login</Button>
@@ -87,7 +79,7 @@ const FavoriteMealsPage = () => {
     );
   }
 
-  if (loading) {
+  if (isLoading) {
     return <FavoriteMealsLoading />;
   }
 
@@ -95,7 +87,7 @@ const FavoriteMealsPage = () => {
     <section className='mt-8'>
       <div className='mb-6'>
         <Title>Favorite Meals</Title>
-        <p className='text-sm text-muted-foreground mt-2'>
+        <p className='mt-2 text-sm text-muted-foreground'>
           Meals you saved for later are listed here.
         </p>
       </div>
@@ -111,7 +103,7 @@ const FavoriteMealsPage = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
           {items.map((item) => {
             const normalizedRestaurantId =
               typeof item.restaurantId === 'string'
