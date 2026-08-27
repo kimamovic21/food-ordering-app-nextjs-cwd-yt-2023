@@ -13,13 +13,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  createDataTableColumnHelper,
+  TanStackDataTable,
+  type DataTableColumnDef,
+} from '@/components/shared/TanStackDataTable';
 import Title from '@/components/shared/Title';
 import { formatAppDateTime } from '@/libs/dateFormat';
 
@@ -42,6 +39,55 @@ const formatMetadata = (metadata: Record<string, unknown>) => {
     .slice(0, 3)
     .map(([key, value]) => `${key}: ${String(value)}`)
     .join(', ');
+};
+
+const columnHelper = createDataTableColumnHelper<AuditLog>();
+
+const auditLogColumns = columnHelper.columns([
+  columnHelper.accessor((log) => (log.createdAt ? new Date(log.createdAt).getTime() : 0), {
+    id: 'createdAt',
+    header: 'Time',
+    sortDescFirst: true,
+    cell: ({ row }) => formatAppDateTime(row.original.createdAt, 'Unknown'),
+  }),
+  columnHelper.accessor((log) => log.action, {
+    id: 'action',
+    header: 'Action',
+    cell: ({ getValue }) => <span className='font-medium'>{getValue()}</span>,
+  }),
+  columnHelper.accessor((log) => `${log.actorEmail || 'System'} ${log.actorRole || ''}`, {
+    id: 'actor',
+    header: 'Actor',
+    cell: ({ row }) => (
+      <div>
+        <div>{row.original.actorEmail || 'System'}</div>
+        <div className='text-xs text-muted-foreground'>{row.original.actorRole || '-'}</div>
+      </div>
+    ),
+  }),
+  columnHelper.accessor((log) => `${log.entityType} ${log.entityId || ''}`, {
+    id: 'entity',
+    header: 'Entity',
+    cell: ({ row }) => (
+      <div>
+        <div>{row.original.entityType}</div>
+        <div className='text-xs text-muted-foreground'>{row.original.entityId || '-'}</div>
+      </div>
+    ),
+  }),
+  columnHelper.accessor((log) => formatMetadata(log.metadata), {
+    id: 'details',
+    header: 'Details',
+    cell: ({ getValue }) => getValue(),
+  }),
+]) satisfies DataTableColumnDef<AuditLog>[];
+
+const auditLogColumnLabels = {
+  action: 'Action',
+  actor: 'Actor',
+  createdAt: 'Time',
+  details: 'Details',
+  entity: 'Entity',
 };
 
 const AuditLogsPage = () => {
@@ -104,43 +150,25 @@ const AuditLogsPage = () => {
             </div>
           ) : error ? (
             <p className='text-sm text-destructive'>{error}</p>
-          ) : logs.length === 0 ? (
-            <p className='text-sm text-muted-foreground'>No audit logs yet.</p>
           ) : (
-            <div className='overflow-x-auto'>
-              <Table className='min-w-[900px]'>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Actor</TableHead>
-                    <TableHead>Entity</TableHead>
-                    <TableHead>Details</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logs.map((log) => (
-                    <TableRow key={log._id}>
-                      <TableCell className='whitespace-nowrap'>
-                        {formatAppDateTime(log.createdAt, 'Unknown')}
-                      </TableCell>
-                      <TableCell className='font-medium'>{log.action}</TableCell>
-                      <TableCell>
-                        <div>{log.actorEmail || 'System'}</div>
-                        <div className='text-xs text-muted-foreground'>{log.actorRole || '-'}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div>{log.entityType}</div>
-                        <div className='text-xs text-muted-foreground'>{log.entityId || '-'}</div>
-                      </TableCell>
-                      <TableCell className='max-w-sm truncate text-muted-foreground'>
-                        {formatMetadata(log.metadata)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <TanStackDataTable
+              columns={auditLogColumns}
+              data={logs}
+              tableKey='audit-logs'
+              searchPlaceholder='Search audit logs by time, actor, action, entity, or details...'
+              emptyMessage='No audit logs yet.'
+              initialSorting={[{ id: 'createdAt', desc: true }]}
+              minWidthClassName='min-w-[900px]'
+              columnLabels={auditLogColumnLabels}
+              showPagination={false}
+              getCellClassName={(columnId) =>
+                columnId === 'createdAt'
+                  ? 'whitespace-nowrap'
+                  : columnId === 'details'
+                    ? 'max-w-sm truncate text-muted-foreground'
+                    : ''
+              }
+            />
           )}
 
           <div className='mt-4 flex items-center justify-between gap-3'>

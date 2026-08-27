@@ -1,20 +1,16 @@
 'use client';
 
-import { useState, type KeyboardEvent } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { useState, type KeyboardEvent } from 'react';
 import { CreditCard, Eye, RefreshCcw, X } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+
+import {
+  createDataTableColumnHelper,
+  TanStackDataTable,
+  type DataTableColumnDef,
+} from '@/components/shared/TanStackDataTable';
+import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,10 +21,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { sonnerToast } from '@/components/shared/SonnerToastComponent';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCart } from '@/contexts/CartContext';
 import { formatAppDateTime } from '@/libs/dateFormat';
-import Link from 'next/link';
 
 type OrderType = {
   _id: string;
@@ -44,6 +50,46 @@ type MyOrdersTableProps = {
   orders: OrderType[];
   loading: boolean;
   onOrderUpdated?: (order: OrderType) => void;
+};
+
+const columnHelper = createDataTableColumnHelper<OrderType>();
+
+function PaymentBadge({ paid }: { paid: boolean }) {
+  return (
+    <Badge
+      variant={paid ? 'secondary' : 'destructive'}
+      className={paid ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : ''}
+    >
+      {paid ? 'Paid' : 'Unpaid'}
+    </Badge>
+  );
+}
+
+function OrderStatusBadge({ status }: { status: OrderType['orderStatus'] }) {
+  const statusClassName =
+    status === 'canceled'
+      ? 'bg-red-100 text-red-800 hover:bg-red-100'
+      : status === 'completed'
+        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+        : status === 'processing'
+          ? 'bg-blue-100 text-blue-800 hover:bg-blue-100'
+          : 'bg-amber-100 text-amber-800 hover:bg-amber-100';
+
+  return (
+    <Badge variant='secondary' className={`${statusClassName} capitalize`}>
+      {status}
+    </Badge>
+  );
+}
+
+const orderColumnLabels = {
+  actions: 'Action',
+  createdAt: 'Date',
+  email: 'Email',
+  orderId: 'Order ID',
+  orderStatus: 'Order Status',
+  paymentStatus: 'Payment',
+  total: 'Total',
 };
 
 const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) => {
@@ -114,20 +160,10 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
       }
 
       replaceCart(data.cartItems || []);
-      sonnerToast.success('Order added to cart', {
-        style: {
-          background: '#22c55e',
-          color: 'white',
-        },
-      });
+      sonnerToast.success('Order added to cart');
       router.push('/cart');
     } catch (error) {
-      sonnerToast.error(error instanceof Error ? error.message : 'Failed to reorder', {
-        style: {
-          background: '#ef4444',
-          color: 'white',
-        },
-      });
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to reorder');
     } finally {
       setReorderingOrder(null);
     }
@@ -141,7 +177,10 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
       const res = await fetch('/api/my-orders', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: cancelOrderId, action: 'cancel-order' }),
+        body: JSON.stringify({
+          orderId: cancelOrderId,
+          action: 'cancel-order',
+        }),
       });
       const data = await res.json();
 
@@ -151,29 +190,140 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
 
       onOrderUpdated?.(data.order);
       setCancelOrderId(null);
-      sonnerToast.success('Order canceled', {
-        style: {
-          background: '#22c55e',
-          color: 'white',
-        },
-      });
+      sonnerToast.success('Order canceled');
     } catch (error) {
-      sonnerToast.error(error instanceof Error ? error.message : 'Failed to cancel order', {
-        style: {
-          background: '#ef4444',
-          color: 'white',
-        },
-      });
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to cancel order');
     } finally {
       setCancelingOrder(null);
     }
   };
 
+  const ordersTableColumns = columnHelper.columns([
+    columnHelper.accessor((order) => order._id, {
+      id: 'orderId',
+      header: 'Order ID',
+      cell: ({ row }) => (
+        <span className='font-mono text-xs font-semibold text-muted-foreground'>
+          {row.original._id.substring(0, 8)}...
+        </span>
+      ),
+    }),
+    columnHelper.accessor((order) => new Date(order.createdAt).getTime(), {
+      id: 'createdAt',
+      header: 'Date',
+      sortDescFirst: true,
+      cell: ({ row }) => (
+        <span className='text-muted-foreground'>{formatAppDateTime(row.original.createdAt)}</span>
+      ),
+    }),
+    columnHelper.accessor((order) => order.email, {
+      id: 'email',
+      header: 'Email',
+      cell: ({ getValue }) => <span className='text-muted-foreground'>{getValue()}</span>,
+    }),
+    columnHelper.accessor((order) => order.total, {
+      id: 'total',
+      header: 'Total',
+      sortDescFirst: true,
+      cell: ({ getValue }) => <span className='font-semibold'>${getValue().toFixed(2)}</span>,
+    }),
+    columnHelper.accessor((order) => (order.paymentStatus ? 'Paid' : 'Unpaid'), {
+      id: 'paymentStatus',
+      header: 'Payment',
+      cell: ({ row }) => <PaymentBadge paid={row.original.paymentStatus} />,
+    }),
+    columnHelper.accessor((order) => order.orderStatus, {
+      id: 'orderStatus',
+      header: 'Order Status',
+      cell: ({ row }) => <OrderStatusBadge status={row.original.orderStatus} />,
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: 'Action',
+      cell: ({ row }) => {
+        const order = row.original;
+
+        return (
+          <div className='flex items-center gap-4'>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href={`/my-orders/${order._id}`}
+                  aria-label='View Order'
+                  className='flex items-center'
+                >
+                  <Eye className='size-5 align-middle text-muted-foreground transition-colors hover:text-primary' />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Order details</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <RefreshCcw
+                  aria-label='Reorder'
+                  onClick={() => handleReorder(order._id)}
+                  onKeyDown={(event) => handleIconKeyDown(event, () => handleReorder(order._id))}
+                  aria-disabled={reorderingOrder === order._id}
+                  className={`size-5 cursor-pointer align-middle text-muted-foreground transition-colors hover:text-primary ${reorderingOrder === order._id ? 'pointer-events-none opacity-50' : ''}`}
+                  tabIndex={reorderingOrder === order._id ? -1 : 0}
+                  role='button'
+                />
+              </TooltipTrigger>
+              <TooltipContent>Reorder</TooltipContent>
+            </Tooltip>
+
+            {!order.paymentStatus && order.orderStatus !== 'canceled' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CreditCard
+                    aria-label='Finish Payment'
+                    onClick={() => handleFinishPayment(order._id)}
+                    onKeyDown={(event) =>
+                      handleIconKeyDown(event, () => handleFinishPayment(order._id))
+                    }
+                    className={`size-6 cursor-pointer align-middle text-primary transition-opacity hover:opacity-80 ${processingPayment === order._id ? 'pointer-events-none opacity-50' : ''}`}
+                    style={{ verticalAlign: 'middle' }}
+                    tabIndex={0}
+                    role='button'
+                  />
+                </TooltipTrigger>
+                <TooltipContent>Finish payment</TooltipContent>
+              </Tooltip>
+            )}
+
+            {!order.paymentStatus && order.orderStatus === 'placed' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <X
+                    aria-label='Cancel order'
+                    onClick={() => setCancelOrderId(order._id)}
+                    onKeyDown={(event) =>
+                      handleIconKeyDown(event, () => setCancelOrderId(order._id))
+                    }
+                    aria-disabled={cancelingOrder === order._id}
+                    className={`size-6 cursor-pointer align-middle text-red-600 transition-colors hover:text-red-700 ${cancelingOrder === order._id ? 'pointer-events-none opacity-50' : ''}`}
+                    tabIndex={cancelingOrder === order._id ? -1 : 0}
+                    role='button'
+                  />
+                </TooltipTrigger>
+                <TooltipContent>Cancel order</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        );
+      },
+      enableGlobalFilter: false,
+      enableHiding: false,
+      enableSorting: false,
+    }),
+  ]) satisfies DataTableColumnDef<OrderType>[];
+
   if (loading) {
     return (
       <Card className='border border-border bg-card text-card-foreground shadow-sm'>
         <div className='p-4'>
-          <Skeleton className='h-8 w-48 mb-4' />
+          <Skeleton className='mb-4 h-8 w-48' />
         </div>
 
         <div className='overflow-x-auto'>
@@ -190,15 +340,7 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
             <TableBody>
               {[...Array(4)].map((_, rowIdx) => (
                 <TableRow key={rowIdx}>
-                  {[
-                    'w-24', // id
-                    'w-40', // date
-                    'w-64', // email
-                    'w-24', // total
-                    'w-20', // payment status
-                    'w-28', // order status
-                    'w-32', // action
-                  ].map((w, cellIdx) => (
+                  {['w-24', 'w-40', 'w-64', 'w-24', 'w-20', 'w-28', 'w-32'].map((w, cellIdx) => (
                     <TableCell key={cellIdx} className='p-3'>
                       <Skeleton className={`h-4 ${w}`} />
                     </TableCell>
@@ -212,139 +354,18 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
     );
   }
 
-  if (orders.length === 0) {
-    return <p className='text-muted-foreground'>No orders found.</p>;
-  }
-
   return (
-    <Card className='border border-border bg-card text-card-foreground shadow-sm'>
-      <div className='overflow-x-auto'>
-        <Table className='w-full min-w-[900px] table-fixed'>
-          <TableHeader className='bg-muted text-left text-xs uppercase tracking-wide text-muted-foreground'>
-            <TableRow>
-              <TableHead className='p-3 w-32'>Order ID</TableHead>
-              <TableHead className='p-3 w-52'>Date</TableHead>
-              <TableHead className='p-3 w-64'>Email</TableHead>
-              <TableHead className='p-3 w-32'>Total</TableHead>
-              <TableHead className='p-3 w-32'>Payment</TableHead>
-              <TableHead className='p-3 w-36'>Order Status</TableHead>
-              <TableHead className='p-3 w-40'>Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody className='divide-y divide-border'>
-            {orders.map((order) => (
-              <TableRow key={order._id} className='hover:bg-muted/50'>
-                <TableCell className='p-3 font-semibold text-xs'>
-                  {order._id.substring(0, 8)}...
-                </TableCell>
-                <TableCell className='p-3 text-muted-foreground'>
-                  {formatAppDateTime(order.createdAt)}
-                </TableCell>
-                <TableCell className='p-3 text-muted-foreground'>{order.email}</TableCell>
-                <TableCell className='p-3 font-semibold'>${order.total.toFixed(2)}</TableCell>
-                <TableCell className='p-3'>
-                  <Badge
-                    variant={order.paymentStatus ? 'secondary' : 'destructive'}
-                    className={
-                      order.paymentStatus
-                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
-                        : ''
-                    }
-                  >
-                    {order.paymentStatus ? 'Paid' : 'Unpaid'}
-                  </Badge>
-                </TableCell>
-                <TableCell className='p-3'>
-                  <Badge
-                    variant='secondary'
-                    className={
-                      order.orderStatus === 'canceled'
-                        ? 'bg-red-100 text-red-800 hover:bg-red-100 capitalize'
-                        : order.orderStatus === 'completed'
-                          ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100 capitalize'
-                          : order.orderStatus === 'delivered'
-                            ? 'bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize'
-                            : order.orderStatus === 'processing'
-                              ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 capitalize'
-                              : 'bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize'
-                    }
-                  >
-                    {order.orderStatus}
-                  </Badge>
-                </TableCell>
-                <TableCell className='p-3'>
-                  <div className='flex items-center gap-4'>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={`/my-orders/${order._id}`}
-                          aria-label='View Order'
-                          className='flex items-center'
-                        >
-                          <Eye className='size-5 text-muted-foreground hover:text-primary transition-colors align-middle' />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>Order details</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <RefreshCcw
-                          aria-label='Reorder'
-                          onClick={() => handleReorder(order._id)}
-                          onKeyDown={(event) =>
-                            handleIconKeyDown(event, () => handleReorder(order._id))
-                          }
-                          aria-disabled={reorderingOrder === order._id}
-                          className={`size-5 cursor-pointer align-middle text-muted-foreground transition-colors hover:text-primary ${reorderingOrder === order._id ? 'pointer-events-none opacity-50' : ''}`}
-                          tabIndex={reorderingOrder === order._id ? -1 : 0}
-                          role='button'
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent>Reorder</TooltipContent>
-                    </Tooltip>
-                    {!order.paymentStatus && order.orderStatus !== 'canceled' && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <CreditCard
-                            aria-label='Finish Payment'
-                            onClick={() => handleFinishPayment(order._id)}
-                            onKeyDown={(event) =>
-                              handleIconKeyDown(event, () => handleFinishPayment(order._id))
-                            }
-                            className={`size-6 cursor-pointer align-middle text-primary transition-opacity hover:opacity-80 ${processingPayment === order._id ? 'pointer-events-none opacity-50' : ''}`}
-                            style={{ verticalAlign: 'middle' }}
-                            tabIndex={0}
-                            role='button'
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>Finish payment</TooltipContent>
-                      </Tooltip>
-                    )}
-                    {!order.paymentStatus && order.orderStatus === 'placed' && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <X
-                            aria-label='Cancel order'
-                            onClick={() => setCancelOrderId(order._id)}
-                            onKeyDown={(event) =>
-                              handleIconKeyDown(event, () => setCancelOrderId(order._id))
-                            }
-                            aria-disabled={cancelingOrder === order._id}
-                            className={`size-6 cursor-pointer align-middle text-red-600 transition-colors hover:text-red-700 ${cancelingOrder === order._id ? 'pointer-events-none opacity-50' : ''}`}
-                            tabIndex={cancelingOrder === order._id ? -1 : 0}
-                            role='button'
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>Cancel order</TooltipContent>
-                      </Tooltip>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+    <>
+      <TanStackDataTable
+        columns={ordersTableColumns}
+        data={orders}
+        tableKey='my-orders'
+        searchPlaceholder='Search orders by ID, email, status, or payment...'
+        emptyMessage='No orders found.'
+        initialSorting={[{ id: 'createdAt', desc: true }]}
+        minWidthClassName='min-w-[900px]'
+        columnLabels={orderColumnLabels}
+      />
 
       <AlertDialog
         open={Boolean(cancelOrderId)}
@@ -366,7 +387,7 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </>
   );
 };
 

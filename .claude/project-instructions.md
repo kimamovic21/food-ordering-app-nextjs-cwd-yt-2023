@@ -4,6 +4,7 @@
 
 - Framework: Next.js 16 App Router + React 19 + TypeScript
 - Client data cache: TanStack Query
+- Data-table UX: TanStack Table through `components/shared/TanStackDataTable.tsx`
 - URL state: nuqs
 - Command UI: cmdk
 - Client error fallback: react-error-boundary
@@ -25,6 +26,7 @@
 - Preserve existing API shapes unless explicitly requested.
 - Reuse helpers in `libs/` before adding new utilities.
 - Use TanStack Query for client-side server state that benefits from cache, refetch, invalidation, optimistic updates, or polling. Keep message inbox/thread views, favorite ID/list views, and shared keys in `libs/queryKeys.ts`.
+- Use TanStack Table for larger list UIs that need search, sorting, pagination, or column visibility. Use simple mode without toolbar/pagination for small read-only detail tables such as order items. Keep mutations and row actions in the owning screen component.
 - `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed filters, sorting, search, selected ticket links, report periods, and pagination when the state should survive refresh/share.
 - `components/shared/AppCommandPalette.tsx` uses `cmdk`; add important new routes/actions there when adding major navigation surfaces.
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client recovery, not API validation.

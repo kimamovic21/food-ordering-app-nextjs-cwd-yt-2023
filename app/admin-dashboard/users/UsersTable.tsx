@@ -1,15 +1,15 @@
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Pencil } from 'lucide-react';
+'use client';
+
 import Link from 'next/link';
+import { Pencil } from 'lucide-react';
+
+import {
+  createDataTableColumnHelper,
+  TanStackDataTable,
+  type DataTableColumnDef,
+} from '@/components/shared/TanStackDataTable';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 type UserRow = {
   _id: string;
@@ -22,99 +22,138 @@ type UserRow = {
   postalCode?: string;
   streetAddress?: string;
   role?: string;
-  admin?: boolean; // some APIs return boolean admin instead of string role
+  admin?: boolean;
 };
 
 type UsersTableProps = {
   users: UserRow[];
 };
 
+const columnHelper = createDataTableColumnHelper<UserRow>();
+
+function getUserRole(user: UserRow) {
+  return (user.role || (user.admin ? 'admin' : 'user')).toLowerCase();
+}
+
+function RoleBadge({ role }: { role: string }) {
+  const label = role.charAt(0).toUpperCase() + role.slice(1);
+  const className =
+    role === 'admin'
+      ? 'bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-100'
+      : role === 'courier'
+        ? 'bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-100'
+        : '';
+
+  return (
+    <Badge variant='secondary' className={`${className} capitalize`}>
+      {label}
+    </Badge>
+  );
+}
+
+const usersTableColumns = columnHelper.columns([
+  columnHelper.accessor((user) => user._id, {
+    id: 'id',
+    header: 'ID',
+    cell: ({ row }) => (
+      <span className='font-mono text-xs text-muted-foreground'>{row.original._id.slice(-8)}</span>
+    ),
+  }),
+  columnHelper.display({
+    id: 'photo',
+    header: 'Photo',
+    cell: ({ row }) => (
+      <Avatar className='size-12'>
+        <AvatarImage
+          src={row.original.image || '/user-default-image.webp'}
+          alt={`${row.original.name}'s avatar`}
+          referrerPolicy='no-referrer'
+        />
+        <AvatarFallback className='text-xs text-gray-400 dark:text-gray-500'>
+          {row.original.name?.charAt(0).toUpperCase() || 'U'}
+        </AvatarFallback>
+      </Avatar>
+    ),
+    enableGlobalFilter: false,
+    enableSorting: false,
+  }),
+  columnHelper.accessor((user) => user.name, {
+    id: 'name',
+    header: 'Name',
+    cell: ({ getValue }) => <span className='font-semibold'>{getValue()}</span>,
+  }),
+  columnHelper.accessor((user) => user.email, {
+    id: 'email',
+    header: 'Email',
+    cell: ({ getValue }) => <span className='text-muted-foreground'>{getValue()}</span>,
+  }),
+  columnHelper.accessor((user) => getUserRole(user), {
+    id: 'role',
+    header: 'Role',
+    cell: ({ row }) => <RoleBadge role={getUserRole(row.original)} />,
+  }),
+  columnHelper.accessor((user) => user.phone || '', {
+    id: 'phone',
+    header: 'Phone',
+    cell: ({ getValue }) => <span className='text-muted-foreground'>{getValue() || '-'}</span>,
+  }),
+  columnHelper.accessor((user) => user.streetAddress || '', {
+    id: 'streetAddress',
+    header: 'Street address',
+    cell: ({ getValue }) => <span className='text-muted-foreground'>{getValue() || '-'}</span>,
+  }),
+  columnHelper.accessor((user) => [user.city, user.postalCode].filter(Boolean).join(' '), {
+    id: 'cityPostal',
+    header: 'City / Postal',
+    cell: ({ getValue }) => <span className='text-muted-foreground'>{getValue() || '-'}</span>,
+  }),
+  columnHelper.accessor((user) => user.country || '', {
+    id: 'country',
+    header: 'Country',
+    cell: ({ getValue }) => <span className='text-muted-foreground'>{getValue() || '-'}</span>,
+  }),
+  columnHelper.display({
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => (
+      <Link
+        href={`/admin-dashboard/users/${row.original._id}`}
+        aria-label='Edit user'
+        className='inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-primary/10 hover:text-primary'
+      >
+        <Pencil className='size-4' aria-hidden='true' />
+      </Link>
+    ),
+    enableGlobalFilter: false,
+    enableHiding: false,
+    enableSorting: false,
+  }),
+]) satisfies DataTableColumnDef<UserRow>[];
+
+const userColumnLabels = {
+  actions: 'Actions',
+  cityPostal: 'City / Postal',
+  country: 'Country',
+  email: 'Email',
+  id: 'ID',
+  name: 'Name',
+  phone: 'Phone',
+  photo: 'Photo',
+  role: 'Role',
+  streetAddress: 'Street address',
+};
+
 const UsersTable = ({ users }: UsersTableProps) => {
   return (
-    <div className='overflow-x-auto'>
-      <Table className='w-full min-w-[1200px] table-fixed'>
-        <TableHeader className='bg-muted text-left text-xs uppercase tracking-wide text-muted-foreground'>
-          <TableRow>
-            <TableHead className='p-3 w-32'>ID</TableHead>
-            <TableHead className='p-3 w-28'>Photo</TableHead>
-            <TableHead className='p-3 w-40'>Name</TableHead>
-            <TableHead className='p-3 w-56'>Email</TableHead>
-            <TableHead className='p-3 w-24'>Role</TableHead>
-            <TableHead className='p-3 w-36'>Phone</TableHead>
-            <TableHead className='p-3 w-52'>Street address</TableHead>
-            <TableHead className='p-3 w-44'>City / Postal</TableHead>
-            <TableHead className='p-3 w-44'>Country</TableHead>
-            <TableHead className='p-3 w-28'>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody className='divide-y divide-gray-100 dark:divide-gray-700'>
-          {users.map((user) => (
-            <TableRow
-              key={user._id}
-              className='bg-white hover:bg-gray-50 dark:bg-neutral-900 dark:hover:bg-neutral-800'
-            >
-              <TableCell className='p-3 text-gray-600 dark:text-gray-400 text-sm font-mono'>
-                {user._id.slice(-8)}
-              </TableCell>
-              <TableCell className='p-3'>
-                <Avatar className='size-12'>
-                  <AvatarImage
-                    src={user.image || '/user-default-image.webp'}
-                    alt={`${user.name}'s avatar`}
-                    referrerPolicy='no-referrer'
-                  />
-                  <AvatarFallback className='text-gray-400 dark:text-gray-500 text-xs'>
-                    {user.name?.charAt(0).toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              </TableCell>
-              <TableCell className='p-3 font-semibold text-gray-900 dark:text-gray-100'>
-                {user.name}
-              </TableCell>
-              <TableCell className='p-3 text-gray-700 dark:text-gray-300'>{user.email}</TableCell>
-              <TableCell className='p-3'>
-                {(() => {
-                  const role = (user.role || (user.admin ? 'admin' : 'user')).toLowerCase();
-                  const label = role.charAt(0).toUpperCase() + role.slice(1);
-
-                  let className = 'capitalize';
-                  if (role === 'admin') {
-                    className +=
-                      ' bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-100';
-                  } else if (role === 'courier') {
-                    className +=
-                      ' bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-100';
-                  }
-
-                  return (
-                    <Badge variant='secondary' className={className}>
-                      {label}
-                    </Badge>
-                  );
-                })()}
-              </TableCell>
-              <TableCell className='p-3 text-gray-700 dark:text-gray-300'>
-                {user.phone || '—'}
-              </TableCell>
-              <TableCell className='p-3 text-gray-700 dark:text-gray-300'>
-                {user.streetAddress || '—'}
-              </TableCell>
-              <TableCell className='p-3 text-gray-700 dark:text-gray-300'>
-                {[user.city, user.postalCode].filter(Boolean).join(' ') || '—'}
-              </TableCell>
-              <TableCell className='p-3 text-gray-700 dark:text-gray-300'>
-                <span className='pr-4'>{user.country || '—'}</span>
-              </TableCell>
-              <TableCell className='p-3'>
-                <Link href={`/admin-dashboard/users/${user._id}`}>
-                  <Pencil className='size-4' />
-                </Link>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <TanStackDataTable
+      columns={usersTableColumns}
+      data={users}
+      tableKey='admin-users'
+      searchPlaceholder='Search users by name, email, role, or city...'
+      emptyMessage='No users found.'
+      minWidthClassName='min-w-[1200px]'
+      columnLabels={userColumnLabels}
+    />
   );
 };
 

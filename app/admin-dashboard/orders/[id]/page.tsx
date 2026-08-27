@@ -371,6 +371,11 @@ const OrderDetailPage = () => {
   const handleStatusUpdate = async () => {
     if (!order) return;
 
+    if (selectedStatus === getEditableStatus(order.orderStatus)) {
+      setStatusError('');
+      return;
+    }
+
     if (!order.paymentStatus) {
       setStatusError('Payment must be completed before updating order status.');
       return;
@@ -746,6 +751,15 @@ const OrderDetailPage = () => {
       : 0;
   const showReadyWithoutCourierWarning = readyWithoutCourierMinutes >= 15;
   const totalTimelineOffsetMinutes = getOrderTimelineTotalOffsetMinutes(timelineOffsets);
+  const isStatusLocked =
+    order.orderStatus === 'ready' ||
+    order.orderStatus === 'transportation' ||
+    order.orderStatus === 'delivered' ||
+    order.orderStatus === 'completed' ||
+    order.orderStatus === 'canceled';
+  const hasSelectedStatusChanged = selectedStatus !== getEditableStatus(order.orderStatus);
+  const isStatusSaveDisabled =
+    statusUpdating || !order.paymentStatus || isStatusLocked || !hasSelectedStatusChanged;
 
   return (
     <section className='mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10'>
@@ -856,15 +870,7 @@ const OrderDetailPage = () => {
                 <Select
                   value={selectedStatus}
                   onValueChange={(value) => setSelectedStatus(value as typeof selectedStatus)}
-                  disabled={
-                    !order.paymentStatus ||
-                    statusUpdating ||
-                    order.orderStatus === 'ready' ||
-                    order.orderStatus === 'transportation' ||
-                    order.orderStatus === 'delivered' ||
-                    order.orderStatus === 'completed' ||
-                    order.orderStatus === 'canceled'
-                  }
+                  disabled={!order.paymentStatus || statusUpdating || isStatusLocked}
                 >
                   <SelectTrigger className='w-full'>
                     <SelectValue placeholder='Select status' />
@@ -897,15 +903,7 @@ const OrderDetailPage = () => {
               </div>
               <Button
                 onClick={handleStatusUpdate}
-                disabled={
-                  statusUpdating ||
-                  !order.paymentStatus ||
-                  order.orderStatus === 'ready' ||
-                  order.orderStatus === 'transportation' ||
-                  order.orderStatus === 'delivered' ||
-                  order.orderStatus === 'completed' ||
-                  order.orderStatus === 'canceled'
-                }
+                disabled={isStatusSaveDisabled}
                 className='w-full mt-4'
               >
                 {statusUpdating ? 'Updating...' : 'Save status'}

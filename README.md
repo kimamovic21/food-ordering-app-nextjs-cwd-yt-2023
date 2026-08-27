@@ -18,6 +18,7 @@ It includes:
 - notifications center with unread counts, mark-as-read actions, and role-aware routing
 - SSE-backed live refresh for notifications, order status screens, courier assignment, and admin order queues with polling kept as fallback
 - TanStack Query caching for shared profile data, favorites, sound settings, and global message/notification unread state
+- TanStack Table-powered searchable, sortable, paginated data tables for high-traffic order and user lists
 - Vercel Web Analytics for production traffic insights
 - admin dashboard for users, menu items, categories, restaurants, restaurant reports, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, and courier ratings views
@@ -49,7 +50,7 @@ It includes:
 - Reorder previous orders from order history, order details, restaurant details, or favorite restaurants after current menu item availability and prices are revalidated
 - Report-problem action on order details, creating support tickets for restaurant support or app support
 - Social sharing actions for restaurant/menu pages
-- Message inbox at `/messages` and direct thread view at `/messages/[participantId]`
+- Message inbox and selected thread view at `/messages`
 
 ### Admin and Staff Features
 
@@ -100,6 +101,7 @@ This project uses many dependencies; below are the main packages actively used i
 - Radix UI: [https://www.radix-ui.com/](https://www.radix-ui.com/)
 - shadcn/ui: [https://ui.shadcn.com/](https://ui.shadcn.com/)
 - TanStack Query: [https://tanstack.com/query/latest](https://tanstack.com/query/latest)
+- TanStack Table: [https://tanstack.com/table/latest](https://tanstack.com/table/latest)
 - nuqs: [https://nuqs.dev/](https://nuqs.dev/)
 - cmdk: [https://cmdk.paco.me/](https://cmdk.paco.me/)
 - Lucide React: [https://lucide.dev/](https://lucide.dev/)
@@ -209,6 +211,14 @@ This project uses many dependencies; below are the main packages actively used i
 - Favorite toggle buttons update `queryKeys.favorites` optimistically, then invalidate the same favorite group so menu cards, restaurant cards, and favorite pages stay in sync.
 - Existing route handlers remain the source of truth. TanStack Query should not replace API authorization, MongoDB validation, checkout validation, or webhook idempotency.
 - Prefer TanStack Query for future client screens with server data that needs loading state, refetching, cache invalidation, polling, or window-focus refresh.
+
+### TanStack Table
+
+- `components/shared/TanStackDataTable.tsx` provides the shared headless table wrapper for searchable, sortable, paginated UI tables.
+- `components/shared/OrderItemsDataTable.tsx` provides the simple TanStack-powered order item table used inside order detail cards.
+- Current rollout uses TanStack Table on `/admin-dashboard/orders`, `/admin-dashboard/users`, `/admin-dashboard/audit-logs`, `/my-orders`, `/admin-dashboard/orders/[id]`, and `/my-orders/[id]`.
+- Keep order/payment/reorder/cancel handlers in the owning screen component; use the table wrapper only for presentation, filtering, sorting, pagination, and column visibility.
+- Prefer TanStack Table for larger admin/customer lists. For small detail tables, use the simple mode without toolbar or pagination when a clean read-only table is better.
 
 ### Frontend Utility Packages
 
