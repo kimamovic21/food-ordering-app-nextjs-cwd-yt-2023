@@ -9,7 +9,7 @@ alwaysApply: true
 
 ## Project Conventions
 
-- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend, Upstash Redis, date-fns, TanStack Query, nuqs, cmdk, Vercel Web Analytics, Sentry.
+- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend, Upstash Redis, date-fns, TanStack Query, TanStack Table, nuqs, cmdk, Vercel Web Analytics, Sentry.
 - Prefer small, incremental changes.
 - Before implementing a new feature or non-trivial app logic, create or switch to a dedicated local feature branch from `main` unless the user explicitly asks to work on the current branch.
 - Follow existing patterns in `app/`, `libs/`, `models/`, `components/`, and `contexts/`.
@@ -28,6 +28,7 @@ alwaysApply: true
 - Preserve order timing fields and snapshots for preparation/delivery estimates and timeline UI.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Use TanStack Query for client-side server state that needs cache, refetch, invalidation, optimistic updates, or polling. Keep message inbox/thread views, favorite ID/list views, and shared keys in `libs/queryKeys.ts`.
+- Use TanStack Table through `components/shared/TanStackDataTable.tsx` for larger list UIs that need search, sorting, pagination, or column visibility. Use simple mode without toolbar/pagination for small read-only detail tables such as order items. Keep mutations and row actions in the owning screen component.
 - `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed filters, sorting, search, selected ticket links, report periods, and pagination when users should be able to refresh or share the same view.
 
 ## Security And Integrations

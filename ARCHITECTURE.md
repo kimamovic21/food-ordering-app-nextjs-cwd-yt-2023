@@ -21,11 +21,13 @@ flowchart LR
   Maps[Leaflet Maps]
   SSE[SSE Streams]
   Query[TanStack Query Cache]
+  Tables[TanStack Table UI]
   Sentry[Sentry Monitoring]
   Analytics[Vercel Web Analytics]
 
   Browser --> NextApp
   Browser --> Query
+  Browser --> Tables
   Query --> Api
   NextApp --> Api
   Api --> Mongo
@@ -62,9 +64,12 @@ flowchart LR
 - `AppCommandPalette` uses `cmdk` for global route/action search from the header or `Ctrl/Cmd + K`.
 - `AppErrorBoundary` uses `react-error-boundary` and sends caught render errors to Sentry.
 - `Analytics` from `@vercel/analytics/next` records production traffic on Vercel.
+- `TanStackDataTable` uses TanStack Table for reusable searchable, sortable, paginated data-table UI.
 - `sharp` is installed for Next.js image optimization and is used automatically by the framework.
 
 `nuqs` is currently used where refreshed or shared URLs should preserve UI state: public menu filters, restaurant menu filters, restaurants search/page, customer orders, customer reports, admin orders, admin users, admin menu items, support ticket filters, and restaurant report period/date filters.
+
+TanStack Table is currently used for larger list views that benefit from client-side search, sorting, pagination, and column visibility controls: `/admin-dashboard/orders`, `/admin-dashboard/users`, `/admin-dashboard/audit-logs`, and `/my-orders`. Order detail item tables on `/admin-dashboard/orders/[id]` and `/my-orders/[id]` use a simple TanStack mode without toolbar or pagination so the read-only receipt-style layout stays quiet.
 
 ## Application Areas
 

@@ -4,7 +4,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 
 ## Project Summary
 
-- Frontend: Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, Radix, Recharts, TanStack Query, nuqs, cmdk, and react-error-boundary.
+- Frontend: Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, Radix, Recharts, TanStack Query, TanStack Table, nuqs, cmdk, and react-error-boundary.
 - Backend: Next.js route handlers in app/api with Mongoose models in models/.
 - Auth: NextAuth with MongoDB adapter and Google OAuth.
 - Payments: Stripe Checkout, payment-link endpoint, and webhook processing.
@@ -16,6 +16,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - Rate limiting: Upstash Redis stores short-lived counters for sensitive auth, checkout, support, and AI routes.
 - Sharing: `react-share` is used for social share actions.
 - Client data cache: TanStack Query powers shared profile data, favorite IDs/lists, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
+- Data tables: TanStack Table powers shared searchable, sortable, paginated table UI through `components/shared/TanStackDataTable.tsx`.
 - Dates: `date-fns` is used through `libs/dateFormat.ts` for UI, email, and PDF date formatting.
 - Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`; Vercel Web Analytics is mounted from `@vercel/analytics/next` in `app/layout.tsx`.
 
@@ -90,6 +91,7 @@ See `example.env`. Variables currently used in the project include:
 - Order notifications can include ETA-style phase copy, late active-order alerts should point admins toward the order queue, and failed-delivery review notifications should point restaurant admins to `/admin-dashboard/orders/[id]`.
 - Realtime updates use SSE with polling fallback: `/api/messages/stream` and `/api/notifications/stream` push events only to the signed-in participant/recipient, and clients should still refresh existing JSON endpoints as the source of truth.
 - TanStack Query should be used for client-side server data that benefits from cache, refetch, invalidation, optimistic updates, or polling. Keep query keys in `libs/queryKeys.ts`; use `queryKeys.favorites` for favorite ID/list invalidation and SSE events to invalidate query keys instead of duplicating source-of-truth state.
+- TanStack Table should be used through `components/shared/TanStackDataTable.tsx` for larger list UIs that need search, sorting, pagination, or column visibility. Use simple mode without toolbar/pagination for small read-only detail tables such as order items. Keep page-specific mutations and business actions in the owning component, not in the shared table wrapper.
 - `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed client state such as filters, sort, search, selected ticket links, periods, and pagination when shareable URLs matter.
 - `components/shared/AppCommandPalette.tsx` uses `cmdk`; add new important routes/actions there when adding major navigation surfaces.
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it as client recovery, not API validation.
