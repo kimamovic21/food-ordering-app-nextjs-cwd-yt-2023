@@ -237,7 +237,7 @@ const MenuItemForm = ({
               <>
                 <div>
                   <Label htmlFor='priceSmall' className='mb-1 block text-xs'>
-                    Price 1
+                    Small
                   </Label>
                   <div className='relative'>
                     <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>
@@ -259,7 +259,7 @@ const MenuItemForm = ({
 
                 <div>
                   <Label htmlFor='priceMedium' className='mb-1 block text-xs'>
-                    Price 2
+                    Large
                   </Label>
                   <div className='relative'>
                     <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground'>

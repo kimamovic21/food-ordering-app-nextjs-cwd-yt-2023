@@ -43,7 +43,7 @@ alwaysApply: true
 - Prefer invalidating TanStack Query keys from SSE handlers instead of manually duplicating cached server state.
 - `components/shared/AppCommandPalette.tsx` uses `cmdk`; add important new routes/actions there when adding major navigation surfaces.
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client recovery, not API validation.
-- Keep Sentry instrumentation files intact. `NEXT_PUBLIC_SENTRY_DSN` is public, but `SENTRY_AUTH_TOKEN` is a build-time secret for source maps and must never enter client code.
+- Keep Sentry instrumentation files intact. `NEXT_PUBLIC_SENTRY_DSN` is public, but `SENTRY_AUTH_TOKEN` is a build-time secret for source maps and must never enter client code. Session Replay should stay disabled in development and only run in production for sampled error sessions.
 - Keep Stripe webhook handling idempotent.
 
 ## High-Risk Areas

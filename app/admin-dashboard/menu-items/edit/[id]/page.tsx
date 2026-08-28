@@ -278,7 +278,9 @@ const EditMenuItemPage = () => {
           color: 'white',
         },
       });
-      router.push('/admin-dashboard/menu-items');
+      setImage(imageUrl || '');
+      setImagePreview(imageUrl || '');
+      setImageFile(null);
     } catch (err) {
       console.error(err);
       sonnerToast.error('Failed to update menu item', {
