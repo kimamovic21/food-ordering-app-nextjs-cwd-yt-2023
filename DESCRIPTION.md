@@ -362,6 +362,7 @@ Large operational lists use TanStack Table through `components/shared/TanStackDa
 Current TanStack Table screens:
 
 - `/admin-dashboard/audit-logs`
+- `/admin-dashboard/menu-items`
 - `/admin-dashboard/orders`
 - `/admin-dashboard/orders/[id]`
 - `/admin-dashboard/users`
@@ -413,7 +414,7 @@ Restaurant report rules:
 - Upstash Redis: short-lived rate-limit counters for sensitive auth, checkout, support, and AI routes.
 - Leaflet: map rendering and courier tracking UI.
 - TanStack Query: client-side server-data cache for shared profile data, favorite IDs/lists, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
-- TanStack Table: headless table state for searchable, sortable, paginated order and user list UIs.
+- TanStack Table: headless table state for searchable, sortable, paginated admin and order list UIs.
 - nuqs: URL-backed client state for shareable filters, search, sort, selected ticket links, periods, and pagination across menu, restaurant, orders, users, reports, and support pages.
 - cmdk: global command palette for quick route and action navigation from the header or `Ctrl/Cmd + K`.
 - sharp: Next.js production image optimization dependency used automatically by the framework.

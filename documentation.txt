@@ -1137,3 +1137,5 @@ Improve messages center with query caching
 Cache favorites with TanStack Query
 
 Migrate app tables to TanStack Table
+
+Improve admin tables with TanStack UI

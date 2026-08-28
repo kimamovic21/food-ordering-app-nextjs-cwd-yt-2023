@@ -55,6 +55,7 @@ This file provides guidance for AI assistance in this repository.
 - `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed filters, sorting, pagination, selected ticket links, periods, and other shareable client state.
 - `components/shared/AppCommandPalette.tsx` uses `cmdk`; add important new routes/actions there when adding major navigation surfaces.
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client-side recovery, not API validation.
+- Keep Sentry Session Replay disabled in development; browser replay should stay production-only and sampled on error sessions to protect quota.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Keep payment and webhook flows idempotent.
 - Keep receipt email generation in server code.

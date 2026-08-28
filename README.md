@@ -18,7 +18,7 @@ It includes:
 - notifications center with unread counts, mark-as-read actions, and role-aware routing
 - SSE-backed live refresh for notifications, order status screens, courier assignment, and admin order queues with polling kept as fallback
 - TanStack Query caching for shared profile data, favorites, sound settings, and global message/notification unread state
-- TanStack Table-powered searchable, sortable, paginated data tables for high-traffic order and user lists
+- TanStack Table-powered searchable, sortable, paginated data tables for high-traffic admin and order lists
 - Vercel Web Analytics for production traffic insights
 - admin dashboard for users, menu items, categories, restaurants, restaurant reports, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, and courier ratings views
@@ -31,7 +31,7 @@ It includes:
 - email purchase receipts with Resend + React Email
 - AI-assisted menu item descriptions for admin create/edit flows
 - Upstash Redis-backed rate limiting for sensitive auth, checkout, support, and AI endpoints
-- Sentry error monitoring, tracing, and privacy-masked Session Replay for production debugging
+- Sentry error monitoring, tracing, and production-only error-sampled privacy-masked Session Replay
 
 ## Key Features
 
@@ -176,7 +176,7 @@ This project uses many dependencies; below are the main packages actively used i
 - Sentry is configured through `instrumentation-client.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `instrumentation.ts`.
 - `app/global-error.tsx` captures root App Router render errors.
 - `/sentry-example-page` and `/api/sentry-example` are development-only verification helpers.
-- Client replay is privacy-conservative: text and inputs are masked and media is blocked.
+- Client replay is production-only and error-sampled to protect quota; text and inputs are masked and media is blocked.
 - Production source maps require `SENTRY_AUTH_TOKEN` at build time so stack traces point back to original TypeScript/TSX files.
 
 ### AI Menu Description Assistant
@@ -216,7 +216,7 @@ This project uses many dependencies; below are the main packages actively used i
 
 - `components/shared/TanStackDataTable.tsx` provides the shared headless table wrapper for searchable, sortable, paginated UI tables.
 - `components/shared/OrderItemsDataTable.tsx` provides the simple TanStack-powered order item table used inside order detail cards.
-- Current rollout uses TanStack Table on `/admin-dashboard/orders`, `/admin-dashboard/users`, `/admin-dashboard/audit-logs`, `/my-orders`, `/admin-dashboard/orders/[id]`, and `/my-orders/[id]`.
+- Current rollout uses TanStack Table on `/admin-dashboard/orders`, `/admin-dashboard/users`, `/admin-dashboard/menu-items`, `/admin-dashboard/audit-logs`, `/my-orders`, `/admin-dashboard/orders/[id]`, and `/my-orders/[id]`.
 - Keep order/payment/reorder/cancel handlers in the owning screen component; use the table wrapper only for presentation, filtering, sorting, pagination, and column visibility.
 - Prefer TanStack Table for larger admin/customer lists. For small detail tables, use the simple mode without toolbar or pagination when a clean read-only table is better.
 

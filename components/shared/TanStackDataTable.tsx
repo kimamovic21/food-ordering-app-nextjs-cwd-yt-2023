@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, type ReactNode } from 'react';
+import { useCallback, useId, useMemo, useState, type ReactNode } from 'react';
 import {
   columnFilteringFeature,
   columnVisibilityFeature,
@@ -21,6 +21,7 @@ import {
   type CellData,
   type ColumnDef,
   type ColumnVisibilityState,
+  type FilterFn,
   type PaginationState,
   type RowData,
   type SortingState,
@@ -47,7 +48,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -94,12 +94,36 @@ export type DataTableColumnDef<TData extends RowData> = ColumnDef<
 export const createDataTableColumnHelper = <TData extends RowData>() =>
   createColumnHelper<typeof dataTableFeatures, TData>();
 
+const normalizeTableSearchValue = (value: unknown) =>
+  String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/(.)\1+/g, '$1');
+
+const createTolerantIncludesStringFilter = <TData extends RowData>() => {
+  const filterFn: FilterFn<typeof dataTableFeatures, TData> = (row, columnId, filterValue) => {
+    const normalizedFilter = normalizeTableSearchValue(filterValue);
+
+    if (!normalizedFilter) {
+      return true;
+    }
+
+    return normalizeTableSearchValue(row.getValue(columnId)).includes(normalizedFilter);
+  };
+
+  filterFn.autoRemove = (value) => !String(value ?? '').trim();
+
+  return filterFn;
+};
+
 type TanStackDataTableProps<TData extends RowData> = {
   columns: DataTableColumnDef<TData>[];
   data: TData[];
   tableKey: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
+  globalFilter?: string;
   initialPageSize?: number;
   initialSorting?: SortingState;
   minWidthClassName?: string;
@@ -109,6 +133,7 @@ type TanStackDataTableProps<TData extends RowData> = {
   getRowClassName?: (row: TData) => string;
   getHeaderClassName?: (columnId: string) => string;
   getCellClassName?: (columnId: string, row: TData) => string;
+  onGlobalFilterChange?: (value: string) => void;
   showToolbar?: boolean;
   showSearch?: boolean;
   showColumnVisibility?: boolean;
@@ -137,6 +162,7 @@ export function TanStackDataTable<TData extends RowData>({
   tableKey,
   searchPlaceholder = 'Search table...',
   emptyMessage = 'No results found.',
+  globalFilter: controlledGlobalFilter,
   initialPageSize = 10,
   initialSorting = [],
   minWidthClassName = 'min-w-[760px]',
@@ -146,6 +172,7 @@ export function TanStackDataTable<TData extends RowData>({
   getRowClassName,
   getHeaderClassName,
   getCellClassName,
+  onGlobalFilterChange,
   showToolbar = true,
   showSearch = true,
   showColumnVisibility = true,
@@ -157,8 +184,34 @@ export function TanStackDataTable<TData extends RowData>({
     pageIndex: 0,
     pageSize: initialPageSize,
   });
-  const [globalFilter, setGlobalFilter] = useState('');
+  const [internalGlobalFilter, setInternalGlobalFilter] = useState('');
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>({});
+  const globalFilter = controlledGlobalFilter ?? internalGlobalFilter;
+  const globalFilterFn = useMemo(() => createTolerantIncludesStringFilter<TData>(), []);
+  const setGlobalFilter = useCallback(
+    (updaterOrValue: unknown) => {
+      const nextValue =
+        typeof updaterOrValue === 'function'
+          ? (updaterOrValue as (oldValue: string) => unknown)(globalFilter)
+          : updaterOrValue;
+      const nextGlobalFilter = typeof nextValue === 'string' ? nextValue : String(nextValue ?? '');
+
+      if (controlledGlobalFilter === undefined) {
+        setInternalGlobalFilter(nextGlobalFilter);
+      }
+
+      if (showPagination) {
+        setPagination((currentPagination) =>
+          currentPagination.pageIndex === 0
+            ? currentPagination
+            : { ...currentPagination, pageIndex: 0 }
+        );
+      }
+
+      onGlobalFilterChange?.(nextGlobalFilter);
+    },
+    [controlledGlobalFilter, globalFilter, onGlobalFilterChange, showPagination]
+  );
   const tablePagination = showPagination
     ? pagination
     : {
@@ -178,7 +231,7 @@ export function TanStackDataTable<TData extends RowData>({
         pagination: tablePagination,
         sorting,
       },
-      globalFilterFn: filterFn_includesString,
+      globalFilterFn,
       onColumnVisibilityChange: setColumnVisibility,
       onGlobalFilterChange: setGlobalFilter,
       onPaginationChange: showPagination ? setPagination : () => undefined,
@@ -209,23 +262,26 @@ export function TanStackDataTable<TData extends RowData>({
                 <label className='sr-only' htmlFor={searchInputId}>
                   Search
                 </label>
-                <div className='relative w-full max-w-md'>
+                <div className='flex h-11 w-full max-w-md items-center rounded-full border border-white/15 bg-background/80 px-4 transition focus-within:border-primary/45 dark:bg-background/80'>
                   <Search
-                    className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground'
+                    className='pointer-events-none size-4 shrink-0 text-muted-foreground'
                     aria-hidden='true'
                   />
-                  <Input
+                  <input
                     id={searchInputId}
+                    type='text'
+                    data-slot='input'
                     value={globalFilter}
                     onChange={(event) => setGlobalFilter(event.target.value)}
                     placeholder={searchPlaceholder}
-                    className='h-11 rounded-full border-white/15 bg-background/70 pl-9 pr-10'
+                    className='h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-sm text-foreground caret-primary outline-none placeholder:text-muted-foreground dark:text-white'
                   />
                   {globalFilter ? (
                     <button
                       type='button'
+                      data-slot='button'
                       onClick={() => setGlobalFilter('')}
-                      className='absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition hover:bg-white/10 hover:text-foreground'
+                      className='grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-muted-foreground transition hover:bg-white/10 hover:text-foreground'
                       aria-label='Clear search'
                     >
                       <X className='size-4' aria-hidden='true' />

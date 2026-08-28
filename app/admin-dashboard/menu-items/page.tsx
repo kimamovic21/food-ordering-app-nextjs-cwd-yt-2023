@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { parseAsString, useQueryState } from 'nuqs';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,6 @@ import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import MenuItems from './MenuItems';
-import SearchInput from './SearchInput';
 
 interface MenuItem {
   _id: string;
@@ -16,6 +15,7 @@ interface MenuItem {
   name: string;
   description: string;
   category?: { _id: string; name: string } | string;
+  priceType?: string;
   priceSmall: number;
   priceMedium: number;
   priceLarge: number;
@@ -43,9 +43,7 @@ const MenuItemsListPage = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useQueryState('q', parseAsString.withDefault(''));
-  const activeSearch = searchQuery.trim();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Immediately clear data when user changes
@@ -53,15 +51,10 @@ const MenuItemsListPage = () => {
     if (data?._id !== currentUserId) {
       setMenuItems([]);
       setCategories([]);
-      setSearchInput('');
       setIsLoading(true);
       setCurrentUserId(data?._id || null);
     }
   }, [data?._id, currentUserId]);
-
-  useEffect(() => {
-    setSearchInput(activeSearch);
-  }, [activeSearch]);
 
   const fetchData = useCallback(async () => {
     const startTime = Date.now();
@@ -186,35 +179,12 @@ const MenuItemsListPage = () => {
     }
   };
 
-  const handleSearch = () => {
-    const trimmedSearch = searchInput.trim();
-    void setSearchQuery(trimmedSearch || null);
-  };
-
-  const handleReset = () => {
-    setSearchInput('');
-    void setSearchQuery(null);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  const filteredItems = useMemo(() => {
-    // Don't return any items if we're loading or user is changing
-    if (isLoading || data?._id !== currentUserId) return [];
-
-    if (!activeSearch) return menuItems;
-
-    const searchLower = activeSearch.toLowerCase();
-    return menuItems.filter(
-      (item) =>
-        item.name.toLowerCase().includes(searchLower) ||
-        item.description.toLowerCase().includes(searchLower)
-    );
-  }, [menuItems, activeSearch, isLoading, data?._id, currentUserId]);
+  const handleTableSearchChange = useCallback(
+    (value: string) => {
+      void setSearchQuery(value.trim() ? value : null);
+    },
+    [setSearchQuery]
+  );
 
   // Show skeleton when loading OR when user has changed but data hasn't loaded yet
   const showSkeleton = loading || isLoading || data?._id !== currentUserId;
@@ -277,38 +247,57 @@ const MenuItemsListPage = () => {
             </div>
           </div>
 
-          {[1, 2, 3].map((section) => (
-            <div key={section} className='space-y-5'>
-              <div className='h-7 w-64 md:w-80 bg-muted animate-pulse rounded-md' />
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {[1, 2, 3].map((card) => (
-                  <div
-                    key={card}
-                    className='rounded-xl border border-border/50 bg-muted/30 overflow-hidden flex flex-col'
-                  >
-                    <div className='h-52 w-full bg-muted animate-pulse' />
-                    <div className='p-4 space-y-3'>
-                      <div className='h-5 w-4/5 bg-muted animate-pulse rounded-md' />
-                      <div className='h-3 w-2/5 bg-muted animate-pulse rounded-md' />
-                      <div className='space-y-2'>
-                        <div className='h-3 w-full bg-muted animate-pulse rounded-md' />
-                        <div className='h-3 w-11/12 bg-muted animate-pulse rounded-md' />
-                      </div>
-                      <div className='flex gap-2 text-xs'>
-                        <div className='h-3 w-16 bg-muted animate-pulse rounded-md' />
-                        <div className='h-3 w-16 bg-muted animate-pulse rounded-md' />
-                        <div className='h-3 w-16 bg-muted animate-pulse rounded-md' />
-                      </div>
-                      <div className='flex gap-2 pt-2'>
-                        <div className='h-9 w-full bg-muted animate-pulse rounded-md' />
-                        <div className='h-9 w-full bg-muted animate-pulse rounded-md' />
-                      </div>
-                    </div>
-                  </div>
-                ))}
+          <div className='overflow-hidden rounded-xl border border-white/10 bg-card/70'>
+            <div className='flex flex-col gap-3 border-b border-white/10 p-4 md:flex-row md:items-center md:justify-between'>
+              <div className='h-11 w-full max-w-md animate-pulse rounded-full bg-muted' />
+              <div className='flex gap-2'>
+                <div className='h-9 w-28 animate-pulse rounded-full bg-muted' />
+                <div className='h-9 w-28 animate-pulse rounded-full bg-muted' />
+                <div className='h-10 w-28 animate-pulse rounded-full bg-muted' />
               </div>
             </div>
-          ))}
+            <div className='min-w-[940px] divide-y divide-white/10'>
+              <div className='grid grid-cols-[96px_360px_110px_176px_140px_90px] gap-4 px-4 py-4'>
+                {[1, 2, 3, 4, 5, 6].map((cell) => (
+                  <div key={cell} className='h-4 animate-pulse rounded-md bg-muted' />
+                ))}
+              </div>
+              {[1, 2, 3, 4, 5].map((row) => (
+                <div
+                  key={row}
+                  className='grid grid-cols-[96px_360px_110px_176px_140px_90px] items-center gap-4 px-4 py-5'
+                >
+                  <div className='h-16 w-20 animate-pulse rounded-md bg-muted' />
+                  <div className='space-y-3'>
+                    <div className='h-5 w-48 animate-pulse rounded-md bg-muted' />
+                    <div className='h-3 w-64 animate-pulse rounded-md bg-muted' />
+                    <div className='h-3 w-44 animate-pulse rounded-md bg-muted' />
+                  </div>
+                  <div className='h-5 w-20 animate-pulse rounded-md bg-muted' />
+                  <div className='space-y-2'>
+                    <div className='h-7 w-36 animate-pulse rounded-md bg-muted' />
+                    <div className='h-7 w-36 animate-pulse rounded-md bg-muted' />
+                    <div className='h-7 w-36 animate-pulse rounded-md bg-muted' />
+                  </div>
+                  <div className='space-y-2'>
+                    <div className='h-6 w-24 animate-pulse rounded-full bg-muted' />
+                    <div className='h-4 w-36 animate-pulse rounded-md bg-muted' />
+                  </div>
+                  <div className='flex gap-2'>
+                    <div className='size-9 animate-pulse rounded-full bg-muted' />
+                    <div className='size-9 animate-pulse rounded-full bg-muted' />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className='flex items-center justify-between border-t border-white/10 p-4'>
+              <div className='h-4 w-24 animate-pulse rounded-md bg-muted' />
+              <div className='flex gap-2'>
+                <div className='h-9 w-20 animate-pulse rounded-full bg-muted' />
+                <div className='h-9 w-24 animate-pulse rounded-full bg-muted' />
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <>
@@ -321,78 +310,16 @@ const MenuItemsListPage = () => {
             )}
           </div>
 
-          {/* Search Section */}
-          <div className='mb-8 max-w-2xl'>
-            <div className='flex gap-2 items-center'>
-              <div className='flex-1'>
-                <SearchInput
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  onSearch={handleSearch}
-                  onClear={() => setSearchInput('')}
-                  onKeyPress={handleKeyPress}
-                />
-              </div>
-              {activeSearch && (
-                <Button
-                  onClick={handleReset}
-                  variant='outline'
-                  className='gap-2 h-11 px-6'
-                  type='button'
-                >
-                  Reset
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Search Results Section */}
-          {activeSearch && (
-            <div className='mb-10'>
-              <div className='bg-muted/50 rounded-lg p-6'>
-                <div className='flex items-center justify-between mb-4'>
-                  <h2 className='text-2xl font-semibold'>
-                    Search Results for &quot;{activeSearch}&quot;
-                  </h2>
-                  <span className='text-sm text-muted-foreground'>
-                    {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'} found
-                  </span>
-                </div>
-
-                {filteredItems.length > 0 ? (
-                  <MenuItems
-                    menuItems={filteredItems}
-                    categories={categories}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onToggleAvailability={handleToggleAvailability}
-                    isAdmin={data?.role === 'admin'}
-                  />
-                ) : (
-                  <div className='text-center py-8'>
-                    <p className='text-muted-foreground'>
-                      No menu items found matching your search.
-                    </p>
-                    <Button onClick={handleReset} variant='outline' className='mt-4'>
-                      View All Menu Items
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Menu Items Section - Only show when not searching */}
-          {!activeSearch && (
-            <MenuItems
-              menuItems={menuItems}
-              categories={categories}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onToggleAvailability={handleToggleAvailability}
-              isAdmin={data?.role === 'admin'}
-            />
-          )}
+          <MenuItems
+            menuItems={menuItems}
+            categories={categories}
+            searchQuery={searchQuery}
+            onSearchChange={handleTableSearchChange}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onToggleAvailability={handleToggleAvailability}
+            isAdmin={data?.role === 'admin'}
+          />
         </>
       )}
     </section>

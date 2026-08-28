@@ -45,7 +45,7 @@
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.
 - Keep SSE realtime updates role-scoped and fallback-friendly; streams should signal clients to refresh existing source-of-truth JSON endpoints.
 - Prefer invalidating TanStack Query keys from SSE handlers instead of manually duplicating cached server state.
-- Keep Sentry instrumentation files and env vars aligned; `SENTRY_AUTH_TOKEN` is secret and only for source map uploads during builds.
+- Keep Sentry instrumentation files and env vars aligned; `SENTRY_AUTH_TOKEN` is secret and only for source map uploads during builds. Session Replay should stay disabled in development and only run in production for sampled error sessions.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 - Keep webhook and async job processing idempotent.
 - Never perform destructive DB changes without explicit approval.

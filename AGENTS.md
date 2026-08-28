@@ -18,7 +18,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - Client data cache: TanStack Query powers shared profile data, favorite IDs/lists, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
 - Data tables: TanStack Table powers shared searchable, sortable, paginated table UI through `components/shared/TanStackDataTable.tsx`.
 - Dates: `date-fns` is used through `libs/dateFormat.ts` for UI, email, and PDF date formatting.
-- Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`; Vercel Web Analytics is mounted from `@vercel/analytics/next` in `app/layout.tsx`.
+- Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`; browser Session Replay is production-only and sampled only on errors; Vercel Web Analytics is mounted from `@vercel/analytics/next` in `app/layout.tsx`.
 
 ## High-Level Features
 
@@ -95,7 +95,7 @@ See `example.env`. Variables currently used in the project include:
 - `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed client state such as filters, sort, search, selected ticket links, periods, and pagination when shareable URLs matter.
 - `components/shared/AppCommandPalette.tsx` uses `cmdk`; add new important routes/actions there when adding major navigation surfaces.
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it as client recovery, not API validation.
-- Keep Sentry instrumentation files intact. Sentry DSNs are allowed in browser config, but `SENTRY_AUTH_TOKEN` is a build secret used for source maps and must stay out of client code.
+- Keep Sentry instrumentation files intact. Sentry DSNs are allowed in browser config, but `SENTRY_AUTH_TOKEN` is a build secret used for source maps and must stay out of client code. Keep Session Replay disabled in development so local testing does not consume replay quota.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 
 ## AI Configuration Folders
