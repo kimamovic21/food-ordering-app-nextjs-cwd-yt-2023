@@ -14,6 +14,12 @@ const isPaid = (order: any) => Boolean(order.orderPaid ?? order.paymentStatus ??
 
 const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100;
 
+const canRecoverFromStripeSessionLookupError = (error: unknown) => {
+  const stripeError = error as { code?: string; statusCode?: number };
+
+  return stripeError?.code === 'resource_missing' || stripeError?.statusCode === 404;
+};
+
 const createCheckoutSessionForOrder = async (order: any, request: Request, email: string) => {
   const origin =
     request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -45,6 +51,23 @@ const createCheckoutSessionForOrder = async (order: any, request: Request, email
     success_url: `${origin}/checkout?status=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/checkout?status=cancelled`,
   });
+};
+
+const createAndSaveCheckoutSessionForOrder = async (
+  order: any,
+  request: Request,
+  email: string
+) => {
+  const stripeSession = await createCheckoutSessionForOrder(order, request, email);
+
+  if (!stripeSession.url) {
+    throw new Error('Stripe checkout URL is missing');
+  }
+
+  order.stripeSessionId = stripeSession.id;
+  await order.save();
+
+  return Response.json({ url: stripeSession.url });
 };
 
 export async function GET(request: Request) {
@@ -91,6 +114,10 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Canceled orders cannot be paid' }, { status: 400 });
   }
 
+  if (order.orderStatus !== 'placed') {
+    return Response.json({ error: 'Only placed unpaid orders can be paid' }, { status: 400 });
+  }
+
   if (user.restaurantId?.toString() === order.restaurantId?.toString()) {
     return Response.json(
       { error: 'You cannot pay for orders from your own restaurant' },
@@ -99,43 +126,52 @@ export async function GET(request: Request) {
   }
 
   if (!order.stripeSessionId) {
-    const stripeSession = await createCheckoutSessionForOrder(order, request, session.user.email);
+    try {
+      return await createAndSaveCheckoutSessionForOrder(order, request, session.user.email);
+    } catch (error) {
+      console.error('Error creating Stripe session:', error);
+      return Response.json({ error: 'Failed to create payment session' }, { status: 500 });
+    }
+  }
+
+  let stripeSession: Stripe.Checkout.Session;
+
+  try {
+    stripeSession = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
+  } catch (error) {
+    if (!canRecoverFromStripeSessionLookupError(error)) {
+      console.error('Error retrieving Stripe session:', error);
+      return Response.json({ error: 'Failed to create payment session' }, { status: 500 });
+    }
+
+    try {
+      return await createAndSaveCheckoutSessionForOrder(order, request, session.user.email);
+    } catch (createError) {
+      console.error('Error creating replacement Stripe session:', createError);
+      return Response.json({ error: 'Failed to create payment session' }, { status: 500 });
+    }
+  }
+
+  if (stripeSession.payment_status === 'paid') {
+    (order as any).orderPaid = true;
+    (order as any).paid = true;
     order.stripeSessionId = stripeSession.id;
     await order.save();
 
+    return Response.json({
+      paid: true,
+      message: 'Payment was already completed. Your order has been updated.',
+    });
+  }
+
+  if (stripeSession.status === 'open' && stripeSession.url) {
     return Response.json({ url: stripeSession.url });
   }
 
   try {
-    const stripeSession = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
-
-    if (stripeSession.payment_status === 'paid') {
-      (order as any).orderPaid = true;
-      (order as any).paid = true;
-      order.stripeSessionId = stripeSession.id;
-      await order.save();
-
-      return Response.json({
-        paid: true,
-        message: 'Payment was already completed. Your order has been updated.',
-      });
-    }
-
-    if (stripeSession.status === 'open' && stripeSession.url) {
-      return Response.json({ url: stripeSession.url });
-    }
-
-    const newStripeSession = await createCheckoutSessionForOrder(
-      order,
-      request,
-      session.user.email
-    );
-    order.stripeSessionId = newStripeSession.id;
-    await order.save();
-
-    return Response.json({ url: newStripeSession.url });
+    return await createAndSaveCheckoutSessionForOrder(order, request, session.user.email);
   } catch (error) {
-    console.error('Error retrieving or creating Stripe session:', error);
+    console.error('Error creating replacement Stripe session:', error);
     return Response.json({ error: 'Failed to create payment session' }, { status: 500 });
   }
 }

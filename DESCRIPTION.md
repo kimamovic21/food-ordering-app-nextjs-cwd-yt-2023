@@ -220,6 +220,7 @@ Checkout server rules:
 - Best coupon suggestions are only UI help until the customer applies them and checkout validates them.
 - Loyalty discount is recalculated server-side.
 - Restaurant active kitchen capacity must not be full.
+- Recent identical unpaid `placed` checkout attempts reuse or recover the existing Stripe Checkout session instead of creating duplicate orders.
 - Order is created as unpaid before redirecting to Stripe.
 - Stripe webhook later marks payment complete.
 

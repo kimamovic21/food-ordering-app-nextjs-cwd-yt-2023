@@ -23,6 +23,7 @@ alwaysApply: true
 - Ask before introducing schema migrations or destructive data operations.
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts`.
 - Preserve restaurant accepting-order logic in checkout: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, paid active kitchen orders, item availability, coupons, and loyalty must be checked before Stripe sessions are created.
+- Preserve checkout duplicate protection: recent identical unpaid `placed` attempts use `checkoutFingerprint` and should reuse or recover the existing Stripe Checkout session.
 - Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
 - Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Preserve order timing fields and snapshots for preparation/delivery estimates and timeline UI.

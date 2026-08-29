@@ -81,6 +81,7 @@ See `example.env`. Variables currently used in the project include:
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts` (`dd/MM/yyyy`, `dd/MM/yyyy HH:mm`).
 - Messaging should remain role-restricted: no customer-to-customer chat, and order threads must match the assigned courier or restaurant owner.
 - Checkout must preserve restaurant accepting-order checks: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty must be validated before creating Stripe sessions.
+- Checkout should deduplicate recent identical unpaid `placed` attempts using `checkoutFingerprint`; reuse or recover the existing Stripe Checkout session instead of creating duplicate orders.
 - Best coupon suggestions are user-facing help only; checkout must revalidate coupons server-side.
 - Reorder must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Restaurant quick reorder must use the same current `menu_items` rebuild rules as order reorder.

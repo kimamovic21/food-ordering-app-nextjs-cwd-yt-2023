@@ -292,7 +292,9 @@ const AppCommandPalette = () => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === 'k' && (event.ctrlKey || event.metaKey)) {
+      const pressedKey = typeof event.key === 'string' ? event.key.toLowerCase() : '';
+
+      if (pressedKey === 'k' && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
         setOpen((current) => !current);
       }

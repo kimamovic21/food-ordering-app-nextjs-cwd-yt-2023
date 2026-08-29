@@ -184,6 +184,7 @@ Key checks:
 - Restaurant active kitchen order count must be below `activeOrderLimit`.
 - Coupon and loyalty discounts are validated server-side.
 - Best coupon suggestions shown in cart are revalidated at checkout before Stripe is created.
+- Recent identical unpaid `placed` checkout attempts are matched by `checkoutFingerprint`; the app reuses or recovers the existing Stripe Checkout session instead of creating duplicate orders.
 - Reorders rebuild cart items from current `menu_items` records so deleted, unavailable, cross-restaurant, or changed-price items cannot silently proceed.
 - Restaurant details and favorite restaurant cards can quick reorder the latest previous order from that restaurant using the same current `menu_items` validation.
 - Customers can request back-online notifications for restaurants blocked by closed, paused, closing-soon, or busy checkout states.
@@ -200,6 +201,7 @@ sequenceDiagram
   User->>Cart: Click Proceed to Checkout
   Cart->>CheckoutAPI: Send delivery info and cart
   CheckoutAPI->>Mongo: Validate user, restaurant availability, menu items, coupons, capacity
+  CheckoutAPI->>Mongo: Check recent unpaid matching checkout fingerprint
   CheckoutAPI->>Mongo: Create unpaid order snapshot
   CheckoutAPI->>Stripe: Create checkout session
   Stripe-->>User: Hosted payment page

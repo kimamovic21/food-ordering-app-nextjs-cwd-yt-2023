@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useId, useMemo, useState, type ReactNode } from 'react';
 import {
   columnFilteringFeature,
@@ -364,7 +362,7 @@ export function TanStackDataTable<TData extends RowData>({
                 <TableRow
                   key={row.id}
                   className={cn(
-                    'border-white/10 transition hover:bg-white/[0.03]',
+                    'border-white/10 transition hover:bg-white/3',
                     getRowClassName?.(row.original)
                   )}
                 >

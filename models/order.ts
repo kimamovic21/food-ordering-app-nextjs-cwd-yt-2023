@@ -162,6 +162,11 @@ const OrderSchema = new Schema(
       trim: true,
       maxlength: 300,
     },
+    checkoutFingerprint: {
+      type: String,
+      default: null,
+      index: true,
+    },
     stripeSessionId: { type: String },
     receiptEmailSentAt: { type: Date, default: null },
     deliveryPin: { type: String, default: createDeliveryPin },

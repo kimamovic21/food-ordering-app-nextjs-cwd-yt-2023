@@ -1139,3 +1139,5 @@ Cache favorites with TanStack Query
 Migrate app tables to TanStack Table
 
 Improve admin tables with TanStack UI
+
+Improve checkout payment recovery

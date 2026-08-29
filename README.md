@@ -234,6 +234,7 @@ This project uses many dependencies; below are the main packages actively used i
 - Checkout snapshots the restaurant estimates onto each order, so order detail timelines can show expected timing alongside actual phase durations.
 - Checkout blocks restaurants that are closed, paused, outside delivery radius, blocked by working hours, or inside the final 60 minutes before closing, and surfaces the next opening time when available.
 - Checkout blocks new orders when the restaurant has reached its paid active kitchen order limit (`placed`, `processing`, or `ready` orders).
+- Checkout deduplicates recent identical unpaid `placed` order attempts by reusing or recovering the existing Stripe Checkout session instead of creating another order.
 - Cart can suggest the best public coupon for the current restaurant subtotal and let the customer apply it directly.
 - Checkout blocks customers from starting another paid active order until the previous order is completed or canceled.
 - Previous orders can be reordered into the cart only after current menu item existence, availability, restaurant ownership, and prices are rechecked.

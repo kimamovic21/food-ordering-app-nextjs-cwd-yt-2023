@@ -80,8 +80,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       <h3 className='text-lg font-bold text-foreground'>Order Summary</h3>
       <div className='space-y-2 border-b pb-3'>
         {loadingRestaurants && (
-          <div className='text-sm text-muted-foreground text-center py-2'>
-            Loading restaurant information...
+          <div className='flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground'>
+            <Loader2 className='size-4 animate-spin' aria-hidden='true' />
+            Checking restaurant status...
           </div>
         )}
         <div className='flex justify-between text-muted-foreground text-sm sm:text-base'>
@@ -223,6 +224,10 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               <Loader2 className='animate-spin mr-2 h-5 w-5' />
               Redirecting...
             </>
+          ) : loadingRestaurants ? (
+            'Checking Restaurant'
+          ) : loadingMenuAvailability ? (
+            'Checking Menu'
           ) : !restaurantsOpen ? (
             'Restaurant Closed'
           ) : restaurantPaused ? (
@@ -235,8 +240,6 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             `Minimum $${minimumOrderAmount.toFixed(2)}`
           ) : missingDeliveryLocation ? (
             'Confirm Location'
-          ) : loadingMenuAvailability ? (
-            'Checking Menu'
           ) : hasUnavailableItems ? (
             'Unavailable Items'
           ) : (

@@ -176,6 +176,8 @@ const createOrderFindQuery = (orders: unknown[]) => {
 describe('high-priority order, review, and payment-link routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    stripeRetrieveSession.mockReset();
+    stripeCreateSession.mockReset();
     process.env.STRIPE_SK = 'sk_test_payment_link';
     process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
     delete process.env.SUPER_ADMIN_EMAIL;
@@ -885,6 +887,7 @@ describe('high-priority order, review, and payment-link routes', () => {
       email: customer.email,
       total: 25,
       orderPaid: false,
+      orderStatus: 'placed',
       stripeSessionId: 'cs_test_123',
       save: vi.fn(),
     };
@@ -922,6 +925,7 @@ describe('high-priority order, review, and payment-link routes', () => {
       total: 25,
       orderPaid: false,
       paid: false,
+      orderStatus: 'placed',
       stripeSessionId: 'cs_test_paid_123',
       save: vi.fn(),
     };
@@ -962,6 +966,7 @@ describe('high-priority order, review, and payment-link routes', () => {
       email: customer.email,
       total: 29.03,
       orderPaid: false,
+      orderStatus: 'placed',
       stripeSessionId: 'cs_test_expired_123',
       save: vi.fn(),
     };
@@ -993,6 +998,79 @@ describe('high-priority order, review, and payment-link routes', () => {
     );
     expect(orderDocument.stripeSessionId).toBe('cs_test_new_123');
     expect(orderDocument.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('creates a replacement Stripe session when the old session no longer exists', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: customer.email },
+    } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    const orderDocument = {
+      _id: { toString: () => 'order-1' },
+      userId: customer._id,
+      restaurantId: { toString: () => 'restaurant-1' },
+      email: customer.email,
+      total: 31.5,
+      orderPaid: false,
+      orderStatus: 'placed',
+      stripeSessionId: 'cs_test_missing_123',
+      save: vi.fn(),
+    };
+    vi.mocked(Order.findById).mockReturnValueOnce({
+      then: (resolve: (value: unknown) => unknown) => resolve(orderDocument),
+    } as never);
+    stripeRetrieveSession.mockRejectedValueOnce(
+      Object.assign(new Error('No such checkout session'), {
+        code: 'resource_missing',
+        statusCode: 404,
+      })
+    );
+    stripeCreateSession.mockResolvedValueOnce({
+      id: 'cs_test_recovered_123',
+      url: 'https://checkout.stripe.test/recovered-session',
+    });
+
+    const { GET } = await import('@/app/api/payment-link/route');
+    const res = await GET(new Request('http://localhost/api/payment-link?orderId=order-1'));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ url: 'https://checkout.stripe.test/recovered-session' });
+    expect(stripeRetrieveSession).toHaveBeenCalledWith('cs_test_missing_123');
+    expect(stripeCreateSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { orderId: 'order-1' },
+      })
+    );
+    expect(orderDocument.stripeSessionId).toBe('cs_test_recovered_123');
+    expect(orderDocument.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('blocks payment links for unpaid orders that are no longer placed', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: customer.email },
+    } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    vi.mocked(Order.findById).mockReturnValueOnce({
+      then: (resolve: (value: unknown) => unknown) =>
+        resolve({
+          _id: 'order-1',
+          userId: customer._id,
+          restaurantId: { toString: () => 'restaurant-1' },
+          orderPaid: false,
+          orderStatus: 'processing',
+          stripeSessionId: 'cs_test_processing_123',
+        }),
+    } as never);
+
+    const { GET } = await import('@/app/api/payment-link/route');
+    const res = await GET(new Request('http://localhost/api/payment-link?orderId=order-1'));
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body).toEqual({ error: 'Only placed unpaid orders can be paid' });
+    expect(stripeRetrieveSession).not.toHaveBeenCalled();
+    expect(stripeCreateSession).not.toHaveBeenCalled();
   });
 
   it('blocks payment links for canceled orders', async () => {

@@ -1,7 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, useRef, type ChangeEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  type ChangeEvent,
+  type ReactNode,
+} from 'react';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { AlertTriangle, CheckCircle2, Clock3, Loader2, XCircle } from 'lucide-react';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
@@ -40,7 +50,77 @@ type CartValidationResponse = {
   message?: string | null;
 };
 
+type CheckoutStartResult = {
+  paid: boolean;
+};
+
+const RESTAURANT_STATUS_CHECK_MIN_MS = 1000;
+const RESTAURANT_STATUS_DOT_STEPS = ['.', '..', '...'] as const;
+
 const getCartItemKey = (item: { _id: string; size: string }) => `${item._id}:${item.size}`;
+
+type CartAvailabilityBannerTone = 'checking' | 'success' | 'danger' | 'warning';
+
+const cartAvailabilityBannerStyles: Record<
+  CartAvailabilityBannerTone,
+  {
+    wrapper: string;
+    icon: string;
+  }
+> = {
+  checking: {
+    wrapper: 'border-primary/30 bg-primary/10 text-primary',
+    icon: 'text-primary',
+  },
+  success: {
+    wrapper:
+      'border-green-300 bg-green-100 text-green-800 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200',
+    icon: 'text-green-600 dark:text-green-300',
+  },
+  danger: {
+    wrapper:
+      'border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200',
+    icon: 'text-red-600 dark:text-red-300',
+  },
+  warning: {
+    wrapper:
+      'border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200',
+    icon: 'text-amber-600 dark:text-amber-300',
+  },
+};
+
+type CartAvailabilityBannerProps = {
+  tone: CartAvailabilityBannerTone;
+  icon: ReactNode;
+  title: string;
+  message: string;
+  children?: ReactNode;
+};
+
+const CartAvailabilityBanner = ({
+  tone,
+  icon,
+  title,
+  message,
+  children,
+}: CartAvailabilityBannerProps) => {
+  const styles = cartAvailabilityBannerStyles[tone];
+
+  return (
+    <div className={`mb-4 rounded-lg border p-4 ${styles.wrapper}`}>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+        <div className='flex gap-3'>
+          <div className={`mt-0.5 shrink-0 ${styles.icon}`}>{icon}</div>
+          <div>
+            <p className='font-semibold'>{title}</p>
+            <p className='mt-1 text-sm opacity-90'>{message}</p>
+          </div>
+        </div>
+        {children ? <div className='sm:shrink-0'>{children}</div> : null}
+      </div>
+    </div>
+  );
+};
 
 const CartSkeleton = () => (
   <div className='max-w-7xl mx-auto py-4 sm:py-8 px-2 sm:px-4'>
@@ -113,6 +193,7 @@ const CartSkeleton = () => (
 );
 
 const CartPage = () => {
+  const router = useRouter();
   const { cartItems, removeFromCart, updateQuantity, clearCart } = useCart();
 
   const { data: profileData } = useProfile();
@@ -134,6 +215,9 @@ const CartPage = () => {
   const [hydrated, setHydrated] = useState(false);
   const [restaurants, setRestaurants] = useState<Map<string, any>>(new Map());
   const [loadingRestaurants, setLoadingRestaurants] = useState(false);
+  const [restaurantStatusReady, setRestaurantStatusReady] = useState(false);
+  const [restaurantLookupFailed, setRestaurantLookupFailed] = useState(false);
+  const [restaurantStatusDotsIndex, setRestaurantStatusDotsIndex] = useState(0);
   const [loyaltyDiscountPercentage, setLoyaltyDiscountPercentage] = useState(0);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<CouponLike | null>(null);
@@ -157,52 +241,110 @@ const CartPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  const cartRestaurantIdForLookup = useMemo(
+    () => (cartItems.length > 0 ? cartItems[0]?.restaurantId || null : null),
+    [cartItems]
+  );
+
   // Fetch restaurant data for cart items (single restaurant only)
   useEffect(() => {
+    let cancelled = false;
+    let checkTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const completeRestaurantStatusCheck = (startedAt: number) => {
+      const remainingDelay = Math.max(0, RESTAURANT_STATUS_CHECK_MIN_MS - (Date.now() - startedAt));
+
+      checkTimer = setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setLoadingRestaurants(false);
+        setRestaurantStatusReady(true);
+      }, remainingDelay);
+    };
+
     const fetchRestaurants = async () => {
-      if (cartItems.length === 0) {
-        setRestaurants(new Map());
-        return;
-      }
-
-      // Get the single restaurant ID from cart items
-      const restaurantId = cartItems[0]?.restaurantId;
-
-      if (!restaurantId) {
-        console.warn('No valid restaurant ID found in cart items');
+      if (!cartRestaurantIdForLookup) {
         setRestaurants(new Map());
         setLoadingRestaurants(false);
+        setRestaurantStatusReady(false);
+        setRestaurantLookupFailed(false);
         return;
       }
 
+      const startedAt = Date.now();
       setLoadingRestaurants(true);
+      setRestaurantStatusReady(false);
+      setRestaurantLookupFailed(false);
+
       try {
         const restaurantData = new Map();
 
         try {
-          const response = await fetch(`/api/restaurant/${restaurantId}`);
+          const response = await fetch(`/api/restaurant/${cartRestaurantIdForLookup}`);
           if (response.ok) {
             const data = await response.json();
-            restaurantData.set(restaurantId, data.restaurant);
+            if (data?.restaurant) {
+              restaurantData.set(cartRestaurantIdForLookup, data.restaurant);
+            } else if (!cancelled) {
+              setRestaurantLookupFailed(true);
+            }
           } else {
-            console.error(`Failed to fetch restaurant ${restaurantId}: ${response.status}`);
+            console.error(
+              `Failed to fetch restaurant ${cartRestaurantIdForLookup}: ${response.status}`
+            );
             const errorText = await response.text();
             console.error('Error response:', errorText);
+            if (!cancelled) {
+              setRestaurantLookupFailed(true);
+            }
           }
         } catch (error) {
-          console.error(`Failed to fetch restaurant ${restaurantId}:`, error);
+          console.error(`Failed to fetch restaurant ${cartRestaurantIdForLookup}:`, error);
+          if (!cancelled) {
+            setRestaurantLookupFailed(true);
+          }
         }
 
-        setRestaurants(restaurantData);
+        if (!cancelled) {
+          setRestaurants(restaurantData);
+        }
       } catch (error) {
         console.error('Failed to fetch restaurants:', error);
+        if (!cancelled) {
+          setRestaurantLookupFailed(true);
+          setRestaurants(new Map());
+        }
       } finally {
-        setLoadingRestaurants(false);
+        completeRestaurantStatusCheck(startedAt);
       }
     };
 
     fetchRestaurants();
-  }, [cartItems]);
+
+    return () => {
+      cancelled = true;
+      if (checkTimer) {
+        clearTimeout(checkTimer);
+      }
+    };
+  }, [cartRestaurantIdForLookup]);
+
+  useEffect(() => {
+    if (!cartRestaurantIdForLookup || restaurantStatusReady) {
+      setRestaurantStatusDotsIndex(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setRestaurantStatusDotsIndex((currentIndex) =>
+        currentIndex === RESTAURANT_STATUS_DOT_STEPS.length - 1 ? 0 : currentIndex + 1
+      );
+    }, 350);
+
+    return () => clearInterval(interval);
+  }, [cartRestaurantIdForLookup, restaurantStatusReady]);
 
   // Fetch user's loyalty discount
   useEffect(() => {
@@ -716,6 +858,18 @@ const CartPage = () => {
         return;
       }
 
+      if (
+        getCartRestaurantId() &&
+        (loadingRestaurants || !restaurantStatusReady || restaurantLookupFailed)
+      ) {
+        sonnerToast.error(
+          restaurantLookupFailed
+            ? 'We could not confirm restaurant status. Please refresh and try again.'
+            : 'Please wait while we check restaurant status.'
+        );
+        return;
+      }
+
       // Check if the restaurant is open
       if (!isRestaurantOpen()) {
         const restaurantName = getRestaurantName();
@@ -789,7 +943,7 @@ const CartPage = () => {
       const couponToSend = couponValidationError ? '' : appliedCoupon?.code || '';
 
       await sonnerToast.promise(
-        (async () => {
+        (async (): Promise<CheckoutStartResult> => {
           const response = await fetch('/api/checkout', {
             method: 'POST',
             headers: {
@@ -808,15 +962,25 @@ const CartPage = () => {
             throw new Error(errorData?.error || 'Failed to start checkout.');
           }
           const data = await response.json();
+          if (data?.paid) {
+            clearCart();
+            router.push(data.orderId ? `/my-orders/${data.orderId}` : '/my-orders');
+            return { paid: true };
+          }
+
           if (data?.url) {
             window.location.href = data.url;
+            return { paid: false };
           } else {
             throw new Error('Checkout URL missing.');
           }
         })(),
         {
           loading: 'Processing checkout...',
-          success: 'Redirecting to payment...',
+          success: (result) =>
+            (result as CheckoutStartResult | undefined)?.paid
+              ? 'Payment already completed.'
+              : 'Redirecting to payment...',
           error: (err) => err?.message || 'Unable to proceed to checkout.',
         }
       );
@@ -854,6 +1018,16 @@ const CartPage = () => {
   const restaurantBusy = isRestaurantBusy();
   const restaurantName = getRestaurantName();
   const cartRestaurantId = getCartRestaurantId();
+  const restaurantStatusDots = RESTAURANT_STATUS_DOT_STEPS[restaurantStatusDotsIndex];
+  const checkingRestaurantStatus =
+    !multipleRestaurants &&
+    Boolean(cartRestaurantId) &&
+    (loadingRestaurants || !restaurantStatusReady);
+  const showRestaurantStatus =
+    !multipleRestaurants &&
+    Boolean(cartRestaurantId) &&
+    restaurantStatusReady &&
+    !loadingRestaurants;
   const minimumOrderAmount = getMinimumOrderAmount();
   const belowMinimumOrderAmount =
     !multipleRestaurants &&
@@ -895,74 +1069,122 @@ const CartPage = () => {
         </div>
       )}
 
-      {!multipleRestaurants && !restaurantOpen && (
-        <div className='mb-4 space-y-3 rounded-lg border border-orange-300 bg-orange-100 p-4 dark:border-orange-700 dark:bg-orange-900/20'>
-          <p className='text-orange-800 dark:text-orange-200 font-semibold'>
-            {getRestaurantUnavailableReason() ||
-              `${restaurantName} you want to order from is not working at the moment. Please remove items from this restaurant and try ordering from another restaurant.`}
-          </p>
-          {cartRestaurantId && (
+      {checkingRestaurantStatus && (
+        <CartAvailabilityBanner
+          tone='checking'
+          icon={<Loader2 className='size-5 animate-spin' aria-hidden='true' />}
+          title='Checking restaurant status'
+          message={`Checking if ${restaurantName} is working right now${restaurantStatusDots}`}
+        />
+      )}
+
+      {showRestaurantStatus && restaurantLookupFailed && (
+        <CartAvailabilityBanner
+          tone='danger'
+          icon={<AlertTriangle className='size-5' aria-hidden='true' />}
+          title='Restaurant status unavailable'
+          message='We could not confirm if this restaurant is accepting orders right now. Please refresh and try again.'
+        />
+      )}
+
+      {showRestaurantStatus && !restaurantLookupFailed && !restaurantOpen && (
+        <CartAvailabilityBanner
+          tone='danger'
+          icon={<XCircle className='size-5' aria-hidden='true' />}
+          title={`${restaurantName} is closed`}
+          message={
+            getRestaurantUnavailableReason() ||
+            `${restaurantName} is not working at the moment. Please try again during open hours or order from another restaurant.`
+          }
+        >
+          {cartRestaurantId ? (
+            <RestaurantAvailabilityNotifyButton
+              restaurantId={cartRestaurantId}
+              restaurantName={restaurantName}
+              className='border-red-400 bg-background text-foreground hover:bg-background/90'
+            />
+          ) : null}
+        </CartAvailabilityBanner>
+      )}
+
+      {showRestaurantStatus && !restaurantLookupFailed && restaurantOpen && restaurantPaused && (
+        <CartAvailabilityBanner
+          tone='warning'
+          icon={<Clock3 className='size-5' aria-hidden='true' />}
+          title={`${restaurantName} paused new orders`}
+          message={
+            getRestaurantUnavailableReason() ||
+            `${restaurantName} paused new orders for a little while. Please try again soon.`
+          }
+        >
+          {cartRestaurantId ? (
             <RestaurantAvailabilityNotifyButton
               restaurantId={cartRestaurantId}
               restaurantName={restaurantName}
               className='border-orange-400 bg-background text-foreground hover:bg-background/90'
             />
-          )}
-        </div>
+          ) : null}
+        </CartAvailabilityBanner>
       )}
 
-      {!multipleRestaurants && restaurantOpen && restaurantPaused && (
-        <div className='mb-4 space-y-3 rounded-lg border border-orange-300 bg-orange-100 p-4 dark:border-orange-700 dark:bg-orange-900/20'>
-          <p className='font-semibold text-orange-800 dark:text-orange-200'>
-            {getRestaurantUnavailableReason() ||
-              `${restaurantName} paused new orders for a little while. Please try again soon.`}
-          </p>
-          {cartRestaurantId && (
-            <RestaurantAvailabilityNotifyButton
-              restaurantId={cartRestaurantId}
-              restaurantName={restaurantName}
-              className='border-orange-400 bg-background text-foreground hover:bg-background/90'
-            />
-          )}
-        </div>
-      )}
-
-      {!multipleRestaurants &&
+      {showRestaurantStatus &&
+        !restaurantLookupFailed &&
         restaurantOpen &&
         !restaurantPaused &&
         !restaurantAcceptingCheckout && (
-          <div className='mb-4 space-y-3 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
-            <p className='font-semibold text-amber-800 dark:text-amber-200'>
-              {getRestaurantUnavailableReason() ||
-                `${restaurantName} is closing soon and is no longer accepting checkout.`}
-            </p>
-            {cartRestaurantId && (
+          <CartAvailabilityBanner
+            tone='warning'
+            icon={<Clock3 className='size-5' aria-hidden='true' />}
+            title={`${restaurantName} is closing soon`}
+            message={
+              getRestaurantUnavailableReason() ||
+              `${restaurantName} is closing soon and is no longer accepting checkout.`
+            }
+          >
+            {cartRestaurantId ? (
               <RestaurantAvailabilityNotifyButton
                 restaurantId={cartRestaurantId}
                 restaurantName={restaurantName}
                 className='border-amber-400 bg-background text-foreground hover:bg-background/90'
               />
-            )}
-          </div>
+            ) : null}
+          </CartAvailabilityBanner>
         )}
 
-      {!multipleRestaurants &&
+      {showRestaurantStatus &&
+        !restaurantLookupFailed &&
         restaurantOpen &&
         restaurantAcceptingCheckout &&
         !restaurantPaused &&
         restaurantBusy && (
-          <div className='mb-4 space-y-3 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
-            <p className='font-semibold text-amber-800 dark:text-amber-200'>
-              {restaurantName} is very busy at the moment. Please wait a little bit and try again.
-            </p>
-            {cartRestaurantId && (
+          <CartAvailabilityBanner
+            tone='warning'
+            icon={<Clock3 className='size-5' aria-hidden='true' />}
+            title={`${restaurantName} is busy`}
+            message={`${restaurantName} is very busy at the moment. Please wait a little bit and try again.`}
+          >
+            {cartRestaurantId ? (
               <RestaurantAvailabilityNotifyButton
                 restaurantId={cartRestaurantId}
                 restaurantName={restaurantName}
                 className='border-amber-400 bg-background text-foreground hover:bg-background/90'
               />
-            )}
-          </div>
+            ) : null}
+          </CartAvailabilityBanner>
+        )}
+
+      {showRestaurantStatus &&
+        !restaurantLookupFailed &&
+        restaurantOpen &&
+        restaurantAcceptingCheckout &&
+        !restaurantPaused &&
+        !restaurantBusy && (
+          <CartAvailabilityBanner
+            tone='success'
+            icon={<CheckCircle2 className='size-5' aria-hidden='true' />}
+            title={`${restaurantName} is accepting orders`}
+            message='Restaurant is open right now. You can continue checkout once your cart and delivery details are ready.'
+          />
         )}
 
       {belowMinimumOrderAmount && (
