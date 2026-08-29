@@ -8,12 +8,14 @@ import { Coupon } from '@/models/coupon';
 import { getCouponValidationError } from '@/libs/coupon';
 
 const stripeCreateSession = vi.fn();
+const stripeRetrieveSession = vi.fn();
 
 vi.mock('stripe', () => ({
   default: class StripeMock {
     checkout = {
       sessions: {
         create: stripeCreateSession,
+        retrieve: stripeRetrieveSession,
       },
     };
   },
@@ -175,9 +177,21 @@ const createCheckoutRequest = (overrides: Partial<Record<string, unknown>> = {})
   });
 };
 
+const createOrderFindOneQuery = (result: unknown) => {
+  const query = {
+    select: vi.fn(() => query),
+    lean: vi.fn().mockResolvedValue(result),
+    sort: vi.fn().mockResolvedValue(result),
+  };
+
+  return query;
+};
+
 describe('POST /api/checkout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    stripeCreateSession.mockReset();
+    stripeRetrieveSession.mockReset();
     process.env.STRIPE_SK = 'sk_test_checkout';
 
     vi.mocked(getServerSession).mockResolvedValue({
@@ -211,11 +225,7 @@ describe('POST /api/checkout', () => {
     } as never);
 
     vi.mocked(Order.countDocuments).mockResolvedValue(0 as never);
-    vi.mocked(Order.findOne).mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue(null),
-      }),
-    } as never);
+    vi.mocked(Order.findOne).mockReturnValue(createOrderFindOneQuery(null) as never);
 
     vi.mocked(Order.create).mockResolvedValue({
       _id: { toString: () => 'order-1' },
@@ -551,12 +561,52 @@ describe('POST /api/checkout', () => {
     );
   });
 
+  it('reuses a recent matching unpaid checkout order instead of creating a duplicate order', async () => {
+    const existingOrder = {
+      _id: { toString: () => 'existing-order-1' },
+      stripeSessionId: 'cs_test_existing_checkout_1',
+      save: vi.fn(),
+    };
+    vi.mocked(Order.findOne)
+      .mockReturnValueOnce(createOrderFindOneQuery(null) as never)
+      .mockReturnValueOnce(createOrderFindOneQuery(existingOrder) as never);
+    stripeRetrieveSession.mockResolvedValueOnce({
+      id: 'cs_test_existing_checkout_1',
+      status: 'open',
+      payment_status: 'unpaid',
+      url: 'https://checkout.stripe.com/session/existing',
+    });
+
+    const POST = await loadCheckoutRoute();
+    const response = await POST(createCheckoutRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      url: 'https://checkout.stripe.com/session/existing',
+      orderId: 'existing-order-1',
+      reusedExistingOrder: true,
+    });
+    expect(Order.findOne).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        userId: 'user-1',
+        restaurantId: 'restaurant-1',
+        orderStatus: 'placed',
+        checkoutFingerprint: expect.any(String),
+        createdAt: expect.objectContaining({ $gte: expect.any(Date) }),
+        $nor: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
+      })
+    );
+    expect(stripeRetrieveSession).toHaveBeenCalledWith('cs_test_existing_checkout_1');
+    expect(Order.create).not.toHaveBeenCalled();
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
   it('rejects checkout when customer already has an active paid order', async () => {
-    vi.mocked(Order.findOne).mockReturnValueOnce({
-      select: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue({ _id: 'previous-order', orderStatus: 'transportation' }),
-      }),
-    } as never);
+    vi.mocked(Order.findOne).mockReturnValueOnce(
+      createOrderFindOneQuery({ _id: 'previous-order', orderStatus: 'transportation' }) as never
+    );
 
     const POST = await loadCheckoutRoute();
     const response = await POST(createCheckoutRequest());

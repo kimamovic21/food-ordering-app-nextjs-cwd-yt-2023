@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import { Coupon } from '@/models/coupon';
@@ -42,7 +43,264 @@ type CartSize = 'small' | 'medium' | 'large' | 'single';
 
 export const runtime = 'nodejs';
 
+const DUPLICATE_CHECKOUT_WINDOW_MS = 5 * 60 * 1000;
+
 const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100;
+
+const canRecoverFromStripeSessionLookupError = (error: unknown) => {
+  const stripeError = error as { code?: string; statusCode?: number };
+
+  return stripeError?.code === 'resource_missing' || stripeError?.statusCode === 404;
+};
+
+const getCheckoutOrigin = (req: Request) =>
+  req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+const normalizeFingerprintText = (value: unknown) =>
+  String(value ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+
+const normalizeFingerprintCoordinate = (value: number | null) =>
+  typeof value === 'number' && Number.isFinite(value) ? Number(value.toFixed(6)) : null;
+
+const createCheckoutFingerprint = ({
+  userId,
+  restaurantId,
+  verifiedItems,
+  delivery,
+  pricing,
+}: {
+  userId: unknown;
+  restaurantId: unknown;
+  verifiedItems: Array<CartItemPayload & { size: CartSize }>;
+  delivery: {
+    phone: string;
+    streetAddress: string;
+    postalCode: string;
+    city: string;
+    country: string;
+    deliveryLatitude: number | null;
+    deliveryLongitude: number | null;
+    specialInstructions: string;
+  };
+  pricing: {
+    subtotal: number;
+    taxAmount: number;
+    deliveryFee: number;
+    loyaltyDiscount: number;
+    loyaltyDiscountPercentage: number;
+    couponCode: string | null;
+    couponDiscountAmount: number;
+    total: number;
+  };
+}) => {
+  const payload = {
+    userId: String(userId),
+    restaurantId: String(restaurantId),
+    delivery: {
+      phone: normalizeFingerprintText(delivery.phone),
+      streetAddress: normalizeFingerprintText(delivery.streetAddress),
+      postalCode: normalizeFingerprintText(delivery.postalCode),
+      city: normalizeFingerprintText(delivery.city),
+      country: normalizeFingerprintText(delivery.country),
+      deliveryLatitude: normalizeFingerprintCoordinate(delivery.deliveryLatitude),
+      deliveryLongitude: normalizeFingerprintCoordinate(delivery.deliveryLongitude),
+      specialInstructions: normalizeFingerprintText(delivery.specialInstructions),
+    },
+    items: [...verifiedItems]
+      .map((item) => ({
+        productId: item._id,
+        size: item.size,
+        quantity: item.quantity,
+        price: roundToTwoDecimals(item.price),
+      }))
+      .sort((firstItem, secondItem) =>
+        `${firstItem.productId}:${firstItem.size}`.localeCompare(
+          `${secondItem.productId}:${secondItem.size}`
+        )
+      ),
+    pricing: {
+      subtotal: roundToTwoDecimals(pricing.subtotal),
+      taxAmount: roundToTwoDecimals(pricing.taxAmount),
+      deliveryFee: roundToTwoDecimals(pricing.deliveryFee),
+      loyaltyDiscount: roundToTwoDecimals(pricing.loyaltyDiscount),
+      loyaltyDiscountPercentage: pricing.loyaltyDiscountPercentage,
+      couponCode: pricing.couponCode,
+      couponDiscountAmount: roundToTwoDecimals(pricing.couponDiscountAmount),
+      total: roundToTwoDecimals(pricing.total),
+    },
+  };
+
+  return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+};
+
+const createStripeLineItems = ({
+  verifiedItems,
+  deliveryFee,
+  couponLineDiscountRate,
+}: {
+  verifiedItems: Array<CartItemPayload & { size: CartSize }>;
+  deliveryFee: number;
+  couponLineDiscountRate: number;
+}) => {
+  const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = verifiedItems.map(
+    (item) => {
+      const adjustedUnitPrice = roundToTwoDecimals(item.price * (1 - couponLineDiscountRate));
+
+      return {
+        quantity: item.quantity,
+        price_data: {
+          currency: 'usd',
+          unit_amount: Math.max(0, Math.round(adjustedUnitPrice * 100)),
+          product_data: {
+            name: `${item.name} (${item.size})`,
+          },
+        },
+      };
+    }
+  );
+
+  stripeLineItems.push({
+    quantity: 1,
+    price_data: {
+      currency: 'usd',
+      unit_amount: Math.round(deliveryFee * 100),
+      product_data: {
+        name: 'Delivery Fee',
+      },
+    },
+  });
+
+  return stripeLineItems;
+};
+
+const createStripeCheckoutSessionForOrder = async ({
+  order,
+  req,
+  email,
+  lineItems,
+}: {
+  order: any;
+  req: Request;
+  email: string;
+  lineItems: Stripe.Checkout.SessionCreateParams.LineItem[];
+}) =>
+  stripe!.checkout.sessions.create({
+    mode: 'payment',
+    payment_method_types: ['card'],
+    customer_email: email,
+    metadata: {
+      orderId: order._id.toString(),
+    },
+    line_items: lineItems,
+    success_url: `${getCheckoutOrigin(req)}/checkout?status=success&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${getCheckoutOrigin(req)}/checkout?status=cancelled`,
+  });
+
+const createAndSaveCheckoutSessionResponse = async ({
+  order,
+  req,
+  email,
+  lineItems,
+  reusedExistingOrder = false,
+}: {
+  order: any;
+  req: Request;
+  email: string;
+  lineItems: Stripe.Checkout.SessionCreateParams.LineItem[];
+  reusedExistingOrder?: boolean;
+}) => {
+  const stripeSession = await createStripeCheckoutSessionForOrder({
+    order,
+    req,
+    email,
+    lineItems,
+  });
+
+  if (!stripeSession.url) {
+    throw new Error('Stripe checkout URL is missing');
+  }
+
+  order.stripeSessionId = stripeSession.id;
+  await order.save();
+
+  return Response.json({
+    url: stripeSession.url,
+    orderId: order._id.toString(),
+    reusedExistingOrder,
+  });
+};
+
+const getExistingCheckoutSessionResponse = async ({
+  order,
+  req,
+  email,
+  lineItems,
+}: {
+  order: any;
+  req: Request;
+  email: string;
+  lineItems: Stripe.Checkout.SessionCreateParams.LineItem[];
+}) => {
+  if (!order.stripeSessionId) {
+    return createAndSaveCheckoutSessionResponse({
+      order,
+      req,
+      email,
+      lineItems,
+      reusedExistingOrder: true,
+    });
+  }
+
+  let stripeSession: Stripe.Checkout.Session;
+
+  try {
+    stripeSession = await stripe!.checkout.sessions.retrieve(order.stripeSessionId);
+  } catch (error) {
+    if (!canRecoverFromStripeSessionLookupError(error)) {
+      throw error;
+    }
+
+    return createAndSaveCheckoutSessionResponse({
+      order,
+      req,
+      email,
+      lineItems,
+      reusedExistingOrder: true,
+    });
+  }
+
+  if (stripeSession.payment_status === 'paid') {
+    order.orderPaid = true;
+    order.paid = true;
+    order.stripeSessionId = stripeSession.id;
+    await order.save();
+
+    return Response.json({
+      paid: true,
+      orderId: order._id.toString(),
+      message: 'Payment was already completed. Your order has been updated.',
+    });
+  }
+
+  if (stripeSession.status === 'open' && stripeSession.url) {
+    return Response.json({
+      url: stripeSession.url,
+      orderId: order._id.toString(),
+      reusedExistingOrder: true,
+    });
+  }
+
+  return createAndSaveCheckoutSessionResponse({
+    order,
+    req,
+    email,
+    lineItems,
+    reusedExistingOrder: true,
+  });
+};
 
 const normalizeCartSize = (value: unknown): CartSize | null => {
   const size = String(value || '')
@@ -185,8 +443,6 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-
-  const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
   // Single restaurant checkout (enforced by frontend)
   const restaurantId = sanitizedItems[0]?.restaurantId;
@@ -447,6 +703,54 @@ export async function POST(req: Request) {
 
   const foodLineDiscountAmount = couponDiscountAmount + verifiedLoyaltyDiscount;
   const couponLineDiscountRate = subtotal > 0 ? foodLineDiscountAmount / subtotal : 0;
+  const stripeLineItems = createStripeLineItems({
+    verifiedItems,
+    deliveryFee,
+    couponLineDiscountRate,
+  });
+  const checkoutFingerprint = createCheckoutFingerprint({
+    userId: user._id,
+    restaurantId: restaurant._id,
+    verifiedItems,
+    delivery: {
+      phone,
+      streetAddress,
+      postalCode,
+      city,
+      country,
+      deliveryLatitude: hasDeliveryLocation ? normalizedDeliveryLatitude : null,
+      deliveryLongitude: hasDeliveryLocation ? normalizedDeliveryLongitude : null,
+      specialInstructions: normalizedSpecialInstructions,
+    },
+    pricing: {
+      subtotal,
+      taxAmount,
+      deliveryFee,
+      loyaltyDiscount: verifiedLoyaltyDiscount,
+      loyaltyDiscountPercentage: verifiedLoyaltyPercentage,
+      couponCode: couponSnapshot.couponCode,
+      couponDiscountAmount,
+      total,
+    },
+  });
+  const duplicateCheckoutCreatedAfter = new Date(Date.now() - DUPLICATE_CHECKOUT_WINDOW_MS);
+  const existingCheckoutOrder = await Order.findOne({
+    userId: user._id,
+    restaurantId: restaurant._id,
+    orderStatus: 'placed',
+    checkoutFingerprint,
+    createdAt: { $gte: duplicateCheckoutCreatedAfter },
+    $nor: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
+  }).sort({ createdAt: -1 });
+
+  if (existingCheckoutOrder) {
+    return getExistingCheckoutSessionResponse({
+      order: existingCheckoutOrder,
+      req,
+      email: session.user.email,
+      lineItems: stripeLineItems,
+    });
+  }
 
   const order = await Order.create({
     userId: user._id,
@@ -482,6 +786,7 @@ export async function POST(req: Request) {
     orderPaid: false,
     paid: false,
     orderStatus: 'placed',
+    checkoutFingerprint,
     deliveryPin: createDeliveryPin(),
   });
 
@@ -510,48 +815,16 @@ export async function POST(req: Request) {
     },
   });
 
-  // Add items to Stripe line items
-  verifiedItems.forEach((item) => {
-    const adjustedUnitPrice = roundToTwoDecimals(item.price * (1 - couponLineDiscountRate));
-
-    stripeLineItems.push({
-      quantity: item.quantity,
-      price_data: {
-        currency: 'usd',
-        unit_amount: Math.max(0, Math.round(adjustedUnitPrice * 100)),
-        product_data: {
-          name: `${item.name} (${item.size})`,
-        },
-      },
-    });
+  const stripeSession = await createStripeCheckoutSessionForOrder({
+    order,
+    req,
+    email: session.user.email,
+    lineItems: stripeLineItems,
   });
 
-  // Add delivery fee
-  stripeLineItems.push({
-    quantity: 1,
-    price_data: {
-      currency: 'usd',
-      unit_amount: Math.round(deliveryFee * 100),
-      product_data: {
-        name: 'Delivery Fee',
-      },
-    },
-  });
-
-  const origin =
-    req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-  const stripeSession = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    payment_method_types: ['card'],
-    customer_email: session.user.email,
-    metadata: {
-      orderId: order._id.toString(),
-    },
-    line_items: stripeLineItems,
-    success_url: `${origin}/checkout?status=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/checkout?status=cancelled`,
-  });
+  if (!stripeSession.url) {
+    throw new Error('Stripe checkout URL is missing');
+  }
 
   // Update order with stripe session ID
   order.stripeSessionId = stripeSession.id;

@@ -61,4 +61,14 @@ describe('AppCommandPalette', () => {
 
     expect(pushMock).toHaveBeenCalledWith('/admin-dashboard/orders');
   });
+
+  it('ignores malformed keyboard events without a key value', () => {
+    render(<AppCommandPalette />);
+
+    const eventWithoutKey = new Event('keydown') as KeyboardEvent;
+    Object.defineProperty(eventWithoutKey, 'key', { value: undefined });
+
+    expect(() => document.dispatchEvent(eventWithoutKey)).not.toThrow();
+    expect(screen.queryByPlaceholderText('Search routes and actions...')).not.toBeInTheDocument();
+  });
 });
