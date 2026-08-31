@@ -25,38 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import useProfile from '@/hooks/useProfile';
 import DeliveryDetailsLoading from './loading';
 import { formatAppDateTime } from '@/libs/dateFormat';
-
-type CartProduct = {
-  productId: string;
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-};
-
-type DeliveredOrder = {
-  _id: string;
-  userId: string;
-  email: string;
-  phone: string;
-  streetAddress: string;
-  postalCode: string;
-  city: string;
-  country: string;
-  specialInstructions?: string;
-  estimatedDeliveryMinutes?: number | null;
-  cartProducts: CartProduct[];
-  deliveryFee: number;
-  loyaltyDiscount?: number;
-  couponCode?: string | null;
-  couponDiscountAmount?: number;
-  couponDiscountPercentage?: number;
-  total: number;
-  orderPaid: boolean;
-  orderStatus: string;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { DeliveredOrder } from '@/types/order';
 
 const DeliveryDetailsPage = () => {
   const params = useParams()!;

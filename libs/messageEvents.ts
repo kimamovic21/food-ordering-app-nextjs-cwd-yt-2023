@@ -1,15 +1,9 @@
 import 'server-only';
 
 import { EventEmitter } from 'node:events';
+import type { MessageRealtimeEvent } from '@/types/messages';
 
-export type MessageRealtimeEvent = {
-  type: 'message-created' | 'message-updated' | 'conversation-hidden' | 'conversation-read';
-  conversationId: string;
-  senderUserId?: string;
-  recipientUserId?: string;
-  messageId?: string;
-  unreadCount?: number;
-};
+export type { MessageRealtimeEvent } from '@/types/messages';
 
 const messageEmitter = new EventEmitter();
 messageEmitter.setMaxListeners(0);

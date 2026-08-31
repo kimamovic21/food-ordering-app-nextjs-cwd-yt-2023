@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { addMoney, divideMoney, roundMoney } from '@/libs/money';
 import { CourierReview } from '@/models/courierReview';
 import { Order } from '@/models/order';
 
@@ -24,8 +25,6 @@ const getOrderCompletionDate = (order: any) => {
 
   return Number.isNaN(date.getTime()) ? null : date;
 };
-
-const roundToTwo = (value: number) => Number(value.toFixed(2));
 
 export const getCourierEarningsReport = async (courierId: unknown) => {
   const deliveredOrders = await Order.find({
@@ -60,7 +59,7 @@ export const getCourierEarningsReport = async (courierId: unknown) => {
     courierAssignmentStatus: 'declined',
   });
   const totalEarnings = deliveredOrders.reduce(
-    (sum: number, order: any) => sum + (Number(order.deliveryFee) || 0),
+    (sum: number, order: any) => addMoney(sum, Number(order.deliveryFee) || 0),
     0
   );
   const ratingSummary = await CourierReview.aggregate([
@@ -92,7 +91,7 @@ export const getCourierEarningsReport = async (courierId: unknown) => {
       deliveries: 0,
     };
 
-    current.earnings += Number(order.deliveryFee) || 0;
+    current.earnings = addMoney(current.earnings, Number(order.deliveryFee) || 0);
     current.deliveries += 1;
     earningsByMonth.set(key, current);
   });
@@ -101,7 +100,7 @@ export const getCourierEarningsReport = async (courierId: unknown) => {
     .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
     .map(([, item]) => ({
       ...item,
-      earnings: roundToTwo(item.earnings),
+      earnings: roundMoney(item.earnings),
     }));
 
   return {
@@ -111,9 +110,9 @@ export const getCourierEarningsReport = async (courierId: unknown) => {
       completedDeliveries: deliveredOrders.length,
       declinedAssignments,
       lateDeliveries,
-      totalEarnings: roundToTwo(totalEarnings),
+      totalEarnings: roundMoney(totalEarnings),
       averageEarning: deliveredOrders.length
-        ? roundToTwo(totalEarnings / deliveredOrders.length)
+        ? divideMoney(totalEarnings, deliveredOrders.length)
         : 0,
       averageDeliveryMinutes: deliveryDurations.length
         ? Math.round(totalDeliveryMinutes / deliveryDurations.length)

@@ -10,27 +10,14 @@ import useProfile from '@/hooks/useProfile';
 import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
 import HeartRating from '@/components/shared/HeartRating';
-
-interface MenuItemType {
-  _id: string;
-  image?: string;
-  name: string;
-  description: string;
-  category?: { _id: string; name: string } | string;
-  priceSmall: number;
-  priceMedium: number;
-  priceLarge: number;
-  restaurantId: string;
-  isAvailable?: boolean;
-  restaurantAverageRating?: number;
-  restaurantRatingCount?: number;
-}
+import type { CartSize } from '@/types/cart';
+import type { MenuItemListItem } from '@/types/menu';
 
 interface MenuItemProps {
-  item?: MenuItemType;
+  item?: MenuItemListItem;
 }
 
-type PizzaSize = 'small' | 'medium' | 'large';
+type PizzaSize = Extract<CartSize, 'small' | 'medium' | 'large'>;
 
 const MenuItem = ({ item }: MenuItemProps) => {
   const [selectedSize, setSelectedSize] = useState<PizzaSize>('small');

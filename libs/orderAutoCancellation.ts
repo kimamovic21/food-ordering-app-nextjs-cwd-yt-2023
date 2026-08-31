@@ -1,9 +1,9 @@
 import 'server-only';
 import type { HydratedDocument } from 'mongoose';
-import type { OrderPhaseDurationOffsets } from '@/components/shared/OrderPhaseTimeline';
 import { createAuditLog } from '@/libs/auditLog';
 import { notifyOrderAutoCanceled } from '@/libs/notifications';
 import { notifyWaitingUsersIfRestaurantCanAcceptOrders } from '@/libs/restaurantAvailabilityRequests';
+import type { OrderPhaseDurationOffsets } from '@/types/order-timeline';
 
 export const UNPAID_ORDER_AUTO_CANCEL_MINUTES = 30;
 export const READY_WITHOUT_COURIER_AUTO_CANCEL_MINUTES = 60;

@@ -2,17 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { mongoConnect } from '@/libs/mongoConnect';
 import { getRestaurantRatingSummaries } from '@/libs/reviewSummary';
 import { Restaurant } from '@/models/restaurant';
-
-type WorkingHour = {
-  day: string;
-  openTime: string;
-  closeTime: string;
-  isClosed?: boolean;
-};
-
-type BlockedDate = {
-  date: string | Date;
-};
+import type { RestaurantBlockedDate, RestaurantWorkingHour } from '@/types/restaurant';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -52,8 +42,8 @@ const calculateDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: num
 };
 
 const isRestaurantOpen = (
-  workingHours: WorkingHour[] = [],
-  blockedDates: BlockedDate[] = [],
+  workingHours: RestaurantWorkingHour[] = [],
+  blockedDates: RestaurantBlockedDate[] = [],
   targetDate: Date = new Date()
 ) => {
   const isBlocked = blockedDates.some((blocked) => {

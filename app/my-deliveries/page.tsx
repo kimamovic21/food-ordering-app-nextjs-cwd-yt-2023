@@ -12,50 +12,8 @@ import Title from '@/components/shared/Title';
 import MyDeliveriesLoading from './loading';
 import { formatAppDate } from '@/libs/dateFormat';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-
-type CartProduct = {
-  productId: string;
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-};
-
-type DeliveredOrder = {
-  _id: string;
-  userId: string;
-  email: string;
-  phone: string;
-  streetAddress: string;
-  postalCode: string;
-  city: string;
-  country: string;
-  cartProducts: CartProduct[];
-  estimatedDeliveryMinutes?: number | null;
-  deliveryFee?: number;
-  total: number;
-  orderPaid: boolean;
-  orderStatus: 'completed';
-  createdAt: string;
-  updatedAt: string;
-};
-
-type CourierPerformanceSummary = {
-  completedDeliveries: number;
-  declinedAssignments: number;
-  lateDeliveries: number;
-  totalEarnings: number;
-  averageEarning: number;
-  averageDeliveryMinutes: number;
-  averageRating: number;
-  ratingCount: number;
-};
-
-type EarningsChartItem = {
-  month: string;
-  earnings: number;
-  deliveries: number;
-};
+import type { CourierPerformanceSummary, EarningsChartItem } from '@/types/courier';
+import type { DeliveredOrder } from '@/types/order';
 
 const earningsChartConfig = {
   earnings: {

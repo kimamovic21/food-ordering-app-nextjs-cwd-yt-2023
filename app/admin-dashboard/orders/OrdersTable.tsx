@@ -10,23 +10,14 @@ import {
 } from '@/components/shared/TanStackDataTable';
 import { Badge } from '@/components/ui/badge';
 import { formatAppDateTime } from '@/libs/dateFormat';
-
-type OrderType = {
-  _id: string;
-  email: string;
-  total: number;
-  paymentStatus: boolean;
-  orderStatus:
-    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
-  createdAt: string;
-};
+import type { OrderListItem } from '@/types/order';
 
 type OrdersTableProps = {
-  orders: OrderType[];
+  orders: OrderListItem[];
   loading: boolean;
 };
 
-const columnHelper = createDataTableColumnHelper<OrderType>();
+const columnHelper = createDataTableColumnHelper<OrderListItem>();
 
 function PaymentBadge({ paid }: { paid: boolean }) {
   return (
@@ -43,7 +34,7 @@ function PaymentBadge({ paid }: { paid: boolean }) {
   );
 }
 
-function OrderStatusBadge({ status }: { status: OrderType['orderStatus'] }) {
+function OrderStatusBadge({ status }: { status: OrderListItem['orderStatus'] }) {
   const statusClassName =
     status === 'canceled'
       ? 'bg-red-100 text-red-800 hover:bg-red-100'
@@ -115,7 +106,7 @@ const ordersTableColumns = columnHelper.columns([
     enableHiding: false,
     enableSorting: false,
   }),
-]) satisfies DataTableColumnDef<OrderType>[];
+]) satisfies DataTableColumnDef<OrderListItem>[];
 
 const orderColumnLabels = {
   actions: 'Action',

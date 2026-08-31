@@ -23,31 +23,14 @@ import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import UsersStatisticsLoading from './loading';
 import { formatAppShortDate } from '@/libs/dateFormat';
-
-interface UsersStatistics {
-  totalUsers: number;
-  totalCustomers: number;
-  totalAdmins: number;
-  totalCouriers: number;
-  googleUsers: number;
-  credentialsUsers: number;
-  verifiedUsers: number;
-  unverifiedUsers: number;
-  verificationRate: number;
-  roleData: { role: string; label: string; count: number }[];
-  providerData: { provider: string; label: string; count: number }[];
-  monthlyData: { month: string; users: number }[];
-  dailyData: { date: string; users: number }[];
-}
-
-type TimeRange = '7d' | '30d' | '3m' | '6m' | '12m';
+import type { StatisticsTimeRange, UsersStatistics } from '@/types/statistics';
 
 const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
 const UsersStatisticsPage = () => {
   const [statistics, setStatistics] = useState<UsersStatistics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [timeRange, setTimeRange] = useState<StatisticsTimeRange>('30d');
   const { loading: profileLoading, data: profileData } = useProfile();
 
   useEffect(() => {
@@ -280,7 +263,7 @@ const UsersStatisticsPage = () => {
               <CardDescription>Track new registrations across different ranges</CardDescription>
             </div>
             <div className='flex flex-wrap gap-2'>
-              {(['7d', '30d', '3m', '6m', '12m'] as TimeRange[]).map((range) => (
+              {(['7d', '30d', '3m', '6m', '12m'] as StatisticsTimeRange[]).map((range) => (
                 <button
                   key={range}
                   onClick={() => setTimeRange(range)}

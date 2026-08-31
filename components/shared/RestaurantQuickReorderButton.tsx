@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Button } from '@/components/ui/button';
-import { useCart, type CartItem } from '@/contexts/CartContext';
+import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/libs/utils';
+import type { CartItem } from '@/types/cart';
 
 type RestaurantQuickReorderButtonProps = {
   restaurantId: string;

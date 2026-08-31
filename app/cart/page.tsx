@@ -30,29 +30,7 @@ import DeliveryInformation from './DeliveryInformation';
 import OrderSummary from './OrderSummary';
 import Title from '@/components/shared/Title';
 import RestaurantAvailabilityNotifyButton from '@/components/shared/RestaurantAvailabilityNotifyButton';
-
-type CartValidationItem = {
-  _id: string;
-  itemKey: string;
-  status: 'valid' | 'unavailable' | 'deleted' | 'invalid_size' | 'invalid';
-  name?: string;
-  image?: string | null;
-  size?: string;
-  price?: number;
-  previousPrice?: number | null;
-  priceChanged?: boolean;
-  message?: string | null;
-};
-
-type CartValidationResponse = {
-  items: CartValidationItem[];
-  canCheckout: boolean;
-  message?: string | null;
-};
-
-type CheckoutStartResult = {
-  paid: boolean;
-};
+import type { CartValidationItem, CartValidationResponse, CheckoutStartResult } from '@/types/cart';
 
 const RESTAURANT_STATUS_CHECK_MIN_MS = 1000;
 const RESTAURANT_STATUS_DOT_STEPS = ['.', '..', '...'] as const;

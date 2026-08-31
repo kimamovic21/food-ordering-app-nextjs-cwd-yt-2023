@@ -34,33 +34,7 @@ import Link from 'next/link';
 import MenuItem from './MenuItem';
 import SearchInput from './SearchInput';
 import MenuPageSkeleton from './MenuPageSkeleton';
-
-interface MenuItemType {
-  _id: string;
-  image?: string;
-  name: string;
-  description: string;
-  category?: { _id: string; name: string } | string;
-  priceSmall: number | null;
-  priceMedium: number | null;
-  priceLarge: number | null;
-  restaurantId: string;
-  isAvailable?: boolean;
-  restaurantAverageRating?: number;
-  restaurantRatingCount?: number;
-}
-
-interface Category {
-  _id: string;
-  name: string;
-}
-
-interface CategorySummary {
-  _id: string;
-  name: string;
-  items: MenuItemType[];
-  total: number;
-}
+import type { MenuCategorySummary, MenuItemCategory, MenuItemListItem } from '@/types/menu';
 
 const SORT_OPTIONS = ['price_asc', 'price_desc', 'newest', 'oldest'] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
@@ -98,12 +72,12 @@ const RestaurantMenuPage = () => {
     maxPrice: parseAsString.withDefault(''),
     page: parseAsInteger.withDefault(1),
   });
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
+  const [categories, setCategories] = useState<MenuItemCategory[]>([]);
+  const [categorySummaries, setCategorySummaries] = useState<MenuCategorySummary[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   const [isResultsLoading, setIsResultsLoading] = useState(false);
-  const [results, setResults] = useState<MenuItemType[]>([]);
+  const [results, setResults] = useState<MenuItemListItem[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const page = Math.max(1, pageQuery);
   const activeSearch = searchQuery.trim();
@@ -178,7 +152,10 @@ const RestaurantMenuPage = () => {
         const data = await response.json();
         const summaries = Array.isArray(data?.categories) ? data.categories : [];
         setCategories(
-          summaries.map((summary: CategorySummary) => ({ _id: summary._id, name: summary.name }))
+          summaries.map((summary: MenuCategorySummary) => ({
+            _id: summary._id,
+            name: summary.name,
+          }))
         );
       } catch (error) {
         console.error('Error fetching restaurant categories:', error);

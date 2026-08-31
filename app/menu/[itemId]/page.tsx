@@ -26,47 +26,9 @@ import useFavorites from '@/hooks/useFavorites';
 import useProfile from '@/hooks/useProfile';
 import Pizza from '@/public/pizza.png';
 import MenuItemDetailLoading from './loading';
-
-interface MenuItemType {
-  _id: string;
-  image?: string;
-  name: string;
-  description: string;
-  category?: { _id: string; name: string } | string;
-  priceSmall: number | null;
-  priceMedium: number | null;
-  priceLarge: number | null;
-  restaurantId: string;
-  restaurantAverageRating?: number;
-  restaurantRatingCount?: number;
-  adminId?: string;
-  isAvailable?: boolean;
-}
-
-interface RestaurantType {
-  _id: string;
-  name: string;
-  street?: string;
-  city?: string;
-  postalCode?: string;
-  country?: string;
-  contact?: string;
-  email?: string;
-  webAddress?: string;
-  description?: string;
-  images?: string[];
-  isOpen?: boolean;
-  averageRating?: number;
-  ratingCount?: number;
-  workingHours?: Array<{
-    day: string;
-    openTime: string;
-    closeTime: string;
-    isClosed: boolean;
-  }>;
-}
-
-type Size = 'small' | 'medium' | 'large' | 'single';
+import type { CartSize } from '@/types/cart';
+import type { MenuItemListItem } from '@/types/menu';
+import type { RestaurantPublicDetails } from '@/types/restaurant';
 
 const formatDay = (day: string) => day.charAt(0).toUpperCase() + day.slice(1);
 
@@ -79,7 +41,7 @@ const normalizeId = (value: unknown): string => {
   return String(value);
 };
 
-const getCategoryName = (category: MenuItemType['category']) => {
+const getCategoryName = (category: MenuItemListItem['category']) => {
   if (!category) return 'Menu item';
   return typeof category === 'string' ? category : category.name;
 };
@@ -87,11 +49,11 @@ const getCategoryName = (category: MenuItemType['category']) => {
 const MenuItemDetailPage = () => {
   const params = useParams<{ itemId: string }>();
   const itemId = params?.itemId;
-  const [item, setItem] = useState<MenuItemType | null>(null);
-  const [restaurant, setRestaurant] = useState<RestaurantType | null>(null);
+  const [item, setItem] = useState<MenuItemListItem | null>(null);
+  const [restaurant, setRestaurant] = useState<RestaurantPublicDetails | null>(null);
   const [isItemLoading, setIsItemLoading] = useState(true);
   const [isRestaurantLoading, setIsRestaurantLoading] = useState(false);
-  const [userSelectedSize, setUserSelectedSize] = useState<Size>('small');
+  const [userSelectedSize, setUserSelectedSize] = useState<CartSize>('small');
   const [shareUrl, setShareUrl] = useState('');
   const { addToCart, getCartRestaurantId } = useCart();
   const { data: profileData, loading: profileLoading } = useProfile();
@@ -164,7 +126,7 @@ const MenuItemDetailPage = () => {
   const availableSizes = useMemo(() => {
     if (!item) return [];
 
-    return (['small', 'medium', 'large'] as Size[])
+    return (['small', 'medium', 'large'] as CartSize[])
       .map((size) => {
         const value =
           size === 'small'
@@ -177,7 +139,7 @@ const MenuItemDetailPage = () => {
       .filter((entry) => typeof entry.value === 'number' && Number.isFinite(entry.value));
   }, [item]);
 
-  const effectiveSelectedSize: Size = useMemo(() => {
+  const effectiveSelectedSize: CartSize = useMemo(() => {
     if (availableSizes.length === 1) return 'single';
     if (availableSizes.some((entry) => entry.size === userSelectedSize)) return userSelectedSize;
     return availableSizes[0]?.size ?? 'small';

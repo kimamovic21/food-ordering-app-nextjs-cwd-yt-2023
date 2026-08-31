@@ -15,7 +15,8 @@
 - Stripe payments (`app/api/checkout/**`, `app/api/payment-link/**`, `app/api/webhook/**`)
 - Resend email integration (`libs/sendPurchaseReceiptEmail.tsx`)
 - Upstash Redis rate limiting (`libs/rateLimit.ts`)
-- date-fns date formatting (`libs/dateFormat.ts`)
+- date-fns and @date-fns/tz date formatting (`libs/dateFormat.ts`)
+- currency.js money helpers (`libs/money.ts`) and libphonenumber-js phone helpers (`libs/phone.ts`)
 - Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin completion, support tickets, and late-order alerts
 
 ## Coding Expectations
@@ -24,12 +25,14 @@
 - Before implementing a new feature or non-trivial app logic, create or switch to a dedicated local feature branch from `main` unless the user explicitly asks to work on the current branch.
 - Respect existing code organization and naming patterns.
 - Reuse business logic from `libs/` and existing contexts.
+- Keep reusable domain, DTO, and API response types in `types/`; use lowercase feature filenames and PascalCase exported names. Keep one-off component props colocated with the component.
 - Use TanStack Query for client-side server state that benefits from cache, refetch, invalidation, optimistic updates, or polling. Keep message inbox/thread views, favorite ID/list views, and shared keys in `libs/queryKeys.ts`.
 - Use TanStack Table for larger list UIs that need search, sorting, pagination, or column visibility. Use simple mode without toolbar/pagination for small read-only detail tables such as order items. Keep mutations and row actions in the owning screen component.
 - `NuqsAdapter` is mounted in `app/layout.tsx`; use `nuqs` for URL-backed filters, sorting, search, selected ticket links, report periods, and pagination when the state should survive refresh/share.
 - `components/shared/AppCommandPalette.tsx` uses `cmdk`; add important new routes/actions there when adding major navigation surfaces.
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client recovery, not API validation.
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts`.
+- Use `libs/money.ts` for business money calculations and `libs/phone.ts` before saving phone numbers.
 - Keep strong typing and avoid implicit any.
 
 ## Risk Controls
@@ -62,6 +65,7 @@
 - Test runner: Vitest.
 - Test folders: `__tests__/` for unit tests, `mocks/` for fixtures, `e2e/` for real-flow tests.
 - Single-file execution: `npm run test:file -- <path>`.
+- Use `__tests__/utils/testFactories.ts` for generated fixtures and `__tests__/utils/mongoMemoryServer.ts` for isolated Mongo integration tests when needed.
 - Prefer behavior-focused tests that cover success and failure paths.
 - For order-flow work, cover checkout validation, coupon suggestion, restaurant availability, notification copy, courier summaries, and lifecycle transitions.
 - Use `npm run test:e2e` for register/login and other real DB flow validation.

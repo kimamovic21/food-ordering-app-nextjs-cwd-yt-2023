@@ -15,22 +15,10 @@ import Title from '@/components/shared/Title';
 import useProfile from '@/hooks/useProfile';
 import UsersTable from './UsersTable';
 import UsersLoading from './loading';
-
-type UserType = {
-  _id: string;
-  name: string;
-  email: string;
-  image?: string;
-  city?: string;
-  country?: string;
-  phone?: string;
-  postalCode?: string;
-  streetAddress?: string;
-  admin?: boolean;
-};
+import type { AdminUserListItem } from '@/types/user';
 
 const UsersPage = () => {
-  const [users, setUsers] = useState<UserType[]>([]);
+  const [users, setUsers] = useState<AdminUserListItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
   const [pageQuery, setPageQuery] = useQueryState('page', parseAsInteger.withDefault(1));

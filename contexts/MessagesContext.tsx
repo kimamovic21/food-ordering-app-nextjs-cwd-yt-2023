@@ -7,19 +7,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useSoundSettings } from '@/contexts/SoundSettingsContext';
 import { queryKeys } from '@/libs/queryKeys';
+import type { MessageSummary, MessagesSummaryApiResponse } from '@/types/messages';
 
-export type MessageSummary = {
-  _id: string;
-  unreadCount: number;
-  lastMessageAt?: string | null;
-  lastMessageText?: string | null;
-  contact?: {
-    _id: string;
-    name: string;
-    image?: string | null;
-    role: 'user' | 'admin' | 'courier';
-  } | null;
-};
+export type { MessageSummary } from '@/types/messages';
 
 type MessagesContextValue = {
   conversations: MessageSummary[];
@@ -34,15 +24,10 @@ type MessagesProviderProps = {
   children: React.ReactNode;
 };
 
-type MessagesApiResponse = {
-  conversations: MessageSummary[];
-  unreadCount: number;
-};
-
 const EMPTY_CONVERSATIONS: MessageSummary[] = [];
 const getEventSourceUrl = () => '/api/messages/stream';
 
-const fetchMessages = async (): Promise<MessagesApiResponse> => {
+const fetchMessages = async (): Promise<MessagesSummaryApiResponse> => {
   const response = await fetch('/api/messages', { cache: 'no-store' });
 
   if (!response.ok) {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 import { formatAppDateTime } from '@/libs/dateFormat';
-import type { RestaurantReportSummary } from '@/libs/restaurantReports';
+import type { RestaurantReportSummary } from '@/types/reports';
 
 type RestaurantReportPdfDocumentProps = {
   restaurant: {

@@ -30,45 +30,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-interface WorkingHour {
-  day: string;
-  openTime: string;
-  closeTime: string;
-  isClosed: boolean;
-}
-
-interface BlockedDate {
-  date: string;
-  reason: string;
-}
-
-interface RestaurantDetails {
-  _id: string;
-  name: string;
-  street: string;
-  city: string;
-  postalCode: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-  contact: string;
-  email: string;
-  webAddress?: string;
-  description: string;
-  images: string[];
-  tax: number;
-  courierFee: number;
-  totalEmployees: number;
-  workingHours: WorkingHour[];
-  blockedDates: BlockedDate[];
-  isOpen: boolean;
-  isAcceptingOrders?: boolean;
-  orderingUnavailableReason?: string | null;
-  isBusy?: boolean;
-  averageRating: number;
-  ratingCount: number;
-}
+import type { RestaurantDetails } from '@/types/restaurant';
 
 const formatDay = (day: string) => day.charAt(0).toUpperCase() + day.slice(1);
 

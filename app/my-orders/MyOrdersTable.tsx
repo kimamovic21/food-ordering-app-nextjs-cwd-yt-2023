@@ -35,24 +35,15 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCart } from '@/contexts/CartContext';
 import { formatAppDateTime } from '@/libs/dateFormat';
-
-type OrderType = {
-  _id: string;
-  email: string;
-  total: number;
-  paymentStatus: boolean;
-  orderStatus:
-    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
-  createdAt: string;
-};
+import type { OrderListItem } from '@/types/order';
 
 type MyOrdersTableProps = {
-  orders: OrderType[];
+  orders: OrderListItem[];
   loading: boolean;
-  onOrderUpdated?: (order: OrderType) => void;
+  onOrderUpdated?: (order: OrderListItem) => void;
 };
 
-const columnHelper = createDataTableColumnHelper<OrderType>();
+const columnHelper = createDataTableColumnHelper<OrderListItem>();
 
 function PaymentBadge({ paid }: { paid: boolean }) {
   return (
@@ -65,7 +56,7 @@ function PaymentBadge({ paid }: { paid: boolean }) {
   );
 }
 
-function OrderStatusBadge({ status }: { status: OrderType['orderStatus'] }) {
+function OrderStatusBadge({ status }: { status: OrderListItem['orderStatus'] }) {
   const statusClassName =
     status === 'canceled'
       ? 'bg-red-100 text-red-800 hover:bg-red-100'
@@ -317,7 +308,7 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
       enableHiding: false,
       enableSorting: false,
     }),
-  ]) satisfies DataTableColumnDef<OrderType>[];
+  ]) satisfies DataTableColumnDef<OrderListItem>[];
 
   if (loading) {
     return (

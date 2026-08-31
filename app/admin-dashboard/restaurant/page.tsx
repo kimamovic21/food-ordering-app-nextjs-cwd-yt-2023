@@ -40,53 +40,12 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import RestaurantStatistics from './RestaurantStatistics';
 import { formatAppDate } from '@/libs/dateFormat';
+import type { RestaurantAdminDetails } from '@/types/restaurant';
 
 const RestaurantLocation = dynamic(() => import('@/components/shared/RestaurantLocation'), {
   ssr: false,
   loading: () => <div className='h-[400px] bg-muted animate-pulse rounded-lg' />,
 });
-
-interface WorkingHours {
-  day: string;
-  openTime: string;
-  closeTime: string;
-  isClosed: boolean;
-}
-
-interface BlockedDate {
-  date: string;
-  reason: string;
-}
-
-interface Restaurant {
-  _id: string;
-  name: string;
-  street: string;
-  city: string;
-  postalCode: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-  contact: string;
-  email: string;
-  webAddress?: string;
-  description: string;
-  tax: number;
-  courierFee: number;
-  minimumOrderAmount?: number;
-  averagePreparationMinutes?: number;
-  averageDeliveryMinutes?: number;
-  activeOrderLimit?: number;
-  deliveryRadiusKm?: number;
-  isPaused?: boolean;
-  pauseReason?: string;
-  workingHours: WorkingHours[];
-  blockedDates: BlockedDate[];
-  totalEmployees: number;
-  images: string[];
-  createdAt: string;
-  updatedAt: string;
-}
 
 type OrderingLoad = {
   activeKitchenOrders: number;
@@ -98,7 +57,7 @@ type OrderingLoad = {
 const RestaurantPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [restaurant, setRestaurant] = useState<RestaurantAdminDetails | null>(null);
   const [orderingLoad, setOrderingLoad] = useState<OrderingLoad | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);

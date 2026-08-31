@@ -23,28 +23,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-
-interface MenuItem {
-  _id: string;
-  image?: string;
-  name: string;
-  description: string;
-  category?: { _id: string; name: string } | string;
-  priceType?: string;
-  priceSmall: number | null;
-  priceMedium: number | null;
-  priceLarge: number | null;
-  isAvailable?: boolean;
-}
-
-interface Category {
-  _id: string;
-  name: string;
-}
+import type { MenuItemCategory, MenuItemListItem } from '@/types/menu';
 
 interface MenuItemsProps {
-  menuItems: MenuItem[];
-  categories: Category[];
+  menuItems: MenuItemListItem[];
+  categories: MenuItemCategory[];
   searchQuery?: string;
   onSearchChange?: (value: string) => void;
   onEdit: (id: string) => void;
@@ -53,19 +36,19 @@ interface MenuItemsProps {
   isAdmin?: boolean;
 }
 
-type MenuItemRow = MenuItem & {
+type MenuItemRow = MenuItemListItem & {
   categoryName: string;
 };
 
 const columnHelper = createDataTableColumnHelper<MenuItemRow>();
 const DESCRIPTION_PREVIEW_LENGTH = 82;
 
-const getCategoryId = (item: MenuItem): string => {
+const getCategoryId = (item: MenuItemListItem): string => {
   if (typeof item.category === 'string') return item.category;
   return item.category?._id || '';
 };
 
-const getCategoryName = (item: MenuItem, categories: Category[]) => {
+const getCategoryName = (item: MenuItemListItem, categories: MenuItemCategory[]) => {
   if (typeof item.category === 'object' && item.category?.name) {
     return item.category.name;
   }

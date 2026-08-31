@@ -146,7 +146,7 @@ const loadCheckoutRoute = async () => {
 
 const createCheckoutRequest = (overrides: Partial<Record<string, unknown>> = {}) => {
   const baseBody = {
-    phone: '+1234567',
+    phone: '062128430',
     streetAddress: 'Street 1',
     postalCode: '71000',
     city: 'Sarajevo',
@@ -287,6 +287,16 @@ describe('POST /api/checkout', () => {
 
     expect(response.status).toBe(400);
     expect(body).toEqual({ error: 'Cart must contain items from one restaurant only' });
+    expect(stripeCreateSession).not.toHaveBeenCalled();
+  });
+
+  it('rejects checkout when phone number is invalid', async () => {
+    const POST = await loadCheckoutRoute();
+    const response = await POST(createCheckoutRequest({ phone: '123' }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ error: 'Please enter a valid phone number.' });
     expect(stripeCreateSession).not.toHaveBeenCalled();
   });
 
@@ -476,6 +486,7 @@ describe('POST /api/checkout', () => {
             quantity: 2,
           }),
         ],
+        phone: '+38762128430',
         total: 34,
       })
     );

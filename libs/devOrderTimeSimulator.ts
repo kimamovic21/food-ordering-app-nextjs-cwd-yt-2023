@@ -1,4 +1,4 @@
-import type { OrderPhaseDurationOffsets } from '@/components/shared/OrderPhaseTimeline';
+import type { OrderPhaseDurationOffsets } from '@/types/order-timeline';
 
 const MAX_DEV_OFFSET_MINUTES = 240;
 

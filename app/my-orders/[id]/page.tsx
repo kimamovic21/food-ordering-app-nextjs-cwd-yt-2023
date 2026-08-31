@@ -36,13 +36,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import OrderPhaseTimeline, {
-  type OrderPhaseDurationOffsets,
-} from '@/components/shared/OrderPhaseTimeline';
+import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
 import OrderProgressStepper from '@/components/shared/OrderProgressStepper';
 import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
+import type { OrderPhaseDurationOffsets } from '@/types/order-timeline';
 import {
   getDevOrderTimeOffsetsFromStorage,
   getDevOrderTimeSimulatorStorageKey,
@@ -53,66 +52,7 @@ import {
   getNotificationRealtimePayload,
   isOrderRelatedRealtimePayload,
 } from '@/libs/realtimeClient';
-
-type CartProduct = {
-  productId: string;
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-};
-
-type OrderDetailsType = {
-  _id: string;
-  userId: string;
-  email: string;
-  phone: string;
-  streetAddress: string;
-  postalCode: string;
-  city: string;
-  country: string;
-  specialInstructions?: string;
-  cartProducts: CartProduct[];
-  total: number;
-  paymentStatus: boolean;
-  orderStatus:
-    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
-  createdAt: string;
-  processingAt?: string | null;
-  readyAt?: string | null;
-  transportationAt?: string | null;
-  courierDeliveredAt?: string | null;
-  customerConfirmedDeliveryAt?: string | null;
-  adminConfirmedDeliveryAt?: string | null;
-  deliveryCompletedBy?: 'customer' | 'admin' | null;
-  deliveryPin?: string | null;
-  canceledBy?: 'customer' | 'restaurant_owner' | 'super_admin' | 'system' | null;
-  cancellationReason?: string | null;
-  canceledAt?: string | null;
-  completedAt?: string | null;
-  taxPercentage?: number;
-  taxAmount?: number;
-  deliveryFee?: number;
-  estimatedPreparationMinutes?: number | null;
-  estimatedDeliveryMinutes?: number | null;
-  estimatedTotalMinutes?: number | null;
-  loyaltyDiscount?: number;
-  loyaltyDiscountPercentage?: number;
-  loyaltyTier?: string;
-  restaurantId?: string;
-  courier?: {
-    _id: string;
-    name: string;
-    email: string;
-    image?: string | null;
-  } | null;
-};
-
-type OrderReviewType = {
-  rating: number;
-  reviewText: string;
-  createdAt?: string;
-};
+import type { CustomerOrderDetails, OrderReview } from '@/types/order';
 
 // Map loads client-side only because Leaflet touches window during module init
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
@@ -125,10 +65,10 @@ const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
 });
 
 const MyOrderDetailPage = () => {
-  const [order, setOrder] = useState<OrderDetailsType | null>(null);
+  const [order, setOrder] = useState<CustomerOrderDetails | null>(null);
   const [timelineOffsets, setTimelineOffsets] = useState<OrderPhaseDurationOffsets>({});
-  const [restaurantReview, setRestaurantReview] = useState<OrderReviewType | null>(null);
-  const [courierReview, setCourierReview] = useState<OrderReviewType | null>(null);
+  const [restaurantReview, setRestaurantReview] = useState<OrderReview | null>(null);
+  const [courierReview, setCourierReview] = useState<OrderReview | null>(null);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [cancelingOrder, setCancelingOrder] = useState(false);

@@ -17,11 +17,7 @@ import Title from '@/components/shared/Title';
 import MenuItemImage from '../../MenuItemImage';
 import MenuItemForm from '../../MenuItemForm';
 import { AI_MENU_DESCRIPTION_MAX_CHARS } from '@/libs/menuItemDescription';
-
-interface Category {
-  _id: string;
-  name: string;
-}
+import type { MenuItemCategory } from '@/types/menu';
 
 const EditMenuItemPage = () => {
   const router = useRouter();
@@ -41,7 +37,7 @@ const EditMenuItemPage = () => {
   const [image, setImage] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<MenuItemCategory[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDescriptionGenerating, setIsDescriptionGenerating] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);

@@ -16,23 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import useFavorites from '@/hooks/useFavorites';
 import { queryKeys } from '@/libs/queryKeys';
 import FavoriteRestaurantsLoading from './loading';
-
-interface FavoriteRestaurant {
-  _id: string;
-  name: string;
-  city: string;
-  country: string;
-  street: string;
-  description: string;
-  image: string | null;
-  isOpen: boolean;
-  averageRating: number;
-  ratingCount: number;
-}
-
-type FavoriteRestaurantsResponse = {
-  restaurants: FavoriteRestaurant[];
-};
+import type { FavoriteRestaurantsResponse } from '@/types/favorites';
 
 const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurantsResponse> => {
   const response = await fetch('/api/favorites/restaurants', { cache: 'no-store' });

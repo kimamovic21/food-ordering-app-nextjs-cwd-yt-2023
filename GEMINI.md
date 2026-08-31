@@ -16,7 +16,8 @@ This file provides project context and coding guidance for Gemini tools.
 - Email: Resend + React Email
 - AI: OpenAI SDK for server-side menu description generation
 - Rate limiting: Upstash Redis for short-lived counters on sensitive routes
-- Dates: date-fns through `libs/dateFormat.ts` for UI, email, and PDF date formatting
+- Dates: date-fns and @date-fns/tz through `libs/dateFormat.ts` for UI, email, and PDF date formatting in the app timezone
+- Money and phone helpers: currency.js through `libs/money.ts`, and libphonenumber-js through `libs/phone.ts`
 - Sharing: react-share
 - URL state: nuqs for shareable search/filter/sort/pagination state
 - Client recovery: react-error-boundary for localized interactive fallbacks
@@ -30,6 +31,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Before implementing a new feature or non-trivial app logic, create or switch to a dedicated local feature branch from `main` unless the user explicitly asks to work on the current branch.
 - Respect existing patterns in app/, libs/, models/, and components/.
 - Use TypeScript types and avoid implicit any.
+- Keep reusable domain, DTO, and API response types in `types/`; use lowercase feature filenames and PascalCase exported names. Keep one-off component props colocated with the component.
 - Do not introduce new dependencies unless requested.
 - Keep docs in sync when adding features, integrations, or env vars.
 
@@ -39,6 +41,8 @@ This file provides project context and coding guidance for Gemini tools.
 - Validate API inputs and return clear error responses.
 - Use existing utility helpers when possible (libs/).
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts` (`dd/MM/yyyy`, `dd/MM/yyyy HH:mm`).
+- Use `libs/money.ts` for business money calculations; avoid hand-rolled floating-point arithmetic in checkout, coupons, earnings, and reports.
+- Use `libs/phone.ts` before saving phone values; local Bosnia and Herzegovina numbers are accepted and normalized to E.164.
 - Avoid breaking API response shapes.
 - Preserve role-based access checks (admin/courier/user).
 - Preserve messaging restrictions: no customer-to-customer chat, and order conversations must match the assigned courier or restaurant owner.
@@ -80,6 +84,7 @@ This file provides project context and coding guidance for Gemini tools.
 - E2E tests are stored in `e2e/` and use `MONGODB_URL_TESTS`.
 - Initial coverage includes register and credentials login behavior.
 - Order-flow coverage includes checkout, coupons, restaurant availability helpers, notification copy, courier delivery summaries, and high-risk lifecycle transitions.
+- Use `__tests__/utils/testFactories.ts` for generated fixtures, and `__tests__/utils/mongoMemoryServer.ts` for isolated Mongo integration tests when needed.
 - Run npm run lint after changes.
 - Run npm run test after test-related changes.
 - For API changes, note any new env vars in example.env.

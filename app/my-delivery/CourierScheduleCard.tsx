@@ -8,13 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
-
-type CourierWorkingHour = {
-  day: string;
-  startTime: string;
-  endTime: string;
-  isUnavailable?: boolean;
-};
+import type { CourierWorkingHour } from '@/types/courier';
 
 const dayLabels: Record<string, string> = {
   monday: 'Monday',

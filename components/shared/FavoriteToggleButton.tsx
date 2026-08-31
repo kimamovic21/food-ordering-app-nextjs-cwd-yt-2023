@@ -8,8 +8,12 @@ import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Button } from '@/components/ui/button';
 import { emptyFavorites, type FavoritesState } from '@/hooks/useFavorites';
 import { queryKeys } from '@/libs/queryKeys';
-
-type FavoriteType = 'menu-item' | 'restaurant';
+import type {
+  FavoriteMenuItemsCache,
+  FavoriteRestaurantsCache,
+  FavoriteToggleResponse,
+  FavoriteType,
+} from '@/types/favorites';
 
 interface FavoriteToggleButtonProps {
   type: FavoriteType;
@@ -21,23 +25,9 @@ interface FavoriteToggleButtonProps {
   onChanged?: (isFavorite: boolean) => void;
 }
 
-type FavoriteToggleResponse = {
-  action?: 'added' | 'removed';
-  isFavorite: boolean;
-  success?: boolean;
-};
-
 type FavoriteMutationContext = {
   previousFavorites?: FavoritesState;
   previousLocalValue: boolean;
-};
-
-type FavoriteMenuItemsCache = {
-  items?: Array<{ _id: string }>;
-};
-
-type FavoriteRestaurantsCache = {
-  restaurants?: Array<{ _id: string }>;
 };
 
 const endpointByType: Record<FavoriteType, string> = {

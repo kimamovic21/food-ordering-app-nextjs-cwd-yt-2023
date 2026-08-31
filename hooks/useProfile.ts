@@ -3,22 +3,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { queryKeys } from '@/libs/queryKeys';
+import type { ProfileData } from '@/types/user';
 
-export interface ProfileData {
-  _id?: string;
-  role?: string;
-  name?: string;
-  email?: string;
-  image?: string;
-  phone?: string;
-  streetAddress?: string;
-  postalCode?: string;
-  city?: string;
-  country?: string;
-  availability?: boolean;
-  loyaltyTier?: string;
-  restaurantId?: string;
-}
+export type { ProfileData } from '@/types/user';
 
 export const fetchProfile = async (): Promise<ProfileData | null> => {
   const response = await fetch('/api/profile', { cache: 'no-store' });

@@ -11,31 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import HeartRating from '@/components/shared/HeartRating';
 import Title from '@/components/shared/Title';
 import { formatAppDate } from '@/libs/dateFormat';
-
-type CourierReviewItem = {
-  _id: string;
-  rating: number;
-  reviewText: string;
-  createdAt: string;
-  customer?: {
-    name?: string;
-  };
-};
-
-type CourierData = {
-  _id: string;
-  name: string;
-  image?: string | null;
-};
-
-type CourierReviewsResponse = {
-  courier: CourierData;
-  reviews: CourierReviewItem[];
-  summary: {
-    averageRating: number;
-    totalCount: number;
-  };
-};
+import type { CourierReviewsDisplayResponse } from '@/types/review';
 
 const CourierReviewsPage = () => {
   const params = useParams();
@@ -44,7 +20,7 @@ const CourierReviewsPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [data, setData] = useState<CourierReviewsResponse | null>(null);
+  const [data, setData] = useState<CourierReviewsDisplayResponse | null>(null);
 
   useEffect(() => {
     const loadCourierReviews = async () => {

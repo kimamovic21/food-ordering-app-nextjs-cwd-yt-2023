@@ -4,7 +4,7 @@ This document explains how the food ordering app is organized, how the main syst
 
 ## System Overview
 
-The app is a full-stack Next.js App Router application. Pages, server route handlers, API logic, and UI live in the same repository. MongoDB stores the application data through Mongoose models. External services handle payments, media uploads, email, OAuth, AI text generation, rate limiting, and maps.
+The app is a full-stack Next.js App Router application. Pages, server route handlers, API logic, and UI live in the same repository. MongoDB stores the application data through Mongoose models. External services handle payments, media uploads, email, OAuth, AI text generation, rate limiting, and maps. Shared helpers centralize money arithmetic, phone normalization, and timezone-aware display dates.
 
 ```mermaid
 flowchart LR
@@ -54,6 +54,7 @@ flowchart LR
 - `hooks/`: client hooks such as profile and favorites data loading.
 - `libs/`: auth, database, notifications, messages, coupons, loyalty, email, AI, rate limiting, date formatting, and helper utilities.
 - `models/`: Mongoose schemas and MongoDB collection contracts.
+- `types/`: reusable TypeScript domain models, DTOs, and API response contracts shared across pages, components, contexts, and server helpers.
 - `__tests__/`, `e2e/`, `mocks/`: Vitest unit/integration/e2e test areas.
 
 ## Client UX Shell
@@ -66,6 +67,9 @@ flowchart LR
 - `Analytics` from `@vercel/analytics/next` records production traffic on Vercel.
 - `TanStackDataTable` uses TanStack Table for reusable searchable, sortable, paginated data-table UI.
 - `sharp` is installed for Next.js image optimization and is used automatically by the framework.
+- `libs/money.ts` wraps `currency.js` for precise checkout, coupon, earnings, delivery fee, and report calculations.
+- `libs/phone.ts` wraps `libphonenumber-js` so profile and checkout phones are validated and stored in E.164 format.
+- `libs/dateFormat.ts` uses `date-fns` with `@date-fns/tz` so UI, email, and PDF dates render in the app timezone.
 
 `nuqs` is currently used where refreshed or shared URLs should preserve UI state: public menu filters, restaurant menu filters, restaurants search/page, customer orders, customer reports, admin orders, admin users, admin menu items, support ticket filters, and restaurant report period/date filters.
 

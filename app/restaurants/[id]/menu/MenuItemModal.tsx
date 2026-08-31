@@ -13,50 +13,19 @@ import { Clock, MapPin, Phone, Mail, Globe } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Pizza from '@/public/pizza.png';
-
-interface MenuItemType {
-  _id: string;
-  image?: string;
-  name: string;
-  description: string;
-  category?: { _id: string; name: string } | string;
-  priceSmall: number | null;
-  priceMedium: number | null;
-  priceLarge: number | null;
-  restaurantId: string;
-  isAvailable?: boolean;
-}
-
-interface RestaurantType {
-  _id: string;
-  name: string;
-  street: string;
-  city: string;
-  postalCode: string;
-  contact: string;
-  email: string;
-  webAddress?: string;
-  description: string;
-  images?: string[];
-  workingHours?: Array<{
-    day: string;
-    openTime: string;
-    closeTime: string;
-    isClosed: boolean;
-  }>;
-}
+import type { CartSize } from '@/types/cart';
+import type { MenuItemListItem } from '@/types/menu';
+import type { RestaurantPublicDetails } from '@/types/restaurant';
 
 interface MenuItemModalProps {
-  item: MenuItemType;
+  item: MenuItemListItem;
   isOpen: boolean;
   onClose: () => void;
 }
 
-type Size = 'small' | 'medium' | 'large' | 'single';
-
 const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
-  const [userSelectedSize, setUserSelectedSize] = useState<Size>('small');
-  const [restaurant, setRestaurant] = useState<RestaurantType | null>(null);
+  const [userSelectedSize, setUserSelectedSize] = useState<CartSize>('small');
+  const [restaurant, setRestaurant] = useState<RestaurantPublicDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { addToCart, getCartRestaurantId } = useCart();
   const { data: profileData } = useProfile();
@@ -68,7 +37,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
     typeof imageUrl === 'string' &&
     (imageUrl.startsWith('http') || imageUrl.includes('cloudinary'));
 
-  const availableSizes = (['small', 'medium', 'large'] as Size[])
+  const availableSizes = (['small', 'medium', 'large'] as CartSize[])
     .map((size) => {
       const value =
         size === 'small' ? item.priceSmall : size === 'medium' ? item.priceMedium : item.priceLarge;
@@ -76,7 +45,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
     })
     .filter((entry) => typeof entry.value === 'number' && Number.isFinite(entry.value));
 
-  const effectiveSelectedSize: Size = (() => {
+  const effectiveSelectedSize: CartSize = (() => {
     if (availableSizes.length === 1) return 'single';
     if (availableSizes.some((entry) => entry.size === userSelectedSize)) return userSelectedSize;
     return availableSizes[0]?.size ?? 'small';

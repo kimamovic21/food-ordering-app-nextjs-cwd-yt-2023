@@ -9,30 +9,9 @@ import {
   dispatchNotificationRealtimeEvent,
   type AppNotificationRealtimePayload,
 } from '@/libs/realtimeClient';
+import type { AppNotification, NotificationsApiResponse } from '@/types/notifications';
 
-export type AppNotification = {
-  _id: string;
-  type:
-    | 'order_placed'
-    | 'order_paid'
-    | 'order_status_changed'
-    | 'courier_assigned'
-    | 'order_completed'
-    | 'order_canceled'
-    | 'restaurant_available'
-    | 'support_ticket'
-    | 'late_order';
-  title: string;
-  message: string;
-  orderId?: string | null;
-  metadata?: {
-    ticketId?: string | null;
-    [key: string]: unknown;
-  } | null;
-  isRead: boolean;
-  readAt?: string | null;
-  createdAt: string;
-};
+export type { AppNotification } from '@/types/notifications';
 
 type NotificationsContextValue = {
   notifications: AppNotification[];
@@ -47,11 +26,6 @@ const NotificationsContext = createContext<NotificationsContextValue | undefined
 
 type NotificationsProviderProps = {
   children: React.ReactNode;
-};
-
-type NotificationsApiResponse = {
-  notifications: AppNotification[];
-  unreadCount: number;
 };
 
 const EMPTY_NOTIFICATIONS: AppNotification[] = [];

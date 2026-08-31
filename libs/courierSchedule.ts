@@ -1,9 +1,6 @@
-export type CourierWorkingHour = {
-  day: string;
-  startTime: string;
-  endTime: string;
-  isUnavailable?: boolean;
-};
+import type { CourierWorkingHour } from '@/types/courier';
+
+export type { CourierWorkingHour } from '@/types/courier';
 
 export const defaultCourierWorkingHours: CourierWorkingHour[] = [
   { day: 'monday', startTime: '09:00', endTime: '17:00', isUnavailable: false },

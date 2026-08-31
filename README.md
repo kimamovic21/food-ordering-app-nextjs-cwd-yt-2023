@@ -85,6 +85,10 @@ It includes:
 - [ARCHITECTURE.md](./ARCHITECTURE.md): technical architecture, diagrams, data model map, and major workflow diagrams.
 - [DESCRIPTION.md](./DESCRIPTION.md): role-by-role feature description and business logic overview.
 
+## TypeScript Types
+
+Reusable domain, DTO, and API response types live in `types/`, grouped by feature area such as `order.ts`, `cart.ts`, `menu.ts`, `restaurant.ts`, `messages.ts`, `notifications.ts`, and `support-ticket.ts`. Keep small one-off component props colocated with the component, but move shared frontend/backend contracts into `types/` and re-export from `types/index.ts` when they are reused across routes, components, contexts, or libs.
+
 ## Packages Used (with Official Websites)
 
 This project uses many dependencies; below are the main packages actively used in app features.
@@ -121,6 +125,9 @@ This project uses many dependencies; below are the main packages actively used i
 - Hookform Resolvers: [https://github.com/react-hook-form/resolvers](https://github.com/react-hook-form/resolvers)
 - T3 Env: [https://env.t3.gg/](https://env.t3.gg/)
 - date-fns: [https://date-fns.org/](https://date-fns.org/)
+- @date-fns/tz: [https://www.npmjs.com/package/@date-fns/tz](https://www.npmjs.com/package/@date-fns/tz)
+- currency.js: [https://currency.js.org/](https://currency.js.org/)
+- libphonenumber-js: [https://www.npmjs.com/package/libphonenumber-js](https://www.npmjs.com/package/libphonenumber-js)
 
 ### Styling Utilities
 
@@ -170,6 +177,8 @@ This project uses many dependencies; below are the main packages actively used i
 - Testing Library React: [https://testing-library.com/docs/react-testing-library/intro/](https://testing-library.com/docs/react-testing-library/intro/)
 - MSW: [https://mswjs.io/](https://mswjs.io/)
 - jsdom: [https://github.com/jsdom/jsdom](https://github.com/jsdom/jsdom)
+- Faker: [https://fakerjs.dev/](https://fakerjs.dev/)
+- mongodb-memory-server: [https://typegoose.github.io/mongodb-memory-server/](https://typegoose.github.io/mongodb-memory-server/)
 
 ### Sentry Monitoring
 
@@ -227,6 +236,10 @@ This project uses many dependencies; below are the main packages actively used i
 - `react-error-boundary` powers `components/shared/AppErrorBoundary.tsx`, which wraps the main app shell and reports caught client render errors to Sentry.
 - `sharp` is installed so Next.js image optimization has the recommended production image processor available. It is used automatically by Next.js and should not be imported directly in app components.
 - `@vercel/analytics` is mounted in `app/layout.tsx` with `<Analytics />`. It does not need a project env var for normal Vercel deployments and complements Sentry by tracking product traffic instead of application errors.
+- `currency.js` is wrapped by `libs/money.ts` for checkout, coupons, courier earnings, delivery fees, and report calculations that should avoid floating-point drift.
+- `libphonenumber-js` is wrapped by `libs/phone.ts`; profile and checkout phone values are validated and stored in E.164 format, while local Bosnia and Herzegovina numbers such as `062...` remain accepted.
+- `@faker-js/faker` powers reusable test factories in `__tests__/utils/testFactories.ts`.
+- `mongodb-memory-server` is available through `__tests__/utils/mongoMemoryServer.ts` for future Mongo integration tests that need a fully isolated in-memory database.
 
 ### Order Flow And Restaurant Capacity
 
@@ -278,6 +291,7 @@ See `libs/authEmails.tsx` for token generation, hashing, and sending logic (Rese
 - MongoDB stores real `Date` values for timestamps such as `createdAt`, `updatedAt`, `completedAt`, and order phase fields.
 - API responses should serialize dates as ISO strings instead of preformatted labels.
 - UI, receipt email, and PDF receipt date formatting should use `libs/dateFormat.ts`.
+- `libs/dateFormat.ts` formats display dates in the app timezone (`Europe/Sarajevo`) through `@date-fns/tz`.
 - The main app display format is `dd/MM/yyyy`; date-time displays use `dd/MM/yyyy HH:mm`.
 
 For the exact complete dependency list and versions, check package.json.

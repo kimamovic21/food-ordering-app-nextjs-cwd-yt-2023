@@ -23,23 +23,9 @@ import {
 import Link from 'next/link';
 import HeartRating from '@/components/shared/HeartRating';
 import Title from '@/components/shared/Title';
-import ReviewCard, { type ReviewCardData } from '@/components/shared/ReviewCard';
+import ReviewCard from '@/components/shared/ReviewCard';
 import RestaurantReviewsLoading from './loading';
-
-type RestaurantReviewsResponse = {
-  restaurant: {
-    _id: string;
-    name: string;
-  };
-  reviews: ReviewCardData[];
-  meta: {
-    totalCount: number;
-    offset: number;
-    limit: number;
-    nextOffset: number;
-    hasMore: boolean;
-  };
-};
+import type { RestaurantReviewsResponse, ReviewCardData } from '@/types/review';
 
 const ratingOptions = [
   { label: 'All ratings', value: 'all' },

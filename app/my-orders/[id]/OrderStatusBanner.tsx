@@ -1,8 +1,8 @@
 import type { ComponentType } from 'react';
 import { ChefHat, CheckCircle2, Clock, Truck, PackageCheck, XCircle } from 'lucide-react';
+import type { OrderStatus } from '@/types/order';
 
-export type OrderStatus =
-  'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
+export type { OrderStatus } from '@/types/order';
 
 type StatusTone = 'amber' | 'sky' | 'blue' | 'green' | 'red';
 

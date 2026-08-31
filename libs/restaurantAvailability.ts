@@ -1,16 +1,7 @@
 import { formatWeekdayKey, formatWeekdayName } from '@/libs/dateFormat';
+import type { RestaurantBlockedDate, RestaurantWorkingHour } from '@/types/restaurant';
 
-export type RestaurantWorkingHour = {
-  day: string;
-  openTime: string;
-  closeTime: string;
-  isClosed?: boolean;
-};
-
-export type RestaurantBlockedDate = {
-  date: string | Date;
-  reason?: string;
-};
+export type { RestaurantBlockedDate, RestaurantWorkingHour } from '@/types/restaurant';
 
 export const DEFAULT_DELIVERY_RADIUS_KM = 10;
 export const MAX_DELIVERY_RADIUS_KM = 15;

@@ -1,20 +1,7 @@
 import { AuditLog } from '@/models/auditLog';
+import type { CreateAuditLogInput } from '@/types/audit-log';
 
-type AuditActor = {
-  _id?: unknown;
-  email?: string | null;
-  role?: string | null;
-};
-
-type CreateAuditLogInput = {
-  actor?: AuditActor | null;
-  action: string;
-  entityType: string;
-  entityId?: unknown;
-  restaurantId?: unknown;
-  orderId?: unknown;
-  metadata?: Record<string, unknown>;
-};
+export type { AuditActor, CreateAuditLogInput } from '@/types/audit-log';
 
 const toId = (value: unknown) => {
   if (!value) return null;

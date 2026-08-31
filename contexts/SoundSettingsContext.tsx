@@ -5,10 +5,17 @@ import { createContext, useCallback, useContext, useEffect, useMemo } from 'reac
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { queryKeys } from '@/libs/queryKeys';
+import type {
+  MessageSoundSettingsResponse,
+  NotificationSoundSettingsResponse,
+  SoundOptions,
+} from '@/types/sound-settings';
 
-type SoundOptions = {
-  force?: boolean;
-};
+export type {
+  MessageSoundSettingsResponse,
+  NotificationSoundSettingsResponse,
+  SoundOptions,
+} from '@/types/sound-settings';
 
 type SoundSettingsContextValue = {
   notificationSoundEnabled: boolean;
@@ -24,14 +31,6 @@ const SoundSettingsContext = createContext<SoundSettingsContextValue | undefined
 
 type SoundSettingsProviderProps = {
   children: ReactNode;
-};
-
-type NotificationSoundSettingsResponse = {
-  notificationSoundEnabled: boolean;
-};
-
-type MessageSoundSettingsResponse = {
-  messageSoundEnabled: boolean;
 };
 
 type MutationContext<TSettings> = {

@@ -16,31 +16,7 @@ import HeartRating from '@/components/shared/HeartRating';
 import Title from '@/components/shared/Title';
 import CourierDashboardReviewsLoading from './loading';
 import { formatAppDate } from '@/libs/dateFormat';
-
-type CourierReviewData = {
-  _id: string;
-  rating: number;
-  reviewText: string;
-  createdAt: string;
-  orderId: string;
-  customer?: {
-    _id?: string;
-    name?: string;
-  } | null;
-};
-
-type CourierReviewsResponse = {
-  reviews: CourierReviewData[];
-  meta: {
-    totalCount: number;
-    search: string;
-    rating: number | null;
-  };
-  summary: {
-    averageRating: number;
-    totalCount: number;
-  };
-};
+import type { CourierReviewData, CourierReviewsResponse } from '@/types/review';
 
 const ratingOptions = [
   { label: 'All ratings', value: 'all' },

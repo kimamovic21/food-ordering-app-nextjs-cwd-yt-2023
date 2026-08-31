@@ -5,43 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { formatAppDate } from '@/libs/dateFormat';
 import Link from 'next/link';
-
-type ReceiptItem = {
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-  image?: string | null;
-  lineTotal?: number;
-};
-
-type ReceiptOrder = {
-  _id: string;
-  createdAt?: string;
-  updatedAt?: string;
-  taxAmount?: number;
-  deliveryFee?: number;
-  couponCode?: string | null;
-  couponDiscountAmount?: number;
-  couponDiscountPercentage?: number;
-  specialInstructions?: string | null;
-  total?: number;
-};
-
-type ReceiptResponse = {
-  order: ReceiptOrder;
-  receiptItems: ReceiptItem[];
-  restaurant?: {
-    _id: string;
-    name: string;
-    contact?: string | null;
-    email?: string | null;
-    street?: string | null;
-    city?: string | null;
-    postalCode?: string | null;
-    country?: string | null;
-  } | null;
-};
+import type { ReceiptResponse } from '@/types/receipt';
 
 type DocumentWithViewTransition = Document & {
   startViewTransition?: (updateCallback: () => void) => void;

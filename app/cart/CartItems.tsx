@@ -4,15 +4,7 @@ import { FaPlus, FaMinus, FaTrash } from 'react-icons/fa';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
-
-interface CartItem {
-  _id: string;
-  name: string;
-  size: string;
-  price: number | null;
-  quantity: number;
-  image?: string;
-}
+import type { CartItem, CartValidationItem } from '@/types/cart';
 
 interface CartItemsProps {
   cartItems: CartItem[];
@@ -21,17 +13,6 @@ interface CartItemsProps {
   clearCart: () => void;
   validationItems?: CartValidationItem[];
 }
-
-type CartValidationItem = {
-  itemKey: string;
-  status: 'valid' | 'unavailable' | 'deleted' | 'invalid_size' | 'invalid';
-  name?: string;
-  image?: string | null;
-  price?: number;
-  previousPrice?: number | null;
-  priceChanged?: boolean;
-  message?: string | null;
-};
 
 const getCartItemKey = (item: CartItem) => `${item._id}:${item.size}`;
 

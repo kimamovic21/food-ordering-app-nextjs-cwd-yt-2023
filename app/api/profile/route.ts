@@ -4,16 +4,9 @@ import { User } from '@/models/user';
 import { MenuItem } from '@/models/menuItem';
 import { Restaurant } from '@/models/restaurant';
 import cloudinary from '@/libs/cloudinary';
+import { normalizePhoneNumberForStorage } from '@/libs/phone';
 import mongoose from 'mongoose';
-
-type ProfileUpdateData = {
-  name?: string;
-  phone?: string;
-  streetAddress?: string;
-  postalCode?: string;
-  city?: string;
-  country?: string;
-};
+import type { ProfileUpdateData } from '@/types/user';
 
 export async function PUT(req: Request) {
   await mongoose.connect(process.env.MONGODB_URL as string);
@@ -40,6 +33,22 @@ export async function PUT(req: Request) {
   for (const key of allowedFields) {
     if (key in data) {
       updateData[key] = data[key];
+    }
+  }
+
+  if ('phone' in data) {
+    const rawPhone = String(data.phone ?? '').trim();
+
+    if (rawPhone) {
+      const normalizedPhone = normalizePhoneNumberForStorage(rawPhone);
+
+      if (!normalizedPhone) {
+        return Response.json({ error: 'Please enter a valid phone number.' }, { status: 400 });
+      }
+
+      updateData.phone = normalizedPhone;
+    } else {
+      updateData.phone = '';
     }
   }
 

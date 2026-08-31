@@ -29,22 +29,7 @@ import Link from 'next/link';
 import UserLoading from './loading';
 import useProfile from '@/hooks/useProfile';
 import { formatAppDateTime } from '@/libs/dateFormat';
-
-type UserType = {
-  _id: string;
-  name: string;
-  email: string;
-  image?: string;
-  emailVerified?: string | null;
-  city?: string;
-  country?: string;
-  phone?: string;
-  postalCode?: string;
-  streetAddress?: string;
-  updatedAt?: string;
-  admin?: boolean;
-  role?: string;
-};
+import type { AdminUserListItem } from '@/types/user';
 
 const UserLocationMap = dynamic(() => import('./UserLocationMap'), {
   ssr: false,
@@ -55,7 +40,7 @@ const UserLocationMap = dynamic(() => import('./UserLocationMap'), {
 
 const UserDetailsPage = () => {
   const params = useParams()!;
-  const [user, setUser] = useState<UserType | null>(null);
+  const [user, setUser] = useState<AdminUserListItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [makingCourier, setMakingCourier] = useState(false);

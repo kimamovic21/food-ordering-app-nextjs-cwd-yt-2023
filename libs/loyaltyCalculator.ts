@@ -1,9 +1,6 @@
-export interface LoyaltyTier {
-  name: string;
-  ordersRequired: number;
-  discountPercentage: number;
-  color: string;
-}
+import type { LoyaltyStatus, LoyaltyTier } from '@/types/loyalty';
+
+export type { LoyaltyStatus, LoyaltyTier } from '@/types/loyalty';
 
 export const LOYALTY_TIERS: LoyaltyTier[] = [
   { name: 'Bronze', ordersRequired: 1, discountPercentage: 10, color: 'text-orange-600' },
@@ -12,14 +9,6 @@ export const LOYALTY_TIERS: LoyaltyTier[] = [
   { name: 'Platinum', ordersRequired: 20, discountPercentage: 40, color: 'text-blue-400' },
   { name: 'Diamond', ordersRequired: 30, discountPercentage: 50, color: 'text-purple-500' },
 ];
-
-export interface LoyaltyStatus {
-  currentTier: LoyaltyTier | null;
-  nextTier: LoyaltyTier | null;
-  totalOrders: number;
-  ordersToNextTier: number;
-  discountPercentage: number;
-}
 
 /**
  * Calculate user's loyalty status based on completed order count

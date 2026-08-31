@@ -30,19 +30,10 @@ import {
   isOrderRelatedRealtimePayload,
 } from '@/libs/realtimeClient';
 import OrdersTable from './OrdersTable';
-
-type OrderType = {
-  _id: string;
-  email: string;
-  total: number;
-  paymentStatus: boolean;
-  orderStatus:
-    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
-  createdAt: string;
-};
+import type { OrderListItem } from '@/types/order';
 
 const OrdersPage = () => {
-  const [orders, setOrders] = useState<OrderType[]>([]);
+  const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [operationalAlerts, setOperationalAlerts] = useState({
     activeOrders: 0,
     lateOrders: 0,

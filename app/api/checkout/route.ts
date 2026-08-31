@@ -15,13 +15,16 @@ import {
   normalizeCouponCode,
 } from '@/libs/coupon';
 import { createAuditLog } from '@/libs/auditLog';
+import { addMoney, multiplyMoney, roundMoney, subtractMoney } from '@/libs/money';
 import { getRestaurantOrderingStatus } from '@/libs/restaurantAvailability';
+import { normalizePhoneNumberForStorage } from '@/libs/phone';
 import {
   createRateLimitKey,
   createRateLimitResponse,
   enforceRateLimit,
   getClientIp,
 } from '@/libs/rateLimit';
+import type { CartSize, CheckoutCartItemPayload } from '@/types/cart';
 import mongoose from 'mongoose';
 import Stripe from 'stripe';
 
@@ -30,22 +33,11 @@ const stripe = stripeSecretKey
   ? new Stripe(stripeSecretKey, { apiVersion: '2025-12-15.clover' })
   : null;
 
-type CartItemPayload = {
-  _id: string;
-  name: string;
-  size: string;
-  price: number;
-  quantity: number;
-  restaurantId: string;
-};
-
-type CartSize = 'small' | 'medium' | 'large' | 'single';
-
 export const runtime = 'nodejs';
 
 const DUPLICATE_CHECKOUT_WINDOW_MS = 5 * 60 * 1000;
 
-const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100;
+const roundToTwoDecimals = roundMoney;
 
 const canRecoverFromStripeSessionLookupError = (error: unknown) => {
   const stripeError = error as { code?: string; statusCode?: number };
@@ -74,7 +66,7 @@ const createCheckoutFingerprint = ({
 }: {
   userId: unknown;
   restaurantId: unknown;
-  verifiedItems: Array<CartItemPayload & { size: CartSize }>;
+  verifiedItems: Array<CheckoutCartItemPayload & { size: CartSize }>;
   delivery: {
     phone: string;
     streetAddress: string;
@@ -141,13 +133,13 @@ const createStripeLineItems = ({
   deliveryFee,
   couponLineDiscountRate,
 }: {
-  verifiedItems: Array<CartItemPayload & { size: CartSize }>;
+  verifiedItems: Array<CheckoutCartItemPayload & { size: CartSize }>;
   deliveryFee: number;
   couponLineDiscountRate: number;
 }) => {
   const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = verifiedItems.map(
     (item) => {
-      const adjustedUnitPrice = roundToTwoDecimals(item.price * (1 - couponLineDiscountRate));
+      const adjustedUnitPrice = multiplyMoney(item.price, 1 - couponLineDiscountRate);
 
       return {
         quantity: item.quantity,
@@ -382,13 +374,19 @@ export async function POST(req: Request) {
     deliveryLatitude?: number | null;
     deliveryLongitude?: number | null;
     specialInstructions?: string;
-    cartItems?: CartItemPayload[];
+    cartItems?: CheckoutCartItemPayload[];
     loyaltyDiscountPercentage?: number;
     couponCode?: string;
   };
 
   if (!phone || !streetAddress || !postalCode || !city || !country) {
     return Response.json({ error: 'Missing delivery information' }, { status: 400 });
+  }
+
+  const normalizedPhone = normalizePhoneNumberForStorage(phone);
+
+  if (!normalizedPhone) {
+    return Response.json({ error: 'Please enter a valid phone number.' }, { status: 400 });
   }
 
   if (!Array.isArray(cartItems) || cartItems.length === 0) {
@@ -546,7 +544,7 @@ export async function POST(req: Request) {
   }
 
   const menuItemById = new Map(menuItems.map((menuItem) => [menuItem._id.toString(), menuItem]));
-  const verifiedItems: Array<CartItemPayload & { size: CartSize }> = [];
+  const verifiedItems: Array<CheckoutCartItemPayload & { size: CartSize }> = [];
 
   for (const cartItem of sanitizedItems) {
     const menuItem = menuItemById.get(cartItem._id);
@@ -611,7 +609,7 @@ export async function POST(req: Request) {
   }
 
   const subtotal = roundToTwoDecimals(
-    verifiedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    verifiedItems.reduce((sum, item) => addMoney(sum, multiplyMoney(item.price, item.quantity)), 0)
   );
   const minimumOrderAmount = roundToTwoDecimals(
     Math.min(100, Math.max(1, Number((restaurant as any).minimumOrderAmount) || 10))
@@ -664,10 +662,11 @@ export async function POST(req: Request) {
   }
 
   const loyaltyDiscountBase = roundToTwoDecimals(Math.max(subtotal - couponDiscountAmount, 0));
-  const verifiedLoyaltyDiscount = roundToTwoDecimals(
-    (loyaltyDiscountBase * verifiedLoyaltyPercentage) / 100
+  const verifiedLoyaltyDiscount = multiplyMoney(
+    loyaltyDiscountBase,
+    verifiedLoyaltyPercentage / 100
   );
-  const taxAmount = roundToTwoDecimals(subtotal * (restaurant.tax / 100));
+  const taxAmount = multiplyMoney(subtotal, restaurant.tax / 100);
   const deliveryFee = roundToTwoDecimals(restaurant.courierFee || 5);
   const estimatedPreparationMinutes = Math.max(
     0,
@@ -679,9 +678,9 @@ export async function POST(req: Request) {
   );
   const estimatedTotalMinutes = estimatedPreparationMinutes + estimatedDeliveryMinutes;
   const discountedSubtotal = roundToTwoDecimals(
-    Math.max(subtotal - couponDiscountAmount - verifiedLoyaltyDiscount, 0)
+    Math.max(subtractMoney(subtotal, couponDiscountAmount, verifiedLoyaltyDiscount), 0)
   );
-  const total = roundToTwoDecimals(discountedSubtotal + deliveryFee);
+  const total = addMoney(discountedSubtotal, deliveryFee);
 
   const couponSnapshot = coupon
     ? {
@@ -701,7 +700,7 @@ export async function POST(req: Request) {
         couponMinimumOrderAmount: 0,
       };
 
-  const foodLineDiscountAmount = couponDiscountAmount + verifiedLoyaltyDiscount;
+  const foodLineDiscountAmount = addMoney(couponDiscountAmount, verifiedLoyaltyDiscount);
   const couponLineDiscountRate = subtotal > 0 ? foodLineDiscountAmount / subtotal : 0;
   const stripeLineItems = createStripeLineItems({
     verifiedItems,
@@ -713,7 +712,7 @@ export async function POST(req: Request) {
     restaurantId: restaurant._id,
     verifiedItems,
     delivery: {
-      phone,
+      phone: normalizedPhone,
       streetAddress,
       postalCode,
       city,
@@ -755,7 +754,7 @@ export async function POST(req: Request) {
   const order = await Order.create({
     userId: user._id,
     email: session.user.email,
-    phone,
+    phone: normalizedPhone,
     streetAddress,
     postalCode,
     city,

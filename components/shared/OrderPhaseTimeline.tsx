@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatMillisecondsToTime } from '@/libs/useOrderElapsedTime';
 import { cn } from '@/libs/utils';
 import { getOrderTimelineTotalOffsetMinutes } from '@/libs/devOrderTimeSimulator';
+import type { OrderPhaseDurationOffsets } from '@/types/order-timeline';
 
 type OrderPhaseTimelineProps = {
   createdAt: string;
@@ -20,19 +21,6 @@ type OrderPhaseTimelineProps = {
   estimatedTotalMinutes?: number | null;
   durationOffsetsMinutes?: OrderPhaseDurationOffsets;
 };
-
-export type OrderPhaseDurationOffsetKey =
-  'waitingForKitchen' | 'kitchenPreparation' | 'deliveryTravel' | 'confirmationWait';
-
-export type OrderPhaseDurationOffsets = Partial<
-  Record<
-    | OrderPhaseDurationOffsetKey
-    | 'failedDeliveryWait'
-    | 'readyWithoutCourierWait'
-    | 'totalOrderTime',
-    number
-  >
->;
 
 const formatDuration = (
   start: string | null | undefined,

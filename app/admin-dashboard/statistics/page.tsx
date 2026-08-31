@@ -8,37 +8,7 @@ import useProfile from '@/hooks/useProfile';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import StatisticsLoading from './loading';
-
-interface StatisticsSummary {
-  totalOrders: number;
-  paidOrders: number;
-  unpaidOrders: number;
-  totalIncome: number;
-  netRevenue: number;
-  averageOrderValue: number;
-  activeOrders: number;
-  completedOrders: number;
-  canceledOrders: number;
-  cancellationRate: number;
-  paymentConversionRate: number;
-  totalUsers: number;
-  totalCustomers: number;
-  totalAdmins: number;
-  totalCouriers: number;
-  totalRestaurants: number;
-  totalMenuItems: number;
-  unavailableMenuItems: number;
-  openSupportTickets: number;
-  unreadNotifications: number;
-  statusData: { status: string; label: string; count: number }[];
-  topRestaurants: {
-    restaurantId: string;
-    restaurantName: string;
-    orders: number;
-    paidOrders: number;
-    revenue: number;
-  }[];
-}
+import type { StatisticsSummary } from '@/types/statistics';
 
 const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 const formatPercent = (value: number) => `${value.toFixed(1)}%`;
