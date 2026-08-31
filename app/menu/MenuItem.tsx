@@ -13,31 +13,16 @@ import Link from 'next/link';
 import Pizza from '@/public/pizza.png';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import HeartRating from '@/components/shared/HeartRating';
-
-interface MenuItemType {
-  _id: string;
-  image?: string;
-  name: string;
-  description: string;
-  category?: { _id: string; name: string } | string;
-  priceSmall: number | null;
-  priceMedium: number | null;
-  priceLarge: number | null;
-  restaurantId: string;
-  isAvailable?: boolean;
-  restaurantAverageRating?: number;
-  restaurantRatingCount?: number;
-}
+import type { CartSize } from '@/types/cart';
+import type { MenuItemListItem } from '@/types/menu';
 
 interface MenuItemProps {
-  item?: MenuItemType;
+  item?: MenuItemListItem;
   href?: string;
 }
 
-type Size = 'small' | 'medium' | 'large' | 'single';
-
 const MenuItem = ({ item, href }: MenuItemProps) => {
-  const [userSelectedSize] = useState<Size>('small');
+  const [userSelectedSize] = useState<CartSize>('small');
   const { addToCart, getCartRestaurantId } = useCart();
   const { data: profileData, loading: profileLoading } = useProfile();
   const { data: favoritesData, setMenuItemFavorite } = useFavorites();
@@ -60,7 +45,7 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
     typeof imageUrl === 'string' &&
     (imageUrl.startsWith('http') || imageUrl.includes('cloudinary'));
 
-  const availableSizes = (['small', 'medium', 'large'] as Size[])
+  const availableSizes = (['small', 'medium', 'large'] as CartSize[])
     .map((size) => {
       const value =
         size === 'small'
@@ -72,7 +57,7 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
     })
     .filter((entry) => typeof entry.value === 'number' && Number.isFinite(entry.value));
 
-  const effectiveSelectedSize: Size = (() => {
+  const effectiveSelectedSize: CartSize = (() => {
     if (availableSizes.length === 1) return 'single';
     if (availableSizes.some((entry) => entry.size === userSelectedSize)) return userSelectedSize;
     return availableSizes[0]?.size ?? 'small';

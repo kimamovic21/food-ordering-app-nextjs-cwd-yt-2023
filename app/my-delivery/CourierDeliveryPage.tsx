@@ -26,6 +26,7 @@ import {
   getNotificationRealtimePayload,
   isOrderRelatedRealtimePayload,
 } from '@/libs/realtimeClient';
+import type { CourierDeliveryOrder } from '@/types/order';
 
 // Dynamic import to prevent SSR issues with Leaflet
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
@@ -37,47 +38,11 @@ const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
   ),
 });
 
-type CartProduct = {
-  productId: string;
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-};
-
-type OrderDetailsType = {
-  _id: string;
-  userId: string;
-  email: string;
-  phone: string;
-  streetAddress: string;
-  postalCode: string;
-  city: string;
-  country: string;
-  specialInstructions?: string;
-  estimatedDeliveryMinutes?: number | null;
-  cartProducts: CartProduct[];
-  total: number;
-  paymentStatus: boolean;
-  orderStatus:
-    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
-  courierId?: { _id: string; name: string; email: string; image?: string };
-  courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
-  courierAssignmentNote?: string;
-  restaurantHandedToCourierAt?: string | null;
-  courierPickedUpAt?: string | null;
-  transportationAt?: string | null;
-  failedDeliveryRequestedAt?: string | null;
-  failedDeliveryReason?: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
 const CourierPage = () => {
   const isDevelopment = process.env.NODE_ENV === 'development';
   const queryClient = useQueryClient();
   const { data: profileData, loading: profileLoading } = useProfile();
-  const [orders, setOrders] = useState<OrderDetailsType[]>([]);
+  const [orders, setOrders] = useState<CourierDeliveryOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [completing, setCompleting] = useState<string | null>(null);
@@ -94,7 +59,7 @@ const CourierPage = () => {
   const isInitialLoadRef = useRef(true);
 
   const refreshDevFailedDeliveryOffsets = useCallback(
-    async (nextOrders: OrderDetailsType[]) => {
+    async (nextOrders: CourierDeliveryOrder[]) => {
       if (!isDevelopment) {
         return;
       }

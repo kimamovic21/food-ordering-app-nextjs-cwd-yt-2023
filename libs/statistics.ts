@@ -1,4 +1,6 @@
-type DateLike = string | Date | undefined | null;
+import type { DateLike } from '@/types/common';
+
+export type { DateLike } from '@/types/common';
 
 const monthNames = [
   'Jan',

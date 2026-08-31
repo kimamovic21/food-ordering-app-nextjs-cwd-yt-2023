@@ -1,13 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import OrderItemsDataTable from '@/components/shared/OrderItemsDataTable';
-
-type CartProduct = {
-  productId: string;
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-};
+import type { CartProduct } from '@/types/cart';
 
 type OrderItemsCardProps = {
   cartProducts: CartProduct[];
@@ -17,7 +10,7 @@ type OrderItemsCardProps = {
   deliveryFee?: number;
   loyaltyDiscount?: number;
   loyaltyDiscountPercentage?: number;
-  loyaltyTier?: string;
+  loyaltyTier?: string | null;
 };
 
 const OrderItemsCard = ({

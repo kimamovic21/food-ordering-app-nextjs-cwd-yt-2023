@@ -23,33 +23,7 @@ import Link from 'next/link';
 import Title from '@/components/shared/Title';
 import OrdersStatisticsLoading from './loading';
 import { formatAppShortDate } from '@/libs/dateFormat';
-
-interface OrdersStatistics {
-  totalOrders: number;
-  paidOrders: number;
-  unpaidOrders: number;
-  totalIncome: number;
-  netRevenue: number;
-  averageOrderValue: number;
-  activeOrders: number;
-  completedOrders: number;
-  canceledOrders: number;
-  cancellationRate: number;
-  completionRate: number;
-  paymentConversionRate: number;
-  statusData: { status: string; label: string; count: number }[];
-  topRestaurants: {
-    restaurantId: string;
-    restaurantName: string;
-    orders: number;
-    paidOrders: number;
-    revenue: number;
-  }[];
-  monthlyData: { month: string; orders: number }[];
-  dailyData: { date: string; orders: number }[];
-}
-
-type TimeRange = '7d' | '30d' | '3m' | '6m' | '12m';
+import type { OrdersStatistics, StatisticsTimeRange } from '@/types/statistics';
 
 const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 const formatPercent = (value: number) => `${value.toFixed(1)}%`;
@@ -57,7 +31,7 @@ const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 const OrdersStatisticsPage = () => {
   const [statistics, setStatistics] = useState<OrdersStatistics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [timeRange, setTimeRange] = useState<StatisticsTimeRange>('30d');
   const { loading: profileLoading, data: profileData } = useProfile();
 
   useEffect(() => {
@@ -296,7 +270,7 @@ const OrdersStatisticsPage = () => {
               <CardDescription>Track order trends across different ranges</CardDescription>
             </div>
             <div className='flex flex-wrap gap-2'>
-              {(['7d', '30d', '3m', '6m', '12m'] as TimeRange[]).map((range) => (
+              {(['7d', '30d', '3m', '6m', '12m'] as StatisticsTimeRange[]).map((range) => (
                 <button
                   key={range}
                   onClick={() => setTimeRange(range)}

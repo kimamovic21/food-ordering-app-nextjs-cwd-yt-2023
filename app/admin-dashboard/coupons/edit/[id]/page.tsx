@@ -16,32 +16,14 @@ import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import CouponForm, { type CouponFormSubmitValues } from '../../CouponForm';
 import EditCouponLoading from './loading';
-
-type Coupon = {
-  _id: string;
-  code: string;
-  title: string;
-  description: string;
-  discountValue: number;
-  minimumOrderAmount: number;
-  maxDiscountAmount: number | null;
-  usageLimit: number | null;
-  usagePerCustomer: number;
-  startsAt: string | null;
-  expiresAt: string | null;
-  isActive: boolean;
-  isPublic: boolean;
-  firstOrderOnly: boolean;
-  terms: string;
-  tags: string[];
-};
+import type { AdminCoupon } from '@/types/coupon';
 
 const EditCouponPage = () => {
   const params = useParams();
   const id = (params as any)?.id as string;
   const router = useRouter();
   const { data, loading } = useProfile();
-  const [coupon, setCoupon] = useState<Coupon | null>(null);
+  const [coupon, setCoupon] = useState<AdminCoupon | null>(null);
   const [loadingCoupon, setLoadingCoupon] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

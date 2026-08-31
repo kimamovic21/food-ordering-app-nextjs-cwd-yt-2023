@@ -19,38 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import useProfile from '@/hooks/useProfile';
 import { formatAppDateTime } from '@/libs/dateFormat';
-
-type SupportTicket = {
-  _id: string;
-  orderId?:
-    | string
-    | {
-        _id: string;
-        email: string;
-        orderStatus: string;
-        total: number;
-        createdAt: string;
-      }
-    | null;
-  restaurantId?:
-    | string
-    | {
-        _id: string;
-        name: string;
-      }
-    | null;
-  target: 'restaurant_support' | 'app_support';
-  category: string;
-  subject: string;
-  description: string;
-  status: 'open' | 'in_review' | 'resolved';
-  priority: 'low' | 'normal' | 'high';
-  responseNote?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { SupportTicket, SupportTicketStatusFilter } from '@/types/support-ticket';
 
 const statusLabels = {
   open: 'Open',
@@ -58,8 +27,12 @@ const statusLabels = {
   resolved: 'Resolved',
 };
 
-const statusFilterOptions = ['all', 'open', 'in_review', 'resolved'] as const;
-type StatusFilter = (typeof statusFilterOptions)[number];
+const statusFilterOptions = [
+  'all',
+  'open',
+  'in_review',
+  'resolved',
+] as const satisfies readonly SupportTicketStatusFilter[];
 
 const categoryLabels: Record<string, string> = {
   order_issue: 'Order issue',
@@ -177,7 +150,7 @@ const MyReportsPage = () => {
           <Select
             value={statusFilter}
             onValueChange={(value) => {
-              void setStatusFilter(value as StatusFilter);
+              void setStatusFilter(value as SupportTicketStatusFilter);
             }}
           >
             <SelectTrigger className='w-[160px]'>

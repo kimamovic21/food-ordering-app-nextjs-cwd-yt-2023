@@ -14,18 +14,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import ReviewCard, { type ReviewCardData } from '@/components/shared/ReviewCard';
+import ReviewCard from '@/components/shared/ReviewCard';
 import Link from 'next/link';
 import Title from '@/components/shared/Title';
-
-type ReviewsResponse = {
-  reviews: ReviewCardData[];
-  meta: {
-    totalCount: number;
-    search: string;
-    rating: number | null;
-  };
-};
+import type { ReviewCardData, ReviewsResponse } from '@/types/review';
 
 const ratingOptions = [
   { label: 'All ratings', value: 'all' },

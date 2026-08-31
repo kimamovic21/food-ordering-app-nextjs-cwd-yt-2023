@@ -19,48 +19,12 @@ import { useEffect, useState } from 'react';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
 import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
 import { formatAppDate, formatAppTime } from '@/libs/dateFormat';
+import type { CourierDeliveryOrder } from '@/types/order';
 
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), { ssr: false });
 
-type CartProduct = {
-  productId: string;
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-};
-
-type OrderDetailsType = {
-  _id: string;
-  userId: string;
-  email: string;
-  phone: string;
-  streetAddress: string;
-  postalCode: string;
-  city: string;
-  country: string;
-  specialInstructions?: string;
-  estimatedDeliveryMinutes?: number | null;
-  cartProducts: CartProduct[];
-  total: number;
-  paymentStatus: boolean;
-  orderStatus:
-    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
-  courierId?: { _id: string; name: string; email: string; image?: string };
-  courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
-  courierAssignmentNote?: string;
-  restaurantHandedToCourierAt?: string | null;
-  courierPickedUpAt?: string | null;
-  transportationAt?: string | null;
-  failedDeliveryRequestedAt?: string | null;
-  failedDeliveryReason?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  completedAt?: string | null;
-};
-
 interface DeliveryOrderCardProps {
-  order: OrderDetailsType;
+  order: CourierDeliveryOrder;
   completing: string | null;
   updatingAssignment: string | null;
   onAssignmentAction: (

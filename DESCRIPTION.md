@@ -42,6 +42,7 @@ Important customer rules:
 - Customers cannot checkout again while they already have a paid active order that is not completed or canceled.
 - Customers cannot add unavailable menu items to cart or checkout with them.
 - Customers cannot checkout from restaurants that are closed, paused, outside delivery radius, blocked by date, inside the final 60 minutes before closing, or at active kitchen capacity.
+- Checkout and profile updates validate phone numbers and store valid values in E.164 format.
 - Customers can only message contacts allowed by their order flow.
 
 ## Admin / Restaurant Owner
@@ -429,6 +430,12 @@ Restaurant report rules:
 - API routes should return ISO date strings or raw date fields, not UI-formatted strings.
 - UI, receipt email, and PDF receipt date formatting should go through `libs/dateFormat.ts`.
 - Main user-facing date format is `dd/MM/yyyy`; date-time format is `dd/MM/yyyy HH:mm`.
+
+## Type Organization
+
+- Reusable TypeScript domain models, DTOs, and API response contracts live in `types/`.
+- Feature files use lowercase names such as `order.ts`, `cart.ts`, `menu.ts`, and `support-ticket.ts`.
+- Exported type names use PascalCase, while small one-off component prop types can stay colocated with the component that owns them.
 
 ## Is This Good Practice?
 

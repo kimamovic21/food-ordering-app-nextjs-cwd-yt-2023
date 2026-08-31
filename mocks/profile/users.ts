@@ -3,7 +3,7 @@ export const profileMockUsers = {
   updatedProfile: {
     name: 'John Updated',
     email: 'john@example.com',
-    phone: '123',
+    phone: '+38761234567',
     city: 'Sarajevo',
     role: 'user',
   },

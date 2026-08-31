@@ -13,37 +13,9 @@ import {
   Text,
 } from '@react-email/components';
 import { formatAppDate } from '@/libs/dateFormat';
+import type { PurchaseReceiptProps } from '@/types/receipt';
 
-type ReceiptItem = {
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-  image?: string | null;
-};
-
-type PurchaseReceiptEmailProps = {
-  orderId: string;
-  customerEmail: string;
-  purchasedOn?: Date | string | null;
-  restaurant?: {
-    name: string;
-    contact?: string | null;
-    email?: string | null;
-    street?: string | null;
-    city?: string | null;
-    postalCode?: string | null;
-    country?: string | null;
-  } | null;
-  items: ReceiptItem[];
-  taxAmount: number;
-  deliveryFee: number;
-  couponCode?: string | null;
-  couponDiscountAmount?: number;
-  couponDiscountPercentage?: number;
-  specialInstructions?: string | null;
-  total: number;
-};
+type PurchaseReceiptEmailProps = PurchaseReceiptProps;
 
 const formatMoney = (amount: number) => `$${(Number(amount) || 0).toFixed(2)}`;
 

@@ -20,16 +20,12 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
-
-type CategoryType = {
-  _id: string;
-  name: string;
-};
+import type { MenuItemCategory } from '@/types/menu';
 
 const CategoriesPage = () => {
   const [categoryName, setCategoryName] = useState('');
-  const [categories, setCategories] = useState<Array<CategoryType>>([]);
-  const [editingCategory, setEditingCategory] = useState<CategoryType | null>(null);
+  const [categories, setCategories] = useState<MenuItemCategory[]>([]);
+  const [editingCategory, setEditingCategory] = useState<MenuItemCategory | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
@@ -57,7 +53,7 @@ const CategoriesPage = () => {
     e.preventDefault();
 
     const creationPromise = new Promise(async (resolve, reject) => {
-      const data: Partial<CategoryType> = { name: categoryName };
+      const data: Partial<MenuItemCategory> = { name: categoryName };
       if (editingCategory) {
         data._id = editingCategory._id;
       }

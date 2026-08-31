@@ -1,23 +1,7 @@
-export type CouponDiscountType = 'percentage';
+import { multiplyMoney, roundMoney } from '@/libs/money';
+import type { CouponLike } from '@/types/coupon';
 
-export type CouponLike = {
-  _id?: string;
-  code: string;
-  title?: string;
-  description?: string;
-  discountType?: CouponDiscountType;
-  discountValue: number;
-  minimumOrderAmount?: number;
-  maxDiscountAmount?: number | null;
-  usageLimit?: number | null;
-  usagePerCustomer?: number | null;
-  usageCount?: number;
-  firstOrderOnly?: boolean;
-  isActive?: boolean;
-  startsAt?: string | Date | null;
-  expiresAt?: string | Date | null;
-  restaurantId?: string;
-};
+export type { CouponDiscountType, CouponLike } from '@/types/coupon';
 
 export const COUPON_CODE_PATTERN = /^[A-Z0-9]+$/;
 export const COUPON_PERCENTAGE_MIN = 5;
@@ -57,15 +41,13 @@ export const isValidCouponCode = (value: string) => {
   return normalized.length >= 4 && normalized.length <= 20 && COUPON_CODE_PATTERN.test(normalized);
 };
 
-export const roundMoney = (value: number) => Math.round(Number(value || 0) * 100) / 100;
-
 export const calculateCouponDiscountAmount = (subtotal: number, coupon: CouponLike) => {
   const baseSubtotal = Math.max(0, Number(subtotal) || 0);
   const percentage = Math.min(
     COUPON_PERCENTAGE_MAX,
     Math.max(COUPON_PERCENTAGE_MIN, Number(coupon.discountValue) || 0)
   );
-  const rawDiscount = (baseSubtotal * percentage) / 100;
+  const rawDiscount = multiplyMoney(baseSubtotal, percentage / 100);
   const maxDiscountAmount =
     typeof coupon.maxDiscountAmount === 'number' && coupon.maxDiscountAmount > 0
       ? coupon.maxDiscountAmount

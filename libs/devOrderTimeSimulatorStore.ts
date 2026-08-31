@@ -1,5 +1,5 @@
-import type { OrderPhaseDurationOffsets } from '@/components/shared/OrderPhaseTimeline';
 import { sanitizeDevOrderTimeOffsets } from '@/libs/devOrderTimeSimulator';
+import type { OrderPhaseDurationOffsets } from '@/types/order-timeline';
 
 type DevOrderTimeSimulatorGlobal = typeof globalThis & {
   __devOrderTimeSimulatorOffsets?: Map<string, OrderPhaseDurationOffsets>;

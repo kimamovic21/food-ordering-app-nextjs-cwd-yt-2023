@@ -5,7 +5,7 @@ import { useState } from 'react';
 import type {
   OrderPhaseDurationOffsetKey,
   OrderPhaseDurationOffsets,
-} from '@/components/shared/OrderPhaseTimeline';
+} from '@/types/order-timeline';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

@@ -19,17 +19,7 @@ import {
 } from '@/components/shared/TanStackDataTable';
 import Title from '@/components/shared/Title';
 import { formatAppDateTime } from '@/libs/dateFormat';
-
-type AuditLog = {
-  _id: string;
-  actorEmail: string;
-  actorRole: string;
-  action: string;
-  entityType: string;
-  entityId: string;
-  metadata: Record<string, unknown>;
-  createdAt: string | null;
-};
+import type { AuditLogItem } from '@/types/audit-log';
 
 const formatMetadata = (metadata: Record<string, unknown>) => {
   const entries = Object.entries(metadata || {}).filter(([, value]) => value !== undefined);
@@ -41,7 +31,7 @@ const formatMetadata = (metadata: Record<string, unknown>) => {
     .join(', ');
 };
 
-const columnHelper = createDataTableColumnHelper<AuditLog>();
+const columnHelper = createDataTableColumnHelper<AuditLogItem>();
 
 const auditLogColumns = columnHelper.columns([
   columnHelper.accessor((log) => (log.createdAt ? new Date(log.createdAt).getTime() : 0), {
@@ -80,7 +70,7 @@ const auditLogColumns = columnHelper.columns([
     header: 'Details',
     cell: ({ getValue }) => getValue(),
   }),
-]) satisfies DataTableColumnDef<AuditLog>[];
+]) satisfies DataTableColumnDef<AuditLogItem>[];
 
 const auditLogColumnLabels = {
   action: 'Action',
@@ -91,7 +81,7 @@ const auditLogColumnLabels = {
 };
 
 const AuditLogsPage = () => {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);

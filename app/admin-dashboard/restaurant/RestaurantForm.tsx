@@ -13,58 +13,19 @@ import { Checkbox } from '@/components/ui/checkbox';
 import dynamic from 'next/dynamic';
 import RestaurantImagesUpload, { ImageItem } from './RestaurantImagesUpload';
 import { formatAppDate } from '@/libs/dateFormat';
+import type { RestaurantFormData, RestaurantWorkingHour } from '@/types/restaurant';
 
 const RestaurantLocation = dynamic(() => import('@/components/shared/RestaurantLocation'), {
   ssr: false,
   loading: () => <div className='h-[400px] bg-muted animate-pulse rounded-lg' />,
 });
 
-interface WorkingHours {
-  day: string;
-  openTime: string;
-  closeTime: string;
-  isClosed: boolean;
-}
-
-interface BlockedDate {
-  date: string;
-  reason: string;
-}
-
-interface RestaurantFormData {
-  _id?: string;
-  name: string;
-  street: string;
-  city: string;
-  postalCode: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-  contact: string;
-  email: string;
-  webAddress: string;
-  description: string;
-  tax: number;
-  courierFee: number;
-  minimumOrderAmount: number;
-  averagePreparationMinutes: number;
-  averageDeliveryMinutes: number;
-  activeOrderLimit: number;
-  deliveryRadiusKm: number;
-  isPaused: boolean;
-  pauseReason: string;
-  workingHours: WorkingHours[];
-  blockedDates: BlockedDate[];
-  totalEmployees: number;
-  images: string[];
-}
-
 interface RestaurantFormProps {
   restaurant?: RestaurantFormData;
   isEdit?: boolean;
 }
 
-const defaultWorkingHours: WorkingHours[] = [
+const defaultWorkingHours: RestaurantWorkingHour[] = [
   { day: 'monday', openTime: '09:00', closeTime: '21:00', isClosed: false },
   { day: 'tuesday', openTime: '09:00', closeTime: '21:00', isClosed: false },
   { day: 'wednesday', openTime: '09:00', closeTime: '21:00', isClosed: false },
@@ -213,7 +174,7 @@ const RestaurantForm = ({ restaurant, isEdit = false }: RestaurantFormProps) => 
           const isoDate = toIsoDate(blocked.date);
           return {
             date: isoDate,
-            reason: blocked.reason.trim(),
+            reason: (blocked.reason || '').trim(),
           };
         })
         .filter((blocked) => {

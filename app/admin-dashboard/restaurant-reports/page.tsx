@@ -8,16 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import Title from '@/components/shared/Title';
-import type { RestaurantReportPeriod, RestaurantReportSummary } from '@/libs/restaurantReports';
 import { formatAppDate } from '@/libs/dateFormat';
-
-type ReportResponse = {
-  restaurant: {
-    _id: string;
-    name: string;
-  };
-  report: RestaurantReportSummary;
-};
+import type {
+  RestaurantReportPeriod,
+  RestaurantReportResponse,
+  RestaurantReportSummary,
+} from '@/types/reports';
 
 const periodOptions: Array<{ value: RestaurantReportPeriod; label: string }> = [
   { value: 'daily', label: 'Daily report' },
@@ -48,7 +44,7 @@ const RestaurantReportsPage = () => {
     period: parseAsStringLiteral(reportPeriodValues).withDefault('daily'),
     date: parseAsString.withDefault(defaultReportDate),
   });
-  const [data, setData] = useState<ReportResponse | null>(null);
+  const [data, setData] = useState<RestaurantReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   const report = data?.report || null;

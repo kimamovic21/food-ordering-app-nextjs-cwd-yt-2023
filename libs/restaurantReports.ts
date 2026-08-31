@@ -9,8 +9,10 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
+import { addMoney, divideMoney, multiplyMoney, roundMoney } from '@/libs/money';
+import type { RestaurantReportPeriod, RestaurantReportSummary } from '@/types/reports';
 
-export type RestaurantReportPeriod = 'daily' | 'weekly' | 'monthly';
+export type { RestaurantReportPeriod, RestaurantReportSummary } from '@/types/reports';
 
 type ReportOrder = {
   _id: unknown;
@@ -27,37 +29,6 @@ type ReportOrder = {
     quantity?: number | null;
     price?: number | null;
   }>;
-};
-
-export type RestaurantReportSummary = {
-  period: RestaurantReportPeriod;
-  label: string;
-  startDate: string;
-  endDate: string;
-  totalOrders: number;
-  paidOrders: number;
-  unpaidOrders: number;
-  completedOrders: number;
-  canceledOrders: number;
-  activeOrders: number;
-  totalRevenue: number;
-  netRevenue: number;
-  canceledValue: number;
-  averageOrderValue: number;
-  totalTax: number;
-  deliveryFees: number;
-  couponDiscounts: number;
-  loyaltyDiscounts: number;
-  paymentRate: number;
-  completionRate: number;
-  cancellationRate: number;
-  itemsSold: number;
-  topItems: Array<{
-    name: string;
-    quantity: number;
-    revenue: number;
-  }>;
-  hasActivity: boolean;
 };
 
 export const REPORT_PERIODS: RestaurantReportPeriod[] = ['daily', 'weekly', 'monthly'];
@@ -119,14 +90,12 @@ export const getRestaurantReportDateRange = (
   };
 };
 
-const roundMoney = (value: number) => Math.round((Number(value) || 0) * 100) / 100;
-
 const roundPercent = (value: number) => Math.round((Number(value) || 0) * 100) / 100;
 
 const isPaidOrder = (order: ReportOrder) => order.orderPaid === true || order.paid === true;
 
 const sumOrders = (orders: ReportOrder[], selector: (order: ReportOrder) => number) =>
-  roundMoney(orders.reduce((sum, order) => sum + (Number(selector(order)) || 0), 0));
+  roundMoney(orders.reduce((sum, order) => addMoney(sum, Number(selector(order)) || 0), 0));
 
 export const buildRestaurantReportSummary = ({
   period,
@@ -156,11 +125,11 @@ export const buildRestaurantReportSummary = ({
     (order.cartProducts || []).forEach((item) => {
       const name = item.name || 'Menu item';
       const quantity = Math.max(0, Number(item.quantity) || 0);
-      const revenue = roundMoney(quantity * (Number(item.price) || 0));
+      const revenue = multiplyMoney(Number(item.price) || 0, quantity);
       const current = itemMap.get(name) || { name, quantity: 0, revenue: 0 };
 
       current.quantity += quantity;
-      current.revenue = roundMoney(current.revenue + revenue);
+      current.revenue = addMoney(current.revenue, revenue);
       itemMap.set(name, current);
     });
   });
@@ -188,7 +157,7 @@ export const buildRestaurantReportSummary = ({
     totalRevenue,
     netRevenue,
     canceledValue,
-    averageOrderValue: paidOrders > 0 ? roundMoney(totalRevenue / paidOrders) : 0,
+    averageOrderValue: paidOrders > 0 ? divideMoney(totalRevenue, paidOrders) : 0,
     totalTax: sumOrders(revenueOrders, (order) => Number(order.taxAmount) || 0),
     deliveryFees: sumOrders(revenueOrders, (order) => Number(order.deliveryFee) || 0),
     couponDiscounts: sumOrders(revenueOrders, (order) => Number(order.couponDiscountAmount) || 0),

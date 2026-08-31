@@ -11,27 +11,12 @@ import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
 import MenuItemModal from './MenuItemModal';
 import HeartRating from '@/components/shared/HeartRating';
-
-interface MenuItemType {
-  _id: string;
-  image?: string;
-  name: string;
-  description: string;
-  category?: { _id: string; name: string } | string;
-  priceSmall: number | null;
-  priceMedium: number | null;
-  priceLarge: number | null;
-  restaurantId: string;
-  isAvailable?: boolean;
-  restaurantAverageRating?: number;
-  restaurantRatingCount?: number;
-}
+import type { CartSize } from '@/types/cart';
+import type { MenuItemListItem } from '@/types/menu';
 
 interface MenuItemProps {
-  item?: MenuItemType;
+  item?: MenuItemListItem;
 }
-
-type Size = 'small' | 'medium' | 'large' | 'single';
 
 const MenuItem = ({ item }: MenuItemProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,7 +41,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
     typeof imageUrl === 'string' &&
     (imageUrl.startsWith('http') || imageUrl.includes('cloudinary'));
 
-  const availableSizes = (['small', 'medium', 'large'] as Size[])
+  const availableSizes = (['small', 'medium', 'large'] as CartSize[])
     .map((size) => {
       const value =
         size === 'small'
@@ -68,7 +53,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
     })
     .filter((entry) => typeof entry.value === 'number' && Number.isFinite(entry.value));
 
-  const effectiveSelectedSize: Size =
+  const effectiveSelectedSize: CartSize =
     availableSizes.length === 1 ? 'single' : (availableSizes[0]?.size ?? 'small');
 
   const getPrice = () => {

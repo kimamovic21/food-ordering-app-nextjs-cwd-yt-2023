@@ -8,24 +8,7 @@ import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import MenuItems from './MenuItems';
-
-interface MenuItem {
-  _id: string;
-  image?: string;
-  name: string;
-  description: string;
-  category?: { _id: string; name: string } | string;
-  priceType?: string;
-  priceSmall: number;
-  priceMedium: number;
-  priceLarge: number;
-  isAvailable?: boolean;
-}
-
-interface Category {
-  _id: string;
-  name: string;
-}
+import type { MenuItemCategory, MenuItemListItem } from '@/types/menu';
 
 const MENU_ITEMS_SCROLL_STATE_KEY = 'admin-dashboard-menu-items-scroll-state';
 
@@ -40,8 +23,8 @@ const MenuItemsListPage = () => {
   const { data, loading } = useProfile();
   const hasRestoredScrollRef = useRef(false);
 
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItemListItem[]>([]);
+  const [categories, setCategories] = useState<MenuItemCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useQueryState('q', parseAsString.withDefault(''));
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);

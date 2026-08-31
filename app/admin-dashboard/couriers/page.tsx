@@ -11,22 +11,12 @@ import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import { formatAppDate } from '@/libs/dateFormat';
 import { BarChart3 } from 'lucide-react';
-
-type CourierType = {
-  _id: string;
-  name: string;
-  email: string;
-  image?: string;
-  availability: boolean;
-  takenOrder?: string;
-  role: string;
-  createdAt: string;
-};
+import type { CourierListItem } from '@/types/courier';
 
 const CouriersPage = () => {
   const router = useRouter();
   const { data: profileData, loading: profileLoading } = useProfile();
-  const [couriers, setCouriers] = useState<CourierType[]>([]);
+  const [couriers, setCouriers] = useState<CourierListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isSuperAdmin =
@@ -125,7 +115,7 @@ const CouriersPage = () => {
               <CardContent className='py-4'>
                 <div className='flex flex-col gap-4 md:flex-row md:items-center'>
                   <Avatar className='h-12 w-12'>
-                    <AvatarImage src={courier.image} alt={courier.name} />
+                    <AvatarImage src={courier.image || undefined} alt={courier.name} />
                     <AvatarFallback>
                       {courier.name
                         ?.split(' ')

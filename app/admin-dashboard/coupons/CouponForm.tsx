@@ -10,42 +10,9 @@ import {
   getCouponDateValidationError,
   normalizeCouponCode,
 } from '@/libs/coupon';
+import type { CouponFormInitialValues, CouponFormSubmitValues } from '@/types/coupon';
 
-export type CouponFormSubmitValues = {
-  code: string;
-  title: string;
-  description: string;
-  discountValue: number;
-  minimumOrderAmount: number;
-  maxDiscountAmount: number | null;
-  usageLimit: number | null;
-  usagePerCustomer: number;
-  startsAt: string;
-  expiresAt: string | null;
-  isActive: boolean;
-  isPublic: boolean;
-  firstOrderOnly: boolean;
-  terms: string;
-  tags: string[];
-};
-
-export type CouponFormInitialValues = Partial<{
-  code: string;
-  title: string;
-  description: string;
-  discountValue: number;
-  minimumOrderAmount: number;
-  maxDiscountAmount: number | null;
-  usageLimit: number | null;
-  usagePerCustomer: number;
-  startsAt: string | null;
-  expiresAt: string | null;
-  isActive: boolean;
-  isPublic: boolean;
-  firstOrderOnly: boolean;
-  terms: string;
-  tags: string[];
-}>;
+export type { CouponFormInitialValues, CouponFormSubmitValues } from '@/types/coupon';
 
 type CouponFormProps = {
   initialValues?: CouponFormInitialValues;

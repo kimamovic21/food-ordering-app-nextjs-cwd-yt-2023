@@ -15,21 +15,7 @@ import {
   getNotificationRealtimePayload,
   isOrderRelatedRealtimePayload,
 } from '@/libs/realtimeClient';
-
-type QueueOrder = {
-  _id: string;
-  email: string;
-  phone: string;
-  total: number;
-  paymentStatus: boolean;
-  orderStatus: 'placed' | 'processing' | 'ready' | 'transportation' | 'delivered';
-  courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
-  minutesSincePlaced: number;
-  isLateBeforeTransport: boolean;
-  isReadyWithoutCourierLate?: boolean;
-  cartProducts: Array<{ name: string; quantity: number; size: string }>;
-  courierId?: { name: string; email: string } | null;
-};
+import type { QueueOrder } from '@/types/order';
 
 const columns: Array<{ status: QueueOrder['orderStatus']; title: string }> = [
   { status: 'placed', title: 'Placed' },

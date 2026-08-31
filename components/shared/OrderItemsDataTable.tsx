@@ -5,14 +5,12 @@ import {
   TanStackDataTable,
   type DataTableColumnDef,
 } from '@/components/shared/TanStackDataTable';
+import type { CartProduct } from '@/types/cart';
 
-export type OrderItemsDataTableProduct = {
-  productId: string;
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-};
+export type OrderItemsDataTableProduct = Pick<
+  CartProduct,
+  'productId' | 'name' | 'size' | 'quantity' | 'price'
+>;
 
 type OrderItemRow = OrderItemsDataTableProduct & {
   lineTotal: number;

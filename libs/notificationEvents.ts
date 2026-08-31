@@ -1,18 +1,9 @@
 import 'server-only';
 
 import { EventEmitter } from 'node:events';
+import type { NotificationRealtimeEvent } from '@/types/notifications';
 
-export type NotificationRealtimeEvent = {
-  type: 'notification-created' | 'notifications-read';
-  recipientUserId: string;
-  notificationId?: string;
-  notificationType?: string;
-  orderId?: string | null;
-  title?: string;
-  message?: string;
-  unreadCount?: number;
-  metadata?: Record<string, unknown> | null;
-};
+export type { NotificationRealtimeEvent } from '@/types/notifications';
 
 const notificationEmitter = new EventEmitter();
 notificationEmitter.setMaxListeners(0);

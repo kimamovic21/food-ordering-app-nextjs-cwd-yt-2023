@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import { MenuItem } from '@/models/menuItem';
-
-type CartSize = 'small' | 'medium' | 'large' | 'single';
+import type { CartSize } from '@/types/cart';
 
 const normalizeSize = (value: unknown, priceType?: string): CartSize => {
   const size = String(value || '').toLowerCase();

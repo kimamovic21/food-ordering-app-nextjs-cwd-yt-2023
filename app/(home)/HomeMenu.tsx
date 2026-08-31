@@ -5,19 +5,7 @@ import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import MenuItem from './MenuItem';
-
-interface MenuItemType {
-  _id: string;
-  image?: string;
-  name: string;
-  description: string;
-  category?: { _id: string; name: string } | string;
-  priceSmall: number;
-  priceMedium: number;
-  priceLarge: number;
-  restaurantId: string;
-  isAvailable?: boolean;
-}
+import type { MenuItemListItem } from '@/types/menu';
 
 const MenuSkeleton = () => (
   <>
@@ -51,7 +39,7 @@ const MenuSkeleton = () => (
 );
 
 const HomeMenu = () => {
-  const [items, setItems] = useState<MenuItemType[]>([]);
+  const [items, setItems] = useState<MenuItemListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -60,7 +48,7 @@ const HomeMenu = () => {
         const response = await fetch('/api/menu-items');
         const data = await response.json();
 
-        const pizzaItems = data.filter((item: MenuItemType) => {
+        const pizzaItems = data.filter((item: MenuItemListItem) => {
           if (typeof item.category === 'string') {
             return item.category.toLowerCase() === 'pizzas';
           }

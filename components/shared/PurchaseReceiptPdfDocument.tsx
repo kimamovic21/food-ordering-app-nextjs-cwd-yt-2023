@@ -1,38 +1,9 @@
 import React from 'react';
 import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 import { formatAppDate } from '@/libs/dateFormat';
+import type { PurchaseReceiptProps } from '@/types/receipt';
 
-type ReceiptItem = {
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-};
-
-type ReceiptRestaurant = {
-  name: string;
-  contact?: string | null;
-  email?: string | null;
-  street?: string | null;
-  city?: string | null;
-  postalCode?: string | null;
-  country?: string | null;
-};
-
-type PurchaseReceiptPdfDocumentProps = {
-  orderId: string;
-  customerEmail: string;
-  purchasedOn?: Date | string | null;
-  restaurant?: ReceiptRestaurant | null;
-  items: ReceiptItem[];
-  taxAmount: number;
-  deliveryFee: number;
-  couponCode?: string | null;
-  couponDiscountAmount?: number;
-  couponDiscountPercentage?: number;
-  specialInstructions?: string | null;
-  total: number;
-};
+type PurchaseReceiptPdfDocumentProps = PurchaseReceiptProps;
 
 const styles = StyleSheet.create({
   page: {

@@ -19,14 +19,15 @@ import OrderInfoCard from './OrderInfoCard';
 import CustomerInfoCard from './CustomerInfoCard';
 import OrderItemsCard from './OrderItemsCard';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
-import OrderPhaseTimeline, {
-  type OrderPhaseDurationOffsetKey,
-  type OrderPhaseDurationOffsets,
-} from '@/components/shared/OrderPhaseTimeline';
+import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
 import OrderProgressStepper from '@/components/shared/OrderProgressStepper';
 import HeartRating from '@/components/shared/HeartRating';
 import dynamic from 'next/dynamic';
 import DevOrderTimelineSimulator from './DevOrderTimelineSimulator';
+import type {
+  OrderPhaseDurationOffsetKey,
+  OrderPhaseDurationOffsets,
+} from '@/types/order-timeline';
 
 // Dynamic import to prevent SSR issues with Leaflet
 const OrderMap = dynamic(() => import('@/components/shared/OrderMap'), {
@@ -71,102 +72,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-type CartProduct = {
-  productId: string;
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-};
-
-type OrderDetailsType = {
-  _id: string;
-  userId: string;
-  email: string;
-  phone: string;
-  streetAddress: string;
-  postalCode: string;
-  city: string;
-  country: string;
-  specialInstructions?: string;
-  cartProducts: CartProduct[];
-  total: number;
-  paymentStatus: boolean;
-  orderStatus:
-    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
-  courierId?: { _id: string; name: string; email: string; image?: string };
-  courierAssignmentStatus?: 'pending' | 'accepted' | 'declined' | null;
-  courierAssignmentNote?: string;
-  createdAt: string;
-  updatedAt: string;
-  processingAt?: string | null;
-  readyAt?: string | null;
-  transportationAt?: string | null;
-  courierDeliveredAt?: string | null;
-  customerConfirmedDeliveryAt?: string | null;
-  adminConfirmedDeliveryAt?: string | null;
-  deliveryCompletedBy?: 'customer' | 'admin' | null;
-  deliveryPin?: string | null;
-  courierAssignedAt?: string | null;
-  courierAcceptedAt?: string | null;
-  courierDeclinedAt?: string | null;
-  restaurantHandedToCourierAt?: string | null;
-  courierPickedUpAt?: string | null;
-  failedDeliveryRequestedAt?: string | null;
-  failedDeliveryRequestedBy?: string | null;
-  failedDeliveryReason?: string | null;
-  failedDeliveryVerifiedAt?: string | null;
-  failedDeliveryVerifiedBy?: string | null;
-  failedDeliveryVerifiedByRole?: 'restaurant_owner' | 'super_admin' | null;
-  canceledBy?: 'customer' | 'restaurant_owner' | 'super_admin' | 'system' | null;
-  cancellationReason?: string | null;
-  canceledAt?: string | null;
-  completedAt?: string | null;
-  stripeSessionId?: string;
-  taxPercentage?: number;
-  taxAmount?: number;
-  deliveryFee?: number;
-  estimatedPreparationMinutes?: number | null;
-  estimatedDeliveryMinutes?: number | null;
-  estimatedTotalMinutes?: number | null;
-  loyaltyDiscount?: number;
-  loyaltyDiscountPercentage?: number;
-  loyaltyTier?: string;
-  restaurantId?: string;
-};
-
-type CourierType = {
-  _id: string;
-  name: string;
-  email: string;
-  image?: string;
-  availability: boolean;
-  takenOrder?: string;
-  role: string;
-  distanceToRestaurantKm?: number | null;
-  averageRating?: number;
-  ratingCount?: number;
-};
-
-type OrderReviewType = {
-  rating: number;
-  reviewText: string;
-  createdAt?: string;
-};
+import type { CourierListItem } from '@/types/courier';
+import type { AdminOrderDetails, EditableOrderStatus, OrderReview } from '@/types/order';
 
 type DevOrderTimeSimulatorOffsetKey =
   OrderPhaseDurationOffsetKey | 'failedDeliveryWait' | 'readyWithoutCourierWait';
 
 const OrderDetailPage = () => {
-  const [order, setOrder] = useState<OrderDetailsType | null>(null);
-  const [review, setReview] = useState<OrderReviewType | null>(null);
+  const [order, setOrder] = useState<AdminOrderDetails | null>(null);
+  const [review, setReview] = useState<OrderReview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<'placed' | 'processing' | 'ready'>('placed');
+  const [selectedStatus, setSelectedStatus] = useState<EditableOrderStatus>('placed');
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [statusError, setStatusError] = useState('');
-  const [couriers, setCouriers] = useState<CourierType[]>([]);
+  const [couriers, setCouriers] = useState<CourierListItem[]>([]);
   const [selectedCourier, setSelectedCourier] = useState<string>('');
   const [courierAssignmentNote, setCourierAssignmentNote] = useState('');
   const [assigningCourier, setAssigningCourier] = useState(false);
@@ -181,7 +101,7 @@ const OrderDetailPage = () => {
   const params = useParams();
   const orderId = params?.id as string;
 
-  const getEditableStatus = (status: OrderDetailsType['orderStatus']) =>
+  const getEditableStatus = (status: AdminOrderDetails['orderStatus']): EditableOrderStatus =>
     status === 'completed' ||
     status === 'transportation' ||
     status === 'delivered' ||

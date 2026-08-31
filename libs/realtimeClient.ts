@@ -1,18 +1,10 @@
 'use client';
 
+import type { AppNotificationRealtimePayload } from '@/types/notifications';
+
 export const APP_NOTIFICATION_REALTIME_EVENT = 'app:notification-realtime';
 
-export type AppNotificationRealtimePayload = {
-  type?: string;
-  notificationId?: string;
-  notificationType?: string;
-  orderId?: string | null;
-  title?: string;
-  message?: string;
-  unreadCount?: number;
-  metadata?: Record<string, unknown> | null;
-  isIncoming?: boolean;
-};
+export type { AppNotificationRealtimePayload } from '@/types/notifications';
 
 export const dispatchNotificationRealtimeEvent = (payload: AppNotificationRealtimePayload) => {
   window.dispatchEvent(new CustomEvent(APP_NOTIFICATION_REALTIME_EVENT, { detail: payload }));

@@ -23,33 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import MenuItem from './MenuItem';
 import SearchInput from './SearchInput';
 import MenuPageSkeleton from './MenuPageSkeleton';
-
-interface MenuItemType {
-  _id: string;
-  image?: string;
-  name: string;
-  description: string;
-  category?: { _id: string; name: string } | string;
-  priceSmall: number | null;
-  priceMedium: number | null;
-  priceLarge: number | null;
-  restaurantId: string;
-  isAvailable?: boolean;
-  restaurantAverageRating?: number;
-  restaurantRatingCount?: number;
-}
-
-interface Category {
-  _id: string;
-  name: string;
-}
-
-interface CategorySummary {
-  _id: string;
-  name: string;
-  items: MenuItemType[];
-  total: number;
-}
+import type { MenuCategorySummary, MenuItemCategory, MenuItemListItem } from '@/types/menu';
 
 const SORT_OPTIONS = ['price_asc', 'price_desc', 'newest', 'oldest'] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
@@ -96,7 +70,7 @@ const preloadImage = (src: string) =>
     }
   });
 
-const preloadMenuItemImages = async (items: MenuItemType[]) => {
+const preloadMenuItemImages = async (items: MenuItemListItem[]) => {
   const imageUrls = Array.from(
     new Set(
       items
@@ -127,12 +101,12 @@ const MenuPage = () => {
     maxPrice: parseAsString.withDefault(''),
     page: parseAsInteger.withDefault(1),
   });
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
+  const [categories, setCategories] = useState<MenuItemCategory[]>([]);
+  const [categorySummaries, setCategorySummaries] = useState<MenuCategorySummary[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   const [isResultsLoading, setIsResultsLoading] = useState(false);
-  const [results, setResults] = useState<MenuItemType[]>([]);
+  const [results, setResults] = useState<MenuItemListItem[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const page = Math.max(1, pageQuery);
   const activeSearch = searchQuery.trim();
@@ -271,7 +245,9 @@ const MenuPage = () => {
       try {
         const response = await fetch(`/api/menu-items?groupBy=category&perCategory=3`);
         const data = await response.json();
-        const summaries: CategorySummary[] = Array.isArray(data?.categories) ? data.categories : [];
+        const summaries: MenuCategorySummary[] = Array.isArray(data?.categories)
+          ? data.categories
+          : [];
         const summaryItems = summaries.flatMap((summary) => summary.items);
 
         await preloadMenuItemImages(summaryItems);
@@ -314,7 +290,7 @@ const MenuPage = () => {
         });
         const data = await response.json();
 
-        const items: MenuItemType[] = Array.isArray(data?.items) ? data.items : [];
+        const items: MenuItemListItem[] = Array.isArray(data?.items) ? data.items : [];
         const total = typeof data?.total === 'number' ? data.total : 0;
 
         await preloadMenuItemImages(items);

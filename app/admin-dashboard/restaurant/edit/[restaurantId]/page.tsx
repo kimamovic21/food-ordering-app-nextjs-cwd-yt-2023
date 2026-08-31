@@ -14,53 +14,14 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import RestaurantForm from '../../RestaurantForm';
-
-interface WorkingHours {
-  day: string;
-  openTime: string;
-  closeTime: string;
-  isClosed: boolean;
-}
-
-interface BlockedDate {
-  date: string;
-  reason: string;
-}
-
-interface Restaurant {
-  _id: string;
-  name: string;
-  street: string;
-  city: string;
-  postalCode: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-  contact: string;
-  email: string;
-  webAddress: string;
-  description: string;
-  tax: number;
-  courierFee: number;
-  minimumOrderAmount: number;
-  averagePreparationMinutes: number;
-  averageDeliveryMinutes: number;
-  activeOrderLimit: number;
-  deliveryRadiusKm: number;
-  isPaused: boolean;
-  pauseReason: string;
-  workingHours: WorkingHours[];
-  blockedDates: BlockedDate[];
-  totalEmployees: number;
-  images: string[];
-}
+import type { RestaurantAdminDetails } from '@/types/restaurant';
 
 const EditRestaurantPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
   const restaurantId = params.restaurantId as string;
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [restaurant, setRestaurant] = useState<RestaurantAdminDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchRestaurant = useCallback(async () => {

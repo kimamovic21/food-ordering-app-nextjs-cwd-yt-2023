@@ -37,75 +37,12 @@ import { Textarea } from '@/components/ui/textarea';
 import useProfile from '@/hooks/useProfile';
 import { formatAppDateTime, formatAppTime } from '@/libs/dateFormat';
 import { queryKeys } from '@/libs/queryKeys';
-
-type ThreadMessage = {
-  _id: string;
-  senderUserId: string;
-  recipientUserId: string;
-  body: string;
-  deliveredAt?: string | null;
-  seenAt?: string | null;
-  editedAt?: string | null;
-  deletedFor: string[];
-  createdAt: string;
-  updatedAt: string;
-};
-
-type ConversationContact = {
-  _id: string;
-  userId?: string;
-  name: string;
-  image?: string | null;
-  role: 'user' | 'admin' | 'courier';
-  href: string;
-};
-
-type ConversationSummary = {
-  _id: string;
-  participantIds: string[];
-  contextType: 'direct' | 'restaurant' | 'order';
-  orderId?: string | null;
-  lastMessageText: string;
-  lastMessageAt?: string | null;
-  unreadCount: number;
-  contact: ConversationContact | null;
-};
-
-type SelectedThread = {
-  conversation: {
-    _id: string;
-    participantIds: string[];
-    participantKey: string;
-    contextType: 'direct' | 'restaurant' | 'order';
-    orderId?: string | null;
-    lastMessageText: string;
-    lastMessageAt?: string | null;
-  } | null;
-  contact: ConversationContact | null;
-  orderId?: string | null;
-  contextType: 'direct' | 'order' | 'restaurant';
-  messages: ThreadMessage[];
-};
-
-type MessagesApiResponse = {
-  conversations: ConversationSummary[];
-  unreadCount: number;
-  contactSuggestions: ConversationContact[];
-  contactSearch?: string;
-  contactPage?: number;
-  contactHasMore?: boolean;
-  contactTotal?: number;
-  selectedConversation: SelectedThread | null;
-};
-
-type MessagesCenterQueryParams = {
-  context?: string | null;
-  isAdminSearchEnabled: boolean;
-  orderId?: string | null;
-  page?: number;
-  participantId?: string | null;
-  searchTerm?: string;
-};
+import type {
+  ConversationThreadMessage as ThreadMessage,
+  MessageContact as ConversationContact,
+  MessagesCenterApiResponse,
+  MessagesCenterQueryParams,
+} from '@/types/messages';
 
 const buildMessagesCenterUrl = ({
   context,
@@ -131,7 +68,7 @@ const buildMessagesCenterUrl = ({
 
 const fetchMessagesCenter = async (
   params: MessagesCenterQueryParams
-): Promise<MessagesApiResponse> => {
+): Promise<MessagesCenterApiResponse> => {
   const response = await fetch(buildMessagesCenterUrl(params), { cache: 'no-store' });
   const json = await response.json().catch(() => null);
 
@@ -139,7 +76,7 @@ const fetchMessagesCenter = async (
     throw new Error(json?.error || 'Failed to load messages');
   }
 
-  return json as MessagesApiResponse;
+  return json as MessagesCenterApiResponse;
 };
 
 const formatDate = (dateInput?: string | null) => {

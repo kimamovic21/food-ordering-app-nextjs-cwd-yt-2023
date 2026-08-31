@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNotifications } from '@/contexts/NotificationsContext';
 import { resolveNotificationTargetPath, type NotificationRole } from '@/libs/notificationClient';
-import type { AppNotification } from '@/contexts/NotificationsContext';
+import type { AppNotification } from '@/types/notifications';
 
 type NotificationsCenterProps = {
   title: string;

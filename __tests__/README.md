@@ -26,6 +26,8 @@ This folder contains unit tests grouped by feature area.
 - Keep test files close to business domain in nested folders.
 - Name test files with `*.test.ts`.
 - Put reusable input fixtures in the root `mocks/` folder.
+- Use `utils/testFactories.ts` for generated fake users, restaurants, and orders.
+- Use `utils/mongoMemoryServer.ts` when a test needs an isolated in-memory MongoDB instance.
 - Focus on behavior contracts, not implementation details.
 
 ## Running Tests

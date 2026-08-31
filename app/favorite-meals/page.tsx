@@ -9,25 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { queryKeys } from '@/libs/queryKeys';
 import FavoriteMealsLoading from './loading';
-
-interface FavoriteMenuItem {
-  _id: string;
-  image?: string;
-  name: string;
-  description: string;
-  category?: { _id: string; name: string } | string;
-  priceSmall: number | null;
-  priceMedium: number | null;
-  priceLarge: number | null;
-  restaurantId: string | { _id: string; name?: string };
-  isAvailable?: boolean;
-  restaurantAverageRating?: number;
-  restaurantRatingCount?: number;
-}
-
-type FavoriteMealsResponse = {
-  items: FavoriteMenuItem[];
-};
+import type { FavoriteMealsResponse } from '@/types/favorites';
 
 const fetchFavoriteMeals = async (): Promise<FavoriteMealsResponse> => {
   const response = await fetch('/api/favorites/menu-items', { cache: 'no-store' });

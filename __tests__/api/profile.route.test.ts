@@ -73,7 +73,7 @@ describe('/api/profile route handlers', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: profileMockUsers.updatedProfile.name,
-        phone: profileMockUsers.updatedProfile.phone,
+        phone: '061234567',
         city: profileMockUsers.updatedProfile.city,
         role: 'admin',
       }),
@@ -88,7 +88,7 @@ describe('/api/profile route handlers', () => {
       {
         $set: {
           name: profileMockUsers.updatedProfile.name,
-          phone: profileMockUsers.updatedProfile.phone,
+          phone: '+38761234567',
           city: profileMockUsers.updatedProfile.city,
         },
       }
@@ -96,6 +96,23 @@ describe('/api/profile route handlers', () => {
 
     const body = await response.json();
     expect(body.name).toBe(profileMockUsers.updatedProfile.name);
+  });
+
+  it('rejects invalid phone numbers on PUT', async () => {
+    const request = new Request('http://localhost/api/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: '123',
+      }),
+    });
+
+    const response = await PUT(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ error: 'Please enter a valid phone number.' });
+    expect(User.updateOne).not.toHaveBeenCalled();
   });
 
   it('returns 404 when DELETE is called for non-existent user', async () => {

@@ -16,11 +16,12 @@ import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AI_MENU_DESCRIPTION_MAX_CHARS } from '@/libs/menuItemDescription';
 import { Loader2, Sparkles } from 'lucide-react';
+import type { MenuItemCategory } from '@/types/menu';
 
 interface MenuItemFormProps {
   name: string;
   categoryId: string;
-  categories: Array<{ _id: string; name: string }>;
+  categories: MenuItemCategory[];
   description: string;
   priceType: string;
   priceSmall: string;

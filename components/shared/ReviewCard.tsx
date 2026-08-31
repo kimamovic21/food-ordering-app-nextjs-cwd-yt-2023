@@ -5,20 +5,9 @@ import HeartRating from './HeartRating';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatAppDate } from '@/libs/dateFormat';
+import type { ReviewCardData } from '@/types/review';
 
-export type ReviewCardData = {
-  _id: string;
-  rating: number;
-  reviewText: string;
-  createdAt: string;
-  restaurant?: {
-    _id: string;
-    name: string;
-  } | null;
-  user?: {
-    name: string;
-  } | null;
-};
+export type { ReviewCardData } from '@/types/review';
 
 type ReviewCardProps = {
   review: ReviewCardData;

@@ -25,32 +25,13 @@ import useProfile from '@/hooks/useProfile';
 import Title from '@/components/shared/Title';
 import MyOrdersTable from './MyOrdersTable';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
-import { useCart, type CartItem } from '@/contexts/CartContext';
+import { useCart } from '@/contexts/CartContext';
 import { formatAppDate } from '@/libs/dateFormat';
-
-type OrderType = {
-  _id: string;
-  email: string;
-  total: number;
-  paymentStatus: boolean;
-  orderStatus:
-    'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
-  createdAt: string;
-};
-
-type UsualOrderType = {
-  orderId: string;
-  repeatCount: number;
-  lastOrderedAt: string;
-  itemCount: number;
-  subtotal: number;
-  items: { name: string; size: string; quantity: number }[];
-  cartItems: CartItem[];
-};
+import type { OrderListItem, UsualOrder } from '@/types/order';
 
 const MyOrdersPage = () => {
-  const [orders, setOrders] = useState<OrderType[]>([]);
-  const [usualOrder, setUsualOrder] = useState<UsualOrderType | null>(null);
+  const [orders, setOrders] = useState<OrderListItem[]>([]);
+  const [usualOrder, setUsualOrder] = useState<UsualOrder | null>(null);
   const [loadingUsualOrder, setLoadingUsualOrder] = useState(true);
   const [addingUsualOrder, setAddingUsualOrder] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(true);

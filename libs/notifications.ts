@@ -3,31 +3,13 @@ import mongoose from 'mongoose';
 import { emitNotificationEvent } from '@/libs/notificationEvents';
 import { Notification } from '@/models/notification';
 import { User } from '@/models/user';
+import type { CreateNotificationInput, CreatedNotification } from '@/types/notifications';
 
-type NotificationType =
-  | 'order_placed'
-  | 'order_paid'
-  | 'order_status_changed'
-  | 'courier_assigned'
-  | 'order_completed'
-  | 'order_canceled'
-  | 'restaurant_available'
-  | 'support_ticket'
-  | 'late_order';
-
-type CreateNotificationInput = {
-  recipientUserIds: Array<string | mongoose.Types.ObjectId>;
-  type: NotificationType;
-  title: string;
-  message: string;
-  orderId?: string | mongoose.Types.ObjectId | null;
-  metadata?: Record<string, unknown> | null;
-};
-
-type CreatedNotification = {
-  _id?: mongoose.Types.ObjectId;
-  recipientUserId: mongoose.Types.ObjectId;
-};
+export type {
+  CreateNotificationInput,
+  CreatedNotification,
+  NotificationType,
+} from '@/types/notifications';
 
 const toObjectId = (value: string | mongoose.Types.ObjectId) =>
   typeof value === 'string' ? new mongoose.Types.ObjectId(value) : value;
@@ -39,7 +21,7 @@ export const createNotifications = async ({
   message,
   orderId,
   metadata = null,
-}: CreateNotificationInput) => {
+}: CreateNotificationInput<mongoose.Types.ObjectId>) => {
   const uniqueRecipientIds = Array.from(
     new Set(
       recipientUserIds
@@ -69,11 +51,10 @@ export const createNotifications = async ({
 
   const insertedNotifications = (await Notification.insertMany(
     notificationPayloads
-  )) as CreatedNotification[];
-  const fallbackRealtimeNotifications: CreatedNotification[] = notificationPayloads.map(
-    ({ recipientUserId }) => ({ recipientUserId })
-  );
-  const realtimeNotifications: CreatedNotification[] =
+  )) as CreatedNotification<mongoose.Types.ObjectId>[];
+  const fallbackRealtimeNotifications: CreatedNotification<mongoose.Types.ObjectId>[] =
+    notificationPayloads.map(({ recipientUserId }) => ({ recipientUserId }));
+  const realtimeNotifications: CreatedNotification<mongoose.Types.ObjectId>[] =
     Array.isArray(insertedNotifications) && insertedNotifications.length > 0
       ? insertedNotifications
       : fallbackRealtimeNotifications;

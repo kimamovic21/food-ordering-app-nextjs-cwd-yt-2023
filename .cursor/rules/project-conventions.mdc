@@ -9,10 +9,11 @@ alwaysApply: true
 
 ## Project Conventions
 
-- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend, Upstash Redis, date-fns, TanStack Query, TanStack Table, nuqs, cmdk, Vercel Web Analytics, Sentry.
+- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend, Upstash Redis, date-fns, @date-fns/tz, currency.js, libphonenumber-js, TanStack Query, TanStack Table, nuqs, cmdk, Vercel Web Analytics, Sentry.
 - Prefer small, incremental changes.
 - Before implementing a new feature or non-trivial app logic, create or switch to a dedicated local feature branch from `main` unless the user explicitly asks to work on the current branch.
 - Follow existing patterns in `app/`, `libs/`, `models/`, `components/`, and `contexts/`.
+- Keep reusable domain, DTO, and API response types in `types/` using lowercase feature filenames and PascalCase exported names. Keep one-off component props colocated with the component.
 - Avoid introducing new dependencies unless explicitly requested.
 
 ## API And Data Rules
@@ -22,6 +23,7 @@ alwaysApply: true
 - Use existing models in `models/` for data access.
 - Ask before introducing schema migrations or destructive data operations.
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts`.
+- Use `libs/money.ts` for business money calculations and `libs/phone.ts` before saving phone numbers.
 - Preserve restaurant accepting-order logic in checkout: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, paid active kitchen orders, item availability, coupons, and loyalty must be checked before Stripe sessions are created.
 - Preserve checkout duplicate protection: recent identical unpaid `placed` attempts use `checkoutFingerprint` and should reuse or recover the existing Stripe Checkout session.
 - Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
@@ -68,6 +70,7 @@ alwaysApply: true
 - Keep tests in `__tests__/` grouped by domain.
 - Keep e2e tests in `e2e/` for real workflow validation.
 - Keep reusable fixtures in `mocks/`.
+- Use `__tests__/utils/testFactories.ts` for generated fixtures and `__tests__/utils/mongoMemoryServer.ts` for isolated Mongo integration tests when needed.
 - Prefer behavior-driven assertions over implementation-coupled assertions.
 - Add both success and failure scenarios for route handlers and auth callbacks.
 - For order-flow work, cover checkout validation, coupon suggestion, restaurant availability, notification copy, courier summaries, and lifecycle transitions.

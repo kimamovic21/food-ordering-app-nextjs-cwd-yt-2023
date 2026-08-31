@@ -4,11 +4,9 @@ import { useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { queryKeys } from '@/libs/queryKeys';
+import type { FavoritesState } from '@/types/favorites';
 
-export interface FavoritesState {
-  favoriteMenuItemIds: string[];
-  favoriteRestaurantIds: string[];
-}
+export type { FavoritesState } from '@/types/favorites';
 
 export const emptyFavorites: FavoritesState = {
   favoriteMenuItemIds: [],

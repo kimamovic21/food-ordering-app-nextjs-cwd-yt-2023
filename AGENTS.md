@@ -17,7 +17,8 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - Sharing: `react-share` is used for social share actions.
 - Client data cache: TanStack Query powers shared profile data, favorite IDs/lists, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
 - Data tables: TanStack Table powers shared searchable, sortable, paginated table UI through `components/shared/TanStackDataTable.tsx`.
-- Dates: `date-fns` is used through `libs/dateFormat.ts` for UI, email, and PDF date formatting.
+- Dates: `date-fns` and `@date-fns/tz` are used through `libs/dateFormat.ts` for UI, email, and PDF date formatting in the app timezone.
+- Money and phone helpers: `currency.js` is wrapped by `libs/money.ts`, and `libphonenumber-js` is wrapped by `libs/phone.ts`.
 - Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`; browser Session Replay is production-only and sampled only on errors; Vercel Web Analytics is mounted from `@vercel/analytics/next` in `app/layout.tsx`.
 
 ## High-Level Features
@@ -67,11 +68,13 @@ See `example.env`. Variables currently used in the project include:
 - contexts/: React contexts and hooks
 - libs/: auth, integrations, business rules, and helper utilities
 - models/: Mongoose schemas
+- types/: reusable TypeScript domain models, DTOs, and API response contracts shared across frontend, backend, contexts, and libs
 - public/: static assets
 
 ## Conventions
 
 - Use TypeScript for new code.
+- Keep reusable domain, DTO, and API response types in `types/` using lowercase feature filenames and PascalCase exported type names. Small one-off component prop types can stay colocated with their component.
 - Keep components small and focused; prefer composition from shared components.
 - Before implementing a new feature or non-trivial app logic, create or switch to a dedicated local feature branch from `main` unless the user explicitly asks to work on the current branch. Keep `main` as the stable baseline.
 - API route handlers should validate inputs and use models/ for data access.
@@ -79,6 +82,8 @@ See `example.env`. Variables currently used in the project include:
 - Do not hardcode personal addresses, phone numbers, or private receiver emails; use neutral fixtures or env vars such as `RESEND_RECEIVER_EMAIL`.
 - Avoid breaking API response shapes unless explicitly requested.
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts` (`dd/MM/yyyy`, `dd/MM/yyyy HH:mm`).
+- Use `libs/money.ts` for business money calculations; avoid hand-rolled floating-point arithmetic in checkout, coupons, earnings, and reports.
+- Use `libs/phone.ts` before saving customer/admin/courier phone values; local Bosnia and Herzegovina numbers are accepted and normalized to E.164.
 - Messaging should remain role-restricted: no customer-to-customer chat, and order threads must match the assigned courier or restaurant owner.
 - Checkout must preserve restaurant accepting-order checks: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty must be validated before creating Stripe sessions.
 - Checkout should deduplicate recent identical unpaid `placed` attempts using `checkoutFingerprint`; reuse or recover the existing Stripe Checkout session instead of creating duplicate orders.
@@ -136,6 +141,7 @@ See `example.env`. Variables currently used in the project include:
 - For profile tests, cover info updates, image upload/remove, and account deletion flows.
 - For order-flow tests, cover checkout validation, best coupon suggestion, reorder validation, restaurant availability, notification copy, courier summaries, and delivery status transitions.
 - For date-format changes, cover `libs/dateFormat.ts` and any business logic that depends on weekday/date calculations.
+- Use `__tests__/utils/testFactories.ts` for generated fixtures, and prefer `__tests__/utils/mongoMemoryServer.ts` when a Mongo integration test needs full database isolation.
 - Use `MONGODB_URL_TESTS` for local test database configuration when needed.
 - Keep e2e tests data-safe with explicit cleanup of created records.
 

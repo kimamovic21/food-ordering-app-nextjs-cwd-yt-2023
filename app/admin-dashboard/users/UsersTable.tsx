@@ -10,20 +10,9 @@ import {
 } from '@/components/shared/TanStackDataTable';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import type { AdminUserListItem } from '@/types/user';
 
-type UserRow = {
-  _id: string;
-  name: string;
-  email: string;
-  image?: string;
-  city?: string;
-  country?: string;
-  phone?: string;
-  postalCode?: string;
-  streetAddress?: string;
-  role?: string;
-  admin?: boolean;
-};
+type UserRow = AdminUserListItem;
 
 type UsersTableProps = {
   users: UserRow[];

@@ -1,15 +1,6 @@
 import mongoose from 'mongoose';
 import { MenuItem } from '@/models/menuItem';
-
-type CartSize = 'small' | 'medium' | 'large' | 'single';
-
-type CartValidationRequestItem = {
-  _id?: string;
-  size?: string;
-  quantity?: number;
-  restaurantId?: string;
-  price?: number | null;
-};
+import type { CartSize, CartValidationRequestItem } from '@/types/cart';
 
 const normalizeCartSize = (value: unknown): CartSize | null => {
   const size = String(value || '')

@@ -9,38 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatAppDate } from '@/libs/dateFormat';
-
-type Courier = {
-  _id: string;
-  name: string;
-  email: string;
-  image?: string;
-  availability: boolean;
-  createdAt?: string;
-};
-
-type CourierEarningsSummary = {
-  completedDeliveries: number;
-  declinedAssignments: number;
-  lateDeliveries: number;
-  totalEarnings: number;
-  averageEarning: number;
-  averageDeliveryMinutes: number;
-  averageRating: number;
-  ratingCount: number;
-};
-
-type EarningsChartItem = {
-  month: string;
-  earnings: number;
-  deliveries: number;
-};
-
-type CourierEarningsResponse = {
-  courier: Courier;
-  earningsChart: EarningsChartItem[];
-  summary: CourierEarningsSummary;
-};
+import type {
+  CourierEarningsCourier,
+  CourierEarningsResponse,
+  CourierPerformanceSummary,
+  EarningsChartItem,
+} from '@/types/courier';
 
 const chartConfig = {
   earnings: {
@@ -49,7 +23,7 @@ const chartConfig = {
   },
 };
 
-const initialSummary: CourierEarningsSummary = {
+const initialSummary: CourierPerformanceSummary = {
   completedDeliveries: 0,
   declinedAssignments: 0,
   lateDeliveries: 0,
@@ -77,8 +51,8 @@ const CourierEarningsPanel = ({
   title: string;
   description: string;
 }) => {
-  const [courier, setCourier] = useState<Courier | null>(null);
-  const [summary, setSummary] = useState<CourierEarningsSummary>(initialSummary);
+  const [courier, setCourier] = useState<CourierEarningsCourier | null>(null);
+  const [summary, setSummary] = useState<CourierPerformanceSummary>(initialSummary);
   const [earningsChart, setEarningsChart] = useState<EarningsChartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -1,4 +1,6 @@
-export type NotificationRole = 'user' | 'courier' | 'admin';
+import type { NotificationRole } from '@/types/notifications';
+
+export type { NotificationRole } from '@/types/notifications';
 
 type NotificationLike = {
   type: string;

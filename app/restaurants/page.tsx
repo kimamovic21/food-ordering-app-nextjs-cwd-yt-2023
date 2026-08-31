@@ -21,20 +21,7 @@ import useFavorites from '@/hooks/useFavorites';
 import ShareActions from '@/components/shared/ShareActions';
 import HeartRating from '@/components/shared/HeartRating';
 import SearchInput from './SearchInput';
-
-interface RestaurantListItem {
-  _id: string;
-  name: string;
-  city: string;
-  country: string;
-  street: string;
-  description: string;
-  image: string | null;
-  isOpen: boolean;
-  distanceKm: number | null;
-  averageRating: number;
-  ratingCount: number;
-}
+import type { RestaurantListItem } from '@/types/restaurant';
 
 const PAGE_SIZE = 9;
 

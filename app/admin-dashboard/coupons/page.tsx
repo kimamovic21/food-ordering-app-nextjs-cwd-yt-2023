@@ -12,29 +12,14 @@ import Title from '@/components/shared/Title';
 import useProfile from '@/hooks/useProfile';
 import CouponsLoading from './loading';
 import { formatAppDate } from '@/libs/dateFormat';
-
-type Coupon = {
-  _id: string;
-  code: string;
-  title: string;
-  description: string;
-  discountValue: number;
-  minimumOrderAmount: number;
-  usageLimit: number | null;
-  usageCount: number;
-  startsAt: string | null;
-  expiresAt: string | null;
-  isActive: boolean;
-  createdAt: string | null;
-  updatedAt: string | null;
-};
+import type { AdminCoupon } from '@/types/coupon';
 
 const CouponsPage = () => {
   const { data, loading } = useProfile();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [coupons, setCoupons] = useState<AdminCoupon[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingCoupons, setLoadingCoupons] = useState(true);

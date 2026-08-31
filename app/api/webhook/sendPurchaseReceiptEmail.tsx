@@ -1,37 +1,9 @@
 import { Resend } from 'resend';
 import { render } from '@react-email/render';
 import PurchaseReceiptEmail from '@/components/resend/PurchaseReceiptEmail';
+import type { PurchaseReceiptProps } from '@/types/receipt';
 
-type ReceiptItem = {
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-  image?: string | null;
-};
-
-type SendPurchaseReceiptEmailArgs = {
-  orderId: string;
-  customerEmail: string;
-  purchasedOn?: Date | string | null;
-  restaurant?: {
-    name: string;
-    contact?: string | null;
-    email?: string | null;
-    street?: string | null;
-    city?: string | null;
-    postalCode?: string | null;
-    country?: string | null;
-  } | null;
-  items: ReceiptItem[];
-  taxAmount: number;
-  deliveryFee: number;
-  couponCode?: string | null;
-  couponDiscountAmount?: number;
-  couponDiscountPercentage?: number;
-  specialInstructions?: string | null;
-  total: number;
-};
+type SendPurchaseReceiptEmailArgs = PurchaseReceiptProps;
 
 export async function sendPurchaseReceiptEmail({
   orderId,

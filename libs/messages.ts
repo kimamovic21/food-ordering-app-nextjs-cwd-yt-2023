@@ -5,63 +5,22 @@ import { Conversation } from '@/models/conversation';
 import { Message } from '@/models/message';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
+import type {
+  ConversationSummary,
+  MessageContact,
+  MessageProfile,
+  MessageRole,
+  PagedContactSearchResult,
+} from '@/types/messages';
 
-export type MessageRole = 'user' | 'admin' | 'courier';
-
-export type MessageContact = {
-  userId: string;
-  name: string;
-  image?: string | null;
-  role: MessageRole;
-  href: string;
-  title: string;
-  subtitle: string;
-  contextType: 'direct' | 'order';
-  orderId?: string | null;
-  restaurantId?: string | null;
-};
-
-export type PagedContactSearchResult = {
-  contacts: MessageContact[];
-  hasMore: boolean;
-  page: number;
-  total: number;
-};
-
-export type ConversationSummary = {
-  _id: string;
-  participantIds: string[];
-  participantKey: string;
-  contextType: 'direct' | 'restaurant' | 'order';
-  orderId?: string | null;
-  restaurantId?: string | null;
-  lastMessageText: string;
-  lastMessageAt?: string | null;
-  lastMessageSenderId?: string | null;
-  unreadCount: number;
-  contact: MessageContact | null;
-};
-
-export type ConversationThreadMessage = {
-  _id: string;
-  senderUserId: string;
-  recipientUserId: string;
-  body: string;
-  deliveredAt?: string | null;
-  seenAt?: string | null;
-  editedAt?: string | null;
-  deletedFor: string[];
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type MessageProfile = {
-  _id: string;
-  name: string;
-  image?: string | null;
-  role: MessageRole;
-  restaurantId?: string | null;
-};
+export type {
+  ConversationSummary,
+  ConversationThreadMessage,
+  MessageContact,
+  MessageProfile,
+  MessageRole,
+  PagedContactSearchResult,
+} from '@/types/messages';
 
 export const isValidObjectId = (value: string | null | undefined) =>
   Boolean(value && mongoose.Types.ObjectId.isValid(value));
