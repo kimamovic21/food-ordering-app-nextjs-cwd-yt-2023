@@ -157,6 +157,10 @@ export const getClosingSoonCheckoutMessage = (
 };
 
 export const isValidCoordinate = (value: unknown) => {
+  if (value === null || value === undefined || value === '') {
+    return false;
+  }
+
   const coordinate = Number(value);
   return Number.isFinite(coordinate);
 };

@@ -306,6 +306,16 @@ const normalizeCartSize = (value: unknown): CartSize | null => {
   return null;
 };
 
+const normalizeDeliveryCoordinate = (value: unknown) => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const coordinate = Number(value);
+
+  return Number.isFinite(coordinate) ? coordinate : null;
+};
+
 const getMenuItemSizePrice = (menuItem: any, requestedSize: CartSize) => {
   const prices = [
     { size: 'small' as const, price: Number(menuItem.priceSmall) },
@@ -470,12 +480,8 @@ export async function POST(req: Request) {
     return Response.json({ error: 'You cannot order from your own restaurant' }, { status: 403 });
   }
 
-  const normalizedDeliveryLatitude =
-    deliveryLatitude === null || deliveryLatitude === undefined ? null : Number(deliveryLatitude);
-  const normalizedDeliveryLongitude =
-    deliveryLongitude === null || deliveryLongitude === undefined
-      ? null
-      : Number(deliveryLongitude);
+  const normalizedDeliveryLatitude = normalizeDeliveryCoordinate(deliveryLatitude);
+  const normalizedDeliveryLongitude = normalizeDeliveryCoordinate(deliveryLongitude);
   const hasDeliveryLocation =
     Number.isFinite(normalizedDeliveryLatitude) && Number.isFinite(normalizedDeliveryLongitude);
   const orderingStatus = getRestaurantOrderingStatus({

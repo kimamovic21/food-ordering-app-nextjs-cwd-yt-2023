@@ -3,6 +3,8 @@ import { User } from '@/models/user';
 import { Restaurant } from '@/models/restaurant';
 import mongoose from 'mongoose';
 
+vi.mock('next-auth/next', () => ({ getServerSession: vi.fn() }));
+
 // Use test DB when running e2e
 if (!process.env.MONGODB_URL) {
   process.env.MONGODB_URL =
@@ -74,13 +76,12 @@ describe('E2E: Favorites full journey', () => {
     restaurantId = restaurant._id;
 
     // import handlers and mock sessions dynamically
-    vi.mock('next-auth/next', () => ({ getServerSession: vi.fn() }));
     const auth = await import('next-auth/next');
     const favModule = await import('@/app/api/favorites/restaurants/route');
     const { POST, GET } = favModule as typeof import('@/app/api/favorites/restaurants/route');
 
     // Mock getServerSession to represent `customer` when adding
-    (auth.getServerSession as unknown as vi.Mock).mockResolvedValueOnce({
+    vi.mocked(auth.getServerSession).mockResolvedValueOnce({
       user: { email: customer.email },
     } as any);
 
@@ -98,7 +99,7 @@ describe('E2E: Favorites full journey', () => {
     expect(addBody.isFavorite).toBe(true);
 
     // As intruder, add same restaurant to their favorites
-    (auth.getServerSession as unknown as vi.Mock).mockResolvedValueOnce({
+    vi.mocked(auth.getServerSession).mockResolvedValueOnce({
       user: { email: intruder.email },
     } as any);
     const intruderResp = await POST(
@@ -114,7 +115,7 @@ describe('E2E: Favorites full journey', () => {
     expect(intruderBody.isFavorite).toBe(true);
 
     // Customer toggles again to remove
-    (auth.getServerSession as unknown as vi.Mock).mockResolvedValueOnce({
+    vi.mocked(auth.getServerSession).mockResolvedValueOnce({
       user: { email: customer.email },
     } as any);
     const removeResp = await POST(
@@ -144,7 +145,7 @@ describe('E2E: Favorites full journey', () => {
     expect(intrFavs.includes(restaurantId.toString())).toBe(true);
 
     // Finally, verify GET returns intruder's favorite when logged as intruder
-    (auth.getServerSession as unknown as vi.Mock).mockResolvedValueOnce({
+    vi.mocked(auth.getServerSession).mockResolvedValueOnce({
       user: { email: intruder.email },
     } as any);
     const getResp = await GET();

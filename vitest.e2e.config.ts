@@ -11,12 +11,14 @@ export default defineConfig({
     restoreMocks: true,
     testTimeout: 30000,
     hookTimeout: 30000,
+    fileParallelism: false,
     sequence: {
       concurrent: false,
     },
   },
   resolve: {
     alias: {
+      'server-only': path.resolve(__dirname, 'mocks/server-only.ts'),
       '@': path.resolve(__dirname, '.'),
     },
   },

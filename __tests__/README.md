@@ -16,10 +16,12 @@ This folder contains unit tests grouped by feature area.
 - `api/courier-assignment.route.test.ts`: validates courier assignment guardrails and courier-only assignment notes.
 - `api/courier-earnings.route.test.ts`: validates courier earnings access and summaries.
 - `api/my-deliveries.route.test.ts`: validates courier delivery history and performance summaries.
+- `api/realtime-streams.route.test.ts`: validates authenticated SSE streams for messages and notifications.
 - `api/restaurant.route.test.ts`: validates restaurant settings, ownership, and deletion behavior.
 - `api/webhook.route.test.ts`: validates webhook signature/idempotency behavior.
 - `api/payment.test.ts`: validates payment-related helper logic and utility contracts.
 - `libs/order-auto-cancellation.test.ts`: validates stale unpaid and ready-without-courier auto-cancel rules.
+- `libs/realtimeClient.test.ts`: validates client-side realtime payload helpers.
 
 ## Structure Rules
 
@@ -37,6 +39,7 @@ This folder contains unit tests grouped by feature area.
 - Run a single test file: `npm run test:file -- __tests__/api/register.route.test.ts`
 - Run profile unit tests: `npm run test:profile`
 - Run payment/webhook-focused unit tests: `npm run test:payment`
+- Run realtime/SSE tests: `npm run test:realtime`
 
 ## E2E Tests
 

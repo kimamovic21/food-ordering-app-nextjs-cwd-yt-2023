@@ -37,6 +37,7 @@ describe('E2E: Checkout restaurant active order capacity', () => {
   const adminEmail = `e2e-busy-restaurant-admin-${runId}@example.com`;
   const existingOrderEmail = `e2e-busy-restaurant-existing-${runId}@example.com`;
   let customer: any;
+  let existingOrderCustomer: any;
   let admin: any;
   let restaurant: any;
   let category: any;
@@ -63,13 +64,21 @@ describe('E2E: Checkout restaurant active order capacity', () => {
     await MenuItem.deleteMany({ name: /^E2E Busy Restaurant/i });
     await Category.deleteMany({ name: /^E2E Busy Restaurant/i });
     await Restaurant.deleteMany({ name: /^E2E Busy Restaurant/i });
-    await User.deleteMany({ email: { $in: [customerEmail, adminEmail] } });
+    await User.deleteMany({ email: { $in: [customerEmail, adminEmail, existingOrderEmail] } });
   });
 
   it('rejects checkout when the restaurant already reached its active order limit', async () => {
     customer = await User.create({
       name: 'Busy Restaurant Customer',
       email: customerEmail,
+      password: 'x',
+      provider: 'credentials',
+      role: 'user',
+    });
+
+    existingOrderCustomer = await User.create({
+      name: 'Busy Restaurant Existing Customer',
+      email: existingOrderEmail,
       password: 'x',
       provider: 'credentials',
       role: 'user',
@@ -119,14 +128,14 @@ describe('E2E: Checkout restaurant active order capacity', () => {
       priceSmall: 12,
       priceMedium: null,
       priceLarge: null,
-      sizes: [{ size: 'Regular', price: 12 }],
+      sizes: [{ size: 'single', price: 12 }],
       prices: [12],
       image: 'https://example.com/busy-restaurant-pizza.jpg',
       isAvailable: true,
     });
 
     await Order.create({
-      userId: customer._id,
+      userId: existingOrderCustomer._id,
       email: existingOrderEmail,
       phone: '+38761111111',
       streetAddress: 'Existing Street 1',
@@ -137,7 +146,7 @@ describe('E2E: Checkout restaurant active order capacity', () => {
         {
           productId: menuItem._id,
           name: menuItem.name,
-          size: 'Regular',
+          size: 'single',
           quantity: 1,
           price: 12,
           restaurantId: restaurant._id,
@@ -174,7 +183,7 @@ describe('E2E: Checkout restaurant active order capacity', () => {
             {
               _id: menuItem._id.toString(),
               name: menuItem.name,
-              size: 'Regular',
+              size: 'single',
               price: 12,
               quantity: 1,
               restaurantId: restaurant._id.toString(),
