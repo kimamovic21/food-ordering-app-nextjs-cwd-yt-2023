@@ -205,7 +205,7 @@ describe('E2E: admin restaurant, coupon, order, and review lifecycle', () => {
     );
     expect(createCouponResponse.status).toBe(201);
 
-    activeSession = null;
+    setSession(customer);
     const validateCouponResponse = await GetCoupon(
       new Request(
         `http://localhost/api/coupons?code=${couponCode.toLowerCase()}&restaurantId=${restaurantId}&subtotal=50`

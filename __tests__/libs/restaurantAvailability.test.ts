@@ -3,7 +3,9 @@ import {
   getClosingSoonCheckoutMessage,
   getRestaurantOrderingStatus,
   getNextOpeningSummary,
+  hasCoordinatePair,
   isRestaurantOpen,
+  isValidCoordinate,
   normalizeDeliveryRadiusKm,
 } from '@/libs/restaurantAvailability';
 
@@ -59,6 +61,14 @@ describe('restaurant availability helpers', () => {
     expect(normalizeDeliveryRadiusKm(0)).toBe(10);
     expect(normalizeDeliveryRadiusKm(18)).toBe(15);
     expect(normalizeDeliveryRadiusKm(7)).toBe(7);
+  });
+
+  it('does not treat missing coordinate values as zero', () => {
+    expect(isValidCoordinate(null)).toBe(false);
+    expect(isValidCoordinate(undefined)).toBe(false);
+    expect(isValidCoordinate('')).toBe(false);
+    expect(hasCoordinatePair(null, null)).toBe(false);
+    expect(hasCoordinatePair('', '')).toBe(false);
   });
 
   it('blocks paused restaurants before radius checks', () => {
