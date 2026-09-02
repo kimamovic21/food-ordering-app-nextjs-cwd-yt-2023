@@ -22,7 +22,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Sharing: react-share
 - URL state: nuqs for shareable search/filter/sort/pagination state
 - Client recovery: react-error-boundary for localized interactive fallbacks
-- Analytics: Vercel Web Analytics mounted in the root layout
+- Analytics: Vercel Web Analytics and Vercel Speed Insights mounted in the root layout
 - Messaging: approved app-native threads with SSE-backed unread badges and per-user visibility
 - Order operations: best coupon suggestion, reorder validation, favorite restaurant quick reorder, restaurant accepting-order checks, restaurant availability alerts, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin delivery confirmation, support tickets, and late-order alerts
 

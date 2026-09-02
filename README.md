@@ -19,7 +19,7 @@ It includes:
 - SSE-backed live refresh for notifications, order status screens, courier assignment, and admin order queues with polling kept as fallback
 - TanStack Query caching for shared profile data, favorites, sound settings, and global message/notification unread state
 - TanStack Table-powered searchable, sortable, paginated data tables for high-traffic admin and order lists
-- Vercel Web Analytics for production traffic insights
+- Vercel Web Analytics for production traffic insights and Vercel Speed Insights for Web Vitals/performance monitoring
 - admin dashboard for users, menu items, categories, restaurants, restaurant reports, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, and courier ratings views
 - courier workflow with assignment, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
@@ -172,6 +172,7 @@ This project uses many dependencies; below are the main packages actively used i
 
 - Sentry Next.js SDK: [https://docs.sentry.io/platforms/javascript/guides/nextjs/](https://docs.sentry.io/platforms/javascript/guides/nextjs/)
 - Vercel Web Analytics: [https://vercel.com/docs/analytics](https://vercel.com/docs/analytics)
+- Vercel Speed Insights: [https://vercel.com/docs/speed-insights](https://vercel.com/docs/speed-insights)
 
 ### Testing
 
@@ -238,6 +239,7 @@ This project uses many dependencies; below are the main packages actively used i
 - `react-error-boundary` powers `components/shared/AppErrorBoundary.tsx`, which wraps the main app shell and reports caught client render errors to Sentry.
 - `sharp` is installed so Next.js image optimization has the recommended production image processor available. It is used automatically by Next.js and should not be imported directly in app components.
 - `@vercel/analytics` is mounted in `app/layout.tsx` with `<Analytics />`. It does not need a project env var for normal Vercel deployments and complements Sentry by tracking product traffic instead of application errors.
+- `@vercel/speed-insights` is mounted in `app/layout.tsx` with `<SpeedInsights />`. It does not need a project env var on Vercel and complements Analytics/Sentry by measuring real user Web Vitals and route performance.
 - `currency.js` is wrapped by `libs/money.ts` for checkout, coupons, courier earnings, delivery fees, and report calculations that should avoid floating-point drift.
 - `libphonenumber-js` is wrapped by `libs/phone.ts`; profile and checkout phone values are validated and stored in E.164 format, while local Bosnia and Herzegovina numbers such as `062...` remain accepted.
 - `@faker-js/faker` powers reusable test factories in `__tests__/utils/testFactories.ts`.

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { Roboto, Roboto_Mono } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
@@ -79,6 +80,7 @@ const RootLayout = ({
                               <Toaster position='top-center' />
                               <AppCommandPalette />
                               <Analytics />
+                              <SpeedInsights />
                             </LayoutWrapper>
                           </AppErrorBoundary>
                         </CartProvider>

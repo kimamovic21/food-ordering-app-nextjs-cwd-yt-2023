@@ -9,7 +9,7 @@ alwaysApply: true
 
 ## Project Conventions
 
-- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend, Upstash Redis, Upstash QStash, date-fns, @date-fns/tz, currency.js, libphonenumber-js, TanStack Query, TanStack Table, nuqs, cmdk, Vercel Web Analytics, Sentry.
+- Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Resend, Upstash Redis, Upstash QStash, date-fns, @date-fns/tz, currency.js, libphonenumber-js, TanStack Query, TanStack Table, nuqs, cmdk, Vercel Web Analytics, Vercel Speed Insights, Sentry.
 - Prefer small, incremental changes.
 - Before implementing a new feature or non-trivial app logic, create or switch to a dedicated local feature branch from `main` unless the user explicitly asks to work on the current branch.
 - Follow existing patterns in `app/`, `libs/`, `models/`, `components/`, and `contexts/`.

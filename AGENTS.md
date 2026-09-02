@@ -20,7 +20,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - Data tables: TanStack Table powers shared searchable, sortable, paginated table UI through `components/shared/TanStackDataTable.tsx`.
 - Dates: `date-fns` and `@date-fns/tz` are used through `libs/dateFormat.ts` for UI, email, and PDF date formatting in the app timezone.
 - Money and phone helpers: `currency.js` is wrapped by `libs/money.ts`, and `libphonenumber-js` is wrapped by `libs/phone.ts`.
-- Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`; browser Session Replay is production-only and sampled only on errors; Vercel Web Analytics is mounted from `@vercel/analytics/next` in `app/layout.tsx`.
+- Observability: Sentry monitors browser, server, and edge errors/traces through `instrumentation-client.ts`, `instrumentation.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `app/global-error.tsx`; browser Session Replay is production-only and sampled only on errors; Vercel Web Analytics and Speed Insights are mounted from `@vercel/analytics/next` and `@vercel/speed-insights/next` in `app/layout.tsx`.
 
 ## High-Level Features
 

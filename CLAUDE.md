@@ -22,7 +22,7 @@ This file provides guidance for AI assistance in this repository.
 - Sharing: react-share
 - URL state: nuqs for shareable search/filter/sort/pagination state
 - Client recovery: react-error-boundary for localized interactive fallbacks
-- Analytics: Vercel Web Analytics mounted in the root layout
+- Analytics: Vercel Web Analytics and Vercel Speed Insights mounted in the root layout
 - Messaging: approved app-native threads with realtime unread badges and per-user message visibility
 - Order operations: best coupon suggestion, reorder validation, favorite restaurant quick reorder, restaurant accepting-order checks, restaurant availability alerts, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin delivery confirmation, support tickets, and late-order alerts
 
