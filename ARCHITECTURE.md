@@ -18,6 +18,7 @@ flowchart LR
   Google[Google OAuth]
   OpenAI[OpenAI Menu Description]
   Redis[Upstash Redis Rate Limits]
+  QStash[Upstash QStash Delayed Jobs]
   Maps[Leaflet Maps]
   SSE[SSE Streams]
   Query[TanStack Query Cache]
@@ -37,6 +38,8 @@ flowchart LR
   Api --> Google
   Api --> OpenAI
   Api --> Redis
+  Api --> QStash
+  QStash --> Api
   Browser --> Maps
   Browser --> SSE
   SSE --> Api
@@ -200,6 +203,7 @@ sequenceDiagram
   participant CheckoutAPI as POST /api/checkout
   participant Mongo
   participant Stripe
+  participant QStash
   participant Webhook as POST /api/webhook
 
   User->>Cart: Click Proceed to Checkout
@@ -208,6 +212,7 @@ sequenceDiagram
   CheckoutAPI->>Mongo: Check recent unpaid matching checkout fingerprint
   CheckoutAPI->>Mongo: Create unpaid order snapshot
   CheckoutAPI->>Stripe: Create checkout session
+  CheckoutAPI->>QStash: Schedule delayed unpaid-order check
   Stripe-->>User: Hosted payment page
   Stripe->>Webhook: checkout.session.completed
   Webhook->>Mongo: Mark order paid
@@ -262,6 +267,7 @@ Operational monitoring builds on the same timestamps:
 - `/admin-dashboard/orders` surfaces late-order alerts and links admins to `/admin-dashboard/order-queue`.
 - Ready orders without a courier show an admin warning after 15 minutes.
 - Stale unpaid orders auto-cancel after 30 minutes; ready orders without a courier auto-cancel after 60 minutes.
+- Upstash QStash schedules delayed checks for stale unpaid orders and ready orders without a courier so production order maintenance is not dependent only on a later page/API read.
 - System auto-cancellations mark the order unpaid, store `canceledBy: system`, add `cancellationReason`, notify customer/admins, and write an audit log.
 - ETA-style notifications reuse estimate snapshots so status changes can include useful preparation or delivery timing.
 - `OrderProgressStepper` gives customers and admins a compact visual stage tracker for placed, kitchen, transport, and delivered phases.
@@ -374,6 +380,7 @@ Existing polling stays as fallback on notifications, messages, order details, ad
 - Cloudinary stores uploaded user, restaurant, and menu item media.
 - Resend and React Email send transactional auth and purchase receipt emails.
 - OpenAI generates menu item descriptions through a server-only API route.
+- Upstash QStash calls verified server-only API routes later for delayed order maintenance.
 - Leaflet renders restaurant, customer, and courier map views.
 
 ## Observability

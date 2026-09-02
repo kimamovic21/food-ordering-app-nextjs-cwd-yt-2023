@@ -16,6 +16,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Email: Resend + React Email
 - AI: OpenAI SDK for server-side menu description generation
 - Rate limiting: Upstash Redis for short-lived counters on sensitive routes
+- Background jobs: Upstash QStash for delayed order-maintenance checks
 - Dates: date-fns and @date-fns/tz through `libs/dateFormat.ts` for UI, email, and PDF date formatting in the app timezone
 - Money and phone helpers: currency.js through `libs/money.ts`, and libphonenumber-js through `libs/phone.ts`
 - Sharing: react-share
@@ -54,6 +55,7 @@ This file provides project context and coding guidance for Gemini tools.
 - Preserve delivery double confirmation: courier PIN handoff first, then customer or restaurant admin completion.
 - Keep support tickets role-scoped between restaurant support and app support.
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.
+- Keep QStash delayed job handlers server-only, signature-verified, idempotent, and fail-open around user-facing checkout/order status flows.
 - Keep SSE realtime updates lightweight: `/api/messages/stream` and `/api/notifications/stream` should only signal relevant signed-in users, while polling fallback and existing JSON endpoints remain the source of truth.
 - Use TanStack Query for client-side server state that needs cache, refetch, invalidation, optimistic updates, or polling. Message inbox/thread views and favorite ID/list views should stay cached through shared keys in `libs/queryKeys.ts`, and SSE should invalidate cached queries instead of duplicating source-of-truth state.
 - Use TanStack Table through `components/shared/TanStackDataTable.tsx` for larger list UIs that need search, sorting, pagination, or column visibility. Use simple mode without toolbar/pagination for small read-only detail tables such as order items. Keep row actions and mutations in the owning screen component.
@@ -62,6 +64,7 @@ This file provides project context and coding guidance for Gemini tools.
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client-side recovery, not API validation.
 - Keep Sentry Session Replay disabled in development; browser replay should stay production-only and sampled on error sessions to protect quota.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
+- Preserve QStash scheduling for unpaid-order and ready-without-courier maintenance checks when changing checkout or order status logic.
 - Keep payment and webhook flows idempotent.
 - Keep receipt email generation in server code.
 
@@ -101,6 +104,7 @@ This file provides project context and coding guidance for Gemini tools.
 - `npm run test:libs`
 - `npm run test:models`
 - `npm run test:profile`
+- `npm run test:qstash`
 - `npm run test:e2e`
 - `npm run test:e2e:file -- e2e/auth/register-login.e2e.test.ts`
 - `npm run test:e2e:admin`
@@ -149,6 +153,10 @@ Keep these in sync with example.env and code usage:
 - OPEN_AI_API_KEY
 - UPSTASH_REDIS_REST_URL
 - UPSTASH_REDIS_REST_TOKEN
+- QSTASH_URL
+- QSTASH_TOKEN
+- QSTASH_CURRENT_SIGNING_KEY
+- QSTASH_NEXT_SIGNING_KEY
 - NEXT_PUBLIC_SENTRY_DSN
 - SENTRY_DSN
 - SENTRY_AUTH_TOKEN

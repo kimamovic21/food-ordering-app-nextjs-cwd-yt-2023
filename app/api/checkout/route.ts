@@ -24,6 +24,7 @@ import {
   enforceRateLimit,
   getClientIp,
 } from '@/libs/rateLimit';
+import { scheduleUnpaidOrderAutoCancellationCheck } from '@/libs/qstash';
 import type { CartSize, CheckoutCartItemPayload } from '@/types/cart';
 import mongoose from 'mongoose';
 import Stripe from 'stripe';
@@ -217,6 +218,7 @@ const createAndSaveCheckoutSessionResponse = async ({
 
   order.stripeSessionId = stripeSession.id;
   await order.save();
+  await scheduleUnpaidOrderAutoCancellationCheck(order._id);
 
   return Response.json({
     url: stripeSession.url,
@@ -828,6 +830,7 @@ export async function POST(req: Request) {
   // Update order with stripe session ID
   order.stripeSessionId = stripeSession.id;
   await order.save();
+  await scheduleUnpaidOrderAutoCancellationCheck(order._id);
 
   return Response.json({ url: stripeSession.url });
 }
