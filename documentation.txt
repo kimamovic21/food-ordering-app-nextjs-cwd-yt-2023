@@ -1145,3 +1145,5 @@ Improve checkout payment recovery
 Centralize shared types and add utility packages
 
 Add qstash order maintenance jobs
+
+Expand critical e2e and realtime coverage
