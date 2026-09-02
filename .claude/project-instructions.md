@@ -8,7 +8,7 @@
 - URL state: nuqs
 - Command UI: cmdk
 - Client error fallback: react-error-boundary
-- Analytics: Vercel Web Analytics
+- Analytics: Vercel Web Analytics and Vercel Speed Insights
 - Data layer: MongoDB with Mongoose models in `models/`
 - Auth: NextAuth with MongoDB adapter and Google OAuth
 - Payments: Stripe checkout + payment link + webhook routes

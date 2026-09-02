@@ -426,6 +426,7 @@ Restaurant report rules:
 - react-error-boundary: app-shell client fallback UI with Sentry capture for recoverable render crashes.
 - Sentry: error monitoring, tracing, and privacy-masked Session Replay across browser, server, and edge runtimes.
 - Vercel Web Analytics: production traffic and route analytics mounted in the root layout.
+- Vercel Speed Insights: real-user Web Vitals and route performance monitoring mounted in the root layout.
 
 ## Date Handling
 

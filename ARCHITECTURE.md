@@ -25,6 +25,7 @@ flowchart LR
   Tables[TanStack Table UI]
   Sentry[Sentry Monitoring]
   Analytics[Vercel Web Analytics]
+  SpeedInsights[Vercel Speed Insights]
 
   Browser --> NextApp
   Browser --> Query
@@ -45,6 +46,7 @@ flowchart LR
   SSE --> Api
   Browser --> Sentry
   Browser --> Analytics
+  Browser --> SpeedInsights
   Api --> Sentry
   Stripe --> Api
 ```
@@ -68,6 +70,7 @@ flowchart LR
 - `AppCommandPalette` uses `cmdk` for global route/action search from the header or `Ctrl/Cmd + K`.
 - `AppErrorBoundary` uses `react-error-boundary` and sends caught render errors to Sentry.
 - `Analytics` from `@vercel/analytics/next` records production traffic on Vercel.
+- `SpeedInsights` from `@vercel/speed-insights/next` records real-user Web Vitals and route performance on Vercel.
 - `TanStackDataTable` uses TanStack Table for reusable searchable, sortable, paginated data-table UI.
 - `sharp` is installed for Next.js image optimization and is used automatically by the framework.
 - `libs/money.ts` wraps `currency.js` for precise checkout, coupon, earnings, delivery fee, and report calculations.
@@ -395,7 +398,7 @@ Sentry is configured for browser, Node.js server, and edge runtimes.
 
 Production source maps are uploaded through `withSentryConfig` in `next.config.ts` when `SENTRY_AUTH_TOKEN` is available during build. Keep `SENTRY_AUTH_TOKEN` secret; `NEXT_PUBLIC_SENTRY_DSN` is intentionally public for browser events.
 
-Vercel Web Analytics is mounted in `app/layout.tsx` through `@vercel/analytics/next`. It tracks production traffic and route usage, while Sentry remains responsible for errors, traces, and replay debugging.
+Vercel Web Analytics is mounted in `app/layout.tsx` through `@vercel/analytics/next`. Vercel Speed Insights is mounted through `@vercel/speed-insights/next` for real-user Web Vitals and route performance. Analytics tracks traffic, Speed Insights tracks performance, and Sentry remains responsible for errors, traces, and replay debugging.
 
 ## Restaurant Reports
 

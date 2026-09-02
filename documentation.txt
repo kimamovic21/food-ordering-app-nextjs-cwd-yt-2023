@@ -1147,3 +1147,5 @@ Centralize shared types and add utility packages
 Add qstash order maintenance jobs
 
 Expand critical e2e and realtime coverage
+
+Add Vercel Speed Insights monitoring

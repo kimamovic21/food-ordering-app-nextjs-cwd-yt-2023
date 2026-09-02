@@ -11,7 +11,7 @@
 - nuqs URL state for shareable filters/search/sort/pagination
 - cmdk for command palette and searchable action-menu patterns
 - react-error-boundary for localized client component fallbacks
-- Vercel Web Analytics for production traffic insights
+- Vercel Web Analytics for production traffic insights and Vercel Speed Insights for real-user performance metrics
 - Stripe payments (`app/api/checkout/**`, `app/api/payment-link/**`, `app/api/webhook/**`)
 - Resend email integration (`libs/sendPurchaseReceiptEmail.tsx`)
 - Upstash Redis rate limiting (`libs/rateLimit.ts`)
