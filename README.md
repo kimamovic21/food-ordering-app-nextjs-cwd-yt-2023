@@ -31,6 +31,7 @@ It includes:
 - email purchase receipts with Resend + React Email
 - AI-assisted menu item descriptions for admin create/edit flows
 - Upstash Redis-backed rate limiting for sensitive auth, checkout, support, and AI endpoints
+- Upstash QStash delayed background jobs for order maintenance checks
 - Sentry error monitoring, tracing, and production-only error-sampled privacy-masked Session Replay
 
 ## Key Features
@@ -142,6 +143,7 @@ This project uses many dependencies; below are the main packages actively used i
 - MongoDB: [https://www.mongodb.com/](https://www.mongodb.com/)
 - Mongoose: [https://mongoosejs.com/](https://mongoosejs.com/)
 - Upstash Redis: [https://upstash.com/](https://upstash.com/)
+- Upstash QStash: [https://upstash.com/qstash](https://upstash.com/qstash)
 - bcrypt: [https://www.npmjs.com/package/bcrypt](https://www.npmjs.com/package/bcrypt)
 
 ### Payments
@@ -261,6 +263,15 @@ This project uses many dependencies; below are the main packages actively used i
 - `/admin-dashboard/orders` surfaces late active-order alerts and links to `/admin-dashboard/order-queue` for the full operational view.
 - `/admin-dashboard/restaurant-reports` generates daily, weekly, and monthly restaurant performance summaries from order data and can download the same report as a PDF when the selected period has traffic.
 
+### Background Jobs With QStash
+
+- `@upstash/qstash` is used for delayed order-maintenance checks that should run later without relying only on someone opening an order page.
+- Checkout schedules a 30-minute unpaid-order check after a Stripe Checkout session is created.
+- Moving an order to `ready` schedules a 60-minute ready-without-courier check.
+- `POST /api/qstash/order-maintenance` receives QStash jobs, verifies the QStash signature, reloads the order from MongoDB, and runs the existing `applyOrderAutoCancellation` logic.
+- QStash publishing is fail-open: if the QStash env vars are missing, the app URL is local, or QStash is temporarily unavailable, checkout and order status updates still continue.
+- For production, `NEXT_PUBLIC_APP_URL` or `NEXTAUTH_URL` must point to a public HTTPS app URL so QStash can call the API route. Local `localhost` URLs are intentionally skipped unless you test through a public tunnel.
+
 ## Auth: Email Verification & Password Reset
 
 - Overview: Credentials-based accounts now require email verification when `SKIP_VERIFY_EMAIL` is `false` (recommended for local development). In production you can set `SKIP_VERIFY_EMAIL=true` to skip verification for legacy or migration scenarios.
@@ -321,6 +332,10 @@ Copy example.env into .env and set all values.
 - OPEN_AI_API_KEY: OpenAI API key for server-side AI menu description generation
 - UPSTASH_REDIS_REST_URL: Upstash Redis REST endpoint for rate limiting
 - UPSTASH_REDIS_REST_TOKEN: Upstash Redis REST token for rate limiting
+- QSTASH_URL: optional Upstash QStash REST endpoint/region URL
+- QSTASH_TOKEN: Upstash QStash token for publishing delayed jobs
+- QSTASH_CURRENT_SIGNING_KEY: current QStash signing key used to verify incoming jobs
+- QSTASH_NEXT_SIGNING_KEY: next QStash signing key used during signing-key rotation
 - NEXT_PUBLIC_SENTRY_DSN: public Sentry DSN used by browser monitoring
 - SENTRY_DSN: Sentry DSN used by server and edge monitoring
 - SENTRY_AUTH_TOKEN: build-time Sentry token for source map upload; keep this secret and set it only in local/CI/Vercel env
@@ -337,6 +352,7 @@ Note: some flows also support SUPER_ADMIN_EMAIL on server side, while UI checks 
 - React Email docs: [https://react.email/](https://react.email/)
 - OpenAI API: [https://platform.openai.com/docs](https://platform.openai.com/docs)
 - Upstash Redis: [https://upstash.com/redis](https://upstash.com/redis)
+- Upstash QStash: [https://upstash.com/qstash](https://upstash.com/qstash)
 - Sentry: [https://sentry.io/](https://sentry.io/)
 
 ## Available Scripts
@@ -346,6 +362,7 @@ npm run dev                # Start dev server
 npm run build              # Build for production
 npm run start              # Run production server
 npm run lint               # Run ESLint
+npm run test:qstash        # Run QStash helper and endpoint tests
 npm run commitlint         # Lint commit message
 npm run favorites:backfill # Backfill favorites fields in database
 npm run stripe:listen      # Start Stripe webhook forwarding

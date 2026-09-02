@@ -16,6 +16,7 @@
 - Images: Cloudinary
 - Mapping: Leaflet + React Leaflet
 - Rate limiting: Upstash Redis for short-lived counters on sensitive routes
+- Background jobs: Upstash QStash for delayed order-maintenance checks
 - Date formatting: date-fns and @date-fns/tz through `libs/dateFormat.ts`
 - Money and phone helpers: currency.js through `libs/money.ts`, and libphonenumber-js through `libs/phone.ts`
 - Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin completion, support tickets, and late-order alerts
@@ -47,6 +48,7 @@
 - Keep delivery completion double-confirmed with courier PIN handoff followed by customer/admin finalization.
 - Keep support tickets scoped between restaurant support and app support.
 - Keep ETA-style notifications and late active-order alerts aligned with order timeline state; failed-delivery review notifications should route restaurant admins to `/admin-dashboard/orders/[id]`.
+- Keep QStash delayed job handlers server-only, signature-verified, idempotent, and fail-open around user-facing checkout/order status flows.
 - Keep SSE realtime updates role-scoped and fallback-friendly; streams should signal clients to refresh existing source-of-truth JSON endpoints.
 - Prefer invalidating TanStack Query keys from SSE handlers instead of manually duplicating cached server state.
 - Keep Sentry instrumentation files and env vars aligned; `SENTRY_AUTH_TOKEN` is secret and only for source map uploads during builds. Session Replay should stay disabled in development and only run in production for sampled error sessions.
@@ -58,6 +60,7 @@
 
 - Run `npm run lint` after non-trivial changes.
 - Run `npm run test` when changing auth or API business logic.
+- Run `npm run test:qstash` when changing delayed order-maintenance scheduling or the QStash receiver route.
 - If environment variables change, update `example.env`.
 - If adding major functionality, update docs in `README.md` and AI guidance files.
 

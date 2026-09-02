@@ -1,6 +1,6 @@
 # AI Agent Guide
 
-This repository is a full-stack food ordering app built with Next.js App Router, TypeScript, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Upstash Redis, and Resend/React Email.
+This repository is a full-stack food ordering app built with Next.js App Router, TypeScript, MongoDB (Mongoose), NextAuth, Stripe, Cloudinary, Leaflet, Upstash Redis, Upstash QStash, and Resend/React Email.
 
 ## Project Summary
 
@@ -14,6 +14,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - Email: Resend + React Email (`react-email`, `@react-email/components`, `@react-email/render`) for purchase receipts.
 - AI: OpenAI SDK is used server-side for admin menu item description generation.
 - Rate limiting: Upstash Redis stores short-lived counters for sensitive auth, checkout, support, and AI routes.
+- Background jobs: Upstash QStash schedules delayed order-maintenance checks for stale unpaid orders and ready orders that cannot get a courier.
 - Sharing: `react-share` is used for social share actions.
 - Client data cache: TanStack Query powers shared profile data, favorite IDs/lists, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
 - Data tables: TanStack Table powers shared searchable, sortable, paginated table UI through `components/shared/TanStackDataTable.tsx`.
@@ -52,6 +53,7 @@ See `example.env`. Variables currently used in the project include:
 - `RESEND_API_KEY`, `SENDER_EMAIL`, optional `RESEND_RECEIVER_EMAIL`
 - `OPEN_AI_API_KEY` (server-side OpenAI key for AI menu descriptions)
 - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (optional Redis rate limiting)
+- `QSTASH_URL`, `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` (optional delayed order maintenance jobs)
 - `SKIP_VERIFY_EMAIL` (optional credentials-auth verification toggle)
 - `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN` (optional Sentry monitoring)
 - `SENTRY_AUTH_TOKEN` (optional build-time source map upload token; secret, never expose client-side)
@@ -95,6 +97,7 @@ See `example.env`. Variables currently used in the project include:
 - Stale unpaid `placed` orders can auto-cancel after 30 minutes, and `ready` orders without a courier can warn after 15 minutes and auto-cancel after 60 minutes.
 - Support tickets should remain role-scoped: restaurant owners handle their restaurant reports, while app-support tickets route to the super admin.
 - Order notifications can include ETA-style phase copy, late active-order alerts should point admins toward the order queue, and failed-delivery review notifications should point restaurant admins to `/admin-dashboard/orders/[id]`.
+- QStash delayed job routes must stay server-only, verify QStash signatures, and reuse existing idempotent business helpers such as `applyOrderAutoCancellation`. Publishing should fail open so checkout/order status updates do not break if QStash is unavailable.
 - Realtime updates use SSE with polling fallback: `/api/messages/stream` and `/api/notifications/stream` push events only to the signed-in participant/recipient, and clients should still refresh existing JSON endpoints as the source of truth.
 - TanStack Query should be used for client-side server data that benefits from cache, refetch, invalidation, optimistic updates, or polling. Keep query keys in `libs/queryKeys.ts`; use `queryKeys.favorites` for favorite ID/list invalidation and SSE events to invalidate query keys instead of duplicating source-of-truth state.
 - TanStack Table should be used through `components/shared/TanStackDataTable.tsx` for larger list UIs that need search, sorting, pagination, or column visibility. Use simple mode without toolbar/pagination for small read-only detail tables such as order items. Keep page-specific mutations and business actions in the owning component, not in the shared table wrapper.
@@ -123,6 +126,7 @@ See `example.env`. Variables currently used in the project include:
 - npm run test:file -- **tests**/api/register.route.test.ts
 - npm run test:auth
 - npm run test:profile
+- npm run test:qstash
 - npm run test:e2e
 - npm run test:e2e:file -- e2e/auth/register-login.e2e.test.ts
 - npm run test:e2e:profile
@@ -147,7 +151,7 @@ See `example.env`. Variables currently used in the project include:
 
 ## When Modifying Auth, Payments, Email, or Courier Logic
 
-- Confirm required env vars are present (`NEXTAUTH_*`, `STRIPE_*`, `RESEND_*`, Cloudinary values, and optional `UPSTASH_REDIS_*` values).
+- Confirm required env vars are present (`NEXTAUTH_*`, `STRIPE_*`, `RESEND_*`, Cloudinary values, optional `UPSTASH_REDIS_*` values, and optional `QSTASH_*` values when delayed jobs are touched).
 - Keep Stripe webhook handling idempotent.
 - Do not expose server secrets in client bundles.
 - Preserve courier location validation and role checks.

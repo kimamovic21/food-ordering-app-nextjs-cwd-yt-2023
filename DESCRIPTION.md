@@ -182,6 +182,7 @@ Order safety automation:
 - Unpaid `placed` orders are automatically canceled after 30 minutes when viewed through order APIs.
 - `ready` orders without a courier are warned after 15 minutes and automatically canceled after 60 minutes.
 - Automatic cancellations mark the order as unpaid, store a system cancellation reason, notify the customer and restaurant admins, and write an audit log entry.
+- Upstash QStash schedules delayed unpaid-order and ready-without-courier checks so production can run those maintenance checks even when nobody is actively viewing the order page.
 - Development-only order time simulation can add minutes for timeline phases, failed-delivery testing, and ready-without-courier auto-cancel testing without editing MongoDB timestamps.
 
 ## Coupon And Reorder Logic
@@ -223,6 +224,7 @@ Checkout server rules:
 - Restaurant active kitchen capacity must not be full.
 - Recent identical unpaid `placed` checkout attempts reuse or recover the existing Stripe Checkout session instead of creating duplicate orders.
 - Order is created as unpaid before redirecting to Stripe.
+- QStash schedules a delayed unpaid-order maintenance check after a new Stripe Checkout session is created.
 - Stripe webhook later marks payment complete.
 
 ## Order Status Logic
@@ -414,6 +416,7 @@ Restaurant report rules:
 - Google OAuth: social login through NextAuth.
 - OpenAI: server-side menu description generation.
 - Upstash Redis: short-lived rate-limit counters for sensitive auth, checkout, support, and AI routes.
+- Upstash QStash: delayed background order-maintenance checks for stale unpaid orders and ready orders without a courier.
 - Leaflet: map rendering and courier tracking UI.
 - TanStack Query: client-side server-data cache for shared profile data, favorite IDs/lists, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
 - TanStack Table: headless table state for searchable, sortable, paginated admin and order list UIs.

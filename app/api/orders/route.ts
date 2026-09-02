@@ -10,6 +10,7 @@ import {
 import { createAuditLog } from '@/libs/auditLog';
 import { getDevOrderTimeSimulatorOffsets } from '@/libs/devOrderTimeSimulatorStore';
 import { applyOrderAutoCancellation } from '@/libs/orderAutoCancellation';
+import { scheduleReadyWithoutCourierAutoCancellationCheck } from '@/libs/qstash';
 import { notifyWaitingUsersIfRestaurantCanAcceptOrders } from '@/libs/restaurantAvailabilityRequests';
 import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth/next';
@@ -324,6 +325,10 @@ export async function PATCH(request: Request) {
 
   if (['completed', 'canceled'].includes(orderStatus)) {
     await notifyWaitingUsersIfRestaurantCanAcceptOrders(order.restaurantId);
+  }
+
+  if (previousStatus !== orderStatus && orderStatus === 'ready') {
+    await scheduleReadyWithoutCourierAutoCancellationCheck(order._id);
   }
 
   if (previousStatus !== orderStatus) {
