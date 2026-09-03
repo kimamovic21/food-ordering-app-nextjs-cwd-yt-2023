@@ -3,7 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Calendar, MapPin, DollarSign, Clock, Star, XCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  MapPin,
+  Package,
+  Star,
+  Timer,
+  XCircle,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import useProfile from '@/hooks/useProfile';
@@ -31,11 +42,18 @@ const MyDeliveriesPage = () => {
   const [orders, setOrders] = useState<DeliveredOrder[]>([]);
   const [summary, setSummary] = useState<CourierPerformanceSummary>({
     completedDeliveries: 0,
+    totalAssignments: 0,
+    acceptedAssignments: 0,
+    respondedAssignments: 0,
     declinedAssignments: 0,
+    missedAssignments: 0,
     lateDeliveries: 0,
     totalEarnings: 0,
     averageEarning: 0,
     averageDeliveryMinutes: 0,
+    averageResponseMinutes: 0,
+    assignmentResponseRate: 0,
+    assignmentAcceptanceRate: 0,
     averageRating: 0,
     ratingCount: 0,
   });
@@ -64,11 +82,18 @@ const MyDeliveriesPage = () => {
         setOrders(data.orders);
         setSummary({
           completedDeliveries: Number(data.summary?.completedDeliveries) || 0,
+          totalAssignments: Number(data.summary?.totalAssignments) || 0,
+          acceptedAssignments: Number(data.summary?.acceptedAssignments) || 0,
+          respondedAssignments: Number(data.summary?.respondedAssignments) || 0,
           declinedAssignments: Number(data.summary?.declinedAssignments) || 0,
+          missedAssignments: Number(data.summary?.missedAssignments) || 0,
           lateDeliveries: Number(data.summary?.lateDeliveries) || 0,
           totalEarnings: Number(data.summary?.totalEarnings) || 0,
           averageEarning: Number(data.summary?.averageEarning) || 0,
           averageDeliveryMinutes: Number(data.summary?.averageDeliveryMinutes) || 0,
+          averageResponseMinutes: Number(data.summary?.averageResponseMinutes) || 0,
+          assignmentResponseRate: Number(data.summary?.assignmentResponseRate) || 0,
+          assignmentAcceptanceRate: Number(data.summary?.assignmentAcceptanceRate) || 0,
           averageRating: Number(data.summary?.averageRating) || 0,
           ratingCount: Number(data.summary?.ratingCount) || 0,
         });
@@ -126,14 +151,34 @@ const MyDeliveriesPage = () => {
       icon: Star,
     },
     {
+      label: 'Response rate',
+      value: summary.totalAssignments ? `${summary.assignmentResponseRate}%` : '-',
+      icon: CheckCircle2,
+    },
+    {
+      label: 'Average response time',
+      value: summary.averageResponseMinutes ? `${summary.averageResponseMinutes} min` : '-',
+      icon: Timer,
+    },
+    {
+      label: 'Accepted assignments',
+      value: summary.acceptedAssignments.toString(),
+      icon: CheckCircle2,
+    },
+    {
       label: 'Declined assignments',
       value: summary.declinedAssignments.toString(),
       icon: XCircle,
     },
     {
+      label: 'Missed assignments',
+      value: summary.missedAssignments.toString(),
+      icon: AlertTriangle,
+    },
+    {
       label: 'Late deliveries',
       value: summary.lateDeliveries.toString(),
-      icon: Clock,
+      icon: AlertTriangle,
     },
   ];
 
@@ -185,6 +230,40 @@ const MyDeliveriesPage = () => {
               Earnings chart appears after your first completed delivery.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className='mb-8'>
+        <CardHeader>
+          <CardTitle>Assignment reliability</CardTitle>
+        </CardHeader>
+        <CardContent className='grid gap-4 md:grid-cols-3'>
+          <div className='rounded-lg border p-4'>
+            <p className='text-sm text-muted-foreground'>Response rate</p>
+            <p className='mt-2 text-3xl font-bold'>
+              {summary.totalAssignments ? `${summary.assignmentResponseRate}%` : 'No data'}
+            </p>
+            <div className='mt-3 h-2 overflow-hidden rounded-full bg-muted'>
+              <div
+                className='h-full rounded-full bg-green-600'
+                style={{ width: `${Math.min(100, summary.assignmentResponseRate)}%` }}
+              />
+            </div>
+          </div>
+          <div className='rounded-lg border p-4'>
+            <p className='text-sm text-muted-foreground'>Assignment responses</p>
+            <p className='mt-2 text-3xl font-bold'>{summary.respondedAssignments}</p>
+            <p className='mt-1 text-sm text-muted-foreground'>
+              {summary.acceptedAssignments} accepted, {summary.declinedAssignments} declined.
+            </p>
+          </div>
+          <div className='rounded-lg border p-4'>
+            <p className='text-sm text-muted-foreground'>Missed assignments</p>
+            <p className='mt-2 text-3xl font-bold'>{summary.missedAssignments}</p>
+            <p className='mt-1 text-sm text-muted-foreground'>
+              Assignments that expired without your response.
+            </p>
+          </div>
         </CardContent>
       </Card>
 

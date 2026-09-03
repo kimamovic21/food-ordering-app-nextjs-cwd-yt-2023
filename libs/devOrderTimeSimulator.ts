@@ -29,6 +29,7 @@ export const sanitizeDevOrderTimeOffsets = (value: unknown): OrderPhaseDurationO
     confirmationWait: sanitizeDevOrderTimeOffsetMinutes(offsets.confirmationWait),
     failedDeliveryWait: sanitizeDevOrderTimeOffsetMinutes(offsets.failedDeliveryWait),
     readyWithoutCourierWait: sanitizeDevOrderTimeOffsetMinutes(offsets.readyWithoutCourierWait),
+    courierAssignmentWait: sanitizeDevOrderTimeOffsetMinutes(offsets.courierAssignmentWait),
     totalOrderTime: sanitizeDevOrderTimeOffsetMinutes(offsets.totalOrderTime),
   };
 };

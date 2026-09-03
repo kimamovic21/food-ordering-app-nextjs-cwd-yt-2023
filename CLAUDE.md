@@ -16,7 +16,8 @@ This file provides guidance for AI assistance in this repository.
 - Email: Resend + React Email
 - AI: OpenAI SDK for server-side menu description generation
 - Rate limiting: Upstash Redis for short-lived counters on sensitive routes
-- Background jobs: Upstash QStash for delayed order-maintenance checks
+- Background jobs: Upstash QStash for delayed order-maintenance checks, including unanswered courier assignment timeouts
+- Courier assignment history tracks accepted, declined, and expired attempts for response-rate and missed-assignment stats.
 - Dates: date-fns and @date-fns/tz through `libs/dateFormat.ts` for UI, email, and PDF date formatting in the app timezone
 - Money and phone helpers: currency.js through `libs/money.ts`, and libphonenumber-js through `libs/phone.ts`
 - Sharing: react-share
@@ -64,7 +65,7 @@ This file provides guidance for AI assistance in this repository.
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client-side recovery, not API validation.
 - Keep Sentry Session Replay disabled in development; browser replay should stay production-only and sampled on error sessions to protect quota.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
-- Preserve QStash scheduling for unpaid-order and ready-without-courier maintenance checks when changing checkout or order status logic.
+- Preserve QStash scheduling for unpaid-order, courier-assignment-timeout, and ready-without-courier maintenance checks when changing checkout, courier assignment, or order status logic.
 - Keep payment and webhook flows idempotent.
 - Keep receipt email generation in server code.
 

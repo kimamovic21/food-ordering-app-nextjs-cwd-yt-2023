@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth/next';
 import { Order } from '@/models/order';
+import { applyCourierAssignmentTimeout } from '@/libs/courierAssignmentTimeout';
 import {
   notifyOrderDelivered,
   notifyRestaurantAdminsAboutFailedDeliveryRequest,
@@ -41,6 +42,10 @@ vi.mock('@/libs/notifications', () => ({
   notifyRestaurantAdminsAboutFailedDeliveryRequest: vi.fn(),
   notifyRestaurantAdminsAboutCourierAssignmentUpdate: vi.fn(),
   notifyUserAboutOrderStatusChange: vi.fn(),
+}));
+
+vi.mock('@/libs/courierAssignmentTimeout', () => ({
+  applyCourierAssignmentTimeout: vi.fn(async (order) => ({ order, expired: false, reason: '' })),
 }));
 
 const loadAvailability = async () =>
@@ -102,6 +107,9 @@ describe('Courier availability and location routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/test';
+    vi.mocked(applyCourierAssignmentTimeout).mockImplementation(
+      async (order) => ({ order, expired: false, reason: '' }) as never
+    );
   });
 
   afterEach(() => {
@@ -377,6 +385,40 @@ describe('Courier availability and location routes', () => {
         status: 'accepted',
       })
     );
+  });
+
+  it('blocks accepting an assignment after the response window expires', async () => {
+    const userDoc = courierUser();
+    const orderDoc = assignedOrder({
+      orderStatus: 'ready',
+      courierAssignmentStatus: 'pending',
+    });
+    vi.mocked(applyCourierAssignmentTimeout).mockResolvedValueOnce({
+      order: orderDoc,
+      expired: true,
+      reason: 'Courier assignment expired.',
+    } as never);
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: userDoc.email, role: 'courier' },
+    } as never);
+    vi.mocked((await import('@/models/user')).User.findOne).mockResolvedValueOnce(userDoc as never);
+    vi.mocked(Order.findById).mockResolvedValueOnce(orderDoc as never);
+
+    const PATCH = await loadDeliveryOrdersPatch();
+    const res = await PATCH(
+      new Request('http://localhost/api/my-delivery/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: 'order-1', action: 'accept-assignment' }),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body.error).toContain('assignment expired');
+    expect(orderDoc.save).not.toHaveBeenCalled();
+    expect(notifyRestaurantAdminsAboutCourierAssignmentUpdate).not.toHaveBeenCalled();
   });
 
   it('lets assigned couriers decline assignments and frees the courier', async () => {

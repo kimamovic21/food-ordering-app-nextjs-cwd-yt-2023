@@ -101,4 +101,27 @@ describe('qstash helpers', () => {
 
     consoleError.mockRestore();
   });
+
+  it('publishes a courier assignment timeout maintenance check', async () => {
+    process.env.QSTASH_TOKEN = 'qstash-token';
+    process.env.NEXT_PUBLIC_APP_URL = 'https://food-ordering.example.com';
+    publishJSON.mockResolvedValueOnce({ messageId: 'msg_assignment' });
+    const { scheduleCourierAssignmentTimeoutCheck } = await loadQStash();
+
+    await expect(scheduleCourierAssignmentTimeoutCheck('order-1')).resolves.toEqual({
+      scheduled: true,
+      messageId: 'msg_assignment',
+    });
+    expect(publishJSON).toHaveBeenCalledWith({
+      url: 'https://food-ordering.example.com/api/qstash/order-maintenance',
+      body: {
+        orderId: 'order-1',
+        reason: 'courier-assignment-timeout',
+      },
+      delay: 10 * 60,
+      retries: 3,
+      method: 'POST',
+      label: ['order-maintenance', 'courier-assignment-timeout'],
+    });
+  });
 });

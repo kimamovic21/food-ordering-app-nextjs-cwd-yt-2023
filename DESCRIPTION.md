@@ -180,10 +180,12 @@ Busy restaurant logic:
 Order safety automation:
 
 - Unpaid `placed` orders are automatically canceled after 30 minutes when viewed through order APIs.
+- Pending courier assignments expire after 10 minutes when the courier does not accept or decline, freeing the courier and notifying restaurant admins to reassign.
+- Courier assignment history is stored on orders so reliability stats survive later reassignments.
 - `ready` orders without a courier are warned after 15 minutes and automatically canceled after 60 minutes.
 - Automatic cancellations mark the order as unpaid, store a system cancellation reason, notify the customer and restaurant admins, and write an audit log entry.
-- Upstash QStash schedules delayed unpaid-order and ready-without-courier checks so production can run those maintenance checks even when nobody is actively viewing the order page.
-- Development-only order time simulation can add minutes for timeline phases, failed-delivery testing, and ready-without-courier auto-cancel testing without editing MongoDB timestamps.
+- Upstash QStash schedules delayed unpaid-order, courier-assignment-timeout, and ready-without-courier checks so production can run those maintenance checks even when nobody is actively viewing the order page.
+- Development-only order time simulation can add minutes for timeline phases, failed-delivery testing, courier assignment timeout testing, and ready-without-courier auto-cancel testing without editing MongoDB timestamps.
 
 ## Coupon And Reorder Logic
 
@@ -288,7 +290,7 @@ Canceled failed deliveries do not count as courier earnings because courier earn
 Courier history and performance:
 
 - Completed delivery history includes earnings, delivery-time summaries, ratings, and reliability metrics.
-- Courier dashboard metrics can summarize completed deliveries, declined assignments, average delivery minutes, late deliveries, ratings, and earnings without tracking total route mileage.
+- Courier dashboard metrics can summarize completed deliveries, accepted/declined/missed assignments, response rate, average response minutes, average delivery minutes, late deliveries, ratings, and earnings without tracking total route mileage.
 
 ## Support Ticket Logic
 
@@ -416,7 +418,7 @@ Restaurant report rules:
 - Google OAuth: social login through NextAuth.
 - OpenAI: server-side menu description generation.
 - Upstash Redis: short-lived rate-limit counters for sensitive auth, checkout, support, and AI routes.
-- Upstash QStash: delayed background order-maintenance checks for stale unpaid orders and ready orders without a courier.
+- Upstash QStash: delayed background order-maintenance checks for stale unpaid orders, unanswered courier assignments, and ready orders without a courier.
 - Leaflet: map rendering and courier tracking UI.
 - TanStack Query: client-side server-data cache for shared profile data, favorite IDs/lists, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
 - TanStack Table: headless table state for searchable, sortable, paginated admin and order list UIs.

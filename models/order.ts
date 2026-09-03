@@ -22,6 +22,24 @@ const CartProductSchema = new Schema(
   { _id: false }
 );
 
+const CourierAssignmentHistorySchema = new Schema(
+  {
+    courierId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ['accepted', 'declined', 'expired'],
+      required: true,
+    },
+    assignedAt: { type: Date, default: null },
+    respondedAt: { type: Date, default: null },
+  },
+  { _id: false }
+);
+
 const OrderSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -153,7 +171,7 @@ const OrderSchema = new Schema(
     courierId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     courierAssignmentStatus: {
       type: String,
-      enum: ['pending', 'accepted', 'declined', null],
+      enum: ['pending', 'accepted', 'declined', 'expired', null],
       default: null,
     },
     courierAssignmentNote: {
@@ -161,6 +179,10 @@ const OrderSchema = new Schema(
       default: '',
       trim: true,
       maxlength: 300,
+    },
+    courierAssignmentHistory: {
+      type: [CourierAssignmentHistorySchema],
+      default: [],
     },
     checkoutFingerprint: {
       type: String,
@@ -176,6 +198,12 @@ const OrderSchema = new Schema(
     courierAcceptedAt: { type: Date, default: null },
     courierDeclinedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     courierDeclinedAt: { type: Date, default: null },
+    courierAssignmentExpiredAt: { type: Date, default: null },
+    courierAssignmentExpiredCourierId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     restaurantHandedToCourierAt: { type: Date, default: null },
     courierPickedUpAt: { type: Date, default: null },
     transportationAt: { type: Date, default: null },

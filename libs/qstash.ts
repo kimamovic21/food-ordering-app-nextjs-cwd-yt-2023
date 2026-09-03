@@ -2,13 +2,15 @@ import 'server-only';
 
 import { Client } from '@upstash/qstash';
 import {
+  COURIER_ASSIGNMENT_RESPONSE_TIMEOUT_MINUTES,
   READY_WITHOUT_COURIER_AUTO_CANCEL_MINUTES,
   UNPAID_ORDER_AUTO_CANCEL_MINUTES,
 } from '@/libs/orderMaintenanceConfig';
 
 export const QSTASH_ORDER_MAINTENANCE_PATH = '/api/qstash/order-maintenance';
 
-export type QStashOrderMaintenanceReason = 'unpaid-payment-window' | 'ready-without-courier';
+export type QStashOrderMaintenanceReason =
+  'unpaid-payment-window' | 'courier-assignment-timeout' | 'ready-without-courier';
 
 type ScheduleOrderMaintenanceInput = {
   orderId: unknown;
@@ -105,4 +107,11 @@ export const scheduleReadyWithoutCourierAutoCancellationCheck = (orderId: unknow
     orderId,
     reason: 'ready-without-courier',
     delaySeconds: READY_WITHOUT_COURIER_AUTO_CANCEL_MINUTES * 60,
+  });
+
+export const scheduleCourierAssignmentTimeoutCheck = (orderId: unknown) =>
+  scheduleOrderMaintenanceCheck({
+    orderId,
+    reason: 'courier-assignment-timeout',
+    delaySeconds: COURIER_ASSIGNMENT_RESPONSE_TIMEOUT_MINUTES * 60,
   });

@@ -6,6 +6,7 @@ export type OrderPhaseDurationOffsets = Partial<
     | OrderPhaseDurationOffsetKey
     | 'failedDeliveryWait'
     | 'readyWithoutCourierWait'
+    | 'courierAssignmentWait'
     | 'totalOrderTime',
     number
   >

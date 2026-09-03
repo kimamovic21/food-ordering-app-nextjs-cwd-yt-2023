@@ -1,5 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
+import { addCourierAssignmentHistoryEntry } from '@/libs/courierAssignmentHistory';
+import { applyCourierAssignmentTimeout } from '@/libs/courierAssignmentTimeout';
 import { Order } from '@/models/order';
 import { User } from '@/models/user';
 import {
@@ -54,16 +56,31 @@ export async function GET() {
     ],
   });
 
-  const normalizedOrders = await Promise.all(
-    orders.map(async (order) => {
-      if (!order.deliveryPin) {
-        order.deliveryPin = createDeliveryPin();
-        await order.save();
-      }
+  const normalizedOrders = (
+    await Promise.all(
+      orders.map(async (order) => {
+        const devOffsets =
+          process.env.NODE_ENV === 'development'
+            ? getDevOrderTimeSimulatorOffsets(order._id.toString())
+            : {};
+        const { order: timeoutNormalizedOrder } = await applyCourierAssignmentTimeout(
+          order,
+          devOffsets
+        );
 
-      return normalizeOrder(order.toObject());
-    })
-  );
+        if (timeoutNormalizedOrder.courierId?.toString() !== user._id.toString()) {
+          return null;
+        }
+
+        if (!timeoutNormalizedOrder.deliveryPin) {
+          timeoutNormalizedOrder.deliveryPin = createDeliveryPin();
+          await timeoutNormalizedOrder.save();
+        }
+
+        return normalizeOrder(timeoutNormalizedOrder.toObject());
+      })
+    )
+  ).filter(Boolean);
 
   return Response.json({ orders: normalizedOrders });
 }
@@ -97,6 +114,20 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'Order not found' }, { status: 404 });
   }
 
+  const devOffsets =
+    process.env.NODE_ENV === 'development' ? getDevOrderTimeSimulatorOffsets(orderId) : {};
+  const timeoutResult = await applyCourierAssignmentTimeout(order, devOffsets);
+
+  if (timeoutResult.expired) {
+    return Response.json(
+      {
+        error:
+          'This courier assignment expired because there was no response in time. The restaurant can assign another courier.',
+      },
+      { status: 400 }
+    );
+  }
+
   // Verify courier is assigned to this order
   if (order.courierId?.toString() !== user._id.toString()) {
     return Response.json({ error: 'You are not assigned to this order' }, { status: 403 });
@@ -109,6 +140,12 @@ export async function PATCH(request: Request) {
 
     order.courierAssignmentStatus = 'accepted';
     order.courierAcceptedAt = new Date();
+    addCourierAssignmentHistoryEntry(order, {
+      courierId: user._id,
+      status: 'accepted',
+      assignedAt: order.courierAssignedAt,
+      respondedAt: order.courierAcceptedAt,
+    });
     await order.save();
 
     if (order.restaurantId) {
@@ -135,6 +172,12 @@ export async function PATCH(request: Request) {
     order.courierAssignmentStatus = 'declined';
     order.courierDeclinedBy = user._id;
     order.courierDeclinedAt = new Date();
+    addCourierAssignmentHistoryEntry(order, {
+      courierId: user._id,
+      status: 'declined',
+      assignedAt: order.courierAssignedAt,
+      respondedAt: order.courierDeclinedAt,
+    });
     order.courierId = null;
     user.takenOrder = null;
 

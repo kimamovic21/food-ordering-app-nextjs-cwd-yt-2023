@@ -282,6 +282,52 @@ export const notifyRestaurantAdminsAboutCourierAssignmentUpdate = async (params:
   });
 };
 
+export const notifyRestaurantAdminsAboutCourierAssignmentTimeout = async (params: {
+  restaurantId: string | mongoose.Types.ObjectId;
+  orderId: string | mongoose.Types.ObjectId;
+  courierName?: string | null;
+  courierId?: string | mongoose.Types.ObjectId | null;
+  timeoutMinutes: number;
+}) => {
+  const adminIds = await findRestaurantAdminIds(params.restaurantId);
+
+  if (adminIds.length === 0) {
+    return;
+  }
+
+  await createNotifications({
+    recipientUserIds: adminIds,
+    type: 'courier_assigned',
+    title: 'Courier assignment expired',
+    message: `${params.courierName || 'Courier'} did not respond to order #${params.orderId.toString().slice(-6)} within ${params.timeoutMinutes} minutes. Please assign another courier.`,
+    orderId: params.orderId,
+    metadata: {
+      restaurantId: params.restaurantId.toString(),
+      courierId: params.courierId ? params.courierId.toString() : null,
+      courierAssignmentStatus: 'expired',
+      timeoutMinutes: params.timeoutMinutes,
+    },
+  });
+};
+
+export const notifyCourierAboutAssignmentExpired = async (params: {
+  courierId: string | mongoose.Types.ObjectId;
+  orderId: string | mongoose.Types.ObjectId;
+  timeoutMinutes: number;
+}) => {
+  await createNotifications({
+    recipientUserIds: [params.courierId],
+    type: 'courier_assigned',
+    title: 'Delivery assignment expired',
+    message: `Order #${params.orderId.toString().slice(-6)} was released because you did not accept or decline within ${params.timeoutMinutes} minutes.`,
+    orderId: params.orderId,
+    metadata: {
+      courierAssignmentStatus: 'expired',
+      timeoutMinutes: params.timeoutMinutes,
+    },
+  });
+};
+
 export const notifyRestaurantAdminsAboutFailedDeliveryRequest = async (params: {
   restaurantId: string | mongoose.Types.ObjectId;
   orderId: string | mongoose.Types.ObjectId;

@@ -14,7 +14,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 - Email: Resend + React Email (`react-email`, `@react-email/components`, `@react-email/render`) for purchase receipts.
 - AI: OpenAI SDK is used server-side for admin menu item description generation.
 - Rate limiting: Upstash Redis stores short-lived counters for sensitive auth, checkout, support, and AI routes.
-- Background jobs: Upstash QStash schedules delayed order-maintenance checks for stale unpaid orders and ready orders that cannot get a courier.
+- Background jobs: Upstash QStash schedules delayed order-maintenance checks for stale unpaid orders, unanswered courier assignments, and ready orders that cannot get a courier.
 - Sharing: `react-share` is used for social share actions.
 - Client data cache: TanStack Query powers shared profile data, favorite IDs/lists, notification/message sound settings, message inbox/thread views, and global message/notification unread state.
 - Data tables: TanStack Table powers shared searchable, sortable, paginated table UI through `components/shared/TanStackDataTable.tsx`.
@@ -94,7 +94,8 @@ See `example.env`. Variables currently used in the project include:
 - Restaurant quick reorder must use the same current `menu_items` rebuild rules as order reorder.
 - Restaurant report UI lives at `/admin-dashboard/restaurant-reports`; daily, weekly, and monthly reports should show zeros for empty periods and disable PDF download when there is no activity.
 - Delivery completion is double-confirmed: courier records handoff with the delivery PIN, then customer or restaurant admin finalizes completion.
-- Stale unpaid `placed` orders can auto-cancel after 30 minutes, and `ready` orders without a courier can warn after 15 minutes and auto-cancel after 60 minutes.
+- Courier assignment history should record accepted, declined, and expired attempts so courier reliability stats can calculate response rate, acceptance rate, missed assignments, and average response time.
+- Stale unpaid `placed` orders can auto-cancel after 30 minutes, pending courier assignments expire after 10 minutes without a courier response, and `ready` orders without a courier can warn after 15 minutes and auto-cancel after 60 minutes.
 - Support tickets should remain role-scoped: restaurant owners handle their restaurant reports, while app-support tickets route to the super admin.
 - Order notifications can include ETA-style phase copy, late active-order alerts should point admins toward the order queue, and failed-delivery review notifications should point restaurant admins to `/admin-dashboard/orders/[id]`.
 - QStash delayed job routes must stay server-only, verify QStash signatures, and reuse existing idempotent business helpers such as `applyOrderAutoCancellation`. Publishing should fail open so checkout/order status updates do not break if QStash is unavailable.

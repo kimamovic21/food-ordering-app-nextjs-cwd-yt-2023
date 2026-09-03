@@ -5,8 +5,10 @@ import { CourierReview } from '@/models/courierReview';
 import { Restaurant } from '@/models/restaurant';
 import { notifyCourierAboutAssignment } from '@/libs/notifications';
 import { COURIER_OWN_ORDER_ASSIGNMENT_ERROR, isCourierOrderOwner } from '@/libs/courierAssignment';
+import { applyCourierAssignmentTimeout } from '@/libs/courierAssignmentTimeout';
 import { isCourierScheduledNow } from '@/libs/courierSchedule';
 import { createDeliveryPin } from '@/libs/deliveryPin';
+import { scheduleCourierAssignmentTimeoutCheck } from '@/libs/qstash';
 import mongoose from 'mongoose';
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
@@ -154,25 +156,39 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'User is not a courier' }, { status: 400 });
   }
 
-  if (courier.takenOrder) {
-    return Response.json(
-      {
-        error:
-          'This courier is currently delivering another order. Please wait for them to finish the delivery before assigning a new order.',
-      },
-      { status: 400 }
-    );
-  }
-
   const order = await Order.findById(orderId);
 
   if (!order) {
     return Response.json({ error: 'Order not found' }, { status: 404 });
   }
 
+  await applyCourierAssignmentTimeout(order);
+
   if (order.orderStatus !== 'ready') {
     return Response.json(
       { error: 'Order must be in ready status before assigning a courier' },
+      { status: 400 }
+    );
+  }
+
+  if (order.courierId && ['pending', 'accepted'].includes(order.courierAssignmentStatus || '')) {
+    return Response.json(
+      {
+        error:
+          'This order already has an active courier assignment. Wait for the courier response or choose another courier after the assignment expires.',
+      },
+      { status: 400 }
+    );
+  }
+
+  const courierTakenOrderId = courier.takenOrder?.toString?.() || '';
+
+  if (courierTakenOrderId && courierTakenOrderId !== order._id.toString()) {
+    return Response.json(
+      {
+        error:
+          'This courier is currently delivering another order. Please wait for them to finish the delivery before assigning a new order.',
+      },
       { status: 400 }
     );
   }
@@ -189,6 +205,8 @@ export async function PATCH(request: Request) {
   order.courierAssignmentNote = assignmentNote;
   order.courierAssignedAt = new Date();
   order.courierAcceptedAt = null;
+  order.courierAssignmentExpiredAt = null;
+  order.courierAssignmentExpiredCourierId = null;
   order.courierDeclinedBy = null;
   order.courierDeclinedAt = null;
   order.restaurantHandedToCourierAt = null;
@@ -206,6 +224,8 @@ export async function PATCH(request: Request) {
   } catch (notificationError) {
     console.error('Failed to create courier assignment notifications:', notificationError);
   }
+
+  await scheduleCourierAssignmentTimeoutCheck(order._id);
 
   return Response.json({ courier, order });
 }

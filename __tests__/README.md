@@ -14,12 +14,14 @@ This folder contains unit tests grouped by feature area.
 - `api/upload-users.route.test.ts`: validates profile image upload/remove behavior.
 - `api/checkout.route.test.ts`: validates checkout guardrails and failure handling.
 - `api/courier-assignment.route.test.ts`: validates courier assignment guardrails and courier-only assignment notes.
-- `api/courier-earnings.route.test.ts`: validates courier earnings access and summaries.
-- `api/my-deliveries.route.test.ts`: validates courier delivery history and performance summaries.
+- `api/courier-earnings.route.test.ts`: validates courier earnings access, summaries, and assignment reliability metrics.
+- `api/my-deliveries.route.test.ts`: validates courier delivery history, performance summaries, and assignment reliability metrics.
 - `api/realtime-streams.route.test.ts`: validates authenticated SSE streams for messages and notifications.
 - `api/restaurant.route.test.ts`: validates restaurant settings, ownership, and deletion behavior.
 - `api/webhook.route.test.ts`: validates webhook signature/idempotency behavior.
 - `api/payment.test.ts`: validates payment-related helper logic and utility contracts.
+- `libs/courier-assignment-timeout.test.ts`: validates stale pending courier assignment expiry and courier release rules.
+- `libs/courier-assignment-history.test.ts`: validates finalized courier assignment attempt history.
 - `libs/order-auto-cancellation.test.ts`: validates stale unpaid and ready-without-courier auto-cancel rules.
 - `libs/realtimeClient.test.ts`: validates client-side realtime payload helpers.
 

@@ -269,8 +269,10 @@ Operational monitoring builds on the same timestamps:
 - `/api/orders/queue` returns active paid orders grouped by lifecycle phase.
 - `/admin-dashboard/orders` surfaces late-order alerts and links admins to `/admin-dashboard/order-queue`.
 - Ready orders without a courier show an admin warning after 15 minutes.
+- Pending courier assignments expire after 10 minutes if the courier does not accept or decline; the courier is released and restaurant admins are notified to reassign.
+- Accepted, declined, and expired courier assignment attempts are appended to order assignment history so courier reliability metrics remain accurate after reassignments.
 - Stale unpaid orders auto-cancel after 30 minutes; ready orders without a courier auto-cancel after 60 minutes.
-- Upstash QStash schedules delayed checks for stale unpaid orders and ready orders without a courier so production order maintenance is not dependent only on a later page/API read.
+- Upstash QStash schedules delayed checks for stale unpaid orders, unanswered courier assignments, and ready orders without a courier so production order maintenance is not dependent only on a later page/API read.
 - System auto-cancellations mark the order unpaid, store `canceledBy: system`, add `cancellationReason`, notify customer/admins, and write an audit log.
 - ETA-style notifications reuse estimate snapshots so status changes can include useful preparation or delivery timing.
 - `OrderProgressStepper` gives customers and admins a compact visual stage tracker for placed, kitchen, transport, and delivered phases.
@@ -304,7 +306,7 @@ If the customer does not confirm, the restaurant owner can finalize delivery fro
 
 If the customer is unavailable after at least 30 minutes in transport, the courier can request failed-delivery cancellation. The order remains in `transportation` until the restaurant owner or super admin verifies the cancellation; verification sets the order to `canceled` and releases the courier from `takenOrder`.
 
-Courier delivery views show estimated travel time without tracking total route mileage. Completed delivery history can summarize completed deliveries, declined assignments, average delivery minutes, late deliveries, ratings, and earnings.
+Courier delivery views show estimated travel time without tracking total route mileage. Completed delivery history can summarize completed deliveries, accepted assignments, declined assignments, missed assignments, response rate, average response time, average delivery minutes, late deliveries, ratings, and earnings.
 
 ## Support Ticket Flow
 

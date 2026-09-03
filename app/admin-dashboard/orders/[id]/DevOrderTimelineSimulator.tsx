@@ -11,7 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type DevOrderTimeSimulatorOffsetKey =
-  OrderPhaseDurationOffsetKey | 'failedDeliveryWait' | 'readyWithoutCourierWait';
+  | OrderPhaseDurationOffsetKey
+  | 'failedDeliveryWait'
+  | 'readyWithoutCourierWait'
+  | 'courierAssignmentWait';
 
 type DevOrderTimelineSimulatorProps = {
   offsets: OrderPhaseDurationOffsets;
@@ -33,6 +36,11 @@ const controls: { key: DevOrderTimeSimulatorOffsetKey; label: string; hint?: str
     key: 'readyWithoutCourierWait',
     label: 'Ready without courier',
     hint: 'Adds time only for auto-cancel testing when an order is ready but has no courier.',
+  },
+  {
+    key: 'courierAssignmentWait',
+    label: 'Courier response wait',
+    hint: 'Adds time only for pending courier assignment timeout testing.',
   },
 ];
 

@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { Calendar, Clock, DollarSign, Package, Star, XCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  Package,
+  Star,
+  Timer,
+  XCircle,
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,11 +35,18 @@ const chartConfig = {
 
 const initialSummary: CourierPerformanceSummary = {
   completedDeliveries: 0,
+  totalAssignments: 0,
+  acceptedAssignments: 0,
+  respondedAssignments: 0,
   declinedAssignments: 0,
+  missedAssignments: 0,
   lateDeliveries: 0,
   totalEarnings: 0,
   averageEarning: 0,
   averageDeliveryMinutes: 0,
+  averageResponseMinutes: 0,
+  assignmentResponseRate: 0,
+  assignmentAcceptanceRate: 0,
   averageRating: 0,
   ratingCount: 0,
 };
@@ -133,9 +150,29 @@ const CourierEarningsPanel = ({
       icon: Clock,
     },
     {
+      label: 'Response rate',
+      value: summary.totalAssignments ? `${summary.assignmentResponseRate}%` : '-',
+      icon: CheckCircle2,
+    },
+    {
+      label: 'Average response',
+      value: summary.averageResponseMinutes ? `${summary.averageResponseMinutes} min` : '-',
+      icon: Timer,
+    },
+    {
       label: 'Late deliveries',
       value: summary.lateDeliveries.toString(),
-      icon: Clock,
+      icon: AlertTriangle,
+    },
+    {
+      label: 'Missed assignments',
+      value: summary.missedAssignments.toString(),
+      icon: AlertTriangle,
+    },
+    {
+      label: 'Accepted assignments',
+      value: summary.acceptedAssignments.toString(),
+      icon: CheckCircle2,
     },
     {
       label: 'Declined assignments',
@@ -260,6 +297,26 @@ const CourierEarningsPanel = ({
               <p className='mt-1 text-sm text-muted-foreground'>
                 Late deliveries after the grace period.
               </p>
+            </div>
+            <div className='rounded-lg border p-4'>
+              <div className='text-sm text-muted-foreground'>Assignment reliability</div>
+              <p className='mt-2 text-3xl font-bold'>
+                {summary.totalAssignments ? `${summary.assignmentResponseRate}%` : 'No data'}
+              </p>
+              <div className='mt-3 h-2 overflow-hidden rounded-full bg-muted'>
+                <div
+                  className='h-full rounded-full bg-green-600'
+                  style={{ width: `${Math.min(100, summary.assignmentResponseRate)}%` }}
+                />
+              </div>
+              <p className='mt-2 text-sm text-muted-foreground'>
+                {summary.respondedAssignments} responded, {summary.missedAssignments} missed.
+              </p>
+              {summary.respondedAssignments > 0 && (
+                <p className='mt-1 text-sm text-muted-foreground'>
+                  {summary.assignmentAcceptanceRate}% acceptance rate after responding.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
