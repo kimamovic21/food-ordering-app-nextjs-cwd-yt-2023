@@ -1149,3 +1149,5 @@ Add qstash order maintenance jobs
 Expand critical e2e and realtime coverage
 
 Add Vercel Speed Insights monitoring
+
+Add courier assignment timeout and reliability metrics

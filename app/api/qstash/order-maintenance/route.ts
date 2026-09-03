@@ -1,5 +1,6 @@
 import { verifySignatureAppRouter } from '@upstash/qstash/nextjs';
 import mongoose from 'mongoose';
+import { applyCourierAssignmentTimeout } from '@/libs/courierAssignmentTimeout';
 import { applyOrderAutoCancellation } from '@/libs/orderAutoCancellation';
 import type { QStashOrderMaintenanceReason } from '@/libs/qstash';
 import { Order } from '@/models/order';
@@ -8,6 +9,7 @@ export const runtime = 'nodejs';
 
 const orderMaintenanceReasons: QStashOrderMaintenanceReason[] = [
   'unpaid-payment-window',
+  'courier-assignment-timeout',
   'ready-without-courier',
 ];
 
@@ -37,6 +39,24 @@ export const handleQStashOrderMaintenance = async (request: Request) => {
       canceled: false,
       skipped: 'order_not_found',
     });
+  }
+
+  if (reason === 'courier-assignment-timeout') {
+    const result = await applyCourierAssignmentTimeout(order);
+
+    return Response.json({
+      ok: true,
+      orderId,
+      reason,
+      assignmentExpired: result.expired,
+      expirationReason: result.reason || null,
+      orderStatus: result.order?.orderStatus || null,
+      courierAssignmentStatus: result.order?.courierAssignmentStatus || null,
+    });
+  }
+
+  if (reason === 'ready-without-courier') {
+    await applyCourierAssignmentTimeout(order);
   }
 
   const result = await applyOrderAutoCancellation(order);

@@ -21,10 +21,10 @@ It includes:
 - TanStack Table-powered searchable, sortable, paginated data tables for high-traffic admin and order lists
 - Vercel Web Analytics for production traffic insights and Vercel Speed Insights for Web Vitals/performance monitoring
 - admin dashboard for users, menu items, categories, restaurants, restaurant reports, couriers, orders, support tickets, and statistics
-- courier dashboard with active delivery, delivery history, earnings, and courier ratings views
-- courier workflow with assignment, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
+- courier dashboard with active delivery, delivery history, earnings, courier ratings, and assignment reliability views
+- courier workflow with assignment, response-time tracking, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
 - order timeline with visual phase icons, preparation/delivery estimates, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
-- order safety automation for stale unpaid orders and ready orders that cannot get a courier
+- order safety automation for stale unpaid orders, unanswered courier assignments, and ready orders that cannot get a courier
 - restaurant busy checkout protection based on each restaurant's active kitchen order limit
 - Stripe checkout/webhook flow
 - Cloudinary media uploads
@@ -269,8 +269,10 @@ This project uses many dependencies; below are the main packages actively used i
 
 - `@upstash/qstash` is used for delayed order-maintenance checks that should run later without relying only on someone opening an order page.
 - Checkout schedules a 30-minute unpaid-order check after a Stripe Checkout session is created.
+- Assigning a courier schedules a 10-minute courier-assignment timeout check. If the courier does not accept or decline in time, the assignment is marked `expired`, the courier is released, and restaurant admins are notified to choose another courier.
+- Courier assignment history records accepted, declined, and expired attempts so admin and courier performance views can show missed assignments, response rate, acceptance rate, and average response time.
 - Moving an order to `ready` schedules a 60-minute ready-without-courier check.
-- `POST /api/qstash/order-maintenance` receives QStash jobs, verifies the QStash signature, reloads the order from MongoDB, and runs the existing `applyOrderAutoCancellation` logic.
+- `POST /api/qstash/order-maintenance` receives QStash jobs, verifies the QStash signature, reloads the order from MongoDB, and runs the existing courier-assignment timeout or order auto-cancellation logic.
 - QStash publishing is fail-open: if the QStash env vars are missing, the app URL is local, or QStash is temporarily unavailable, checkout and order status updates still continue.
 - For production, `NEXT_PUBLIC_APP_URL` or `NEXTAUTH_URL` must point to a public HTTPS app URL so QStash can call the API route. Local `localhost` URLs are intentionally skipped unless you test through a public tunnel.
 

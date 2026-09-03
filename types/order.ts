@@ -6,7 +6,7 @@ export type OrderStatus =
   'placed' | 'processing' | 'ready' | 'transportation' | 'delivered' | 'completed' | 'canceled';
 
 export type EditableOrderStatus = Extract<OrderStatus, 'placed' | 'processing' | 'ready'>;
-export type CourierAssignmentStatus = 'pending' | 'accepted' | 'declined' | null;
+export type CourierAssignmentStatus = 'pending' | 'accepted' | 'declined' | 'expired' | null;
 export type DeliveryCompletedBy = 'customer' | 'admin' | null;
 export type OrderCanceledBy = 'customer' | 'restaurant_owner' | 'super_admin' | 'system' | null;
 export type FailedDeliveryVerifiedByRole = 'restaurant_owner' | 'super_admin' | null;
@@ -54,6 +54,8 @@ export type OrderDetails = OrderListItem & {
   courierAssignedAt?: ISODateString | null;
   courierAcceptedAt?: ISODateString | null;
   courierDeclinedAt?: ISODateString | null;
+  courierAssignmentExpiredAt?: ISODateString | null;
+  courierAssignmentExpiredCourierId?: EntityId | null;
   restaurantHandedToCourierAt?: ISODateString | null;
   courierPickedUpAt?: ISODateString | null;
   failedDeliveryRequestedAt?: ISODateString | null;
@@ -123,8 +125,10 @@ export type QueueOrder = {
   paymentStatus: boolean;
   orderStatus: Exclude<OrderStatus, 'completed' | 'canceled'>;
   courierAssignmentStatus?: CourierAssignmentStatus;
+  courierAssignmentExpiredAt?: ISODateString | null;
   minutesSincePlaced: number;
   isLateBeforeTransport: boolean;
+  isCourierAssignmentExpired?: boolean;
   isReadyWithoutCourierLate?: boolean;
   cartProducts: Array<{ name: string; quantity: number; size: string }>;
   courierId?: Pick<UserSummary, 'name' | 'email'> | null;

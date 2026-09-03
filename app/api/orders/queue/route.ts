@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import mongoose from 'mongoose';
 import { authOptions } from '@/libs/authOptions';
+import { applyCourierAssignmentTimeout } from '@/libs/courierAssignmentTimeout';
 import { notifyRestaurantAdminsAboutLateOrder } from '@/libs/notifications';
 import {
   applyOrderAutoCancellation,
@@ -50,7 +51,13 @@ export async function GET() {
     .sort({ createdAt: 1 });
 
   const orders = (
-    await Promise.all(orderDocuments.map((order) => applyOrderAutoCancellation(order)))
+    await Promise.all(
+      orderDocuments.map(async (order) => {
+        const { order: timeoutNormalizedOrder } = await applyCourierAssignmentTimeout(order);
+
+        return applyOrderAutoCancellation(timeoutNormalizedOrder);
+      })
+    )
   )
     .map(({ order }) => order.toObject())
     .filter((order) => activeStatuses.includes(order.orderStatus));
@@ -95,6 +102,7 @@ export async function GET() {
     orders: orders.map((order) => ({
       ...normalizeOrder(order),
       minutesSincePlaced: getMinutesSince(order.createdAt),
+      isCourierAssignmentExpired: order.courierAssignmentStatus === 'expired',
       isReadyWithoutCourierLate: isReadyWithoutCourierLate(order),
       isLateBeforeTransport: lateOrders.some(
         ({ order: lateOrder }) => lateOrder._id.toString() === order._id.toString()

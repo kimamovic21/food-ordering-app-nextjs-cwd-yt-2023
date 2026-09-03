@@ -9,6 +9,7 @@ import {
 } from '@/libs/notifications';
 import { createAuditLog } from '@/libs/auditLog';
 import { getDevOrderTimeSimulatorOffsets } from '@/libs/devOrderTimeSimulatorStore';
+import { applyCourierAssignmentTimeout } from '@/libs/courierAssignmentTimeout';
 import { applyOrderAutoCancellation } from '@/libs/orderAutoCancellation';
 import { scheduleReadyWithoutCourierAutoCancellationCheck } from '@/libs/qstash';
 import { notifyWaitingUsersIfRestaurantCanAcceptOrders } from '@/libs/restaurantAvailabilityRequests';
@@ -67,9 +68,15 @@ export async function GET(request: Request) {
       return Response.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    const { order: normalizedDocument } = await applyOrderAutoCancellation(
+    const devOffsets =
+      process.env.NODE_ENV === 'development' ? getDevOrderTimeSimulatorOffsets(id) : {};
+    const { order: timeoutNormalizedDocument } = await applyCourierAssignmentTimeout(
       order,
-      process.env.NODE_ENV === 'development' ? getDevOrderTimeSimulatorOffsets(id) : {}
+      devOffsets
+    );
+    const { order: normalizedDocument } = await applyOrderAutoCancellation(
+      timeoutNormalizedDocument,
+      devOffsets
     );
 
     await normalizedDocument.populate('courierId', 'name email image');
@@ -89,7 +96,13 @@ export async function GET(request: Request) {
     .skip(skip)
     .limit(limit);
   const normalizedOrders = (
-    await Promise.all(orders.map((order) => applyOrderAutoCancellation(order)))
+    await Promise.all(
+      orders.map(async (order) => {
+        const { order: timeoutNormalizedOrder } = await applyCourierAssignmentTimeout(order);
+
+        return applyOrderAutoCancellation(timeoutNormalizedOrder);
+      })
+    )
   ).map(({ order }) => normalizeOrder(order.toObject()));
 
   const totalPages = Math.ceil(totalOrders / limit) || 1;

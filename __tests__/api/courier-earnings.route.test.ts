@@ -45,6 +45,7 @@ vi.mock('@/models/courierReview', () => ({
 const createOrderFindQuery = (orders: unknown[]) => {
   const query = {
     sort: vi.fn(() => query),
+    select: vi.fn(() => query),
     lean: vi.fn().mockResolvedValue(orders),
   };
 
@@ -75,19 +76,46 @@ describe('GET /api/courier-earnings', () => {
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
       }),
     } as never);
-    vi.mocked(Order.find).mockReturnValue(
-      createOrderFindQuery([
-        {
-          _id: 'order-1',
-          courierPickedUpAt: new Date('2026-02-01T10:00:00.000Z'),
-          completedAt: new Date('2026-02-01T10:20:00.000Z'),
-          updatedAt: new Date('2026-02-01T10:20:00.000Z'),
-          estimatedDeliveryMinutes: 25,
-          deliveryFee: 6,
-        },
-      ]) as never
-    );
-    vi.mocked(Order.countDocuments).mockResolvedValue(1 as never);
+    vi.mocked(Order.find)
+      .mockReturnValueOnce(
+        createOrderFindQuery([
+          {
+            _id: 'order-1',
+            courierPickedUpAt: new Date('2026-02-01T10:00:00.000Z'),
+            completedAt: new Date('2026-02-01T10:20:00.000Z'),
+            updatedAt: new Date('2026-02-01T10:20:00.000Z'),
+            estimatedDeliveryMinutes: 25,
+            deliveryFee: 6,
+          },
+        ]) as never
+      )
+      .mockReturnValueOnce(
+        createOrderFindQuery([
+          {
+            _id: 'order-1',
+            courierAssignmentHistory: [
+              {
+                courierId: 'courier-1',
+                status: 'accepted',
+                assignedAt: new Date('2026-02-01T09:56:00.000Z'),
+                respondedAt: new Date('2026-02-01T10:00:00.000Z'),
+              },
+              {
+                courierId: 'courier-1',
+                status: 'declined',
+                assignedAt: new Date('2026-02-02T09:56:00.000Z'),
+                respondedAt: new Date('2026-02-02T10:02:00.000Z'),
+              },
+              {
+                courierId: 'courier-1',
+                status: 'expired',
+                assignedAt: new Date('2026-02-03T09:50:00.000Z'),
+                respondedAt: new Date('2026-02-03T10:00:00.000Z'),
+              },
+            ],
+          },
+        ]) as never
+      );
     vi.mocked(CourierReview.aggregate).mockResolvedValue([
       { averageRating: 5, ratingCount: 2 },
     ] as never);
@@ -104,11 +132,18 @@ describe('GET /api/courier-earnings', () => {
     expect(body.courier.email).toBe('courier@example.com');
     expect(body.summary).toEqual({
       completedDeliveries: 1,
+      totalAssignments: 3,
+      acceptedAssignments: 1,
+      respondedAssignments: 2,
       declinedAssignments: 1,
+      missedAssignments: 1,
       lateDeliveries: 0,
       totalEarnings: 6,
       averageEarning: 6,
       averageDeliveryMinutes: 20,
+      averageResponseMinutes: 5,
+      assignmentResponseRate: 67,
+      assignmentAcceptanceRate: 50,
       averageRating: 5,
       ratingCount: 2,
     });

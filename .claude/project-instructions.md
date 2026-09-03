@@ -16,7 +16,8 @@
 - Images: Cloudinary
 - Mapping: Leaflet + React Leaflet
 - Rate limiting: Upstash Redis for short-lived counters on sensitive routes
-- Background jobs: Upstash QStash for delayed order-maintenance checks
+- Background jobs: Upstash QStash for delayed order-maintenance checks, including unanswered courier assignment timeouts
+- Courier assignment history tracks accepted, declined, and expired attempts for reliability stats.
 - Date formatting: date-fns and @date-fns/tz through `libs/dateFormat.ts`
 - Money and phone helpers: currency.js through `libs/money.ts`, and libphonenumber-js through `libs/phone.ts`
 - Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin completion, support tickets, and late-order alerts
@@ -60,7 +61,7 @@
 
 - Run `npm run lint` after non-trivial changes.
 - Run `npm run test` when changing auth or API business logic.
-- Run `npm run test:qstash` when changing delayed order-maintenance scheduling or the QStash receiver route.
+- Run `npm run test:qstash` when changing delayed order-maintenance scheduling, courier assignment timeout logic, or the QStash receiver route.
 - If environment variables change, update `example.env`.
 - If adding major functionality, update docs in `README.md` and AI guidance files.
 

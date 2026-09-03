@@ -139,17 +139,30 @@ const OrderQueuePage = () => {
                         <p className='font-semibold'>#{order._id.slice(-8).toUpperCase()}</p>
                         <p className='text-muted-foreground'>{order.email}</p>
                       </div>
-                      {order.isLateBeforeTransport && (
-                        <Badge className='bg-red-100 text-red-800 hover:bg-red-100'>
-                          <AlertTriangle className='mr-1 size-3' />
-                          {order.isReadyWithoutCourierLate ? 'No courier' : 'Late'}
-                        </Badge>
-                      )}
+                      <div className='flex flex-wrap justify-end gap-1'>
+                        {order.isCourierAssignmentExpired && (
+                          <Badge className='bg-amber-100 text-amber-800 hover:bg-amber-100'>
+                            <AlertTriangle className='mr-1 size-3' />
+                            Courier missed
+                          </Badge>
+                        )}
+                        {order.isLateBeforeTransport && (
+                          <Badge className='bg-red-100 text-red-800 hover:bg-red-100'>
+                            <AlertTriangle className='mr-1 size-3' />
+                            {order.isReadyWithoutCourierLate ? 'No courier' : 'Late'}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <p className='text-muted-foreground'>{order.minutesSincePlaced} min active</p>
                     {order.courierAssignmentStatus && (
                       <p className='mt-1 capitalize'>
                         Courier: {order.courierAssignmentStatus.replace('_', ' ')}
+                      </p>
+                    )}
+                    {order.isCourierAssignmentExpired && (
+                      <p className='mt-1 text-xs text-amber-700 dark:text-amber-300'>
+                        Previous courier did not respond. Assign another courier from order details.
                       </p>
                     )}
                     <p className='mt-2 font-medium'>${Number(order.total || 0).toFixed(2)}</p>

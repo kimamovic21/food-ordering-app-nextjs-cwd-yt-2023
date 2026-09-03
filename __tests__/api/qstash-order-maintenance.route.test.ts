@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { applyCourierAssignmentTimeout } from '@/libs/courierAssignmentTimeout';
 import { applyOrderAutoCancellation } from '@/libs/orderAutoCancellation';
 import { Order } from '@/models/order';
 
@@ -26,6 +27,10 @@ vi.mock('@/models/order', () => ({
 
 vi.mock('@/libs/orderAutoCancellation', () => ({
   applyOrderAutoCancellation: vi.fn(),
+}));
+
+vi.mock('@/libs/courierAssignmentTimeout', () => ({
+  applyCourierAssignmentTimeout: vi.fn(),
 }));
 
 const postMaintenance = async (body: Record<string, unknown>) => {
@@ -89,6 +94,7 @@ describe('/api/qstash/order-maintenance route', () => {
     });
     expect(mongoose.connect).toHaveBeenCalledWith(process.env.MONGODB_URL);
     expect(applyOrderAutoCancellation).not.toHaveBeenCalled();
+    expect(applyCourierAssignmentTimeout).not.toHaveBeenCalled();
   });
 
   it('runs existing auto-cancel logic for valid QStash maintenance messages', async () => {
@@ -111,6 +117,7 @@ describe('/api/qstash/order-maintenance route', () => {
 
     expect(response.status).toBe(200);
     expect(applyOrderAutoCancellation).toHaveBeenCalledWith(order);
+    expect(applyCourierAssignmentTimeout).not.toHaveBeenCalled();
     expect(body).toEqual({
       ok: true,
       orderId: '507f1f77bcf86cd799439011',
@@ -119,5 +126,73 @@ describe('/api/qstash/order-maintenance route', () => {
       cancellationReason: 'Order was automatically canceled.',
       orderStatus: 'canceled',
     });
+  });
+
+  it('expires stale courier assignments for courier timeout messages', async () => {
+    const order = {
+      _id: '507f1f77bcf86cd799439011',
+      orderStatus: 'ready',
+      courierAssignmentStatus: 'pending',
+    };
+    vi.mocked(Order.findById).mockResolvedValueOnce(order as never);
+    vi.mocked(applyCourierAssignmentTimeout).mockResolvedValueOnce({
+      order: { ...order, courierAssignmentStatus: 'expired' },
+      expired: true,
+      reason: 'Courier assignment expired.',
+    } as never);
+
+    const response = await postMaintenance({
+      orderId: '507f1f77bcf86cd799439011',
+      reason: 'courier-assignment-timeout',
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(applyCourierAssignmentTimeout).toHaveBeenCalledWith(order);
+    expect(applyOrderAutoCancellation).not.toHaveBeenCalled();
+    expect(body).toEqual({
+      ok: true,
+      orderId: '507f1f77bcf86cd799439011',
+      reason: 'courier-assignment-timeout',
+      assignmentExpired: true,
+      expirationReason: 'Courier assignment expired.',
+      orderStatus: 'ready',
+      courierAssignmentStatus: 'expired',
+    });
+  });
+
+  it('expires pending assignments before ready-without-courier auto-cancel checks', async () => {
+    const order = {
+      _id: '507f1f77bcf86cd799439011',
+      orderStatus: 'ready',
+      courierAssignmentStatus: 'pending',
+    };
+    vi.mocked(Order.findById).mockResolvedValueOnce(order as never);
+    vi.mocked(applyCourierAssignmentTimeout).mockResolvedValueOnce({
+      order,
+      expired: true,
+      reason: 'Courier assignment expired.',
+    } as never);
+    vi.mocked(applyOrderAutoCancellation).mockResolvedValueOnce({
+      order: { ...order, orderStatus: 'canceled' },
+      canceled: true,
+      reason: 'Order was automatically canceled.',
+    } as never);
+
+    const response = await postMaintenance({
+      orderId: '507f1f77bcf86cd799439011',
+      reason: 'ready-without-courier',
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(applyCourierAssignmentTimeout).toHaveBeenCalledWith(order);
+    expect(applyOrderAutoCancellation).toHaveBeenCalledWith(order);
+    expect(body).toEqual(
+      expect.objectContaining({
+        canceled: true,
+        orderStatus: 'canceled',
+      })
+    );
   });
 });

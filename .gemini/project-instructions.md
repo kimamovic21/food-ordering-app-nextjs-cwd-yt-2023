@@ -15,7 +15,8 @@
 - Stripe payments (`app/api/checkout/**`, `app/api/payment-link/**`, `app/api/webhook/**`)
 - Resend email integration (`libs/sendPurchaseReceiptEmail.tsx`)
 - Upstash Redis rate limiting (`libs/rateLimit.ts`)
-- Upstash QStash delayed order-maintenance jobs (`libs/qstash.ts`, `app/api/qstash/**`)
+- Upstash QStash delayed order-maintenance jobs (`libs/qstash.ts`, `app/api/qstash/**`), including unanswered courier assignment timeouts
+- Courier assignment history tracks accepted, declined, and expired attempts for reliability stats.
 - date-fns and @date-fns/tz date formatting (`libs/dateFormat.ts`)
 - currency.js money helpers (`libs/money.ts`) and libphonenumber-js phone helpers (`libs/phone.ts`)
 - Order operations: best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, delivery PIN handoff, ETA-style notifications, customer/admin completion, support tickets, and late-order alerts
@@ -59,7 +60,7 @@
 
 - Execute `npm run lint` for meaningful code edits.
 - Execute `npm run test` for auth and API behavior changes.
-- Execute `npm run test:qstash` when changing delayed order-maintenance scheduling or the QStash receiver route.
+- Execute `npm run test:qstash` when changing delayed order-maintenance scheduling, courier assignment timeout logic, or the QStash receiver route.
 - Update `example.env` if any env contract changes.
 - Update top-level docs when adding major features or integrations.
 

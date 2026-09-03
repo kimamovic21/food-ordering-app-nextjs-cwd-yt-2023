@@ -56,6 +56,7 @@ import {
   getOrderTimelineTotalOffsetMinutes,
   hasDevOrderTimeOffsets,
 } from '@/libs/devOrderTimeSimulator';
+import { COURIER_ASSIGNMENT_RESPONSE_TIMEOUT_MINUTES } from '@/libs/orderMaintenanceConfig';
 import {
   APP_NOTIFICATION_REALTIME_EVENT,
   getNotificationRealtimePayload,
@@ -76,7 +77,10 @@ import type { CourierListItem } from '@/types/courier';
 import type { AdminOrderDetails, EditableOrderStatus, OrderReview } from '@/types/order';
 
 type DevOrderTimeSimulatorOffsetKey =
-  OrderPhaseDurationOffsetKey | 'failedDeliveryWait' | 'readyWithoutCourierWait';
+  | OrderPhaseDurationOffsetKey
+  | 'failedDeliveryWait'
+  | 'readyWithoutCourierWait'
+  | 'courierAssignmentWait';
 
 const OrderDetailPage = () => {
   const [order, setOrder] = useState<AdminOrderDetails | null>(null);
@@ -670,6 +674,24 @@ const OrderDetailPage = () => {
         )
       : 0;
   const showReadyWithoutCourierWarning = readyWithoutCourierMinutes >= 15;
+  const courierAssignmentPendingMinutes =
+    order.orderStatus === 'ready' &&
+    order.courierAssignmentStatus === 'pending' &&
+    order.courierAssignedAt
+      ? Math.max(
+          0,
+          Math.floor((Date.now() - new Date(order.courierAssignedAt).getTime()) / 60000) +
+            (timelineOffsets.courierAssignmentWait ?? 0)
+        )
+      : 0;
+  const courierAssignmentRemainingMinutes = Math.max(
+    0,
+    COURIER_ASSIGNMENT_RESPONSE_TIMEOUT_MINUTES - courierAssignmentPendingMinutes
+  );
+  const showCourierAssignmentExpired =
+    order.orderStatus === 'ready' &&
+    order.courierAssignmentStatus === 'expired' &&
+    !order.courierId;
   const totalTimelineOffsetMinutes = getOrderTimelineTotalOffsetMinutes(timelineOffsets);
   const isStatusLocked =
     order.orderStatus === 'ready' ||
@@ -947,6 +969,19 @@ const OrderDetailPage = () => {
           </Card>
         )}
 
+        {showCourierAssignmentExpired && (
+          <Card className='border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'>
+            <CardHeader>
+              <CardTitle>Courier assignment expired</CardTitle>
+              <CardDescription>
+                The previous courier did not accept or decline this order within{' '}
+                {COURIER_ASSIGNMENT_RESPONSE_TIMEOUT_MINUTES} minutes. The courier has been
+                released, and this order is ready for another courier assignment.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
+
         {order.orderStatus === 'ready' && !order.courierId && (
           <Card>
             <CardHeader>
@@ -1085,7 +1120,10 @@ const OrderDetailPage = () => {
               </div>
               {order.courierAssignmentStatus === 'pending' && (
                 <p className='text-sm text-amber-600'>
-                  Waiting for courier to accept or decline this delivery.
+                  Waiting for courier to accept or decline this delivery.{' '}
+                  {courierAssignmentRemainingMinutes > 0
+                    ? `Auto-release in ${courierAssignmentRemainingMinutes} min.`
+                    : 'This assignment is ready to expire; refresh if it has not updated yet.'}
                 </p>
               )}
               {order.courierAssignmentStatus === 'accepted' &&
