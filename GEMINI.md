@@ -94,6 +94,15 @@ This file provides project context and coding guidance for Gemini tools.
 - For API changes, note any new env vars in example.env.
 - For feature additions, also update README.md and AGENTS.md.
 
+## Documentation Maintenance
+
+- Treat docs updates as part of done-state for non-trivial feature, integration, route, env, schema/model, background-job, order/courier/auth/payment/email, realtime, observability, or test workflow changes.
+- Keep docs scoped: `README.md` for setup/package/env and high-level capabilities, `DESCRIPTION.md` for role behavior and business rules, `ARCHITECTURE.md` for system/data-flow changes, and `TESTING.md`, `__tests__/README.md`, or `e2e/README.md` for test strategy changes.
+- Keep AI guidance aligned across `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.claude/project-instructions.md`, `.gemini/project-instructions.md`, `.cursor/rules/project-conventions.mdc`, and `.windsurf/rules/project-conventions.md` when workflow-critical rules change.
+- Use `.github/pull_request_template.md` as the final merge checklist for validation and docs ownership.
+- Avoid adding new AI-tool config folders unless the tool is actively used in this project.
+- In final summaries for meaningful changes, say whether docs were updated or why no docs update was needed.
+
 ## Test Commands
 
 - `npm run test`
@@ -126,7 +135,7 @@ This file provides project context and coding guidance for Gemini tools.
 
 - `GEMINI.md` is the canonical Gemini policy file for this repository.
 - `.gemini/project-instructions.md` is a supplemental, task-oriented checklist.
-- `.cursor/rules/project-conventions.mdc` and `.claude/project-instructions.md` should stay aligned on security and workflow-critical rules.
+- `.cursor/rules/project-conventions.mdc`, `.windsurf/rules/project-conventions.md`, and `.claude/project-instructions.md` should stay aligned on security and workflow-critical rules.
 - If you update auth, payments, webhook behavior, email flow, env vars, or docs process, keep all root AI docs synchronized.
 
 ## Environment Variables Snapshot

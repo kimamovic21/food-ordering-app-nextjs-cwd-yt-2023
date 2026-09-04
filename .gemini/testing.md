@@ -24,3 +24,7 @@ Use Vitest to cover business-critical logic with small, maintainable tests.
 - E2E run: `npm run test:e2e`
 - E2E single file: `npm run test:e2e:file -- e2e/path/to/file.e2e.test.ts`
 - Profile E2E scope: `npm run test:e2e:profile`
+
+## Documentation
+
+- Update `TESTING.md`, `__tests__/README.md`, or `e2e/README.md` when adding new test domains, commands, fixtures, or coverage strategy.

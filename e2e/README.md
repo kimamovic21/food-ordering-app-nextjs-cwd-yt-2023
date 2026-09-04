@@ -94,3 +94,5 @@ Example:
 - Prefer unique emails or IDs per test execution.
 - E2E files run serially because route-handler modules share mocked auth/session state.
 - Prefer route-level e2e tests for checkout, webhook, courier, support, and role-gated flows where the database and API handler must agree.
+- Update this README when adding a new e2e domain, changing required test env vars, or adding/removing focused e2e commands.
+- Keep e2e guidance aligned with `TESTING.md` and `__tests__/README.md`.
