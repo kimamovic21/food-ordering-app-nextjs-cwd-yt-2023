@@ -85,6 +85,19 @@ It includes:
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md): technical architecture, diagrams, data model map, and major workflow diagrams.
 - [DESCRIPTION.md](./DESCRIPTION.md): role-by-role feature description and business logic overview.
+- [TESTING.md](./TESTING.md): unit, integration, and e2e testing strategy and commands.
+
+## Documentation Maintenance
+
+When a meaningful feature or integration changes, update the docs in the same branch or pull request.
+
+- Use `README.md` for setup, packages, environment variables, public routes, and high-level capabilities.
+- Use `DESCRIPTION.md` for role behavior, business rules, checkout/order/courier/support/messaging flows, and user-facing logic.
+- Use `ARCHITECTURE.md` for data model, lifecycle, background job, realtime, integration, and system-flow changes.
+- Use `TESTING.md`, `__tests__/README.md`, and `e2e/README.md` when test scope, commands, fixtures, or coverage strategy changes.
+- Keep AI guidance aligned in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.claude/project-instructions.md`, `.gemini/project-instructions.md`, `.cursor/rules/project-conventions.mdc`, and `.windsurf/rules/project-conventions.md` when workflow-critical rules change.
+- Use `.github/pull_request_template.md` as the final reminder for validation and docs ownership before merging.
+- Avoid adding config folders for AI tools that are not actively used in this project.
 
 ## TypeScript Types
 
@@ -384,3 +397,5 @@ npm run dev
 ```
 
 Then open [http://localhost:3000](http://localhost:3000).
+
+VS Code users should install the workspace recommendations from `.vscode/extensions.json` for Prettier, ESLint, and Tailwind CSS support.

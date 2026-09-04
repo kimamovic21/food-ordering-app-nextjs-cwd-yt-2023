@@ -110,10 +110,21 @@ See `example.env`. Variables currently used in the project include:
 - Keep Sentry instrumentation files intact. Sentry DSNs are allowed in browser config, but `SENTRY_AUTH_TOKEN` is a build secret used for source maps and must stay out of client code. Keep Session Replay disabled in development so local testing does not consume replay quota.
 - Preserve Upstash Redis rate limits on credentials login, register, forgot password, resend verification, checkout, support ticket creation, and AI menu description generation.
 
+## Documentation Maintenance
+
+- Treat docs updates as part of feature completion, not as optional cleanup after the code works.
+- Update documentation in the same branch/PR when a change adds or changes routes, role behavior, environment variables, database fields/models, third-party integrations, background jobs, order/payment/email/courier/auth logic, realtime behavior, observability, test commands, or user-facing workflows.
+- Use the smallest useful docs change. Avoid repeating implementation details everywhere; put product behavior in `DESCRIPTION.md`, system/data-flow details in `ARCHITECTURE.md`, setup and package/env guidance in `README.md`, and test workflow changes in `TESTING.md`, `__tests__/README.md`, or `e2e/README.md`.
+- Keep AI guidance synchronized across `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.claude/project-instructions.md`, `.gemini/project-instructions.md`, `.cursor/rules/project-conventions.mdc`, and `.windsurf/rules/project-conventions.md` when changing workflow-critical rules.
+- Use `.github/pull_request_template.md` as the final merge checklist for validation and documentation ownership.
+- Do not add new AI-tool config folders unless the team actually uses that tool. Prefer maintaining the existing small set of AI instruction files.
+- In the final response for non-trivial changes, mention whether docs were updated or why no docs change was needed.
+
 ## AI Configuration Folders
 
 - `.cursor/rules/project-conventions.mdc` contains Cursor auto-applied rules.
 - `.claude/project-instructions.md` contains supplemental Claude workflow guidance.
+- `.windsurf/rules/project-conventions.md` contains Windsurf project rules.
 - `.gemini/project-instructions.md` contains supplemental Gemini workflow guidance.
 - Root files remain canonical for shared project policy: `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`.
 - Keep these files consistent when changing auth, payments, email, courier, env vars, or docs policy.

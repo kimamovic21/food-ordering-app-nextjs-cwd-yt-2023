@@ -446,6 +446,17 @@ Restaurant report rules:
 - Feature files use lowercase names such as `order.ts`, `cart.ts`, `menu.ts`, and `support-ticket.ts`.
 - Exported type names use PascalCase, while small one-off component prop types can stay colocated with the component that owns them.
 
+## Documentation Maintenance Logic
+
+Documentation is treated as part of the application workflow, not as a separate afterthought.
+
+- Feature behavior and role rules belong in this file.
+- System architecture, integrations, data flows, background jobs, realtime behavior, and model relationships belong in `ARCHITECTURE.md`.
+- Setup, packages, environment variables, and route-level project overview belong in `README.md`.
+- Test coverage strategy, commands, fixtures, and e2e notes belong in `TESTING.md`, `__tests__/README.md`, and `e2e/README.md`.
+- AI assistant rules belong in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.claude/project-instructions.md`, `.gemini/project-instructions.md`, `.cursor/rules/project-conventions.mdc`, and `.windsurf/rules/project-conventions.md`.
+- New AI-tool config folders should only be added when that tool is actively used by the project.
+
 ## Is This Good Practice?
 
 Yes. Keeping `ARCHITECTURE.md` and `DESCRIPTION.md` is a good practice for this kind of project because:

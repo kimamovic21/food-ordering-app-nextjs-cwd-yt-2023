@@ -1152,4 +1152,6 @@ Add Vercel Speed Insights monitoring
 
 Add courier assignment timeout and reliability metrics
 
+Add documentation maintenance workflow
+
 Expire stale unpaid and customer-canceled Stripe checkout sessions

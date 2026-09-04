@@ -33,6 +33,8 @@ This folder contains unit tests grouped by feature area.
 - Use `utils/testFactories.ts` for generated fake users, restaurants, and orders.
 - Use `utils/mongoMemoryServer.ts` when a test needs an isolated in-memory MongoDB instance.
 - Focus on behavior contracts, not implementation details.
+- Update this README when new unit-test domains, helper utilities, or focused test commands are added.
+- Keep this file aligned with `TESTING.md` and `e2e/README.md` when the test strategy changes.
 
 ## Running Tests
 

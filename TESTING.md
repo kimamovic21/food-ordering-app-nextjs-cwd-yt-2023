@@ -54,6 +54,8 @@ Recent high-priority coverage also checks best coupon suggestion rules, restaura
 - Test success and failure paths for each route/handler.
 - Avoid brittle UI snapshots for server business logic.
 - Keep tests deterministic and fast.
+- When test commands, fixtures, coverage priorities, or e2e setup change, update this file together with `__tests__/README.md` and `e2e/README.md` as needed.
+- For feature work, mention whether tests were added, updated, or intentionally skipped in the final task summary.
 
 ## Commands
 
