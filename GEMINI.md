@@ -50,6 +50,8 @@ This file provides project context and coding guidance for Gemini tools.
 - Preserve messaging restrictions: no customer-to-customer chat, and order conversations must match the assigned courier or restaurant owner.
 - Preserve checkout accepting-order checks before Stripe session creation: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty.
 - Preserve checkout duplicate protection: recent identical unpaid `placed` attempts use `checkoutFingerprint` and should reuse or recover the existing Stripe Checkout session.
+- Preserve stale unpaid auto-cancel protection: when the app cancels an unpaid `placed` order, it should try to expire the open Stripe Checkout session and audit the result without blocking cancellation.
+- Preserve customer manual cancel protection: unpaid `placed` order cancellation should use the same Stripe Checkout expiration helper and audit metadata.
 - Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
 - Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Restaurant reports live at `/admin-dashboard/restaurant-reports` and generate daily, weekly, and monthly summaries/PDFs from order data.

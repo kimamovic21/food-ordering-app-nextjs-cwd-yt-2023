@@ -89,6 +89,8 @@ See `example.env`. Variables currently used in the project include:
 - Messaging should remain role-restricted: no customer-to-customer chat, and order threads must match the assigned courier or restaurant owner.
 - Checkout must preserve restaurant accepting-order checks: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty must be validated before creating Stripe sessions.
 - Checkout should deduplicate recent identical unpaid `placed` attempts using `checkoutFingerprint`; reuse or recover the existing Stripe Checkout session instead of creating duplicate orders.
+- System auto-cancellation of stale unpaid orders should attempt to expire the open Stripe Checkout session and record the result in audit metadata without blocking local cancellation.
+- Customer manual cancellation of unpaid `placed` orders should use the same Stripe Checkout session expiration helper and audit the result.
 - Best coupon suggestions are user-facing help only; checkout must revalidate coupons server-side.
 - Reorder must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Restaurant quick reorder must use the same current `menu_items` rebuild rules as order reorder.

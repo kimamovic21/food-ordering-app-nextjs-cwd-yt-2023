@@ -29,7 +29,7 @@ They can:
 - See a visual order progress stepper for placed, kitchen, transport, and delivered stages.
 - See delivery PIN on active delivery orders.
 - Confirm final delivery after courier handoff.
-- Cancel unpaid orders while they are still in `placed` status.
+- Cancel unpaid orders while they are still in `placed` status, which also attempts to expire the old Stripe Checkout session.
 - Favorite restaurants and menu items.
 - Review restaurants and couriers after completed paid orders.
 - Report a problem for an order.
@@ -184,6 +184,7 @@ Order safety automation:
 - Courier assignment history is stored on orders so reliability stats survive later reassignments.
 - `ready` orders without a courier are warned after 15 minutes and automatically canceled after 60 minutes.
 - Automatic cancellations mark the order as unpaid, store a system cancellation reason, notify the customer and restaurant admins, and write an audit log entry.
+- Stale unpaid order cancellation also attempts to expire the open Stripe Checkout session, preventing old hosted payment tabs from completing an already canceled order.
 - Upstash QStash schedules delayed unpaid-order, courier-assignment-timeout, and ready-without-courier checks so production can run those maintenance checks even when nobody is actively viewing the order page.
 - Development-only order time simulation can add minutes for timeline phases, failed-delivery testing, courier assignment timeout testing, and ready-without-courier auto-cancel testing without editing MongoDB timestamps.
 
@@ -227,6 +228,8 @@ Checkout server rules:
 - Recent identical unpaid `placed` checkout attempts reuse or recover the existing Stripe Checkout session instead of creating duplicate orders.
 - Order is created as unpaid before redirecting to Stripe.
 - QStash schedules a delayed unpaid-order maintenance check after a new Stripe Checkout session is created.
+- If that unpaid order expires, the app attempts to expire the original Stripe Checkout session and stores the expiration result in the cancellation audit log.
+- Customer manual cancellation of an unpaid `placed` order also attempts to expire the original Stripe Checkout session and stores the result in the cancellation audit log.
 - Stripe webhook later marks payment complete.
 
 ## Order Status Logic

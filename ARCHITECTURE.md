@@ -195,6 +195,8 @@ Key checks:
 - Coupon and loyalty discounts are validated server-side.
 - Best coupon suggestions shown in cart are revalidated at checkout before Stripe is created.
 - Recent identical unpaid `placed` checkout attempts are matched by `checkoutFingerprint`; the app reuses or recovers the existing Stripe Checkout session instead of creating duplicate orders.
+- System cancellation of stale unpaid orders attempts to expire the open Stripe Checkout session so an old hosted payment page cannot pay a canceled order.
+- Customer cancellation of an unpaid `placed` order uses the same Stripe Checkout session expiration helper.
 - Reorders rebuild cart items from current `menu_items` records so deleted, unavailable, cross-restaurant, or changed-price items cannot silently proceed.
 - Restaurant details and favorite restaurant cards can quick reorder the latest previous order from that restaurant using the same current `menu_items` validation.
 - Customers can request back-online notifications for restaurants blocked by closed, paused, closing-soon, or busy checkout states.
@@ -274,6 +276,7 @@ Operational monitoring builds on the same timestamps:
 - Stale unpaid orders auto-cancel after 30 minutes; ready orders without a courier auto-cancel after 60 minutes.
 - Upstash QStash schedules delayed checks for stale unpaid orders, unanswered courier assignments, and ready orders without a courier so production order maintenance is not dependent only on a later page/API read.
 - System auto-cancellations mark the order unpaid, store `canceledBy: system`, add `cancellationReason`, notify customer/admins, and write an audit log.
+- For stale unpaid orders, system auto-cancellation also tries to expire the open Stripe Checkout session; failures are recorded as audit metadata and do not stop the local cancellation.
 - ETA-style notifications reuse estimate snapshots so status changes can include useful preparation or delivery timing.
 - `OrderProgressStepper` gives customers and admins a compact visual stage tracker for placed, kitchen, transport, and delivered phases.
 

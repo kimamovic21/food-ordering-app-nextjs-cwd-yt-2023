@@ -11,6 +11,7 @@ Write tests that verify production behavior without changing stable runtime logi
 3. Payment and webhook safety
 4. Order state transitions
 5. Courier assignment and status updates
+6. Background order-maintenance edge cases such as stale unpaid Checkout session expiration
 
 ## Workflow
 

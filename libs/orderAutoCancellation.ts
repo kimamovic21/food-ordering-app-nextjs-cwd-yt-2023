@@ -7,6 +7,7 @@ import {
   UNPAID_ORDER_AUTO_CANCEL_MINUTES,
 } from '@/libs/orderMaintenanceConfig';
 import { notifyWaitingUsersIfRestaurantCanAcceptOrders } from '@/libs/restaurantAvailabilityRequests';
+import { expireOpenStripeCheckoutSession } from '@/libs/stripeCheckoutSession';
 import type { OrderPhaseDurationOffsets } from '@/types/order-timeline';
 
 export { READY_WITHOUT_COURIER_AUTO_CANCEL_MINUTES, UNPAID_ORDER_AUTO_CANCEL_MINUTES };
@@ -22,8 +23,12 @@ const getElapsedMinutes = (date: Date | string | null | undefined, offsetMinutes
   return Math.floor((Date.now() - timestamp) / 60000) + Math.max(0, offsetMinutes);
 };
 
+const isOrderPaid = (order: OrderDocument) =>
+  Boolean(order.orderPaid || order.paymentStatus || order.paid);
+
 const markOrderCanceledBySystem = async (order: OrderDocument, reason: string) => {
   const now = new Date();
+  const wasPaidBeforeCancellation = isOrderPaid(order);
 
   order.orderStatus = 'canceled';
   order.orderPaid = false;
@@ -35,6 +40,10 @@ const markOrderCanceledBySystem = async (order: OrderDocument, reason: string) =
   order.canceledAt = now;
   order.cancellationReason = reason;
 
+  const stripeCheckoutExpiration = wasPaidBeforeCancellation
+    ? null
+    : await expireOpenStripeCheckoutSession(order.stripeSessionId);
+
   await order.save();
 
   await createAuditLog({
@@ -44,7 +53,16 @@ const markOrderCanceledBySystem = async (order: OrderDocument, reason: string) =
     entityId: order._id,
     restaurantId: order.restaurantId,
     orderId: order._id,
-    metadata: { reason },
+    metadata: {
+      reason,
+      ...(stripeCheckoutExpiration
+        ? {
+            stripeCheckoutSessionExpired: stripeCheckoutExpiration.expired,
+            stripeCheckoutSessionExpirationReason: stripeCheckoutExpiration.reason,
+            stripeCheckoutSessionId: stripeCheckoutExpiration.sessionId,
+          }
+        : {}),
+    },
   });
 
   try {
@@ -71,7 +89,7 @@ export const applyOrderAutoCancellation = async (
     return { order, canceled: false, reason: '' };
   }
 
-  const isPaid = Boolean(order.orderPaid ?? order.paymentStatus ?? order.paid);
+  const isPaid = isOrderPaid(order);
 
   if (!isPaid && order.orderStatus === 'placed') {
     const elapsedMinutes = getElapsedMinutes(order.createdAt);

@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import { createAuditLog } from '@/libs/auditLog';
 import { applyOrderAutoCancellation } from '@/libs/orderAutoCancellation';
+import { expireOpenStripeCheckoutSession } from '@/libs/stripeCheckoutSession';
 import {
   notifyRestaurantAdminsAboutCanceledOrder,
   notifyUserAboutOrderCompletion,
@@ -15,7 +16,7 @@ import mongoose from 'mongoose';
 
 const normalizeOrder = (order: any) => ({
   ...order,
-  paymentStatus: Boolean(order.orderPaid ?? order.paymentStatus ?? order.paid),
+  paymentStatus: Boolean(order.orderPaid || order.paymentStatus || order.paid),
   orderStatus: order.orderStatus || 'pending',
   courier:
     order.courierId && typeof order.courierId === 'object'
@@ -187,7 +188,7 @@ export async function PATCH(request: Request) {
 
   if (action === 'cancel-order') {
     const isPaid = Boolean(
-      (order as any).orderPaid ?? (order as any).paymentStatus ?? (order as any).paid
+      (order as any).orderPaid || (order as any).paymentStatus || (order as any).paid
     );
 
     if (isPaid) {
@@ -203,8 +204,15 @@ export async function PATCH(request: Request) {
 
     const now = new Date();
     order.orderStatus = 'canceled';
+    order.orderPaid = false;
+    order.paid = false;
+    order.paymentStatus = false;
     order.canceledBy = 'customer';
     order.canceledAt = now;
+
+    const stripeCheckoutExpiration = await expireOpenStripeCheckoutSession(
+      (order as any).stripeSessionId
+    );
 
     await order.save();
     await notifyWaitingUsersIfRestaurantCanAcceptOrders(order.restaurantId);
@@ -216,7 +224,12 @@ export async function PATCH(request: Request) {
       entityId: order._id,
       restaurantId: order.restaurantId,
       orderId: order._id,
-      metadata: { total: Number((order as any).total) || 0 },
+      metadata: {
+        total: Number((order as any).total) || 0,
+        stripeCheckoutSessionExpired: stripeCheckoutExpiration.expired,
+        stripeCheckoutSessionExpirationReason: stripeCheckoutExpiration.reason,
+        stripeCheckoutSessionId: stripeCheckoutExpiration.sessionId,
+      },
     });
 
     try {

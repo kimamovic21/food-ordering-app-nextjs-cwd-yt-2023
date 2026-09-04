@@ -6,6 +6,7 @@ import {
   UNPAID_ORDER_AUTO_CANCEL_MINUTES,
 } from '@/libs/orderAutoCancellation';
 import { notifyWaitingUsersIfRestaurantCanAcceptOrders } from '@/libs/restaurantAvailabilityRequests';
+import { expireOpenStripeCheckoutSession } from '@/libs/stripeCheckoutSession';
 
 vi.mock('@/libs/auditLog', () => ({
   createAuditLog: vi.fn(),
@@ -17,6 +18,10 @@ vi.mock('@/libs/notifications', () => ({
 
 vi.mock('@/libs/restaurantAvailabilityRequests', () => ({
   notifyWaitingUsersIfRestaurantCanAcceptOrders: vi.fn(),
+}));
+
+vi.mock('@/libs/stripeCheckoutSession', () => ({
+  expireOpenStripeCheckoutSession: vi.fn(),
 }));
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60 * 1000);
@@ -31,6 +36,7 @@ const createOrderDocument = (overrides: Record<string, unknown> = {}): any => ({
   orderStatus: 'placed',
   courierId: null,
   courierAssignmentStatus: null,
+  stripeSessionId: 'cs_test_order_auto_1',
   cancellationReason: '',
   createdAt: minutesAgo(UNPAID_ORDER_AUTO_CANCEL_MINUTES + 1),
   save: vi.fn(async function save(this: any) {
@@ -42,6 +48,13 @@ const createOrderDocument = (overrides: Record<string, unknown> = {}): any => ({
 describe('order auto cancellation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(expireOpenStripeCheckoutSession).mockResolvedValue({
+      attempted: true,
+      expired: true,
+      skipped: false,
+      reason: 'expired',
+      sessionId: 'cs_test_order_auto_1',
+    });
   });
 
   it('cancels unpaid placed orders after the payment window expires', async () => {
@@ -55,11 +68,17 @@ describe('order auto cancellation', () => {
     expect(order.paid).toBe(false);
     expect(order.canceledBy).toBe('system');
     expect(order.cancellationReason).toContain('payment was not completed');
+    expect(expireOpenStripeCheckoutSession).toHaveBeenCalledWith('cs_test_order_auto_1');
     expect(order.save).toHaveBeenCalled();
     expect(createAuditLog).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'order.auto_canceled',
-        metadata: expect.objectContaining({ reason: order.cancellationReason }),
+        metadata: expect.objectContaining({
+          reason: order.cancellationReason,
+          stripeCheckoutSessionExpired: true,
+          stripeCheckoutSessionExpirationReason: 'expired',
+          stripeCheckoutSessionId: 'cs_test_order_auto_1',
+        }),
       })
     );
     expect(notifyOrderAutoCanceled).toHaveBeenCalledWith(
@@ -91,6 +110,7 @@ describe('order auto cancellation', () => {
     expect(order.paid).toBe(false);
     expect(order.courierId).toBeNull();
     expect(order.cancellationReason).toContain('no courier accepted it');
+    expect(expireOpenStripeCheckoutSession).not.toHaveBeenCalled();
   });
 
   it('keeps active paid orders when they have not crossed an auto-cancel window', async () => {
@@ -108,5 +128,23 @@ describe('order auto cancellation', () => {
     expect(order.orderStatus).toBe('processing');
     expect(order.save).not.toHaveBeenCalled();
     expect(notifyOrderAutoCanceled).not.toHaveBeenCalled();
+    expect(expireOpenStripeCheckoutSession).not.toHaveBeenCalled();
+  });
+
+  it('treats any legacy payment flag as paid before stale unpaid cancellation', async () => {
+    const order = createOrderDocument({
+      orderPaid: false,
+      paid: true,
+      paymentStatus: false,
+      orderStatus: 'placed',
+    });
+
+    const result = await applyOrderAutoCancellation(order as never);
+
+    expect(result.canceled).toBe(false);
+    expect(order.orderStatus).toBe('placed');
+    expect(order.save).not.toHaveBeenCalled();
+    expect(notifyOrderAutoCanceled).not.toHaveBeenCalled();
+    expect(expireOpenStripeCheckoutSession).not.toHaveBeenCalled();
   });
 });

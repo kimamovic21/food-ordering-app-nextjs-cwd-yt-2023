@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { CreditCard, Loader2 } from 'lucide-react';
 import useProfile from '@/hooks/useProfile';
 import OrderInfoCard from './OrderInfoCard';
 import CustomerInfoCard from './CustomerInfoCard';
@@ -71,6 +72,7 @@ const MyOrderDetailPage = () => {
   const [courierReview, setCourierReview] = useState<OrderReview | null>(null);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
   const [cancelingOrder, setCancelingOrder] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [reorderingOrder, setReorderingOrder] = useState(false);
@@ -391,7 +393,7 @@ const MyOrderDetailPage = () => {
 
       setOrder(json.order);
       setCancelDialogOpen(false);
-      sonnerToast.success('Order canceled', {
+      sonnerToast.success('Order canceled. The old payment link is no longer valid.', {
         style: {
           background: '#22c55e',
           color: 'white',
@@ -447,6 +449,68 @@ const MyOrderDetailPage = () => {
   };
 
   const totalTimelineOffsetMinutes = getOrderTimelineTotalOffsetMinutes(timelineOffsets);
+
+  const handleFinishPayment = async () => {
+    if (!order || processingPayment) return;
+
+    let redirectingToCheckout = false;
+
+    try {
+      setProcessingPayment(true);
+
+      const response = await fetch(`/api/payment-link?orderId=${order._id}`);
+      const json = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        message?: string;
+        paid?: boolean;
+        paymentLinkStatus?: 'created' | 'reused' | 'refreshed';
+        url?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(json.error || 'Failed to get payment link');
+      }
+
+      if (json.paid) {
+        setOrder({ ...order, paymentStatus: true });
+        sonnerToast.success(json.message || 'Payment completed', {
+          style: {
+            background: '#22c55e',
+            color: 'white',
+          },
+        });
+        router.refresh();
+        return;
+      }
+
+      if (!json.url) {
+        throw new Error('Payment link not available');
+      }
+
+      redirectingToCheckout = true;
+
+      if (json.paymentLinkStatus === 'refreshed') {
+        sonnerToast.info('Previous payment link expired. Opening a fresh checkout.');
+        window.setTimeout(() => {
+          window.location.assign(json.url as string);
+        }, 700);
+        return;
+      }
+
+      window.location.assign(json.url);
+    } catch (error) {
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to get payment link', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+    } finally {
+      if (!redirectingToCheckout) {
+        setProcessingPayment(false);
+      }
+    }
+  };
 
   return (
     <section className='mt-8'>
@@ -548,31 +612,62 @@ const MyOrderDetailPage = () => {
         {!order.paymentStatus && order.orderStatus === 'placed' && (
           <Card className='mb-6 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'>
             <CardHeader>
-              <CardTitle>Cancel Order</CardTitle>
+              <CardTitle>Payment Required</CardTitle>
               <CardDescription>
-                You can cancel this unpaid order before the restaurant starts preparing it.
+                Complete payment to send this order to the restaurant, or cancel it before the
+                restaurant starts preparing it.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button variant='destructive' onClick={() => setCancelDialogOpen(true)}>
+            <CardContent className='flex flex-col gap-3 sm:flex-row'>
+              <Button
+                type='button'
+                onClick={handleFinishPayment}
+                disabled={processingPayment || cancelingOrder}
+                className='w-full sm:w-auto'
+              >
+                {processingPayment ? (
+                  <Loader2 className='mr-2 size-4 animate-spin' />
+                ) : (
+                  <CreditCard className='mr-2 size-4' />
+                )}
+                {processingPayment ? 'Opening checkout...' : 'Finish payment'}
+              </Button>
+              <Button
+                variant='destructive'
+                onClick={() => setCancelDialogOpen(true)}
+                disabled={processingPayment || cancelingOrder}
+              >
                 Cancel order
               </Button>
             </CardContent>
           </Card>
         )}
 
-        <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialog
+          open={cancelDialogOpen}
+          onOpenChange={(open) => {
+            if (!cancelingOrder) {
+              setCancelDialogOpen(open);
+            }
+          }}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
               <AlertDialogDescription>
-                This cancels the unpaid order before the restaurant starts preparing it. You can
-                place a new order afterward.
+                This cancels the unpaid order before the restaurant starts preparing it and
+                invalidates the old Stripe checkout link. You can place a new order afterward.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={cancelingOrder}>Keep order</AlertDialogCancel>
-              <AlertDialogAction onClick={handleCancelOrder} disabled={cancelingOrder}>
+              <AlertDialogAction
+                onClick={(event) => {
+                  event.preventDefault();
+                  void handleCancelOrder();
+                }}
+                disabled={cancelingOrder}
+              >
                 {cancelingOrder ? 'Canceling...' : 'Cancel order'}
               </AlertDialogAction>
             </AlertDialogFooter>
