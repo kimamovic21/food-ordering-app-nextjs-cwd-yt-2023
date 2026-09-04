@@ -26,6 +26,8 @@ alwaysApply: true
 - Use `libs/money.ts` for business money calculations and `libs/phone.ts` before saving phone numbers.
 - Preserve restaurant accepting-order logic in checkout: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, paid active kitchen orders, item availability, coupons, and loyalty must be checked before Stripe sessions are created.
 - Preserve checkout duplicate protection: recent identical unpaid `placed` attempts use `checkoutFingerprint` and should reuse or recover the existing Stripe Checkout session.
+- Preserve stale unpaid auto-cancel protection: system cancellation should try to expire the open Stripe Checkout session and audit the result without blocking local order cancellation.
+- Preserve customer manual cancel protection: unpaid `placed` order cancellation should use the same Stripe Checkout expiration helper and audit metadata.
 - Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
 - Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Preserve order timing fields and snapshots for preparation/delivery estimates and timeline UI.

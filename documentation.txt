@@ -1151,3 +1151,5 @@ Expand critical e2e and realtime coverage
 Add Vercel Speed Insights monitoring
 
 Add courier assignment timeout and reliability metrics
+
+Expire stale unpaid and customer-canceled Stripe checkout sessions

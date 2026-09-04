@@ -19,10 +19,13 @@ description: Project rules for this Next.js food ordering app. Use when editing 
 - Keep Stripe, Cloudinary, and Resend credentials in server-side code only.
 - Validate API inputs and keep response shapes stable unless a change is requested.
 - Preserve role checks for admin, courier, and user flows.
-- Preserve checkout capacity checks before Stripe session creation.
+- Preserve checkout acceptance checks before Stripe session creation, including working hours, closing-soon cutoff, pause state, blocked dates, delivery radius, kitchen capacity, item availability, coupons, and loyalty.
+- Preserve stale unpaid auto-cancel protection: system cancellation should try to expire the open Stripe Checkout session and audit the result without blocking local order cancellation.
+- Preserve customer manual cancel protection: unpaid `placed` order cancellation should use the same Stripe Checkout expiration helper and audit metadata.
 - Preserve delivery double confirmation with courier PIN handoff followed by customer/admin completion.
 - Keep support tickets scoped between restaurant support and app support.
 - Keep Stripe webhook handling idempotent.
+- Preserve QStash delayed order-maintenance checks for unpaid orders, courier assignment timeouts, and ready orders without a courier.
 
 ## Code Areas To Treat Carefully
 

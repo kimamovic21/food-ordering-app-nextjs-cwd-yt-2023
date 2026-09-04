@@ -24,6 +24,7 @@ Auth is a high-value and high-risk area. Testing register and login first gives 
   - `app/api/upload/users/route.ts`
   - `app/api/checkout/route.ts`
   - `app/api/webhook/route.ts`
+  - `libs/stripeCheckoutSession.ts`
   - `app/api/coupons/route.ts`
   - `app/api/my-deliveries/route.ts`
   - credentials `authorize` handler in `libs/authOptions.ts`
@@ -37,7 +38,7 @@ Auth is a high-value and high-risk area. Testing register and login first gives 
   - profile management flow (info update, image upload/remove, account deletion)
   - checkout & payment flow (order creation, coupon application, payment webhook)
 
-Recent high-priority coverage also checks best coupon suggestion rules, restaurant closed/busy availability helpers, ETA-style notification copy, courier delivery summaries, Redis rate-limit helper behavior, and app date formatting helpers.
+Recent high-priority coverage also checks best coupon suggestion rules, restaurant closed/busy availability helpers, ETA-style notification copy, courier delivery summaries, Redis rate-limit helper behavior, Stripe Checkout session expiration for stale unpaid/customer-canceled orders, and app date formatting helpers.
 
 ## Folder Layout
 
@@ -65,7 +66,7 @@ Recent high-priority coverage also checks best coupon suggestion rules, restaura
 - `npm run test:libs`: run library/helper tests
 - `npm run test:models`: run model tests
 - `npm run test:profile`: run only profile-focused unit tests
-- `npm run test:payment`: run only payment & webhook unit tests (checkout + webhook)
+- `npm run test:payment`: run only payment & webhook unit tests, including Stripe Checkout session expiration
 - `npm run test:e2e`: run all e2e tests
 - `npm run test:e2e:watch`: run e2e tests in watch mode
 - `npm run test:e2e:file -- <path>`: run one e2e file

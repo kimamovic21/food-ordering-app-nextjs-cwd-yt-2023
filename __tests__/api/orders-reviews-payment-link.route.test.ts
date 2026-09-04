@@ -6,12 +6,14 @@ import { MenuItem } from '@/models/menuItem';
 import { Restaurant } from '@/models/restaurant';
 import { RestaurantReview } from '@/models/restaurantReview';
 import { CourierReview } from '@/models/courierReview';
+import { createAuditLog } from '@/libs/auditLog';
 import {
   notifyFailedDeliveryCancellationVerified,
   notifyRestaurantAdminsAboutCanceledOrder,
   notifyUserAboutOrderCompletion,
   notifyUserAboutOrderStatusChange,
 } from '@/libs/notifications';
+import { expireOpenStripeCheckoutSession } from '@/libs/stripeCheckoutSession';
 
 const stripeRetrieveSession = vi.fn();
 const stripeCreateSession = vi.fn();
@@ -61,6 +63,10 @@ vi.mock('@/libs/notifications', () => ({
 
 vi.mock('@/libs/auditLog', () => ({
   createAuditLog: vi.fn(),
+}));
+
+vi.mock('@/libs/stripeCheckoutSession', () => ({
+  expireOpenStripeCheckoutSession: vi.fn(),
 }));
 
 vi.mock('@/libs/restaurantAvailabilityRequests', () => ({
@@ -178,6 +184,13 @@ describe('high-priority order, review, and payment-link routes', () => {
     vi.clearAllMocks();
     stripeRetrieveSession.mockReset();
     stripeCreateSession.mockReset();
+    vi.mocked(expireOpenStripeCheckoutSession).mockResolvedValue({
+      attempted: true,
+      expired: true,
+      skipped: false,
+      reason: 'expired',
+      sessionId: 'cs_test_customer_cancel_123',
+    });
     process.env.STRIPE_SK = 'sk_test_payment_link';
     process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
     delete process.env.SUPER_ADMIN_EMAIL;
@@ -372,7 +385,10 @@ describe('high-priority order, review, and payment-link routes', () => {
     const unpaidOrderDoc = {
       ...paidOrderDoc,
       orderPaid: false,
+      paid: false,
+      paymentStatus: false,
       orderStatus: 'placed',
+      stripeSessionId: 'cs_test_customer_cancel_123',
       save: vi.fn(async function save(this: any) {
         return this;
       }),
@@ -404,7 +420,18 @@ describe('high-priority order, review, and payment-link routes', () => {
 
     expect(res.status).toBe(200);
     expect(body.order.orderStatus).toBe('canceled');
+    expect(expireOpenStripeCheckoutSession).toHaveBeenCalledWith('cs_test_customer_cancel_123');
     expect(unpaidOrderDoc.save).toHaveBeenCalled();
+    expect(createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'order.canceled',
+        metadata: expect.objectContaining({
+          stripeCheckoutSessionExpired: true,
+          stripeCheckoutSessionExpirationReason: 'expired',
+          stripeCheckoutSessionId: 'cs_test_customer_cancel_123',
+        }),
+      })
+    );
     expect(notifyRestaurantAdminsAboutCanceledOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         restaurantId: unpaidOrderDoc.restaurantId,
@@ -434,6 +461,7 @@ describe('high-priority order, review, and payment-link routes', () => {
 
     expect(res.status).toBe(400);
     expect(body).toEqual({ error: 'Paid orders cannot be canceled here' });
+    expect(expireOpenStripeCheckoutSession).not.toHaveBeenCalled();
     expect(notifyRestaurantAdminsAboutCanceledOrder).not.toHaveBeenCalled();
   });
 
@@ -905,11 +933,57 @@ describe('high-priority order, review, and payment-link routes', () => {
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body).toEqual({ url: 'https://checkout.stripe.test/session' });
+    expect(body).toEqual({
+      paymentLinkStatus: 'reused',
+      url: 'https://checkout.stripe.test/session',
+    });
     expect(stripeRetrieveSession).toHaveBeenCalledWith('cs_test_123');
     expect(stripeCreateSession).not.toHaveBeenCalled();
     expect(orderDocument.save).not.toHaveBeenCalled();
     expect(mongoose.connect).toHaveBeenCalledWith(process.env.MONGODB_URL);
+  });
+
+  it('creates a first Stripe payment URL when an unpaid order has no session yet', async () => {
+    vi.mocked(getServerSession).mockResolvedValueOnce({
+      user: { email: customer.email },
+    } as never);
+    vi.mocked(User.findOne).mockResolvedValueOnce(customer as never);
+    const orderDocument = {
+      _id: { toString: () => 'order-1' },
+      userId: customer._id,
+      restaurantId: { toString: () => 'restaurant-1' },
+      email: customer.email,
+      total: 25,
+      orderPaid: false,
+      orderStatus: 'placed',
+      stripeSessionId: null,
+      save: vi.fn(),
+    };
+    vi.mocked(Order.findById).mockReturnValueOnce({
+      then: (resolve: (value: unknown) => unknown) => resolve(orderDocument),
+    } as never);
+    stripeCreateSession.mockResolvedValueOnce({
+      id: 'cs_test_created_123',
+      url: 'https://checkout.stripe.test/created-session',
+    });
+
+    const { GET } = await import('@/app/api/payment-link/route');
+    const res = await GET(new Request('http://localhost/api/payment-link?orderId=order-1'));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toEqual({
+      paymentLinkStatus: 'created',
+      url: 'https://checkout.stripe.test/created-session',
+    });
+    expect(stripeRetrieveSession).not.toHaveBeenCalled();
+    expect(stripeCreateSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { orderId: 'order-1' },
+      })
+    );
+    expect(orderDocument.stripeSessionId).toBe('cs_test_created_123');
+    expect(orderDocument.save).toHaveBeenCalledTimes(1);
   });
 
   it('syncs an order as paid when Stripe says the existing session is already paid', async () => {
@@ -988,7 +1062,10 @@ describe('high-priority order, review, and payment-link routes', () => {
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body).toEqual({ url: 'https://checkout.stripe.test/new-session' });
+    expect(body).toEqual({
+      paymentLinkStatus: 'refreshed',
+      url: 'https://checkout.stripe.test/new-session',
+    });
     expect(stripeCreateSession).toHaveBeenCalledWith(
       expect.objectContaining({
         mode: 'payment',
@@ -1035,7 +1112,10 @@ describe('high-priority order, review, and payment-link routes', () => {
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body).toEqual({ url: 'https://checkout.stripe.test/recovered-session' });
+    expect(body).toEqual({
+      paymentLinkStatus: 'refreshed',
+      url: 'https://checkout.stripe.test/recovered-session',
+    });
     expect(stripeRetrieveSession).toHaveBeenCalledWith('cs_test_missing_123');
     expect(stripeCreateSession).toHaveBeenCalledWith(
       expect.objectContaining({

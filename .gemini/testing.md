@@ -13,6 +13,7 @@ Use Vitest to cover business-critical logic with small, maintainable tests.
 
 - Prefer route-handler and business-logic tests first.
 - Add edge case tests for validation and permissions.
+- Include background order-maintenance edge cases such as stale unpaid Checkout session expiration when payment/order flow changes.
 - Keep assertions centered on observable behavior.
 
 ## Execution

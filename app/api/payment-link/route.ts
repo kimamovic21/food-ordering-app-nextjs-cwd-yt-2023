@@ -10,7 +10,9 @@ const stripe = stripeSecretKey
   ? new Stripe(stripeSecretKey, { apiVersion: '2025-12-15.clover' })
   : null;
 
-const isPaid = (order: any) => Boolean(order.orderPaid ?? order.paymentStatus ?? order.paid);
+type PaymentLinkStatus = 'created' | 'reused' | 'refreshed';
+
+const isPaid = (order: any) => Boolean(order.orderPaid || order.paymentStatus || order.paid);
 
 const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100;
 
@@ -56,7 +58,8 @@ const createCheckoutSessionForOrder = async (order: any, request: Request, email
 const createAndSaveCheckoutSessionForOrder = async (
   order: any,
   request: Request,
-  email: string
+  email: string,
+  paymentLinkStatus: PaymentLinkStatus = 'created'
 ) => {
   const stripeSession = await createCheckoutSessionForOrder(order, request, email);
 
@@ -67,7 +70,7 @@ const createAndSaveCheckoutSessionForOrder = async (
   order.stripeSessionId = stripeSession.id;
   await order.save();
 
-  return Response.json({ url: stripeSession.url });
+  return Response.json({ url: stripeSession.url, paymentLinkStatus });
 };
 
 export async function GET(request: Request) {
@@ -145,7 +148,12 @@ export async function GET(request: Request) {
     }
 
     try {
-      return await createAndSaveCheckoutSessionForOrder(order, request, session.user.email);
+      return await createAndSaveCheckoutSessionForOrder(
+        order,
+        request,
+        session.user.email,
+        'refreshed'
+      );
     } catch (createError) {
       console.error('Error creating replacement Stripe session:', createError);
       return Response.json({ error: 'Failed to create payment session' }, { status: 500 });
@@ -165,11 +173,16 @@ export async function GET(request: Request) {
   }
 
   if (stripeSession.status === 'open' && stripeSession.url) {
-    return Response.json({ url: stripeSession.url });
+    return Response.json({ url: stripeSession.url, paymentLinkStatus: 'reused' });
   }
 
   try {
-    return await createAndSaveCheckoutSessionForOrder(order, request, session.user.email);
+    return await createAndSaveCheckoutSessionForOrder(
+      order,
+      request,
+      session.user.email,
+      'refreshed'
+    );
   } catch (error) {
     console.error('Error creating replacement Stripe session:', error);
     return Response.json({ error: 'Failed to create payment session' }, { status: 500 });

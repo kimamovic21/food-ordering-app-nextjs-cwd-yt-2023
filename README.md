@@ -24,7 +24,7 @@ It includes:
 - courier dashboard with active delivery, delivery history, earnings, courier ratings, and assignment reliability views
 - courier workflow with assignment, response-time tracking, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
 - order timeline with visual phase icons, preparation/delivery estimates, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
-- order safety automation for stale unpaid orders, unanswered courier assignments, and ready orders that cannot get a courier
+- order safety automation for stale unpaid orders, unanswered courier assignments, ready orders that cannot get a courier, and expired Stripe Checkout sessions
 - restaurant busy checkout protection based on each restaurant's active kitchen order limit
 - Stripe checkout/webhook flow
 - Cloudinary media uploads
@@ -252,6 +252,8 @@ This project uses many dependencies; below are the main packages actively used i
 - Checkout blocks restaurants that are closed, paused, outside delivery radius, blocked by working hours, or inside the final 60 minutes before closing, and surfaces the next opening time when available.
 - Checkout blocks new orders when the restaurant has reached its paid active kitchen order limit (`placed`, `processing`, or `ready` orders).
 - Checkout deduplicates recent identical unpaid `placed` order attempts by reusing or recovering the existing Stripe Checkout session instead of creating another order.
+- When a stale unpaid `placed` order is system-canceled, the app also attempts to expire the still-open Stripe Checkout session so old payment tabs cannot complete canceled orders.
+- When a customer manually cancels an unpaid `placed` order, the app also attempts to expire that order's Stripe Checkout session.
 - Cart can suggest the best public coupon for the current restaurant subtotal and let the customer apply it directly.
 - Checkout blocks customers from starting another paid active order until the previous order is completed or canceled.
 - Previous orders can be reordered into the cart only after current menu item existence, availability, restaurant ownership, and prices are rechecked.
@@ -269,6 +271,7 @@ This project uses many dependencies; below are the main packages actively used i
 
 - `@upstash/qstash` is used for delayed order-maintenance checks that should run later without relying only on someone opening an order page.
 - Checkout schedules a 30-minute unpaid-order check after a Stripe Checkout session is created.
+- When that delayed check cancels an unpaid order, the order-maintenance helper tries to expire the open Stripe Checkout session before writing the cancellation audit metadata.
 - Assigning a courier schedules a 10-minute courier-assignment timeout check. If the courier does not accept or decline in time, the assignment is marked `expired`, the courier is released, and restaurant admins are notified to choose another courier.
 - Courier assignment history records accepted, declined, and expired attempts so admin and courier performance views can show missed assignments, response rate, acceptance rate, and average response time.
 - Moving an order to `ready` schedules a 60-minute ready-without-courier check.
