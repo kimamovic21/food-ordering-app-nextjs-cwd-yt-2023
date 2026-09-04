@@ -18,4 +18,6 @@ This folder stores Cursor-specific project rules.
   - `AGENTS.md`
   - `CLAUDE.md`
   - `GEMINI.md`
-- Update rule files when auth, payment, email, or deployment behavior changes.
+- Update rule files when auth, payment, email, courier/order, deployment, env, test workflow, or documentation-process behavior changes.
+- Keep `.windsurf/rules/project-conventions.md`, `.claude/project-instructions.md`, and `.gemini/project-instructions.md` aligned with workflow-critical Cursor rules.
+- Do not add extra AI-tool config folders unless the project actively uses that tool.

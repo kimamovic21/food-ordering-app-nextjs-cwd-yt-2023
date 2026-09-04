@@ -1151,3 +1151,5 @@ Expand critical e2e and realtime coverage
 Add Vercel Speed Insights monitoring
 
 Add courier assignment timeout and reliability metrics
+
+Add documentation maintenance workflow

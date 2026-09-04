@@ -65,6 +65,18 @@
 - If environment variables change, update `example.env`.
 - If adding major functionality, update docs in `README.md` and AI guidance files.
 
+## Documentation Done Criteria
+
+- For non-trivial changes, decide whether docs need an update before finalizing the task.
+- Update `README.md` for setup, package, env var, route, or high-level feature changes.
+- Update `DESCRIPTION.md` for user/admin/courier behavior, business rules, support, messaging, checkout, order, restaurant, review, loyalty, or reporting changes.
+- Update `ARCHITECTURE.md` for system design, model, integration, background job, realtime, data-flow, or lifecycle changes.
+- Update `TESTING.md`, `__tests__/README.md`, or `e2e/README.md` when commands, coverage strategy, fixtures, or test layers change.
+- Keep `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.claude/project-instructions.md`, `.gemini/project-instructions.md`, `.cursor/rules/project-conventions.mdc`, and `.windsurf/rules/project-conventions.md` aligned when workflow-critical guidance changes.
+- Use `.github/pull_request_template.md` as the final merge checklist for validation and docs ownership.
+- Do not create config folders for AI tools that are not actively used in this repository.
+- Mention docs updates, or explain why none were needed, in the final response.
+
 ## Test Workflow
 
 - Test runner: Vitest.

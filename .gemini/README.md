@@ -16,4 +16,6 @@ This folder holds extended, task-focused guidance that can evolve without bloati
 
 - Keep high-level rules in `GEMINI.md`.
 - Keep detailed checklists and flow notes in this folder.
-- Keep parity with `AGENTS.md` and `CLAUDE.md` when changing core conventions.
+- Keep parity with `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/project-conventions.mdc`, and `.windsurf/rules/project-conventions.md` when changing core conventions.
+- Do not create extra AI-tool folders unless the project starts actively using that tool.
+- When feature behavior, env vars, integrations, or test workflows change, update the matching root documentation in the same branch.

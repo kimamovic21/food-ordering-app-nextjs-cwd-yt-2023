@@ -30,3 +30,4 @@ Write tests that verify production behavior without changing stable runtime logi
 - Do not weaken role checks in tests.
 - Do not leak secrets into test fixtures.
 - Keep tests deterministic and isolated.
+- Update `TESTING.md`, `__tests__/README.md`, or `e2e/README.md` when adding new test domains, commands, fixtures, or coverage strategy.

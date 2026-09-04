@@ -65,6 +65,11 @@ alwaysApply: true
 - Run `npm run test` when changing business logic in auth, checkout, webhook, order, or courier flows.
 - If env usage changes, update `example.env`.
 - For major feature additions, update `README.md` and root AI docs.
+- Treat docs updates as part of feature completion. Update `DESCRIPTION.md` for role/business-rule changes, `ARCHITECTURE.md` for system/data-flow/model/integration changes, and `TESTING.md`, `__tests__/README.md`, or `e2e/README.md` for test workflow changes.
+- Keep `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.claude/project-instructions.md`, `.gemini/project-instructions.md`, `.cursor/rules/project-conventions.mdc`, and `.windsurf/rules/project-conventions.md` aligned when workflow-critical guidance changes.
+- Use `.github/pull_request_template.md` as the final merge checklist for validation and docs ownership.
+- Do not add new AI-tool config folders unless that tool is actively used in this repository.
+- Final summaries for meaningful changes should mention whether docs were updated or why no docs update was needed.
 
 ## Testing Conventions
 

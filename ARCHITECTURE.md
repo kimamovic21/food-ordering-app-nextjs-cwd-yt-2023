@@ -448,3 +448,14 @@ For risky areas, prefer focused route tests first:
 - order lifecycle and delivery confirmation
 - support ticket authorization
 - courier assignment, location updates, delivery metrics, and earnings summaries
+
+## Documentation And AI Guidance
+
+The repository keeps documentation close to code changes so future contributors and AI tools share the same mental model.
+
+- Update this file when a change affects system architecture, data models, lifecycle diagrams, integration boundaries, background jobs, realtime behavior, or cross-module data flow.
+- Update `DESCRIPTION.md` when role behavior or business rules change.
+- Update `README.md` when setup, packages, environment variables, public routes, or high-level capabilities change.
+- Update `TESTING.md`, `__tests__/README.md`, or `e2e/README.md` when test commands, fixtures, coverage areas, or test layers change.
+- Keep `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.claude/project-instructions.md`, `.gemini/project-instructions.md`, `.cursor/rules/project-conventions.mdc`, and `.windsurf/rules/project-conventions.md` aligned when workflow-critical instructions change.
+- Avoid adding new AI-tool folders unless the project actually uses that tool.
