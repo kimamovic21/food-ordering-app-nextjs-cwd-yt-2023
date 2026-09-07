@@ -4,6 +4,8 @@ import { isAdmin } from '@/app/api/auth/[...nextauth]/route';
 import { User } from '@/models/user';
 import { MenuItem } from '@/models/menuItem';
 import { Category } from '@/models/category';
+import { Order } from '@/models/order';
+import cloudinary from '@/libs/cloudinary';
 
 vi.mock('next-auth/next', () => ({
   getServerSession: vi.fn(),
@@ -61,6 +63,13 @@ vi.mock('@/models/menuItem', () => ({
     aggregate: vi.fn(),
     find: vi.fn(),
     countDocuments: vi.fn(),
+    deleteOne: vi.fn(),
+  },
+}));
+
+vi.mock('@/models/order', () => ({
+  Order: {
+    findOne: vi.fn(),
   },
 }));
 
@@ -104,6 +113,9 @@ describe('/api/menu-items route', () => {
       user: { email: 'admin@example.com' },
     } as never);
     vi.mocked(User.findOne).mockResolvedValue(currentAdmin as never);
+    vi.mocked(Order.findOne).mockReturnValue({
+      select: vi.fn().mockResolvedValue(null),
+    } as never);
   });
 
   it('requires an admin session to create menu items', async () => {
@@ -264,5 +276,49 @@ describe('/api/menu-items route', () => {
       ])
     );
     expect(mongoose.connect).toHaveBeenCalledWith(process.env.MONGODB_URL);
+  });
+
+  it('blocks deleting a menu item that is part of an active order', async () => {
+    vi.mocked(MenuItem.findById).mockResolvedValueOnce({
+      _id: 'menu-1',
+      adminId: { toString: () => 'admin-1' },
+      image: '',
+    } as never);
+    vi.mocked(Order.findOne).mockReturnValueOnce({
+      select: vi.fn().mockResolvedValue({
+        _id: 'order-1',
+        orderStatus: 'processing',
+      }),
+    } as never);
+
+    const { DELETE } = await loadMenuItemsRoute();
+    const res = await DELETE(
+      new Request('http://localhost/api/menu-items?_id=menu-1', { method: 'DELETE' })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(body.error).toContain('active order');
+    expect(MenuItem.deleteOne).not.toHaveBeenCalled();
+    expect(cloudinary.uploader.destroy).not.toHaveBeenCalled();
+  });
+
+  it('deletes an owned menu item when no active order references it', async () => {
+    vi.mocked(MenuItem.findById).mockResolvedValueOnce({
+      _id: 'menu-1',
+      adminId: { toString: () => 'admin-1' },
+      image: 'https://res.cloudinary.com/demo/image/upload/menu-items/pizza.jpg',
+    } as never);
+
+    const { DELETE } = await loadMenuItemsRoute();
+    const res = await DELETE(
+      new Request('http://localhost/api/menu-items?_id=menu-1', { method: 'DELETE' })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toBe(true);
+    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith('menu-items/pizza');
+    expect(MenuItem.deleteOne).toHaveBeenCalledWith({ _id: 'menu-1' });
   });
 });

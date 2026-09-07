@@ -21,6 +21,7 @@ import OrderItemsCard from './OrderItemsCard';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
 import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
 import OrderProgressStepper from '@/components/shared/OrderProgressStepper';
+import OrderDelayNotice from '@/components/shared/OrderDelayNotice';
 import HeartRating from '@/components/shared/HeartRating';
 import dynamic from 'next/dynamic';
 import DevOrderTimelineSimulator from './DevOrderTimelineSimulator';
@@ -736,6 +737,13 @@ const OrderDetailPage = () => {
 
       <div className='space-y-6'>
         <OrderProgressStepper status={order.orderStatus} />
+
+        <OrderDelayNotice
+          createdAt={order.createdAt}
+          orderStatus={order.orderStatus}
+          estimatedTotalMinutes={order.estimatedTotalMinutes}
+          durationOffsetMinutes={totalTimelineOffsetMinutes}
+        />
 
         {order.specialInstructions?.trim() && (
           <Card>

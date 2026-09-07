@@ -11,6 +11,7 @@ import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
 import MenuItemModal from './MenuItemModal';
 import HeartRating from '@/components/shared/HeartRating';
+import useRestaurantOrderingGate from '@/hooks/useRestaurantOrderingGate';
 import type { CartSize } from '@/types/cart';
 import type { MenuItemListItem } from '@/types/menu';
 
@@ -22,6 +23,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { addToCart, getCartRestaurantId } = useCart();
   const { data: profileData } = useProfile();
+  const { assertRestaurantCanAcceptOrders, checkingRestaurantId } = useRestaurantOrderingGate();
 
   const displayItem = item || {
     _id: 'default',
@@ -66,7 +68,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
     return availableSizes[0]?.value ?? null;
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     const cartRestaurantId = getCartRestaurantId();
 
     if (!isAvailable) {
@@ -89,6 +91,11 @@ const MenuItem = ({ item }: MenuItemProps) => {
         description: 'Clear your cart to add items from a different restaurant',
         duration: 4000,
       });
+      return;
+    }
+
+    const canOrderFromRestaurant = await assertRestaurantCanAcceptOrders(displayItem.restaurantId);
+    if (!canOrderFromRestaurant) {
       return;
     }
 
@@ -119,6 +126,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
       }
     );
   };
+  const isCheckingRestaurant = checkingRestaurantId === displayItem.restaurantId;
 
   return (
     <>
@@ -192,9 +200,13 @@ const MenuItem = ({ item }: MenuItemProps) => {
             onClick={handleAddToCart}
             className='w-full mt-4'
             size='lg'
-            disabled={!isAvailable || getPrice() == null}
+            disabled={!isAvailable || getPrice() == null || isCheckingRestaurant}
           >
-            {isAvailable ? `Add to cart $${getPrice()?.toFixed(2) || '0.00'}` : 'Unavailable'}
+            {isCheckingRestaurant
+              ? 'Checking...'
+              : isAvailable
+                ? `Add to cart $${getPrice()?.toFixed(2) || '0.00'}`
+                : 'Unavailable'}
           </Button>
         </div>
       </Card>

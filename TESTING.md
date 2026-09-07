@@ -21,6 +21,9 @@ Auth is a high-value and high-risk area. Testing register and login first gives 
 - Unit-level behavior tests for:
   - `app/api/register/route.ts`
   - `app/api/profile/route.ts`
+  - `app/api/profile/delivery-addresses/route.ts`
+  - `app/api/my-orders/active/route.ts`
+  - `app/api/restaurants/[id]/ordering-status/route.ts`
   - `app/api/upload/users/route.ts`
   - `app/api/checkout/route.ts`
   - `app/api/webhook/route.ts`
@@ -30,15 +33,17 @@ Auth is a high-value and high-risk area. Testing register and login first gives 
   - credentials `authorize` handler in `libs/authOptions.ts`
   - restaurant availability helpers in `libs/restaurantAvailability.ts`
   - notification copy/routing helpers in `libs/notifications.ts`
+  - order delay warning helper behavior in `libs/orderDelay.ts`
   - Upstash Redis rate-limit helper behavior in `libs/rateLimit.ts`
   - shared date-fns formatting helpers in `libs/dateFormat.ts`
   - TanStack Query provider, shared query keys, profile hook cache behavior, sound settings cache/mutation behavior, and message center query rendering
+  - restaurant ordering-status prefetch caching for faster first add-to-cart clicks
 - E2E tests for:
   - register + login flow
   - profile management flow (info update, image upload/remove, account deletion)
   - checkout & payment flow (order creation, coupon application, payment webhook)
 
-Recent high-priority coverage also checks best coupon suggestion rules, restaurant closed/busy availability helpers, ETA-style notification copy, courier delivery summaries, Redis rate-limit helper behavior, Stripe Checkout session expiration for stale unpaid/customer-canceled orders, and app date formatting helpers.
+Recent high-priority coverage also checks best coupon suggestion rules, restaurant closed/busy availability helpers, pre-cart ordering status checks, saved delivery addresses, active customer order lookup, ETA-style notification copy, order delay warnings, courier delivery summaries, delete protection for active restaurant/menu orders, Redis rate-limit helper behavior, Stripe Checkout session expiration for stale unpaid/customer-canceled orders, and app date formatting helpers.
 
 ## Folder Layout
 
@@ -85,6 +90,12 @@ Useful focused command after recent order-flow changes:
 
 ```bash
 npm run test:file -- __tests__/api/coupons.route.test.ts __tests__/api/my-deliveries.route.test.ts __tests__/libs/restaurantAvailability.test.ts __tests__/libs/notifications.test.ts
+```
+
+Useful focused command after customer order UX/safety changes:
+
+```bash
+npm run test:file -- __tests__/libs/orderDelay.test.ts __tests__/api/delivery-addresses.route.test.ts __tests__/api/my-orders-active.route.test.ts __tests__/api/restaurant-ordering-status.route.test.ts __tests__/api/menu-items.route.test.ts __tests__/api/restaurant.route.test.ts __tests__/api/profile.route.test.ts
 ```
 
 Useful focused command after rate-limit changes:

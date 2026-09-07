@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import useProfile from '@/hooks/useProfile';
+import useRestaurantOrderingGate from '@/hooks/useRestaurantOrderingGate';
 import Image from 'next/image';
 import Pizza from '@/public/pizza.png';
 import HeartRating from '@/components/shared/HeartRating';
@@ -23,6 +24,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
   const [selectedSize, setSelectedSize] = useState<PizzaSize>('small');
   const { addToCart, getCartRestaurantId } = useCart();
   const { data: profileData } = useProfile();
+  const { assertRestaurantCanAcceptOrders, checkingRestaurantId } = useRestaurantOrderingGate();
 
   const displayItem = item || {
     _id: 'default',
@@ -55,15 +57,16 @@ const MenuItem = ({ item }: MenuItemProps) => {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     const cartRestaurantId = getCartRestaurantId();
+    const itemRestaurantId = displayItem.restaurantId;
 
     if (!isAvailable) {
       sonnerToast.error(`${displayItem.name} is currently unavailable`);
       return;
     }
 
-    if (profileData?.restaurantId && profileData.restaurantId === displayItem.restaurantId) {
+    if (profileData?.restaurantId && profileData.restaurantId === itemRestaurantId) {
       sonnerToast.error('You cannot order from your own restaurant', {
         style: {
           background: '#dc2626',
@@ -74,11 +77,16 @@ const MenuItem = ({ item }: MenuItemProps) => {
     }
 
     // Check if trying to add from a different restaurant
-    if (cartRestaurantId && cartRestaurantId !== displayItem.restaurantId) {
+    if (cartRestaurantId && cartRestaurantId !== itemRestaurantId) {
       sonnerToast.error('Your cart contains items from another restaurant', {
         description: 'Clear your cart to add items from a different restaurant',
         duration: 4000,
       });
+      return;
+    }
+
+    const canOrderFromRestaurant = await assertRestaurantCanAcceptOrders(itemRestaurantId);
+    if (!canOrderFromRestaurant) {
       return;
     }
 
@@ -89,7 +97,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
       image: displayItem.image,
       size: selectedSize,
       price: getPrice(),
-      restaurantId: displayItem.restaurantId,
+      restaurantId: itemRestaurantId,
     });
     sonnerToast.success(`${displayItem.name} (${selectedSize}) added to cart!`, {
       style: {
@@ -98,6 +106,7 @@ const MenuItem = ({ item }: MenuItemProps) => {
       },
     });
   };
+  const isCheckingRestaurant = checkingRestaurantId === displayItem.restaurantId;
 
   return (
     <Card className='p-0 overflow-hidden hover:shadow-lg transition-shadow flex flex-col'>
@@ -200,8 +209,17 @@ const MenuItem = ({ item }: MenuItemProps) => {
           </Button>
         </div>
 
-        <Button onClick={handleAddToCart} className='w-full mt-4' size='lg' disabled={!isAvailable}>
-          {isAvailable ? `Add to cart $${getPrice()?.toFixed(2) || '0.00'}` : 'Unavailable'}
+        <Button
+          onClick={handleAddToCart}
+          className='w-full mt-4'
+          size='lg'
+          disabled={!isAvailable || isCheckingRestaurant}
+        >
+          {isCheckingRestaurant
+            ? 'Checking...'
+            : isAvailable
+              ? `Add to cart $${getPrice()?.toFixed(2) || '0.00'}`
+              : 'Unavailable'}
         </Button>
       </div>
     </Card>

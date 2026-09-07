@@ -24,10 +24,10 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 
 ## High-Level Features
 
-- Customer flows: auth, profile, menu browsing, cart/checkout, best coupon suggestion, reorder, favorite restaurant quick reorder, restaurant availability alerts, favorites, loyalty history, reviews, approved messaging, visual order tracking, order timelines, delivery confirmation, and support tickets.
+- Customer flows: auth, profile, saved delivery addresses, menu browsing, cart/checkout, pre-cart restaurant ordering checks, active order quick access, best coupon suggestion, reorder, favorite restaurant quick reorder, restaurant availability alerts, favorites, loyalty history, reviews, approved messaging, visual order tracking, order timelines, order delay warnings, delivery confirmation, and support tickets.
 - Admin dashboard: users, categories, menu items, restaurants, restaurant reports, orders, order queue, late-order alerts, couriers, support tickets, statistics, and AI-assisted menu descriptions.
 - Courier flows: assignment with courier-only notes, availability toggle, live location sharing, delivery PIN handoff, problem reporting, tracked delivery maps, and delivery history metrics.
-- Restaurant operations: menu item availability, working-hours checkout protection, 60-minute-before-closing checkout cutoff, pause/blocked-date/radius checks, preparation/delivery estimates, and active order limit checks that can temporarily block checkout when the kitchen is busy.
+- Restaurant operations: menu item availability, active-order delete protection, working-hours checkout protection, 60-minute-before-closing checkout cutoff, pause/blocked-date/radius checks, preparation/delivery estimates, and active order limit checks that can temporarily block checkout when the kitchen is busy.
 
 ## Local Setup
 
@@ -86,9 +86,14 @@ See `example.env`. Variables currently used in the project include:
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts` (`dd/MM/yyyy`, `dd/MM/yyyy HH:mm`).
 - Use `libs/money.ts` for business money calculations; avoid hand-rolled floating-point arithmetic in checkout, coupons, earnings, and reports.
 - Use `libs/phone.ts` before saving customer/admin/courier phone values; local Bosnia and Herzegovina numbers are accepted and normalized to E.164.
+- Saved customer delivery addresses live on `User.deliveryAddresses`, are capped at five, require complete delivery fields plus confirmed latitude/longitude, and should be loaded/mutated through `/api/profile/delivery-addresses`.
 - Messaging should remain role-restricted: no customer-to-customer chat, and order threads must match the assigned courier or restaurant owner.
+- Public add-to-cart surfaces should prefetch visible restaurant ordering status where possible, check `/api/restaurants/[id]/ordering-status` before changing the cart, and still keep checkout as the server-authoritative source of truth.
 - Checkout must preserve restaurant accepting-order checks: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty must be validated before creating Stripe sessions.
 - Checkout should deduplicate recent identical unpaid `placed` attempts using `checkoutFingerprint`; reuse or recover the existing Stripe Checkout session instead of creating duplicate orders.
+- Active customer order quick access should use `/api/my-orders/active`, apply stale-order maintenance before returning data, and stay customer-only.
+- Order delay warnings should use `libs/orderDelay.ts` and compare elapsed active time against the saved estimated total plus the grace window; development time offsets can affect the warning without changing MongoDB timestamps.
+- Do not delete restaurants, restaurant-owner accounts, or menu items while active orders still depend on them; use `libs/orderDeletionGuards.ts` and return `409` with clear guidance.
 - System auto-cancellation of stale unpaid orders should attempt to expire the open Stripe Checkout session and record the result in audit metadata without blocking local cancellation.
 - Customer manual cancellation of unpaid `placed` orders should use the same Stripe Checkout session expiration helper and audit the result.
 - Best coupon suggestions are user-facing help only; checkout must revalidate coupons server-side.

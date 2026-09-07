@@ -5,6 +5,7 @@ import { MenuItem } from '@/models/menuItem';
 import { Restaurant } from '@/models/restaurant';
 import cloudinary from '@/libs/cloudinary';
 import { normalizePhoneNumberForStorage } from '@/libs/phone';
+import { findBlockingRestaurantOrder } from '@/libs/orderDeletionGuards';
 import mongoose from 'mongoose';
 import type { ProfileUpdateData } from '@/types/user';
 
@@ -112,6 +113,19 @@ export async function DELETE() {
   });
 
   if (restaurant) {
+    const activeOrder = await findBlockingRestaurantOrder(restaurant._id);
+    if (activeOrder) {
+      return Response.json(
+        {
+          error:
+            'Your restaurant has active orders. Finish or cancel those orders before deleting your account.',
+          activeOrderId: String(activeOrder._id),
+          activeOrderStatus: activeOrder.orderStatus,
+        },
+        { status: 409 }
+      );
+    }
+
     const restaurantImages = Array.isArray(restaurant.images) ? restaurant.images : [];
     for (const imageUrl of restaurantImages) {
       const match =

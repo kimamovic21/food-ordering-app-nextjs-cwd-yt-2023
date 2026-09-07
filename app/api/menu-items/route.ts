@@ -8,6 +8,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions';
 import mongoose, { PipelineStage } from 'mongoose';
 import cloudinary from '@/libs/cloudinary';
+import { findBlockingMenuItemOrder } from '@/libs/orderDeletionGuards';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -478,6 +479,19 @@ export async function DELETE(req: Request) {
       return Response.json(
         { error: 'You are not authorized to delete this menu item' },
         { status: 403 }
+      );
+    }
+
+    const activeOrder = await findBlockingMenuItemOrder(_id);
+    if (activeOrder) {
+      return Response.json(
+        {
+          error:
+            'This menu item is part of an active order. Mark it unavailable now, then delete it after active orders finish.',
+          activeOrderId: String(activeOrder._id),
+          activeOrderStatus: activeOrder.orderStatus,
+        },
+        { status: 409 }
       );
     }
 

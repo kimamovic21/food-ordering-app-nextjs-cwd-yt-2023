@@ -2,6 +2,7 @@ import { DELETE, GET, PUT } from '@/app/api/profile/route';
 import { User } from '@/models/user';
 import { Restaurant } from '@/models/restaurant';
 import { MenuItem } from '@/models/menuItem';
+import { Order } from '@/models/order';
 import { profileMockUsers } from '@/mocks/profile/users';
 import { getServerSession } from 'next-auth/next';
 import cloudinary from '@/libs/cloudinary';
@@ -48,10 +49,20 @@ vi.mock('@/models/menuItem', () => ({
   },
 }));
 
+vi.mock('@/models/order', () => ({
+  Order: {
+    findOne: vi.fn(),
+  },
+}));
+
 describe('/api/profile route handlers', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.mocked(getServerSession).mockResolvedValue({
       user: { email: profileMockUsers.sessionEmail },
+    } as never);
+    vi.mocked(Order.findOne).mockReturnValue({
+      select: vi.fn().mockResolvedValue(null),
     } as never);
   });
 
@@ -170,5 +181,33 @@ describe('/api/profile route handlers', () => {
     expect(cloudinary.uploader.destroy).toHaveBeenCalledWith('users/profile-image-1');
     expect(cloudinary.uploader.destroy).toHaveBeenCalledWith('restaurants/restaurant-image-1');
     expect(cloudinary.uploader.destroy).toHaveBeenCalledWith('menu-items/menu-item-image-1');
+  });
+
+  it('blocks account deletion when the owned restaurant has active orders', async () => {
+    vi.mocked(User.findOne).mockResolvedValueOnce({
+      email: profileMockUsers.sessionEmail,
+      image: '/user-default-image.webp',
+      _id: 'user-id-1',
+      restaurantId: 'restaurant-id-1',
+    } as never);
+    vi.mocked(Restaurant.findOne).mockResolvedValueOnce({
+      _id: 'restaurant-id-1',
+      images: [],
+    } as never);
+    vi.mocked(Order.findOne).mockReturnValueOnce({
+      select: vi.fn().mockResolvedValue({
+        _id: 'order-id-1',
+        orderStatus: 'processing',
+      }),
+    } as never);
+
+    const response = await DELETE();
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.error).toContain('active orders');
+    expect(MenuItem.deleteMany).not.toHaveBeenCalled();
+    expect(Restaurant.deleteOne).not.toHaveBeenCalled();
+    expect(User.deleteOne).not.toHaveBeenCalled();
   });
 });

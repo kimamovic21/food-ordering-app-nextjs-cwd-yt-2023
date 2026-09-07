@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import MenuItem from './MenuItem';
+import { prefetchRestaurantOrderingStatuses } from '@/hooks/useRestaurantOrderingGate';
 import type { MenuItemListItem } from '@/types/menu';
 
 const MenuSkeleton = () => (
@@ -39,6 +41,7 @@ const MenuSkeleton = () => (
 );
 
 const HomeMenu = () => {
+  const queryClient = useQueryClient();
   const [items, setItems] = useState<MenuItemListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,6 +58,11 @@ const HomeMenu = () => {
           return item.category?.name?.toLowerCase() === 'pizzas';
         });
 
+        void prefetchRestaurantOrderingStatuses(
+          queryClient,
+          pizzaItems.map((item: MenuItemListItem) => item.restaurantId)
+        );
+
         // Add 1 second delay before showing content
         await new Promise((resolve) => setTimeout(resolve, 1000));
         setItems(pizzaItems);
@@ -67,7 +75,7 @@ const HomeMenu = () => {
     };
 
     fetchMenuItems();
-  }, []);
+  }, [queryClient]);
 
   return (
     <section className='my-16'>

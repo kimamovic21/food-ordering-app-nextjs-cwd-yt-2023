@@ -4,7 +4,7 @@ This document describes what the app does from the point of view of each role an
 
 ## Short Summary
 
-The project is a food ordering platform where customers browse restaurants and menu items, place orders through Stripe Checkout, track delivery, confirm receipt, review restaurants/couriers, report problems, and message approved contacts. Restaurant admins manage their restaurant, menu, orders, couriers, support tickets, and statistics. Couriers manage availability, delivery tasks, live location sharing, delivery PIN handoff, and delivery history. Super admin manages global platform data and elevated user actions.
+The project is a food ordering platform where customers browse restaurants and menu items, save delivery addresses, place orders through Stripe Checkout, track active and delayed deliveries, confirm receipt, review restaurants/couriers, report problems, and message approved contacts. Restaurant admins manage their restaurant, menu, orders, couriers, support tickets, and statistics. Couriers manage availability, delivery tasks, live location sharing, delivery PIN handoff, and delivery history. Super admin manages global platform data and elevated user actions.
 
 ## User Roles
 
@@ -16,17 +16,20 @@ They can:
 
 - Register, verify email when credentials verification is enabled, and sign in with credentials or Google OAuth.
 - Edit profile details such as name, phone, delivery address, and avatar.
+- Save up to five reusable delivery addresses with confirmed map coordinates.
 - Browse restaurants and menu items.
 - Filter, search, sort, and paginate public restaurant/menu views.
-- Add menu items to cart when they are available.
+- Add menu items to cart when they are available and the restaurant is currently accepting orders.
 - Use coupons and loyalty discounts when eligible.
 - See and apply the best available public coupon for the current restaurant cart.
 - Checkout through Stripe.
 - View order history and order details.
 - Reorder a previous order after current menu item prices and availability are rechecked.
 - Quickly order again from restaurant details or favorite restaurant cards based on the latest previous order from that restaurant.
+- Use the header quick-access link to finish payment, track an active order, or notice a delayed active order.
 - Track order progress and live courier location when delivery starts.
 - See a visual order progress stepper for placed, kitchen, transport, and delivered stages.
+- See a delay warning when an active order runs past its estimated total time plus the grace window.
 - See delivery PIN on active delivery orders.
 - Confirm final delivery after courier handoff.
 - Cancel unpaid orders while they are still in `placed` status, which also attempts to expire the old Stripe Checkout session.
@@ -41,7 +44,9 @@ Important customer rules:
 - Customers cannot order from their own restaurant.
 - Customers cannot checkout again while they already have a paid active order that is not completed or canceled.
 - Customers cannot add unavailable menu items to cart or checkout with them.
+- Customers cannot add items from restaurants that are closed, paused, closing soon, blocked by date, outside radius, or at active kitchen capacity.
 - Customers cannot checkout from restaurants that are closed, paused, outside delivery radius, blocked by date, inside the final 60 minutes before closing, or at active kitchen capacity.
+- Saved delivery addresses require complete address fields and confirmed latitude/longitude; checkout still revalidates the selected delivery location server-side.
 - Checkout and profile updates validate phone numbers and store valid values in E.164 format.
 - Customers can only message contacts allowed by their order flow.
 
@@ -51,10 +56,10 @@ Admins usually represent restaurant owners. An admin can own one restaurant and 
 
 They can:
 
-- Create, edit, and delete their restaurant.
+- Create, edit, and delete their restaurant when no active orders depend on it.
 - Upload restaurant images.
 - Configure restaurant location, working hours, blocked dates, tax, courier fee, staff count, preparation estimate, delivery estimate, and active order limit.
-- Create, edit, delete, and search menu items.
+- Create, edit, delete, and search menu items when no active orders depend on the item.
 - Mark menu items as available or unavailable.
 - Use the AI menu description helper when creating or editing menu items.
 - Create and manage restaurant coupons.
@@ -82,6 +87,7 @@ Important admin rules:
 - Admins can cancel a transported order only after the assigned courier requests failed-delivery verification.
 - Restaurant support tickets are scoped to the admin's restaurant.
 - Active order limit blocks checkout when the restaurant has too many paid active kitchen orders.
+- Restaurants and menu items cannot be deleted while active orders still reference them; mark items unavailable first, then delete after those orders finish or cancel.
 - Late-order alerts warn admins when an active paid order has not reached transportation after the configured threshold.
 
 ## Super Admin
@@ -160,11 +166,18 @@ Menu items store:
 - prices by size
 - availability state
 
+Deletion protection:
+
+- A restaurant cannot be deleted while it has active orders in `placed`, `processing`, `ready`, `transportation`, or `delivered`.
+- A restaurant-owner account cannot be deleted while the owned restaurant still has active orders.
+- A menu item cannot be deleted while active order snapshots still reference it; admins can mark it unavailable immediately to block new checkout attempts.
+
 Availability logic:
 
 - Admins can mark a menu item unavailable when ingredients are missing or the item is temporarily sold out.
 - Public menu cards show availability badges.
 - Unavailable items cannot be added to cart.
+- Public add-to-cart actions prefetch visible restaurant ordering status where possible and check it before changing the cart.
 - Checkout validates availability again on the server.
 
 Busy restaurant logic:
@@ -208,6 +221,13 @@ Reorder:
 ## Cart And Checkout Logic
 
 The cart is client-side state managed by `CartContext`.
+
+Customer-side checkout helpers:
+
+- Saved delivery addresses are loaded through `/api/profile/delivery-addresses` and cached with TanStack Query.
+- The default saved address can prefill checkout once per cart visit, and customers can switch, save, set default, or delete saved addresses.
+- The header active-order quick access uses `/api/my-orders/active` to surface the latest non-terminal customer order.
+- Public menu add-to-cart buttons call `/api/restaurants/[id]/ordering-status` before adding items, but `/api/checkout` remains authoritative.
 
 Checkout server rules:
 

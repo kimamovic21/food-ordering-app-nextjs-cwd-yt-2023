@@ -120,7 +120,7 @@ flowchart TD
 
 The important persistent models are:
 
-- `User`: account, role, profile fields, courier availability/location, restaurant ownership, favorites.
+- `User`: account, role, profile fields, saved delivery addresses, courier availability/location, restaurant ownership, favorites.
 - `Restaurant`: owner, location, contact, images, working hours, blocked dates, tax, courier fee, preparation/delivery estimates, active order limit.
 - `MenuItem`: restaurant item, category, image, prices, availability.
 - `Order`: customer delivery details, cart snapshot, payment data, restaurant fee/tax snapshots, coupon/loyalty snapshots, estimate snapshots, status timeline timestamps, courier, delivery PIN, completion state.
@@ -141,6 +141,7 @@ erDiagram
   RESTAURANT ||--o{ SUPPORT_TICKET : receives
   RESTAURANT ||--o{ RESTAURANT_AVAILABILITY_REQUEST : has
   USER ||--o{ ORDER : places
+  USER ||--o{ SAVED_DELIVERY_ADDRESS : embeds
   USER ||--o{ NOTIFICATION : receives
   USER ||--o{ RESTAURANT_AVAILABILITY_REQUEST : requests
   USER ||--o{ SUPPORT_TICKET : reports
@@ -190,6 +191,7 @@ Key checks:
 - User cannot order from their own restaurant.
 - User cannot start another checkout while a previous delivered order still needs customer confirmation.
 - Menu items must still exist and be available.
+- Public menu surfaces can call `/api/restaurants/[id]/ordering-status` before adding an item to the cart, so users get early feedback before checkout.
 - Restaurant must currently accept orders based on working hours, the 60-minute-before-closing checkout cutoff, pause state, blocked dates, delivery radius, and active kitchen capacity.
 - Restaurant active kitchen order count must be below `activeOrderLimit`.
 - Coupon and loyalty discounts are validated server-side.
@@ -200,6 +202,7 @@ Key checks:
 - Reorders rebuild cart items from current `menu_items` records so deleted, unavailable, cross-restaurant, or changed-price items cannot silently proceed.
 - Restaurant details and favorite restaurant cards can quick reorder the latest previous order from that restaurant using the same current `menu_items` validation.
 - Customers can request back-online notifications for restaurants blocked by closed, paused, closing-soon, or busy checkout states.
+- Customers can reuse saved delivery addresses from `/api/profile/delivery-addresses`; checkout still validates the final delivery payload and radius server-side.
 
 ```mermaid
 sequenceDiagram
@@ -265,6 +268,7 @@ Estimate snapshots are saved on each order:
 - `estimatedTotalMinutes`
 
 This lets the order timeline compare expected timing against actual progress.
+Active customer order detail pages use `libs/orderDelay.ts` to warn when elapsed time exceeds the saved estimated total plus the grace window. Development-only simulated timeline offsets can feed that warning without changing MongoDB timestamps.
 
 Operational monitoring builds on the same timestamps:
 
@@ -279,6 +283,15 @@ Operational monitoring builds on the same timestamps:
 - For stale unpaid orders, system auto-cancellation also tries to expire the open Stripe Checkout session; failures are recorded as audit metadata and do not stop the local cancellation.
 - ETA-style notifications reuse estimate snapshots so status changes can include useful preparation or delivery timing.
 - `OrderProgressStepper` gives customers and admins a compact visual stage tracker for placed, kitchen, transport, and delivered phases.
+
+## Delete Protection
+
+Restaurant and menu data can be edited while orders are active, but destructive deletes are blocked when active order records still depend on that data.
+
+- `libs/orderDeletionGuards.ts` centralizes active-order lookup for restaurant and menu item deletion.
+- `DELETE /api/menu-items` returns `409` when an active order still references the item snapshot; admins should mark the item unavailable first.
+- `DELETE /api/restaurant` returns `409` when the restaurant still has active orders.
+- `DELETE /api/profile` also blocks restaurant-owner account deletion when the owned restaurant still has active orders.
 
 ## Delivery And Courier Flow
 

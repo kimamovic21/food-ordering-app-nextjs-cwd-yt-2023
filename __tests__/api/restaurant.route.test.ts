@@ -44,6 +44,7 @@ vi.mock('@/models/menuItem', () => ({
 vi.mock('@/models/order', () => ({
   Order: {
     countDocuments: vi.fn(),
+    findOne: vi.fn(),
   },
 }));
 
@@ -99,6 +100,9 @@ describe('/api/restaurant route', () => {
     } as never);
     vi.mocked(User.findOne).mockResolvedValue(adminUser as never);
     vi.mocked(Order.countDocuments).mockResolvedValue(0 as never);
+    vi.mocked(Order.findOne).mockReturnValue({
+      select: vi.fn().mockResolvedValue(null),
+    } as never);
   });
 
   it('blocks restaurant creation for unauthenticated users', async () => {
@@ -226,5 +230,33 @@ describe('/api/restaurant route', () => {
     expect(Restaurant.findByIdAndDelete).toHaveBeenCalledWith('restaurant-1');
     expect(User.findByIdAndUpdate).toHaveBeenCalledWith(adminUser._id, { restaurantId: null });
     expect(mongoConnect).toHaveBeenCalled();
+  });
+
+  it('blocks deleting an owned restaurant while it has active orders', async () => {
+    const restaurant = {
+      _id: 'restaurant-1',
+      ownerId: adminUser._id,
+      images: ['https://res.cloudinary.com/demo/image/upload/restaurants/old-rest.jpg'],
+    };
+
+    vi.mocked(Restaurant.findOne).mockResolvedValueOnce(restaurant as never);
+    vi.mocked(Order.findOne).mockReturnValueOnce({
+      select: vi.fn().mockResolvedValue({
+        _id: 'order-1',
+        orderStatus: 'ready',
+      }),
+    } as never);
+
+    const { DELETE } = await loadRestaurantRoute();
+    const res = await DELETE(
+      new Request('http://localhost/api/restaurant?id=restaurant-1', { method: 'DELETE' }) as any
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(body.error).toContain('active orders');
+    expect(MenuItem.find).not.toHaveBeenCalled();
+    expect(cloudinary.uploader.destroy).not.toHaveBeenCalled();
+    expect(Restaurant.findByIdAndDelete).not.toHaveBeenCalled();
   });
 });

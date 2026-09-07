@@ -13,6 +13,7 @@ import Link from 'next/link';
 import Pizza from '@/public/pizza.png';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import HeartRating from '@/components/shared/HeartRating';
+import useRestaurantOrderingGate from '@/hooks/useRestaurantOrderingGate';
 import type { CartSize } from '@/types/cart';
 import type { MenuItemListItem } from '@/types/menu';
 
@@ -26,6 +27,7 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
   const { addToCart, getCartRestaurantId } = useCart();
   const { data: profileData, loading: profileLoading } = useProfile();
   const { data: favoritesData, setMenuItemFavorite } = useFavorites();
+  const { assertRestaurantCanAcceptOrders, checkingRestaurantId } = useRestaurantOrderingGate();
 
   const displayItem = item || {
     _id: 'default',
@@ -82,7 +84,7 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
     return String(value);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (profileLoading) {
       return;
     }
@@ -119,6 +121,11 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
       return;
     }
 
+    const canOrderFromRestaurant = await assertRestaurantCanAcceptOrders(itemRestaurantId);
+    if (!canOrderFromRestaurant) {
+      return;
+    }
+
     const price = getPrice();
     if (price == null) return;
 
@@ -146,6 +153,7 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
       }
     );
   };
+  const isCheckingRestaurant = checkingRestaurantId === normalizeId(displayItem.restaurantId);
 
   return (
     <>
@@ -206,9 +214,13 @@ const MenuItem = ({ item, href }: MenuItemProps) => {
               onClick={handleAddToCart}
               className='flex-1'
               size='lg'
-              disabled={!isAvailable || getPrice() == null}
+              disabled={!isAvailable || getPrice() == null || isCheckingRestaurant}
             >
-              {isAvailable ? `Add to cart $${getPrice()?.toFixed(2) || '0.00'}` : 'Unavailable'}
+              {isCheckingRestaurant
+                ? 'Checking...'
+                : isAvailable
+                  ? `Add to cart $${getPrice()?.toFixed(2) || '0.00'}`
+                  : 'Unavailable'}
             </Button>
             <FavoriteToggleButton
               type='menu-item'

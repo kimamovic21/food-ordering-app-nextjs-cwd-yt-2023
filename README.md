@@ -8,10 +8,10 @@ This is a full-stack food ordering platform built with Next.js App Router and Ty
 
 It includes:
 
-- customer authentication, profile management, cart, checkout, and order history
+- customer authentication, profile management, saved delivery addresses, cart, checkout, active order quick access, and order history
 - restaurant browsing with search/filter/sort/pagination and shareable URLs
 - favorites for meals and restaurants
-- restaurant availability alerts when checkout is blocked by closed, paused, closing-soon, or busy restaurants
+- restaurant ordering-status checks before add-to-cart plus availability alerts when checkout is blocked by closed, paused, closing-soon, or busy restaurants
 - loyalty rewards with delivery fee discounts and loyalty history
 - ratings and review flows
 - approved in-app messaging between customers, restaurant owners, admins, and couriers
@@ -23,7 +23,7 @@ It includes:
 - admin dashboard for users, menu items, categories, restaurants, restaurant reports, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, courier ratings, and assignment reliability views
 - courier workflow with assignment, response-time tracking, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
-- order timeline with visual phase icons, preparation/delivery estimates, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
+- order timeline with visual phase icons, preparation/delivery estimates, delay warnings, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
 - order safety automation for stale unpaid orders, unanswered courier assignments, ready orders that cannot get a courier, and expired Stripe Checkout sessions
 - restaurant busy checkout protection based on each restaurant's active kitchen order limit
 - Stripe checkout/webhook flow
@@ -39,15 +39,16 @@ It includes:
 ### Customer Features
 
 - Authentication with credentials and Google OAuth
-- Profile editing (name, phone, address, avatar)
+- Profile editing (name, phone, address, avatar) and up to five saved delivery addresses for checkout reuse
 - Menu and restaurant discovery with filtering/sorting/search
 - Menu item availability indicators with disabled ordering for sold-out items
-- Cart, checkout, best coupon suggestion, busy/closed restaurant checks, restaurant availability alerts, and order tracking
+- Add-to-cart restaurant ordering checks, prefetched for visible menu items, so closed, paused, closing-soon, or busy restaurants are blocked before the cart is changed
+- Cart, checkout, best coupon suggestion, busy/closed restaurant checks, restaurant availability alerts, active order quick access, and order tracking
 - Favorites for menu items and restaurants
 - Loyalty tiers and automatic delivery-fee discounts
 - Personal review management and restaurant review pages
 - Per-order courier reviews and ratings (optional, one submission per order)
-- Order details with courier information, order timeline estimates, delivery PIN visibility, customer delivery confirmation, and a public courier review page for customers
+- Order details with courier information, order timeline estimates, delay warnings, delivery PIN visibility, customer delivery confirmation, and a public courier review page for customers
 - Reorder previous orders from order history, order details, restaurant details, or favorite restaurants after current menu item availability and prices are revalidated
 - Report-problem action on order details, creating support tickets for restaurant support or app support
 - Social sharing actions for restaurant/menu pages
@@ -58,7 +59,7 @@ It includes:
 - Role-based access (user, admin, courier)
 - Super-admin protected management actions
 - CRUD for categories, menu items, restaurants, and users
-- Menu item availability controls for temporarily unavailable or sold-out items
+- Menu item availability controls for temporarily unavailable or sold-out items, with delete protection while active orders still reference an item
 - Restaurant preparation/delivery estimate settings, working-hours checkout protection, and active order limit controls
 - Courier management and order assignment with optional courier-only assignment notes
 - Order lifecycle management, late-order operational alerts, order queue, and dashboards/statistics
@@ -262,6 +263,7 @@ This project uses many dependencies; below are the main packages actively used i
 
 - Restaurants can configure average preparation time, average delivery time, and an active kitchen order limit in the admin restaurant form.
 - Checkout snapshots the restaurant estimates onto each order, so order detail timelines can show expected timing alongside actual phase durations.
+- Public menu item pages check the restaurant ordering status before adding to cart, while checkout remains the final server-side source of truth.
 - Checkout blocks restaurants that are closed, paused, outside delivery radius, blocked by working hours, or inside the final 60 minutes before closing, and surfaces the next opening time when available.
 - Checkout blocks new orders when the restaurant has reached its paid active kitchen order limit (`placed`, `processing`, or `ready` orders).
 - Checkout deduplicates recent identical unpaid `placed` order attempts by reusing or recovering the existing Stripe Checkout session instead of creating another order.
@@ -269,6 +271,9 @@ This project uses many dependencies; below are the main packages actively used i
 - When a customer manually cancels an unpaid `placed` order, the app also attempts to expire that order's Stripe Checkout session.
 - Cart can suggest the best public coupon for the current restaurant subtotal and let the customer apply it directly.
 - Checkout blocks customers from starting another paid active order until the previous order is completed or canceled.
+- Signed-in customers see a header quick-access link to finish payment, track the active order, or spot a delayed active order without hunting through order history.
+- Customers can save up to five validated delivery addresses with confirmed latitude/longitude and apply them during checkout.
+- Order detail pages show a delay warning when active elapsed time passes the saved estimated total plus the grace window.
 - Previous orders can be reordered into the cart only after current menu item existence, availability, restaurant ownership, and prices are rechecked.
 - Favorite restaurants and restaurant detail pages can rebuild the latest previous order from that restaurant into the cart.
 - Customers can request a notification when a closed, paused, closing-soon, or busy restaurant starts accepting orders again.
@@ -279,6 +284,7 @@ This project uses many dependencies; below are the main packages actively used i
 - Failed-delivery review notifications route restaurant admins to `/admin-dashboard/orders/[id]`, while customer order notifications stay on customer order pages.
 - `/admin-dashboard/orders` surfaces late active-order alerts and links to `/admin-dashboard/order-queue` for the full operational view.
 - `/admin-dashboard/restaurant-reports` generates daily, weekly, and monthly restaurant performance summaries from order data and can download the same report as a PDF when the selected period has traffic.
+- Restaurants, restaurant-owner account deletion, and menu item deletion are blocked while active orders still depend on that data; menu items should be marked unavailable first and deleted after active orders finish.
 
 ### Background Jobs With QStash
 

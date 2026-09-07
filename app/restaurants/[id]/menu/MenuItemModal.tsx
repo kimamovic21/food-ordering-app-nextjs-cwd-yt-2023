@@ -9,6 +9,7 @@ import useProfile from '@/hooks/useProfile';
 import useFavorites from '@/hooks/useFavorites';
 import FavoriteToggleButton from '@/components/shared/FavoriteToggleButton';
 import ShareActions from '@/components/shared/ShareActions';
+import useRestaurantOrderingGate from '@/hooks/useRestaurantOrderingGate';
 import { Clock, MapPin, Phone, Mail, Globe } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -30,6 +31,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
   const { addToCart, getCartRestaurantId } = useCart();
   const { data: profileData } = useProfile();
   const { data: favorites, setMenuItemFavorite, setRestaurantFavorite } = useFavorites();
+  const { assertRestaurantCanAcceptOrders, checkingRestaurantId } = useRestaurantOrderingGate();
   const isAvailable = item.isAvailable !== false;
 
   const imageUrl = item.image || Pizza.src;
@@ -82,7 +84,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
     }
   }, [isOpen, item.restaurantId]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     const cartRestaurantId = getCartRestaurantId();
 
     if (!isAvailable) {
@@ -105,6 +107,11 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
         description: 'Clear your cart to add items from a different restaurant',
         duration: 4000,
       });
+      return;
+    }
+
+    const canOrderFromRestaurant = await assertRestaurantCanAcceptOrders(item.restaurantId);
+    if (!canOrderFromRestaurant) {
       return;
     }
 
@@ -138,6 +145,7 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
     onClose();
   };
 
+  const isCheckingRestaurant = checkingRestaurantId === item.restaurantId;
   const formatDay = (day: string) => day.charAt(0).toUpperCase() + day.slice(1);
   const shareBaseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const itemShareUrl = `${shareBaseUrl}/restaurants/${item.restaurantId}/menu`;
@@ -258,9 +266,13 @@ const MenuItemModal = ({ item, isOpen, onClose }: MenuItemModalProps) => {
               onClick={handleAddToCart}
               className='w-full'
               size='lg'
-              disabled={!isAvailable || getPrice() == null}
+              disabled={!isAvailable || getPrice() == null || isCheckingRestaurant}
             >
-              {isAvailable ? `Add to cart $${getPrice()?.toFixed(2) || '0.00'}` : 'Unavailable'}
+              {isCheckingRestaurant
+                ? 'Checking...'
+                : isAvailable
+                  ? `Add to cart $${getPrice()?.toFixed(2) || '0.00'}`
+                  : 'Unavailable'}
             </Button>
 
             {isLoading ? (

@@ -8,6 +8,7 @@ import {
   parseAsStringLiteral,
   useQueryStates,
 } from 'nuqs';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import MenuItem from './MenuItem';
 import SearchInput from './SearchInput';
 import MenuPageSkeleton from './MenuPageSkeleton';
+import { prefetchRestaurantOrderingStatuses } from '@/hooks/useRestaurantOrderingGate';
 import type { MenuCategorySummary, MenuItemCategory, MenuItemListItem } from '@/types/menu';
 
 const SORT_OPTIONS = ['price_asc', 'price_desc', 'newest', 'oldest'] as const;
@@ -38,6 +40,9 @@ const toCategorySlug = (value: string) =>
     .replace(/-+/g, '-');
 
 const isObjectId = (value: string) => /^[a-f0-9]{24}$/i.test(value);
+
+const getUniqueRestaurantIds = (items: MenuItemListItem[]) =>
+  Array.from(new Set(items.map((item) => item.restaurantId).filter(Boolean)));
 
 const preloadImage = (src: string) =>
   new Promise<void>((resolve) => {
@@ -83,6 +88,7 @@ const preloadMenuItemImages = async (items: MenuItemListItem[]) => {
 };
 
 const MenuPage = () => {
+  const queryClient = useQueryClient();
   const [
     {
       q: searchQuery,
@@ -193,6 +199,11 @@ const MenuPage = () => {
     },
     [menuQueryString]
   );
+  const prefetchOrderingStatusForItems = useCallback(
+    (items: MenuItemListItem[]) =>
+      prefetchRestaurantOrderingStatuses(queryClient, getUniqueRestaurantIds(items)),
+    [queryClient]
+  );
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -250,6 +261,7 @@ const MenuPage = () => {
           : [];
         const summaryItems = summaries.flatMap((summary) => summary.items);
 
+        void prefetchOrderingStatusForItems(summaryItems);
         await preloadMenuItemImages(summaryItems);
         setCategorySummaries(summaries);
       } catch (error) {
@@ -262,7 +274,7 @@ const MenuPage = () => {
     };
 
     fetchSummary();
-  }, [isResultsView]);
+  }, [isResultsView, prefetchOrderingStatusForItems]);
 
   useEffect(() => {
     if (!isResultsView) return;
@@ -293,6 +305,7 @@ const MenuPage = () => {
         const items: MenuItemListItem[] = Array.isArray(data?.items) ? data.items : [];
         const total = typeof data?.total === 'number' ? data.total : 0;
 
+        void prefetchOrderingStatusForItems(items);
         await preloadMenuItemImages(items);
 
         if (controller.signal.aborted) {
@@ -314,7 +327,16 @@ const MenuPage = () => {
     fetchResults();
 
     return () => controller.abort();
-  }, [isResultsView, activeSearch, selectedCategoryValues, minPrice, maxPrice, sortBy, page]);
+  }, [
+    isResultsView,
+    activeSearch,
+    selectedCategoryValues,
+    minPrice,
+    maxPrice,
+    sortBy,
+    page,
+    prefetchOrderingStatusForItems,
+  ]);
 
   const handleSearch = () => {
     const trimmedSearch = searchInput.trim();
