@@ -1,9 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { MapPin } from 'lucide-react';
+import { MapPin, Save, Star, Trash2 } from 'lucide-react';
 import DevDeliveryLocationDialog from './DevDeliveryLocationDialog';
+import type { DeliveryAddress } from '@/types/user';
 
 interface DeliveryInformationProps {
   email: string;
@@ -23,6 +31,17 @@ interface DeliveryInformationProps {
   isGettingDeliveryLocation: boolean;
   onUseCurrentLocation: () => void;
   onManualLocationUpdate: (latitude: number, longitude: number) => void;
+  savedAddresses?: DeliveryAddress[];
+  selectedAddressId?: string;
+  loadingSavedAddresses?: boolean;
+  savingDeliveryAddress?: boolean;
+  deletingDeliveryAddress?: boolean;
+  settingDefaultDeliveryAddress?: boolean;
+  canSaveDeliveryAddress?: boolean;
+  onSelectSavedAddress?: (addressId: string) => void;
+  onSaveCurrentAddress?: () => void;
+  onDeleteSelectedAddress?: () => void;
+  onSetDefaultAddress?: () => void;
 }
 
 const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
@@ -34,9 +53,21 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
   isGettingDeliveryLocation,
   onUseCurrentLocation,
   onManualLocationUpdate,
+  savedAddresses = [],
+  selectedAddressId = '',
+  loadingSavedAddresses = false,
+  savingDeliveryAddress = false,
+  deletingDeliveryAddress = false,
+  settingDefaultDeliveryAddress = false,
+  canSaveDeliveryAddress = false,
+  onSelectSavedAddress,
+  onSaveCurrentAddress,
+  onDeleteSelectedAddress,
+  onSetDefaultAddress,
 }) => {
   const hasDeliveryLocation =
     typeof formData.deliveryLatitude === 'number' && typeof formData.deliveryLongitude === 'number';
+  const selectedSavedAddress = savedAddresses.find((address) => address._id === selectedAddressId);
 
   return (
     <div className='bg-card border rounded-xl p-4 sm:p-6 lg:max-h-[70vh] lg:overflow-y-auto'>
@@ -45,6 +76,57 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
         <Label className='mb-2'>Email</Label>
         <Input type='email' value={email} disabled />
       </div>
+      {(loadingSavedAddresses || savedAddresses.length > 0) && (
+        <div className='mb-4 rounded-lg border bg-muted/20 p-3'>
+          <Label className='mb-2'>Saved addresses</Label>
+          <Select
+            value={selectedAddressId}
+            onValueChange={(value) => onSelectSavedAddress?.(value)}
+            disabled={loadingSavedAddresses}
+          >
+            <SelectTrigger className='w-full'>
+              <SelectValue
+                placeholder={
+                  loadingSavedAddresses ? 'Loading saved addresses...' : 'Choose saved address'
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {savedAddresses.map((address) => (
+                <SelectItem key={address._id} value={address._id}>
+                  {address.label}
+                  {address.isDefault ? ' (default)' : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {selectedSavedAddress && (
+            <div className='mt-3 flex flex-wrap gap-2'>
+              <Button
+                type='button'
+                size='sm'
+                variant='outline'
+                onClick={onSetDefaultAddress}
+                disabled={selectedSavedAddress.isDefault || settingDefaultDeliveryAddress}
+              >
+                <Star className='size-4' aria-hidden='true' />
+                {selectedSavedAddress.isDefault ? 'Default' : 'Make default'}
+              </Button>
+              <Button
+                type='button'
+                size='sm'
+                variant='outline'
+                onClick={onDeleteSelectedAddress}
+                disabled={deletingDeliveryAddress}
+              >
+                <Trash2 className='size-4' aria-hidden='true' />
+                Delete
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
       <div className='mb-4'>
         <Label htmlFor='phone' className='mb-2'>
           Phone
@@ -159,6 +241,19 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
               {isGettingDeliveryLocation ? 'Checking location...' : 'Use current location'}
             </Button>
             <DevDeliveryLocationDialog onManualLocationUpdate={onManualLocationUpdate} />
+            {onSaveCurrentAddress && (
+              <Button
+                type='button'
+                variant='secondary'
+                size='sm'
+                className='mt-3 ml-2'
+                onClick={onSaveCurrentAddress}
+                disabled={!canSaveDeliveryAddress || savingDeliveryAddress}
+              >
+                <Save className='size-4' aria-hidden='true' />
+                {savingDeliveryAddress ? 'Saving...' : 'Save address'}
+              </Button>
+            )}
           </div>
         </div>
       </div>

@@ -19,12 +19,22 @@ export const queryKeys = {
   profile: {
     all: ['profile'] as const,
     detail: () => [...queryKeys.profile.all, 'detail'] as const,
+    deliveryAddresses: () => [...queryKeys.profile.all, 'delivery-addresses'] as const,
   },
   favorites: {
     all: ['favorites'] as const,
     ids: () => [...queryKeys.favorites.all, 'ids'] as const,
     menuItems: () => [...queryKeys.favorites.all, 'menu-items'] as const,
     restaurants: () => [...queryKeys.favorites.all, 'restaurants'] as const,
+  },
+  restaurants: {
+    all: ['restaurants'] as const,
+    orderingStatus: (restaurantId: string) =>
+      [...queryKeys.restaurants.all, 'ordering-status', restaurantId] as const,
+  },
+  orders: {
+    all: ['orders'] as const,
+    active: () => [...queryKeys.orders.all, 'active'] as const,
   },
   soundSettings: {
     all: ['sound-settings'] as const,

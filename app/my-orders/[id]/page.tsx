@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
 import OrderProgressStepper from '@/components/shared/OrderProgressStepper';
+import OrderDelayNotice from '@/components/shared/OrderDelayNotice';
 import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
@@ -573,6 +574,13 @@ const MyOrderDetailPage = () => {
           status={order.orderStatus}
           estimatedPreparationMinutes={order.estimatedPreparationMinutes}
           estimatedDeliveryMinutes={order.estimatedDeliveryMinutes}
+        />
+
+        <OrderDelayNotice
+          createdAt={order.createdAt}
+          orderStatus={order.orderStatus}
+          estimatedTotalMinutes={order.estimatedTotalMinutes}
+          durationOffsetMinutes={totalTimelineOffsetMinutes}
         />
 
         <div className='mb-6'>

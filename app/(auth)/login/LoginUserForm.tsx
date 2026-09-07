@@ -105,9 +105,6 @@ const LoginUserForm = () => {
         return;
       }
 
-      sonnerToast.success('Welcome back!', {
-        style: { backgroundColor: '#22c55e', color: 'white' },
-      });
       router.push(result?.url || '/');
     } catch (err) {
       console.error(err);

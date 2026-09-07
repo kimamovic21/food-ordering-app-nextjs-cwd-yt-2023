@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -24,6 +25,9 @@ import ShareActions from '@/components/shared/ShareActions';
 import { useCart } from '@/contexts/CartContext';
 import useFavorites from '@/hooks/useFavorites';
 import useProfile from '@/hooks/useProfile';
+import useRestaurantOrderingGate, {
+  prefetchRestaurantOrderingStatuses,
+} from '@/hooks/useRestaurantOrderingGate';
 import Pizza from '@/public/pizza.png';
 import MenuItemDetailLoading from './loading';
 import type { CartSize } from '@/types/cart';
@@ -47,6 +51,7 @@ const getCategoryName = (category: MenuItemListItem['category']) => {
 };
 
 const MenuItemDetailPage = () => {
+  const queryClient = useQueryClient();
   const params = useParams<{ itemId: string }>();
   const itemId = params?.itemId;
   const [item, setItem] = useState<MenuItemListItem | null>(null);
@@ -58,6 +63,16 @@ const MenuItemDetailPage = () => {
   const { addToCart, getCartRestaurantId } = useCart();
   const { data: profileData, loading: profileLoading } = useProfile();
   const { data: favorites, setMenuItemFavorite, setRestaurantFavorite } = useFavorites();
+  const { assertRestaurantCanAcceptOrders, checkingRestaurantId } = useRestaurantOrderingGate();
+
+  useEffect(() => {
+    const restaurantId = normalizeId(item?.restaurantId);
+    if (!restaurantId) {
+      return;
+    }
+
+    void prefetchRestaurantOrderingStatuses(queryClient, [restaurantId]);
+  }, [item?.restaurantId, queryClient]);
 
   useEffect(() => {
     setShareUrl(window.location.href);
@@ -160,8 +175,11 @@ const MenuItemDetailPage = () => {
     restaurant && shareBaseUrl ? `${shareBaseUrl}/restaurants/${restaurant._id}` : '';
   const categoryName = getCategoryName(item?.category);
   const isAvailable = item?.isAvailable !== false;
+  const isCheckingRestaurant = Boolean(
+    item && checkingRestaurantId === normalizeId(item.restaurantId)
+  );
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!item || profileLoading) {
       return;
     }
@@ -195,6 +213,11 @@ const MenuItemDetailPage = () => {
         description: 'Clear your cart to add items from a different restaurant',
         duration: 4000,
       });
+      return;
+    }
+
+    const canOrderFromRestaurant = await assertRestaurantCanAcceptOrders(itemRestaurantId);
+    if (!canOrderFromRestaurant) {
       return;
     }
 
@@ -375,12 +398,12 @@ const MenuItemDetailPage = () => {
 
             <Button
               onClick={handleAddToCart}
-              disabled={!isAvailable || selectedPrice == null}
+              disabled={!isAvailable || selectedPrice == null || isCheckingRestaurant}
               className='mt-6 w-full'
               size='lg'
             >
               <ShoppingCart className='h-4 w-4' />
-              {isAvailable ? 'Add to cart' : 'Unavailable'}
+              {isCheckingRestaurant ? 'Checking...' : isAvailable ? 'Add to cart' : 'Unavailable'}
             </Button>
           </Card>
 

@@ -145,7 +145,10 @@ describe('E2E: payment link recovery', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({ url: 'https://checkout.stripe.test/open-session' });
+    expect(body).toEqual({
+      url: 'https://checkout.stripe.test/open-session',
+      paymentLinkStatus: 'reused',
+    });
     expect(stripeCreateSession).not.toHaveBeenCalled();
   });
 
@@ -163,7 +166,10 @@ describe('E2E: payment link recovery', () => {
     const updatedOrder = await Order.findById(order._id).lean();
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({ url: 'https://checkout.stripe.test/recovered-session' });
+    expect(body).toEqual({
+      url: 'https://checkout.stripe.test/recovered-session',
+      paymentLinkStatus: 'refreshed',
+    });
     expect(stripeCreateSession).toHaveBeenCalledTimes(1);
     expect(updatedOrder?.stripeSessionId).toBe('cs_recovered_e2e');
   });

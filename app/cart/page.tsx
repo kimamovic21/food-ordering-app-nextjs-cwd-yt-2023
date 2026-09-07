@@ -24,6 +24,7 @@ import {
   type CouponLike,
 } from '@/libs/coupon';
 import useProfile from '@/hooks/useProfile';
+import useDeliveryAddresses from '@/hooks/useDeliveryAddresses';
 import Link from 'next/link';
 import CartItems from './CartItems';
 import DeliveryInformation from './DeliveryInformation';
@@ -31,6 +32,7 @@ import OrderSummary from './OrderSummary';
 import Title from '@/components/shared/Title';
 import RestaurantAvailabilityNotifyButton from '@/components/shared/RestaurantAvailabilityNotifyButton';
 import type { CartValidationItem, CartValidationResponse, CheckoutStartResult } from '@/types/cart';
+import type { DeliveryAddressInput } from '@/types/user';
 
 const RESTAURANT_STATUS_CHECK_MIN_MS = 1000;
 const RESTAURANT_STATUS_DOT_STEPS = ['.', '..', '...'] as const;
@@ -177,6 +179,13 @@ const CartPage = () => {
   const { data: profileData } = useProfile();
   const { status: sessionStatus } = useSession();
   const isLoggedIn = sessionStatus === 'authenticated';
+  const {
+    addresses: savedDeliveryAddresses,
+    isLoading: loadingSavedDeliveryAddresses,
+    createAddress: createDeliveryAddress,
+    setDefaultAddress,
+    deleteAddress,
+  } = useDeliveryAddresses(isLoggedIn);
 
   const [formData, setFormData] = useState({
     phone: '',
@@ -211,6 +220,9 @@ const CartPage = () => {
   const [cartValidationItems, setCartValidationItems] = useState<CartValidationItem[]>([]);
   const [cartValidationMessage, setCartValidationMessage] = useState<string | null>(null);
   const [loadingMenuAvailability, setLoadingMenuAvailability] = useState(false);
+  const [selectedDeliveryAddressId, setSelectedDeliveryAddressId] = useState('');
+  const hasLoadedProfileDeliveryInfoRef = useRef(false);
+  const hasAppliedDefaultDeliveryAddressRef = useRef(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -348,19 +360,49 @@ const CartPage = () => {
   }, [isLoggedIn]);
 
   useEffect(() => {
-    if (profileData) {
-      setFormData({
-        phone: profileData.phone || '',
-        streetAddress: profileData.streetAddress || '',
-        postalCode: profileData.postalCode || '',
-        city: profileData.city || '',
-        country: profileData.country || '',
-        deliveryLatitude: null,
-        deliveryLongitude: null,
-        specialInstructions: '',
-      });
+    if (!profileData || hasLoadedProfileDeliveryInfoRef.current) {
+      return;
     }
+
+    hasLoadedProfileDeliveryInfoRef.current = true;
+    setFormData((prev) => ({
+      ...prev,
+      phone: prev.phone || profileData.phone || '',
+      streetAddress: prev.streetAddress || profileData.streetAddress || '',
+      postalCode: prev.postalCode || profileData.postalCode || '',
+      city: prev.city || profileData.city || '',
+      country: prev.country || profileData.country || '',
+    }));
   }, [profileData]);
+
+  useEffect(() => {
+    if (
+      hasAppliedDefaultDeliveryAddressRef.current ||
+      savedDeliveryAddresses.length === 0 ||
+      formData.deliveryLatitude !== null ||
+      formData.deliveryLongitude !== null
+    ) {
+      return;
+    }
+
+    const defaultAddress = savedDeliveryAddresses.find((address) => address.isDefault);
+    if (!defaultAddress) {
+      return;
+    }
+
+    hasAppliedDefaultDeliveryAddressRef.current = true;
+    setSelectedDeliveryAddressId(defaultAddress._id);
+    setFormData((prev) => ({
+      ...prev,
+      phone: defaultAddress.phone,
+      streetAddress: defaultAddress.streetAddress,
+      postalCode: defaultAddress.postalCode,
+      city: defaultAddress.city,
+      country: defaultAddress.country,
+      deliveryLatitude: defaultAddress.deliveryLatitude,
+      deliveryLongitude: defaultAddress.deliveryLongitude,
+    }));
+  }, [formData.deliveryLatitude, formData.deliveryLongitude, savedDeliveryAddresses]);
 
   const fetchCartValidation = useCallback(async (): Promise<CartValidationResponse> => {
     const response = await fetch('/api/cart/validate', {
@@ -633,6 +675,101 @@ const CartPage = () => {
       deliveryLatitude: latitude,
       deliveryLongitude: longitude,
     }));
+  };
+
+  const hasRequiredDeliveryAddressFields = [
+    formData.phone,
+    formData.streetAddress,
+    formData.postalCode,
+    formData.city,
+    formData.country,
+  ].every((value) => String(value || '').trim());
+  const canSaveDeliveryAddress =
+    isLoggedIn && hasRequiredDeliveryAddressFields && hasDeliveryLocation;
+
+  const handleSelectSavedAddress = (addressId: string) => {
+    const selectedAddress = savedDeliveryAddresses.find((address) => address._id === addressId);
+    if (!selectedAddress) {
+      return;
+    }
+
+    setSelectedDeliveryAddressId(addressId);
+    setFormData((prev) => ({
+      ...prev,
+      phone: selectedAddress.phone,
+      streetAddress: selectedAddress.streetAddress,
+      postalCode: selectedAddress.postalCode,
+      city: selectedAddress.city,
+      country: selectedAddress.country,
+      deliveryLatitude: selectedAddress.deliveryLatitude,
+      deliveryLongitude: selectedAddress.deliveryLongitude,
+    }));
+    sonnerToast.success('Delivery address applied', {
+      style: { background: '#22c55e', color: 'white' },
+    });
+  };
+
+  const handleSaveCurrentDeliveryAddress = async () => {
+    if (!canSaveDeliveryAddress) {
+      sonnerToast.error('Complete delivery details and confirm your location first.');
+      return;
+    }
+
+    const label = `${formData.streetAddress}, ${formData.city}`.slice(0, 60);
+    const address: DeliveryAddressInput = {
+      label,
+      phone: formData.phone,
+      streetAddress: formData.streetAddress,
+      postalCode: formData.postalCode,
+      city: formData.city,
+      country: formData.country,
+      deliveryLatitude: formData.deliveryLatitude as number,
+      deliveryLongitude: formData.deliveryLongitude as number,
+      isDefault: savedDeliveryAddresses.length === 0,
+    };
+
+    try {
+      const result = await createDeliveryAddress.mutateAsync(address);
+      if (result.address?._id) {
+        setSelectedDeliveryAddressId(result.address._id);
+      }
+      sonnerToast.success('Delivery address saved', {
+        style: { background: '#22c55e', color: 'white' },
+      });
+    } catch (error) {
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to save address.');
+    }
+  };
+
+  const handleSetDefaultDeliveryAddress = async () => {
+    if (!selectedDeliveryAddressId) {
+      return;
+    }
+
+    try {
+      await setDefaultAddress.mutateAsync(selectedDeliveryAddressId);
+      sonnerToast.success('Default delivery address updated', {
+        style: { background: '#22c55e', color: 'white' },
+      });
+    } catch (error) {
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to update address.');
+    }
+  };
+
+  const handleDeleteSelectedDeliveryAddress = async () => {
+    if (!selectedDeliveryAddressId) {
+      return;
+    }
+
+    try {
+      await deleteAddress.mutateAsync(selectedDeliveryAddressId);
+      setSelectedDeliveryAddressId('');
+      sonnerToast.success('Delivery address deleted', {
+        style: { background: '#22c55e', color: 'white' },
+      });
+    } catch (error) {
+      sonnerToast.error(error instanceof Error ? error.message : 'Failed to delete address.');
+    }
   };
 
   const subtotal = cartItems.reduce(
@@ -1230,6 +1367,17 @@ const CartPage = () => {
             isGettingDeliveryLocation={isGettingDeliveryLocation}
             onUseCurrentLocation={handleUseCurrentLocation}
             onManualLocationUpdate={handleManualDeliveryLocationUpdate}
+            savedAddresses={savedDeliveryAddresses}
+            selectedAddressId={selectedDeliveryAddressId}
+            loadingSavedAddresses={loadingSavedDeliveryAddresses}
+            savingDeliveryAddress={createDeliveryAddress.isPending}
+            deletingDeliveryAddress={deleteAddress.isPending}
+            settingDefaultDeliveryAddress={setDefaultAddress.isPending}
+            canSaveDeliveryAddress={canSaveDeliveryAddress}
+            onSelectSavedAddress={handleSelectSavedAddress}
+            onSaveCurrentAddress={handleSaveCurrentDeliveryAddress}
+            onDeleteSelectedAddress={handleDeleteSelectedDeliveryAddress}
+            onSetDefaultAddress={handleSetDefaultDeliveryAddress}
           />
           <OrderSummary
             subtotal={subtotal}

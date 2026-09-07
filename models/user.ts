@@ -14,6 +14,21 @@ const CourierWorkingHoursSchema = new Schema(
   { _id: false }
 );
 
+const DeliveryAddressSchema = new Schema(
+  {
+    label: { type: String, required: true, trim: true, maxlength: 60 },
+    phone: { type: String, required: true, trim: true },
+    streetAddress: { type: String, required: true, trim: true },
+    postalCode: { type: String, required: true, trim: true },
+    city: { type: String, required: true, trim: true },
+    country: { type: String, required: true, trim: true },
+    deliveryLatitude: { type: Number, required: true },
+    deliveryLongitude: { type: Number, required: true },
+    isDefault: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
 const UserSchema = new Schema(
   {
     name: { type: String, required: true },
@@ -56,6 +71,10 @@ const UserSchema = new Schema(
     },
     favoriteRestaurants: {
       type: [{ type: Schema.Types.ObjectId, ref: 'Restaurant' }],
+      default: [],
+    },
+    deliveryAddresses: {
+      type: [DeliveryAddressSchema],
       default: [],
     },
     notificationSoundEnabled: { type: Boolean, default: false },

@@ -9,6 +9,7 @@ import {
   parseAsStringLiteral,
   useQueryStates,
 } from 'nuqs';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ import Link from 'next/link';
 import MenuItem from './MenuItem';
 import SearchInput from './SearchInput';
 import MenuPageSkeleton from './MenuPageSkeleton';
+import { prefetchRestaurantOrderingStatuses } from '@/hooks/useRestaurantOrderingGate';
 import type { MenuCategorySummary, MenuItemCategory, MenuItemListItem } from '@/types/menu';
 
 const SORT_OPTIONS = ['price_asc', 'price_desc', 'newest', 'oldest'] as const;
@@ -51,6 +53,7 @@ const toCategorySlug = (value: string) =>
 const isObjectId = (value: string) => /^[a-f0-9]{24}$/i.test(value);
 
 const RestaurantMenuPage = () => {
+  const queryClient = useQueryClient();
   const params = useParams();
   const id = params?.id as string;
 
@@ -142,6 +145,14 @@ const RestaurantMenuPage = () => {
     [activeSearch, selectedCategoryValues, minPrice, maxPrice, sortBy]
   );
   const lastFilterKeyRef = useRef(filterKey);
+
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
+
+    void prefetchRestaurantOrderingStatuses(queryClient, [id]);
+  }, [id, queryClient]);
 
   useEffect(() => {
     if (!id) return;

@@ -105,7 +105,8 @@ const MenuItemsListPage = () => {
         method: 'DELETE',
       });
 
-      if (!res.ok) throw new Error('Delete failed');
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || 'Delete failed');
 
       sonnerToast.success('Menu item deleted', {
         style: {
@@ -116,7 +117,7 @@ const MenuItemsListPage = () => {
       fetchData();
     } catch (err) {
       console.error(err);
-      sonnerToast.error('Failed to delete menu item', {
+      sonnerToast.error(err instanceof Error ? err.message : 'Failed to delete menu item', {
         style: {
           background: '#ef4444',
           color: 'white',

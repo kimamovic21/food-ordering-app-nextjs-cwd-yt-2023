@@ -8,6 +8,23 @@ export interface UserSummary {
   role?: UserRole | string | null;
 }
 
+export interface DeliveryAddress {
+  _id: string;
+  label: string;
+  phone: string;
+  streetAddress: string;
+  postalCode: string;
+  city: string;
+  country: string;
+  deliveryLatitude: number;
+  deliveryLongitude: number;
+  isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type DeliveryAddressInput = Omit<DeliveryAddress, '_id' | 'createdAt' | 'updatedAt'>;
+
 export interface ExtendedUser {
   _id?: string;
   name?: string | null;
@@ -23,6 +40,7 @@ export interface ExtendedUser {
   availability?: boolean;
   loyaltyTier?: string | null;
   restaurantId?: string | null;
+  deliveryAddresses?: DeliveryAddress[];
 }
 
 export type ProfileData = ExtendedUser;

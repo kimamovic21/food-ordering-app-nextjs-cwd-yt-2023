@@ -10,6 +10,9 @@ This folder contains unit tests grouped by feature area.
 - `api/forgot-password.route.test.ts`: validates forgot-password route behavior.
 - `api/reset-password.route.test.ts`: validates reset-password route behavior.
 - `api/profile.route.test.ts`: validates profile fetch/update/delete behavior.
+- `api/delivery-addresses.route.test.ts`: validates saved delivery address CRUD, defaults, limits, and location requirements.
+- `api/my-orders-active.route.test.ts`: validates active customer order lookup and stale-order cancellation filtering.
+- `api/restaurant-ordering-status.route.test.ts`: validates public restaurant ordering status and active capacity responses.
 - `api/profile-change-password.route.test.ts`: validates password change API behavior.
 - `api/upload-users.route.test.ts`: validates profile image upload/remove behavior.
 - `api/checkout.route.test.ts`: validates checkout guardrails and failure handling.
@@ -23,6 +26,8 @@ This folder contains unit tests grouped by feature area.
 - `libs/courier-assignment-timeout.test.ts`: validates stale pending courier assignment expiry and courier release rules.
 - `libs/courier-assignment-history.test.ts`: validates finalized courier assignment attempt history.
 - `libs/order-auto-cancellation.test.ts`: validates stale unpaid and ready-without-courier auto-cancel rules.
+- `libs/orderDelay.test.ts`: validates active order delay warning thresholds and development time offsets.
+- `hooks/useRestaurantOrderingGate.test.ts`: validates restaurant ordering-status prefetch caching for visible menu items.
 - `libs/realtimeClient.test.ts`: validates client-side realtime payload helpers.
 
 ## Structure Rules

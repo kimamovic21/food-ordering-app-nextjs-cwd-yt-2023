@@ -7,6 +7,7 @@ import { User } from '@/models/user';
 import { MenuItem } from '@/models/menuItem';
 import { Order } from '@/models/order';
 import { createAuditLog } from '@/libs/auditLog';
+import { findBlockingRestaurantOrder } from '@/libs/orderDeletionGuards';
 import { getRestaurantOrderingStatus } from '@/libs/restaurantAvailability';
 import { notifyWaitingUsersIfRestaurantAcceptingOrders } from '@/libs/restaurantAvailabilityRequests';
 import cloudinary from '@/libs/cloudinary';
@@ -436,6 +437,19 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json(
         { error: 'Restaurant not found or you do not own this restaurant' },
         { status: 404 }
+      );
+    }
+
+    const activeOrder = await findBlockingRestaurantOrder(restaurantId);
+    if (activeOrder) {
+      return NextResponse.json(
+        {
+          error:
+            'This restaurant has active orders. Finish or cancel those orders before deleting the restaurant.',
+          activeOrderId: String(activeOrder._id),
+          activeOrderStatus: activeOrder.orderStatus,
+        },
+        { status: 409 }
       );
     }
 

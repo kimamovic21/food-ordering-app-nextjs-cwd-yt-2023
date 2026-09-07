@@ -34,6 +34,7 @@ import ModeToggle from '../theme/ModeToggle';
 import NotificationBell from './NotificationBell';
 import MessageBell from './MessageBell';
 import CommandPaletteTrigger from './CommandPaletteTrigger';
+import ActiveOrderQuickAccess from './ActiveOrderQuickAccess';
 
 const DEFAULT_PROFILE_IMAGE = '/user-default-image.webp';
 
@@ -110,6 +111,7 @@ const Header = () => {
   const isCourier =
     (session?.data?.user as any)?.role === 'courier' || profileData?.role === 'courier';
   const isAdmin = (session?.data?.user as any)?.role === 'admin' || profileData?.role === 'admin';
+  const role = profileData?.role || (session?.data?.user as any)?.role || null;
   const isPublicRestaurantPage =
     pathname === '/restaurants' ||
     Boolean(pathname && /^\/restaurants\/[^/]+(?:\/reviews)?$/.test(pathname));
@@ -236,6 +238,10 @@ const Header = () => {
           ) : (
             <>
               <ModeToggle />
+              <ActiveOrderQuickAccess
+                isAuthenticated={status === 'authenticated'}
+                userRole={role}
+              />
               <CommandPaletteTrigger showLabel={false} className='h-9 rounded-md px-2.5' />
               {status === 'authenticated' && <MessageBell iconSize={26} />}
               {status === 'authenticated' && <NotificationBell iconSize={26} />}
@@ -375,6 +381,13 @@ const Header = () => {
             <CommandPaletteTrigger
               className='w-full justify-start'
               onOpen={() => setMobileOpen(false)}
+            />
+
+            <ActiveOrderQuickAccess
+              isAuthenticated={status === 'authenticated'}
+              userRole={role}
+              onNavigate={() => setMobileOpen(false)}
+              className='justify-center'
             />
 
             {status === 'authenticated' && (

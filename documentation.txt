@@ -1155,3 +1155,5 @@ Add courier assignment timeout and reliability metrics
 Add documentation maintenance workflow
 
 Expire stale unpaid and customer-canceled Stripe checkout sessions
+
+Improve customer order UX and active-order safety
