@@ -60,6 +60,14 @@ describe('queryKeys', () => {
     expect(queryKeys.favorites.restaurants()).toEqual(['favorites', 'restaurants']);
   });
 
+  it('keeps restaurant operations keys grouped for broad invalidation', () => {
+    expect(queryKeys.restaurantOperations.all).toEqual(['restaurant-operations']);
+    expect(queryKeys.restaurantOperations.overview()).toEqual([
+      'restaurant-operations',
+      'overview',
+    ]);
+  });
+
   it('keeps sound setting keys grouped for broad invalidation', () => {
     expect(queryKeys.soundSettings.all).toEqual(['sound-settings']);
     expect(queryKeys.soundSettings.messages()).toEqual(['sound-settings', 'messages']);

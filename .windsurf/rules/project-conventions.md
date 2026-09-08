@@ -21,13 +21,15 @@ description: Project rules for this Next.js food ordering app. Use when editing 
 - Keep Stripe, Cloudinary, and Resend credentials in server-side code only.
 - Validate API inputs and keep response shapes stable unless a change is requested.
 - Preserve role checks for admin, courier, and user flows.
-- Saved customer delivery addresses live on `User.deliveryAddresses`, are capped at five, require complete delivery fields plus confirmed latitude/longitude, and should be loaded/mutated through `/api/profile/delivery-addresses`.
+- Saved customer delivery addresses live on `User.deliveryAddresses`, are capped at five, require complete delivery fields plus confirmed latitude/longitude, dedupe duplicate saves by normalized address/phone/coordinates, and should be loaded/mutated through `/api/profile/delivery-addresses`.
 - Preserve checkout checks before Stripe session creation: working hours, 60-minute closing-soon cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, loyalty, and duplicate unpaid checkout recovery.
+- Cart validation should keep unavailable/deleted/invalid items as hard checkout blockers, while price changes stay non-blocking and should be shown clearly before checkout.
 - Public add-to-cart surfaces should prefetch visible restaurant ordering status where possible, check `/api/restaurants/[id]/ordering-status` before changing the cart, and still keep checkout as the server-authoritative source of truth.
 - Active customer order quick access should use `/api/my-orders/active`, apply stale-order maintenance before returning data, and stay customer-only.
+- Restaurant operations overview should use `/api/restaurant/operations` and `/admin-dashboard/operations` for active stage counts, kitchen capacity, restaurant status, courier availability, today revenue, unpaid/canceled counts, quick actions, and urgent order attention items.
 - Order delay warnings should use `libs/orderDelay.ts` and compare elapsed active time against the saved estimated total plus the grace window; development time offsets can affect the warning without changing MongoDB timestamps.
 - Do not delete restaurants, restaurant-owner accounts, or menu items while active orders still depend on them; use `libs/orderDeletionGuards.ts` and return `409` with clear guidance.
-- Preserve stale unpaid auto-cancel protection: system cancellation should try to expire the open Stripe Checkout session and audit the result without blocking local order cancellation.
+- Preserve stale unpaid auto-cancel protection: system cancellation should try to expire the open Stripe Checkout session and audit the result without blocking local order cancellation; customer order screens should show the same 30-minute payment-expiry window.
 - Preserve customer manual cancel protection: unpaid `placed` order cancellation should use the same Stripe Checkout expiration helper and audit metadata.
 - Preserve delivery double confirmation with courier PIN handoff followed by customer/admin completion.
 - Preserve courier assignment timeout and history logic for accepted, declined, and expired attempts.

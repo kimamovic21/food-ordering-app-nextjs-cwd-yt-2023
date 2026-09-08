@@ -15,6 +15,7 @@ import {
   Menu,
   MessageSquareText,
   PieChart,
+  Radar,
   Columns3,
   TicketPercent,
   ShoppingCart,
@@ -167,6 +168,12 @@ const AdminDashboardClientLayout = ({ children }: { children: React.ReactNode })
       label: 'Restaurant',
       superAdminOnly: false,
       icon: Utensils,
+    },
+    {
+      href: '/admin-dashboard/operations',
+      label: 'Operations',
+      superAdminOnly: false,
+      icon: Radar,
     },
     {
       href: '/admin-dashboard/restaurant-reports',

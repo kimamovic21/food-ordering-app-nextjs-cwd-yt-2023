@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Lightbulb, Package, ShoppingCart, Utensils } from 'lucide-react';
+import { ArrowRight, Lightbulb, Package, Radar, ShoppingCart, Utensils } from 'lucide-react';
 import Link from 'next/link';
 
 const shortcuts = [
@@ -9,6 +9,14 @@ const shortcuts = [
     description: 'Update your restaurant profile, opening hours, and contact details.',
     href: '/admin-dashboard/restaurant',
     icon: Utensils,
+    color: 'bg-primary/10',
+    iconColor: 'text-primary',
+  },
+  {
+    title: 'Operations',
+    description: 'View active orders, kitchen capacity, courier coverage, and alerts.',
+    href: '/admin-dashboard/operations',
+    icon: Radar,
     color: 'bg-primary/10',
     iconColor: 'text-primary',
   },
@@ -52,7 +60,7 @@ const AdminDashboard = () => {
       {/* Quick Shortcuts */}
       <section>
         <h2 className='text-lg font-semibold mb-4 text-foreground'>Quick Shortcuts</h2>
-        <div className='grid gap-4 md:grid-cols-3'>
+        <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
           {shortcuts.map((item) => {
             const Icon = item.icon;
             return (

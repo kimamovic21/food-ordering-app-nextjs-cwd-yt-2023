@@ -10,6 +10,7 @@ export type * from '@/types/menu';
 export type * from '@/types/messages';
 export type * from '@/types/money';
 export type * from '@/types/notifications';
+export type * from '@/types/operations';
 export type * from '@/types/order';
 export type * from '@/types/order-timeline';
 export type * from '@/types/phone';

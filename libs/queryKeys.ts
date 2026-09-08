@@ -32,6 +32,10 @@ export const queryKeys = {
     orderingStatus: (restaurantId: string) =>
       [...queryKeys.restaurants.all, 'ordering-status', restaurantId] as const,
   },
+  restaurantOperations: {
+    all: ['restaurant-operations'] as const,
+    overview: () => [...queryKeys.restaurantOperations.all, 'overview'] as const,
+  },
   orders: {
     all: ['orders'] as const,
     active: () => [...queryKeys.orders.all, 'active'] as const,

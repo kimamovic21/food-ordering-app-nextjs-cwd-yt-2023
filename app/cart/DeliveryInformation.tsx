@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -9,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { MapPin, Save, Star, Trash2 } from 'lucide-react';
+import { Home, MapPin, Save, Star, Trash2 } from 'lucide-react';
 import DevDeliveryLocationDialog from './DevDeliveryLocationDialog';
 import type { DeliveryAddress } from '@/types/user';
 
@@ -32,6 +33,7 @@ interface DeliveryInformationProps {
   onUseCurrentLocation: () => void;
   onManualLocationUpdate: (latitude: number, longitude: number) => void;
   savedAddresses?: DeliveryAddress[];
+  isLoggedIn?: boolean;
   selectedAddressId?: string;
   loadingSavedAddresses?: boolean;
   savingDeliveryAddress?: boolean;
@@ -54,6 +56,7 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
   onUseCurrentLocation,
   onManualLocationUpdate,
   savedAddresses = [],
+  isLoggedIn = false,
   selectedAddressId = '',
   loadingSavedAddresses = false,
   savingDeliveryAddress = false,
@@ -68,6 +71,7 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
   const hasDeliveryLocation =
     typeof formData.deliveryLatitude === 'number' && typeof formData.deliveryLongitude === 'number';
   const selectedSavedAddress = savedAddresses.find((address) => address._id === selectedAddressId);
+  const shouldShowSavedAddresses = isLoggedIn || loadingSavedAddresses || savedAddresses.length > 0;
 
   return (
     <div className='bg-card border rounded-xl p-4 sm:p-6 lg:max-h-[70vh] lg:overflow-y-auto'>
@@ -76,53 +80,86 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
         <Label className='mb-2'>Email</Label>
         <Input type='email' value={email} disabled />
       </div>
-      {(loadingSavedAddresses || savedAddresses.length > 0) && (
+      {shouldShowSavedAddresses && (
         <div className='mb-4 rounded-lg border bg-muted/20 p-3'>
-          <Label className='mb-2'>Saved addresses</Label>
-          <Select
-            value={selectedAddressId}
-            onValueChange={(value) => onSelectSavedAddress?.(value)}
-            disabled={loadingSavedAddresses}
-          >
-            <SelectTrigger className='w-full'>
-              <SelectValue
-                placeholder={
-                  loadingSavedAddresses ? 'Loading saved addresses...' : 'Choose saved address'
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {savedAddresses.map((address) => (
-                <SelectItem key={address._id} value={address._id}>
-                  {address.label}
-                  {address.isDefault ? ' (default)' : ''}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className='mb-3 flex items-center justify-between gap-3'>
+            <div className='flex items-center gap-2'>
+              <Home className='size-4 text-primary' aria-hidden='true' />
+              <Label>Saved addresses</Label>
+            </div>
+            {savedAddresses.length > 0 && (
+              <Badge variant='outline'>{savedAddresses.length}/5 saved</Badge>
+            )}
+          </div>
+
+          {savedAddresses.length > 0 ? (
+            <Select
+              value={selectedAddressId}
+              onValueChange={(value) => onSelectSavedAddress?.(value)}
+              disabled={loadingSavedAddresses}
+            >
+              <SelectTrigger className='w-full'>
+                <SelectValue
+                  placeholder={
+                    loadingSavedAddresses ? 'Loading saved addresses...' : 'Choose saved address'
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {savedAddresses.map((address) => (
+                  <SelectItem key={address._id} value={address._id}>
+                    {address.label}
+                    {address.isDefault ? ' (default)' : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className='rounded-md border border-dashed bg-background/60 p-3 text-sm text-muted-foreground'>
+              No saved delivery addresses yet. Confirm your location, then save this address for
+              faster checkout next time.
+            </div>
+          )}
 
           {selectedSavedAddress && (
-            <div className='mt-3 flex flex-wrap gap-2'>
-              <Button
-                type='button'
-                size='sm'
-                variant='outline'
-                onClick={onSetDefaultAddress}
-                disabled={selectedSavedAddress.isDefault || settingDefaultDeliveryAddress}
-              >
-                <Star className='size-4' aria-hidden='true' />
-                {selectedSavedAddress.isDefault ? 'Default' : 'Make default'}
-              </Button>
-              <Button
-                type='button'
-                size='sm'
-                variant='outline'
-                onClick={onDeleteSelectedAddress}
-                disabled={deletingDeliveryAddress}
-              >
-                <Trash2 className='size-4' aria-hidden='true' />
-                Delete
-              </Button>
+            <div className='mt-3 rounded-md border bg-background/60 p-3'>
+              <div className='flex flex-wrap items-start justify-between gap-2'>
+                <div>
+                  <p className='font-medium'>{selectedSavedAddress.label}</p>
+                  <p className='mt-1 text-xs text-muted-foreground'>
+                    {selectedSavedAddress.streetAddress}, {selectedSavedAddress.postalCode}{' '}
+                    {selectedSavedAddress.city}
+                  </p>
+                  <p className='mt-1 text-xs text-muted-foreground'>{selectedSavedAddress.phone}</p>
+                </div>
+                {selectedSavedAddress.isDefault && (
+                  <Badge className='bg-emerald-100 text-emerald-800 hover:bg-emerald-100'>
+                    Default
+                  </Badge>
+                )}
+              </div>
+              <div className='mt-3 flex flex-wrap gap-2'>
+                <Button
+                  type='button'
+                  size='sm'
+                  variant='outline'
+                  onClick={onSetDefaultAddress}
+                  disabled={selectedSavedAddress.isDefault || settingDefaultDeliveryAddress}
+                >
+                  <Star className='size-4' aria-hidden='true' />
+                  {selectedSavedAddress.isDefault ? 'Default address' : 'Make default'}
+                </Button>
+                <Button
+                  type='button'
+                  size='sm'
+                  variant='outline'
+                  onClick={onDeleteSelectedAddress}
+                  disabled={deletingDeliveryAddress}
+                >
+                  <Trash2 className='size-4' aria-hidden='true' />
+                  Delete
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -241,7 +278,7 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
               {isGettingDeliveryLocation ? 'Checking location...' : 'Use current location'}
             </Button>
             <DevDeliveryLocationDialog onManualLocationUpdate={onManualLocationUpdate} />
-            {onSaveCurrentAddress && (
+            {onSaveCurrentAddress && isLoggedIn && (
               <Button
                 type='button'
                 variant='secondary'
@@ -251,7 +288,11 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
                 disabled={!canSaveDeliveryAddress || savingDeliveryAddress}
               >
                 <Save className='size-4' aria-hidden='true' />
-                {savingDeliveryAddress ? 'Saving...' : 'Save address'}
+                {savingDeliveryAddress
+                  ? 'Saving...'
+                  : savedAddresses.length === 0
+                    ? 'Save first address'
+                    : 'Save as new address'}
               </Button>
             )}
           </div>

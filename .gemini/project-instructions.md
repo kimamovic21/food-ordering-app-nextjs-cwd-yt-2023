@@ -19,7 +19,7 @@
 - Courier assignment history tracks accepted, declined, and expired attempts for reliability stats.
 - date-fns and @date-fns/tz date formatting (`libs/dateFormat.ts`)
 - currency.js money helpers (`libs/money.ts`) and libphonenumber-js phone helpers (`libs/phone.ts`)
-- Order operations: saved delivery addresses, pre-cart restaurant ordering checks, active order quick access, best coupon suggestion, reorder validation, restaurant accepting-order checks, preparation/delivery estimates, order delay warnings, delivery PIN handoff, ETA-style notifications, customer/admin completion, support tickets, and late-order alerts
+- Order operations: saved delivery addresses, pre-cart restaurant ordering checks, active order quick access, best coupon suggestion, reorder validation, restaurant accepting-order checks, operations overview, preparation/delivery estimates, order delay warnings, delivery PIN handoff, ETA-style notifications, customer/admin completion, support tickets, and late-order alerts
 
 ## Coding Expectations
 
@@ -35,7 +35,7 @@
 - `components/shared/AppErrorBoundary.tsx` uses `react-error-boundary` and reports caught client render errors to Sentry; keep it for client recovery, not API validation.
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts`.
 - Use `libs/money.ts` for business money calculations and `libs/phone.ts` before saving phone numbers.
-- Saved customer delivery addresses live on `User.deliveryAddresses`, are capped at five, require complete delivery fields plus confirmed latitude/longitude, and should be loaded/mutated through `/api/profile/delivery-addresses`.
+- Saved customer delivery addresses live on `User.deliveryAddresses`, are capped at five, require complete delivery fields plus confirmed latitude/longitude, dedupe duplicate saves by normalized address/phone/coordinates, and should be loaded/mutated through `/api/profile/delivery-addresses`.
 - Keep strong typing and avoid implicit any.
 
 ## Risk Controls
@@ -45,10 +45,12 @@
 - Keep checkout accepting-order checks in place before Stripe sessions are created: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty.
 - Public add-to-cart surfaces should prefetch visible restaurant ordering status where possible, check `/api/restaurants/[id]/ordering-status` before changing the cart, and still keep checkout as the server-authoritative source of truth.
 - Preserve checkout duplicate protection: recent identical unpaid `placed` attempts use `checkoutFingerprint` and should reuse or recover the existing Stripe Checkout session.
+- Cart validation should keep unavailable/deleted/invalid items as hard checkout blockers, while price changes stay non-blocking and should be shown clearly before checkout.
 - Active customer order quick access should use `/api/my-orders/active`, apply stale-order maintenance before returning data, and stay customer-only.
+- Restaurant operations overview should use `/api/restaurant/operations` and `/admin-dashboard/operations` for active stage counts, kitchen capacity, restaurant status, courier availability, today revenue, unpaid/canceled counts, quick actions, and urgent order attention items.
 - Order delay warnings should use `libs/orderDelay.ts` and compare elapsed active time against the saved estimated total plus the grace window; development time offsets can affect the warning without changing MongoDB timestamps.
 - Do not delete restaurants, restaurant-owner accounts, or menu items while active orders still depend on them; use `libs/orderDeletionGuards.ts` and return `409` with clear guidance.
-- Preserve stale unpaid auto-cancel protection: system cancellation should try to expire the open Stripe Checkout session and audit the result without blocking local order cancellation.
+- Preserve stale unpaid auto-cancel protection: system cancellation should try to expire the open Stripe Checkout session and audit the result without blocking local order cancellation; customer order screens should show the same 30-minute payment-expiry window.
 - Preserve customer manual cancel protection: unpaid `placed` order cancellation should use the same Stripe Checkout expiration helper and audit metadata.
 - Treat best coupon suggestions as UI help only; checkout must revalidate coupons server-side.
 - Reorder flows must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.

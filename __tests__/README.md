@@ -10,7 +10,7 @@ This folder contains unit tests grouped by feature area.
 - `api/forgot-password.route.test.ts`: validates forgot-password route behavior.
 - `api/reset-password.route.test.ts`: validates reset-password route behavior.
 - `api/profile.route.test.ts`: validates profile fetch/update/delete behavior.
-- `api/delivery-addresses.route.test.ts`: validates saved delivery address CRUD, defaults, limits, and location requirements.
+- `api/delivery-addresses.route.test.ts`: validates saved delivery address CRUD, duplicate reuse, defaults, limits, and location requirements.
 - `api/my-orders-active.route.test.ts`: validates active customer order lookup and stale-order cancellation filtering.
 - `api/restaurant-ordering-status.route.test.ts`: validates public restaurant ordering status and active capacity responses.
 - `api/profile-change-password.route.test.ts`: validates password change API behavior.
@@ -21,12 +21,16 @@ This folder contains unit tests grouped by feature area.
 - `api/my-deliveries.route.test.ts`: validates courier delivery history, performance summaries, and assignment reliability metrics.
 - `api/realtime-streams.route.test.ts`: validates authenticated SSE streams for messages and notifications.
 - `api/restaurant.route.test.ts`: validates restaurant settings, ownership, and deletion behavior.
+- `api/restaurant-operations.route.test.ts`: validates restaurant operations overview API summaries and admin restaurant scoping.
 - `api/webhook.route.test.ts`: validates webhook signature/idempotency behavior.
 - `api/payment.test.ts`: validates payment-related helper logic and utility contracts.
 - `libs/courier-assignment-timeout.test.ts`: validates stale pending courier assignment expiry and courier release rules.
 - `libs/courier-assignment-history.test.ts`: validates finalized courier assignment attempt history.
 - `libs/order-auto-cancellation.test.ts`: validates stale unpaid and ready-without-courier auto-cancel rules.
+- `libs/paymentExpiry.test.ts`: validates the customer-facing unpaid payment countdown helper.
+- `libs/deliveryAddresses.test.ts`: validates saved delivery address normalization and duplicate matching.
 - `libs/orderDelay.test.ts`: validates active order delay warning thresholds and development time offsets.
+- `libs/restaurantOperations.test.ts`: validates operations overview stage counts, capacity, courier summary, revenue, and attention-order prioritization.
 - `hooks/useRestaurantOrderingGate.test.ts`: validates restaurant ordering-status prefetch caching for visible menu items.
 - `libs/realtimeClient.test.ts`: validates client-side realtime payload helpers.
 

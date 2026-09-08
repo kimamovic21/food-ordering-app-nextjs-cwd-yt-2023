@@ -46,7 +46,7 @@ Important customer rules:
 - Customers cannot add unavailable menu items to cart or checkout with them.
 - Customers cannot add items from restaurants that are closed, paused, closing soon, blocked by date, outside radius, or at active kitchen capacity.
 - Customers cannot checkout from restaurants that are closed, paused, outside delivery radius, blocked by date, inside the final 60 minutes before closing, or at active kitchen capacity.
-- Saved delivery addresses require complete address fields and confirmed latitude/longitude; checkout still revalidates the selected delivery location server-side.
+- Saved delivery addresses require complete address fields and confirmed latitude/longitude; duplicate saved-address attempts reuse the existing address, and checkout still revalidates the selected delivery location server-side.
 - Checkout and profile updates validate phone numbers and store valid values in E.164 format.
 - Customers can only message contacts allowed by their order flow.
 
@@ -70,6 +70,7 @@ They can:
 - Assign available couriers to ready orders with optional notes visible only to the courier.
 - View customer delivery location.
 - View order time breakdown and estimated timing.
+- Monitor live restaurant operations at `/admin-dashboard/operations`, including active order stages, kitchen capacity, restaurant status, courier availability, today revenue, unpaid/canceled counts, urgent order attention items, and quick actions for the next operational step.
 - View daily, weekly, and monthly restaurant reports at `/admin-dashboard/restaurant-reports`.
 - Download a PDF report when the selected period has order activity.
 - Finalize delivery when a courier has recorded handoff but the customer does not confirm.
@@ -224,7 +225,7 @@ The cart is client-side state managed by `CartContext`.
 
 Customer-side checkout helpers:
 
-- Saved delivery addresses are loaded through `/api/profile/delivery-addresses` and cached with TanStack Query.
+- Saved delivery addresses are loaded through `/api/profile/delivery-addresses`, deduped by normalized delivery details, and cached with TanStack Query.
 - The default saved address can prefill checkout once per cart visit, and customers can switch, save, set default, or delete saved addresses.
 - The header active-order quick access uses `/api/my-orders/active` to surface the latest non-terminal customer order.
 - Public menu add-to-cart buttons call `/api/restaurants/[id]/ordering-status` before adding items, but `/api/checkout` remains authoritative.
@@ -246,6 +247,8 @@ Checkout server rules:
 - Loyalty discount is recalculated server-side.
 - Restaurant active kitchen capacity must not be full.
 - Recent identical unpaid `placed` checkout attempts reuse or recover the existing Stripe Checkout session instead of creating duplicate orders.
+- Customers see a payment-expiry countdown for unpaid `placed` orders that matches the 30-minute auto-cancel window.
+- Cart validation surfaces item-specific unavailable/deleted-item blockers and non-blocking price-change warnings before checkout.
 - Order is created as unpaid before redirecting to Stripe.
 - QStash schedules a delayed unpaid-order maintenance check after a new Stripe Checkout session is created.
 - If that unpaid order expires, the app attempts to expire the original Stripe Checkout session and stores the expiration result in the cancellation audit log.
@@ -280,6 +283,8 @@ Timeline fields are stored on the order so the UI can show exact phase durations
 Operational order monitoring:
 
 - `/api/orders/queue` returns active paid orders grouped by lifecycle phase.
+- `/api/restaurant/operations` returns a live restaurant operations overview for active stage counts, kitchen capacity, open/paused/closing status, courier availability, today revenue, unpaid/canceled counts, and urgent order attention items.
+- `/admin-dashboard/operations` gives restaurant admins a single control-center view for the same operational summary plus quick actions.
 - `/admin-dashboard/orders` shows a late-order alert when an active paid order has stayed before transportation for too long.
 - The alert links admins to `/admin-dashboard/order-queue` for the full operational view.
 

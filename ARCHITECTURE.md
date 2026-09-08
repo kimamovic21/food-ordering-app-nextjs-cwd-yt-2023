@@ -202,7 +202,7 @@ Key checks:
 - Reorders rebuild cart items from current `menu_items` records so deleted, unavailable, cross-restaurant, or changed-price items cannot silently proceed.
 - Restaurant details and favorite restaurant cards can quick reorder the latest previous order from that restaurant using the same current `menu_items` validation.
 - Customers can request back-online notifications for restaurants blocked by closed, paused, closing-soon, or busy checkout states.
-- Customers can reuse saved delivery addresses from `/api/profile/delivery-addresses`; checkout still validates the final delivery payload and radius server-side.
+- Customers can reuse saved delivery addresses from `/api/profile/delivery-addresses`; duplicate saved-address attempts reuse the existing address, and checkout still validates the final delivery payload and radius server-side.
 
 ```mermaid
 sequenceDiagram
@@ -273,11 +273,13 @@ Active customer order detail pages use `libs/orderDelay.ts` to warn when elapsed
 Operational monitoring builds on the same timestamps:
 
 - `/api/orders/queue` returns active paid orders grouped by lifecycle phase.
+- `/api/restaurant/operations` returns the restaurant operations overview used by `/admin-dashboard/operations`.
+- `/admin-dashboard/operations` summarizes active order stages, kitchen capacity, restaurant open/paused/closing status, courier availability, today revenue, unpaid/canceled counts, quick actions, and orders needing attention.
 - `/admin-dashboard/orders` surfaces late-order alerts and links admins to `/admin-dashboard/order-queue`.
 - Ready orders without a courier show an admin warning after 15 minutes.
 - Pending courier assignments expire after 10 minutes if the courier does not accept or decline; the courier is released and restaurant admins are notified to reassign.
 - Accepted, declined, and expired courier assignment attempts are appended to order assignment history so courier reliability metrics remain accurate after reassignments.
-- Stale unpaid orders auto-cancel after 30 minutes; ready orders without a courier auto-cancel after 60 minutes.
+- Stale unpaid orders auto-cancel after 30 minutes and show a customer-facing payment countdown; ready orders without a courier auto-cancel after 60 minutes.
 - Upstash QStash schedules delayed checks for stale unpaid orders, unanswered courier assignments, and ready orders without a courier so production order maintenance is not dependent only on a later page/API read.
 - System auto-cancellations mark the order unpaid, store `canceledBy: system`, add `cancellationReason`, notify customer/admins, and write an audit log.
 - For stale unpaid orders, system auto-cancellation also tries to expire the open Stripe Checkout session; failures are recorded as audit metadata and do not stop the local cancellation.

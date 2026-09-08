@@ -110,6 +110,42 @@ describe('/api/profile/delivery-addresses route', () => {
     expect(mongoConnect).toHaveBeenCalled();
   });
 
+  it('reuses a duplicate saved address before enforcing the saved address limit', async () => {
+    const matchingAddress = {
+      _id: { toString: () => 'address-existing' },
+      ...validAddress,
+      label: 'Home saved earlier',
+    };
+    const user = {
+      deliveryAddresses: [
+        matchingAddress,
+        ...Array.from({ length: 4 }, (_, index) => ({
+          _id: { toString: () => `address-${index + 2}` },
+          ...validAddress,
+          streetAddress: `Other Street ${index + 2}`,
+          deliveryLatitude: validAddress.deliveryLatitude + index + 1,
+        })),
+      ] as any[],
+      save: vi.fn(),
+    };
+    vi.mocked(User.findOne).mockResolvedValueOnce(user as never);
+
+    const { POST } = await loadRoute();
+    const res = await POST(createRequest({ ...validAddress, label: 'Same address again' }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.duplicate).toBe(true);
+    expect(body.address).toEqual(
+      expect.objectContaining({
+        _id: 'address-existing',
+        label: 'Home saved earlier',
+      })
+    );
+    expect(user.deliveryAddresses).toHaveLength(5);
+    expect(user.save).not.toHaveBeenCalled();
+  });
+
   it('sets a selected address as default', async () => {
     const user = {
       deliveryAddresses: [

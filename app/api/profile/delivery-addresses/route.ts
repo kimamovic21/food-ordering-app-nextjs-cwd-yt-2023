@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import mongoose from 'mongoose';
 import { authOptions } from '@/libs/authOptions';
 import {
+  findMatchingDeliveryAddress,
   MAX_SAVED_DELIVERY_ADDRESSES,
   normalizeDeliveryAddress,
   serializeDeliveryAddress,
@@ -41,16 +42,33 @@ export async function POST(req: Request) {
   }
 
   const currentAddresses = Array.isArray(user.deliveryAddresses) ? user.deliveryAddresses : [];
+  const result = normalizeDeliveryAddress(await req.json().catch(() => null));
+  if (!result.ok) {
+    return Response.json({ error: result.error }, { status: 400 });
+  }
+
+  const matchingAddress = findMatchingDeliveryAddress(currentAddresses, result.address);
+  if (matchingAddress) {
+    if (result.address.isDefault && !matchingAddress.isDefault) {
+      currentAddresses.forEach((address: any) => {
+        address.isDefault = String(address._id) === String(matchingAddress._id);
+      });
+      user.deliveryAddresses = currentAddresses;
+      await user.save();
+    }
+
+    return Response.json({
+      address: serializeDeliveryAddress(matchingAddress),
+      addresses: serializeDeliveryAddresses(user.deliveryAddresses || currentAddresses),
+      duplicate: true,
+    });
+  }
+
   if (currentAddresses.length >= MAX_SAVED_DELIVERY_ADDRESSES) {
     return Response.json(
       { error: `You can save up to ${MAX_SAVED_DELIVERY_ADDRESSES} delivery addresses.` },
       { status: 400 }
     );
-  }
-
-  const result = normalizeDeliveryAddress(await req.json().catch(() => null));
-  if (!result.ok) {
-    return Response.json({ error: result.error }, { status: 400 });
   }
 
   if (result.address.isDefault || currentAddresses.length === 0) {

@@ -20,7 +20,7 @@ It includes:
 - TanStack Query caching for shared profile data, favorites, sound settings, and global message/notification unread state
 - TanStack Table-powered searchable, sortable, paginated data tables for high-traffic admin and order lists
 - Vercel Web Analytics for production traffic insights and Vercel Speed Insights for Web Vitals/performance monitoring
-- admin dashboard for users, menu items, categories, restaurants, restaurant reports, couriers, orders, support tickets, and statistics
+- admin dashboard for users, menu items, categories, restaurants, operations overview, restaurant reports, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, courier ratings, and assignment reliability views
 - courier workflow with assignment, response-time tracking, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
 - order timeline with visual phase icons, preparation/delivery estimates, delay warnings, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
@@ -62,7 +62,8 @@ It includes:
 - Menu item availability controls for temporarily unavailable or sold-out items, with delete protection while active orders still reference an item
 - Restaurant preparation/delivery estimate settings, working-hours checkout protection, and active order limit controls
 - Courier management and order assignment with optional courier-only assignment notes
-- Order lifecycle management, late-order operational alerts, order queue, and dashboards/statistics
+- Order lifecycle management, operations overview, late-order operational alerts, order queue, and dashboards/statistics
+- Restaurant operations overview at `/admin-dashboard/operations` with active stage counts, restaurant capacity, open/closing/paused status, courier availability, today revenue, unpaid/canceled counts, and orders that need attention
 - Restaurant reports at `/admin-dashboard/restaurant-reports` with daily, weekly, and monthly summaries plus PDF downloads when there is activity
 - Support ticket dashboard for reported order, delivery, and app issues
 - Notifications management with SSE-backed order, delivery, and assignment updates
@@ -102,7 +103,7 @@ When a meaningful feature or integration changes, update the docs in the same br
 
 ## TypeScript Types
 
-Reusable domain, DTO, and API response types live in `types/`, grouped by feature area such as `order.ts`, `cart.ts`, `menu.ts`, `restaurant.ts`, `messages.ts`, `notifications.ts`, and `support-ticket.ts`. Keep small one-off component props colocated with the component, but move shared frontend/backend contracts into `types/` and re-export from `types/index.ts` when they are reused across routes, components, contexts, or libs.
+Reusable domain, DTO, and API response types live in `types/`, grouped by feature area such as `order.ts`, `operations.ts`, `cart.ts`, `menu.ts`, `restaurant.ts`, `messages.ts`, `notifications.ts`, and `support-ticket.ts`. Keep small one-off component props colocated with the component, but move shared frontend/backend contracts into `types/` and re-export from `types/index.ts` when they are reused across routes, components, contexts, or libs.
 
 ## Packages Used (with Official Websites)
 
@@ -267,12 +268,14 @@ This project uses many dependencies; below are the main packages actively used i
 - Checkout blocks restaurants that are closed, paused, outside delivery radius, blocked by working hours, or inside the final 60 minutes before closing, and surfaces the next opening time when available.
 - Checkout blocks new orders when the restaurant has reached its paid active kitchen order limit (`placed`, `processing`, or `ready` orders).
 - Checkout deduplicates recent identical unpaid `placed` order attempts by reusing or recovering the existing Stripe Checkout session instead of creating another order.
+- Unpaid `placed` orders show the customer a countdown based on the same 30-minute auto-cancel window used by background maintenance.
 - When a stale unpaid `placed` order is system-canceled, the app also attempts to expire the still-open Stripe Checkout session so old payment tabs cannot complete canceled orders.
 - When a customer manually cancels an unpaid `placed` order, the app also attempts to expire that order's Stripe Checkout session.
+- Cart validation shows item-specific unavailable/deleted-item blockers and non-blocking price-change warnings before Stripe Checkout.
 - Cart can suggest the best public coupon for the current restaurant subtotal and let the customer apply it directly.
 - Checkout blocks customers from starting another paid active order until the previous order is completed or canceled.
 - Signed-in customers see a header quick-access link to finish payment, track the active order, or spot a delayed active order without hunting through order history.
-- Customers can save up to five validated delivery addresses with confirmed latitude/longitude and apply them during checkout.
+- Customers can save up to five validated delivery addresses with confirmed latitude/longitude and apply them during checkout; duplicate saves reuse the existing saved address instead of creating another entry.
 - Order detail pages show a delay warning when active elapsed time passes the saved estimated total plus the grace window.
 - Previous orders can be reordered into the cart only after current menu item existence, availability, restaurant ownership, and prices are rechecked.
 - Favorite restaurants and restaurant detail pages can rebuild the latest previous order from that restaurant into the cart.
@@ -282,6 +285,7 @@ This project uses many dependencies; below are the main packages actively used i
 - Order status notifications use phase-specific copy, including preparation and delivery ETA hints when an estimate is available.
 - Customers and couriers can report order or delivery problems; admins manage those reports from `/admin-dashboard/support-tickets`.
 - Failed-delivery review notifications route restaurant admins to `/admin-dashboard/orders/[id]`, while customer order notifications stay on customer order pages.
+- `/admin-dashboard/operations` gives restaurant admins a live operations overview for active order stages, kitchen capacity, restaurant status, available couriers, today revenue, unpaid/canceled counts, quick actions, and orders that need attention.
 - `/admin-dashboard/orders` surfaces late active-order alerts and links to `/admin-dashboard/order-queue` for the full operational view.
 - `/admin-dashboard/restaurant-reports` generates daily, weekly, and monthly restaurant performance summaries from order data and can download the same report as a PDF when the selected period has traffic.
 - Restaurants, restaurant-owner account deletion, and menu item deletion are blocked while active orders still depend on that data; menu items should be marked unavailable first and deleted after active orders finish.

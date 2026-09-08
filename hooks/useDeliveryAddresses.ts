@@ -7,6 +7,7 @@ import type { DeliveryAddress, DeliveryAddressInput } from '@/types/user';
 type DeliveryAddressResponse = {
   address?: DeliveryAddress;
   addresses: DeliveryAddress[];
+  duplicate?: boolean;
 };
 
 const readErrorMessage = async (response: Response, fallback: string) => {
