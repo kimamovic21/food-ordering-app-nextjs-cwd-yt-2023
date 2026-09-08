@@ -10,6 +10,7 @@ import {
   TanStackDataTable,
   type DataTableColumnDef,
 } from '@/components/shared/TanStackDataTable';
+import PaymentExpiryCountdown from '@/components/shared/PaymentExpiryCountdown';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import {
   AlertDialog,
@@ -246,7 +247,17 @@ const MyOrdersTable = ({ orders, loading, onOrderUpdated }: MyOrdersTableProps) 
     columnHelper.accessor((order) => (order.paymentStatus ? 'Paid' : 'Unpaid'), {
       id: 'paymentStatus',
       header: 'Payment',
-      cell: ({ row }) => <PaymentBadge paid={row.original.paymentStatus} />,
+      cell: ({ row }) => (
+        <div className='flex flex-col items-start'>
+          <PaymentBadge paid={row.original.paymentStatus} />
+          <PaymentExpiryCountdown
+            compact
+            createdAt={row.original.createdAt}
+            orderStatus={row.original.orderStatus}
+            paymentStatus={row.original.paymentStatus}
+          />
+        </div>
+      ),
     }),
     columnHelper.accessor((order) => order.orderStatus, {
       id: 'orderStatus',

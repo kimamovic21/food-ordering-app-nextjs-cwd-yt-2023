@@ -15,6 +15,9 @@ type DeliveryAddressValidationResult =
 
 const normalizeRequiredText = (value: unknown) => String(value ?? '').trim();
 
+const normalizeComparisonText = (value: unknown) =>
+  normalizeRequiredText(value).toLowerCase().replace(/\s+/g, ' ');
+
 const normalizeCoordinate = (value: unknown) => {
   if (value === null || value === undefined || value === '') {
     return null;
@@ -23,6 +26,35 @@ const normalizeCoordinate = (value: unknown) => {
   const coordinate = Number(value);
   return Number.isFinite(coordinate) ? coordinate : null;
 };
+
+const normalizeComparisonCoordinate = (value: unknown) => {
+  const coordinate = normalizeCoordinate(value);
+  return coordinate === null ? null : Number(coordinate.toFixed(5));
+};
+
+type DeliveryAddressComparable = Partial<DeliveryAddressInput> &
+  Pick<Partial<DeliveryAddress>, '_id' | 'createdAt' | 'updatedAt'>;
+
+export const getDeliveryAddressFingerprint = (address: DeliveryAddressComparable) =>
+  [
+    normalizeComparisonText(address.phone),
+    normalizeComparisonText(address.streetAddress),
+    normalizeComparisonText(address.postalCode),
+    normalizeComparisonText(address.city),
+    normalizeComparisonText(address.country),
+    normalizeComparisonCoordinate(address.deliveryLatitude),
+    normalizeComparisonCoordinate(address.deliveryLongitude),
+  ].join('|');
+
+export const areDeliveryAddressesSame = (
+  firstAddress: DeliveryAddressComparable,
+  secondAddress: DeliveryAddressComparable
+) => getDeliveryAddressFingerprint(firstAddress) === getDeliveryAddressFingerprint(secondAddress);
+
+export const findMatchingDeliveryAddress = <TAddress extends DeliveryAddressComparable>(
+  addresses: TAddress[],
+  candidateAddress: DeliveryAddressComparable
+) => addresses.find((address) => areDeliveryAddressesSame(address, candidateAddress));
 
 export const normalizeDeliveryAddress = (data: unknown): DeliveryAddressValidationResult => {
   const input = (data ?? {}) as Partial<DeliveryAddressInput>;

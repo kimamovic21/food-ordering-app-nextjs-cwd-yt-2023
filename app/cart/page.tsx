@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { AlertTriangle, CheckCircle2, Clock3, Loader2, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock3, Loader2, RefreshCw, XCircle } from 'lucide-react';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
@@ -733,9 +733,20 @@ const CartPage = () => {
       if (result.address?._id) {
         setSelectedDeliveryAddressId(result.address._id);
       }
-      sonnerToast.success('Delivery address saved', {
-        style: { background: '#22c55e', color: 'white' },
-      });
+
+      if (result.duplicate) {
+        sonnerToast.info('This delivery address is already saved. Using the saved address.');
+        return;
+      }
+
+      sonnerToast.success(
+        savedDeliveryAddresses.length === 0
+          ? 'Delivery address saved as your default.'
+          : 'Delivery address saved.',
+        {
+          style: { background: '#22c55e', color: 'white' },
+        }
+      );
     } catch (error) {
       sonnerToast.error(error instanceof Error ? error.message : 'Failed to save address.');
     }
@@ -1322,15 +1333,35 @@ const CartPage = () => {
 
       {blockingCartItems.length > 0 && (
         <div className='mb-4 rounded-lg border border-red-300 bg-red-100 p-4 dark:border-red-700 dark:bg-red-900/20'>
-          <p className='font-semibold text-red-800 dark:text-red-200'>
-            Some items in your cart cannot be ordered right now. Remove them before checkout.
-          </p>
-          <p className='mt-1 text-sm text-red-700 dark:text-red-200'>
-            {cartValidationMessage ||
-              blockingCartItems
-                .map((item) => cartValidationByKey.get(getCartItemKey(item))?.message || item.name)
-                .join(', ')}
-          </p>
+          <div className='flex gap-3'>
+            <XCircle className='mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-300' />
+            <div className='min-w-0'>
+              <p className='font-semibold text-red-800 dark:text-red-200'>
+                Some cart items need attention
+              </p>
+              <p className='mt-1 text-sm text-red-700 dark:text-red-200'>
+                {cartValidationMessage ||
+                  'Remove unavailable, deleted, or invalid items before checkout.'}
+              </p>
+              <div className='mt-3 grid gap-2'>
+                {blockingCartItems.map((item) => {
+                  const validation = cartValidationByKey.get(getCartItemKey(item));
+
+                  return (
+                    <div
+                      key={getCartItemKey(item)}
+                      className='rounded-md border border-red-300/70 bg-background/70 p-3 text-sm dark:border-red-800/70'
+                    >
+                      <p className='font-medium text-foreground'>{validation?.name || item.name}</p>
+                      <p className='mt-1 text-xs text-red-700 dark:text-red-200'>
+                        {validation?.message || 'This item cannot be ordered right now.'}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
           <Button type='button' onClick={handleRemoveBlockingCartItems} className='mt-3'>
             Remove unavailable items
           </Button>
@@ -1339,10 +1370,46 @@ const CartPage = () => {
 
       {priceChangedCartItems.length > 0 && blockingCartItems.length === 0 && (
         <div className='mb-4 rounded-lg border border-amber-300 bg-amber-100 p-4 dark:border-amber-700 dark:bg-amber-900/20'>
-          <p className='font-semibold text-amber-800 dark:text-amber-200'>
-            Some prices changed since you added items to cart. Checkout will use current menu
-            prices.
-          </p>
+          <div className='flex gap-3'>
+            <RefreshCw className='mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-300' />
+            <div className='min-w-0'>
+              <p className='font-semibold text-amber-800 dark:text-amber-200'>
+                Cart prices were refreshed
+              </p>
+              <p className='mt-1 text-sm text-amber-700 dark:text-amber-200'>
+                Checkout will use the current menu prices. Your cart total has already been
+                recalculated.
+              </p>
+              <div className='mt-3 grid gap-2'>
+                {priceChangedCartItems.map((item) => {
+                  const validation = cartValidationByKey.get(getCartItemKey(item));
+                  const previousPrice =
+                    typeof validation?.previousPrice === 'number'
+                      ? validation.previousPrice
+                      : item.price;
+                  const currentPrice =
+                    typeof validation?.price === 'number' && Number.isFinite(validation.price)
+                      ? validation.price
+                      : item.price;
+
+                  return (
+                    <div
+                      key={getCartItemKey(item)}
+                      className='flex flex-col gap-1 rounded-md border border-amber-300/70 bg-background/70 p-3 text-sm dark:border-amber-800/70 sm:flex-row sm:items-center sm:justify-between'
+                    >
+                      <span className='font-medium text-foreground'>
+                        {validation?.name || item.name}
+                      </span>
+                      <span className='font-mono text-xs font-semibold text-amber-700 dark:text-amber-200'>
+                        ${Number(previousPrice || 0).toFixed(2)} -&gt; $
+                        {Number(currentPrice || 0).toFixed(2)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1368,6 +1435,7 @@ const CartPage = () => {
             onUseCurrentLocation={handleUseCurrentLocation}
             onManualLocationUpdate={handleManualDeliveryLocationUpdate}
             savedAddresses={savedDeliveryAddresses}
+            isLoggedIn={isLoggedIn}
             selectedAddressId={selectedDeliveryAddressId}
             loadingSavedAddresses={loadingSavedDeliveryAddresses}
             savingDeliveryAddress={createDeliveryAddress.isPending}

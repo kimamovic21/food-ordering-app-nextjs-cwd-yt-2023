@@ -175,7 +175,19 @@ const MessagesLoadingSkeleton = () => (
   </section>
 );
 
-const MessagesCenter = ({ title, description }: { title: string; description: string }) => {
+type MessagesCenterProps = {
+  title: string;
+  description: string;
+  backHref?: string;
+  backLabel?: string;
+};
+
+const MessagesCenter = ({
+  title,
+  description,
+  backHref = '/my-orders',
+  backLabel = 'Back',
+}: MessagesCenterProps) => {
   const params = useParams<{ participantId?: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -570,9 +582,18 @@ const MessagesCenter = ({ title, description }: { title: string; description: st
         <Card className={messagesSidebarClass}>
           <CardHeader className='space-y-3 border-b border-border/60 bg-linear-to-br from-foreground/5 to-transparent pb-3'>
             <div className='flex items-start justify-between gap-4'>
-              <div>
-                <CardTitle className='text-xl font-semibold tracking-tight'>{title}</CardTitle>
-                <p className='mt-1 text-sm leading-snug text-muted-foreground'>{description}</p>
+              <div className='flex min-w-0 items-start gap-3'>
+                <Link
+                  href={backHref}
+                  className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted'
+                  aria-label={backLabel}
+                >
+                  <ArrowLeft className='h-4 w-4' />
+                </Link>
+                <div className='min-w-0'>
+                  <CardTitle className='text-xl font-semibold tracking-tight'>{title}</CardTitle>
+                  <p className='mt-1 text-sm leading-snug text-muted-foreground'>{description}</p>
+                </div>
               </div>
               <div className='flex items-center gap-2'>
                 <Button variant='outline' size='sm' asChild className='rounded-full'>

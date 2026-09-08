@@ -25,7 +25,7 @@ This repository is a full-stack food ordering app built with Next.js App Router,
 ## High-Level Features
 
 - Customer flows: auth, profile, saved delivery addresses, menu browsing, cart/checkout, pre-cart restaurant ordering checks, active order quick access, best coupon suggestion, reorder, favorite restaurant quick reorder, restaurant availability alerts, favorites, loyalty history, reviews, approved messaging, visual order tracking, order timelines, order delay warnings, delivery confirmation, and support tickets.
-- Admin dashboard: users, categories, menu items, restaurants, restaurant reports, orders, order queue, late-order alerts, couriers, support tickets, statistics, and AI-assisted menu descriptions.
+- Admin dashboard: users, categories, menu items, restaurants, operations overview, restaurant reports, orders, order queue, late-order alerts, couriers, support tickets, statistics, and AI-assisted menu descriptions.
 - Courier flows: assignment with courier-only notes, availability toggle, live location sharing, delivery PIN handoff, problem reporting, tracked delivery maps, and delivery history metrics.
 - Restaurant operations: menu item availability, active-order delete protection, working-hours checkout protection, 60-minute-before-closing checkout cutoff, pause/blocked-date/radius checks, preparation/delivery estimates, and active order limit checks that can temporarily block checkout when the kitchen is busy.
 
@@ -86,11 +86,12 @@ See `example.env`. Variables currently used in the project include:
 - Store timestamps as MongoDB `Date` values, return ISO/raw date fields from APIs, and format user-facing dates through `libs/dateFormat.ts` (`dd/MM/yyyy`, `dd/MM/yyyy HH:mm`).
 - Use `libs/money.ts` for business money calculations; avoid hand-rolled floating-point arithmetic in checkout, coupons, earnings, and reports.
 - Use `libs/phone.ts` before saving customer/admin/courier phone values; local Bosnia and Herzegovina numbers are accepted and normalized to E.164.
-- Saved customer delivery addresses live on `User.deliveryAddresses`, are capped at five, require complete delivery fields plus confirmed latitude/longitude, and should be loaded/mutated through `/api/profile/delivery-addresses`.
+- Saved customer delivery addresses live on `User.deliveryAddresses`, are capped at five, require complete delivery fields plus confirmed latitude/longitude, dedupe duplicate saves by normalized address/phone/coordinates, and should be loaded/mutated through `/api/profile/delivery-addresses`.
 - Messaging should remain role-restricted: no customer-to-customer chat, and order threads must match the assigned courier or restaurant owner.
 - Public add-to-cart surfaces should prefetch visible restaurant ordering status where possible, check `/api/restaurants/[id]/ordering-status` before changing the cart, and still keep checkout as the server-authoritative source of truth.
 - Checkout must preserve restaurant accepting-order checks: working hours, the 60-minute-before-closing cutoff, pause state, blocked dates, delivery radius, active kitchen capacity, item availability, coupons, and loyalty must be validated before creating Stripe sessions.
 - Checkout should deduplicate recent identical unpaid `placed` attempts using `checkoutFingerprint`; reuse or recover the existing Stripe Checkout session instead of creating duplicate orders.
+- Cart validation should keep unavailable/deleted/invalid items as hard checkout blockers, while price changes stay non-blocking and should be shown clearly before checkout.
 - Active customer order quick access should use `/api/my-orders/active`, apply stale-order maintenance before returning data, and stay customer-only.
 - Order delay warnings should use `libs/orderDelay.ts` and compare elapsed active time against the saved estimated total plus the grace window; development time offsets can affect the warning without changing MongoDB timestamps.
 - Do not delete restaurants, restaurant-owner accounts, or menu items while active orders still depend on them; use `libs/orderDeletionGuards.ts` and return `409` with clear guidance.
@@ -100,9 +101,10 @@ See `example.env`. Variables currently used in the project include:
 - Reorder must rebuild from current `menu_items` data and block deleted, unavailable, cross-restaurant, or invalid items.
 - Restaurant quick reorder must use the same current `menu_items` rebuild rules as order reorder.
 - Restaurant report UI lives at `/admin-dashboard/restaurant-reports`; daily, weekly, and monthly reports should show zeros for empty periods and disable PDF download when there is no activity.
+- Restaurant operations overview lives at `/admin-dashboard/operations` and uses `/api/restaurant/operations` to summarize active order stages, kitchen capacity, restaurant open/paused/closing status, courier availability, today revenue, unpaid/canceled counts, quick actions, and orders needing attention.
 - Delivery completion is double-confirmed: courier records handoff with the delivery PIN, then customer or restaurant admin finalizes completion.
 - Courier assignment history should record accepted, declined, and expired attempts so courier reliability stats can calculate response rate, acceptance rate, missed assignments, and average response time.
-- Stale unpaid `placed` orders can auto-cancel after 30 minutes, pending courier assignments expire after 10 minutes without a courier response, and `ready` orders without a courier can warn after 15 minutes and auto-cancel after 60 minutes.
+- Stale unpaid `placed` orders can auto-cancel after 30 minutes and should show customers a payment-expiry countdown; pending courier assignments expire after 10 minutes without a courier response, and `ready` orders without a courier can warn after 15 minutes and auto-cancel after 60 minutes.
 - Support tickets should remain role-scoped: restaurant owners handle their restaurant reports, while app-support tickets route to the super admin.
 - Order notifications can include ETA-style phase copy, late active-order alerts should point admins toward the order queue, and failed-delivery review notifications should point restaurant admins to `/admin-dashboard/orders/[id]`.
 - QStash delayed job routes must stay server-only, verify QStash signatures, and reuse existing idempotent business helpers such as `applyOrderAutoCancellation`. Publishing should fail open so checkout/order status updates do not break if QStash is unavailable.

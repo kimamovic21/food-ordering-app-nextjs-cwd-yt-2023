@@ -24,6 +24,7 @@ import LeaveReviewDialog from './LeaveReviewDialog';
 import LeaveCourierReviewDialog from './LeaveCourierReviewDialog';
 import Title from '@/components/shared/Title';
 import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
+import PaymentExpiryCountdown from '@/components/shared/PaymentExpiryCountdown';
 import HeartRating from '@/components/shared/HeartRating';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -626,27 +627,34 @@ const MyOrderDetailPage = () => {
                 restaurant starts preparing it.
               </CardDescription>
             </CardHeader>
-            <CardContent className='flex flex-col gap-3 sm:flex-row'>
-              <Button
-                type='button'
-                onClick={handleFinishPayment}
-                disabled={processingPayment || cancelingOrder}
-                className='w-full sm:w-auto'
-              >
-                {processingPayment ? (
-                  <Loader2 className='mr-2 size-4 animate-spin' />
-                ) : (
-                  <CreditCard className='mr-2 size-4' />
-                )}
-                {processingPayment ? 'Opening checkout...' : 'Finish payment'}
-              </Button>
-              <Button
-                variant='destructive'
-                onClick={() => setCancelDialogOpen(true)}
-                disabled={processingPayment || cancelingOrder}
-              >
-                Cancel order
-              </Button>
+            <CardContent className='space-y-4'>
+              <PaymentExpiryCountdown
+                createdAt={order.createdAt}
+                orderStatus={order.orderStatus}
+                paymentStatus={order.paymentStatus}
+              />
+              <div className='flex flex-col gap-3 sm:flex-row'>
+                <Button
+                  type='button'
+                  onClick={handleFinishPayment}
+                  disabled={processingPayment || cancelingOrder}
+                  className='w-full sm:w-auto'
+                >
+                  {processingPayment ? (
+                    <Loader2 className='mr-2 size-4 animate-spin' />
+                  ) : (
+                    <CreditCard className='mr-2 size-4' />
+                  )}
+                  {processingPayment ? 'Opening checkout...' : 'Finish payment'}
+                </Button>
+                <Button
+                  variant='destructive'
+                  onClick={() => setCancelDialogOpen(true)}
+                  disabled={processingPayment || cancelingOrder}
+                >
+                  Cancel order
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

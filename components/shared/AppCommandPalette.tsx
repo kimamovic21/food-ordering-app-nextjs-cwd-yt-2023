@@ -16,6 +16,7 @@ import {
   LogIn,
   MessageSquareText,
   PieChart,
+  Radar,
   ReceiptText,
   Search,
   ShoppingCart,
@@ -155,6 +156,14 @@ const adminCommands: AppCommand[] = [
     group: 'Admin',
     keywords: ['orders', 'restaurant'],
     icon: ReceiptText,
+  },
+  {
+    href: '/admin-dashboard/operations',
+    label: 'Restaurant operations',
+    description: 'Open today status, capacity, courier, and attention overview',
+    group: 'Admin',
+    keywords: ['operations', 'capacity', 'couriers', 'busy', 'late'],
+    icon: Radar,
   },
   {
     href: '/admin-dashboard/order-queue',

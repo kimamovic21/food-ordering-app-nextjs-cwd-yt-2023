@@ -1157,3 +1157,5 @@ Add documentation maintenance workflow
 Expire stale unpaid and customer-canceled Stripe checkout sessions
 
 Improve customer order UX and active-order safety
+
+Add restaurant operations and checkout UX safeguards
