@@ -23,7 +23,7 @@ It includes:
 - admin dashboard for users, menu items, categories, restaurants, operations overview, restaurant reports, couriers, orders, support tickets, and statistics
 - courier dashboard with active delivery, delivery history, earnings, courier ratings, and assignment reliability views
 - courier workflow with assignment, response-time tracking, availability toggle, live location sharing on maps, delivery PIN handoff, failed-delivery review, and delivery history
-- order timeline with visual phase icons, preparation/delivery estimates, delay warnings, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
+- order timeline with visual phase icons, readable activity history, preparation/delivery estimates, delay warnings, ETA-style notifications, delivery confirmation, reorder, and report-problem support tickets
 - order safety automation for stale unpaid orders, unanswered courier assignments, ready orders that cannot get a courier, and expired Stripe Checkout sessions
 - restaurant busy checkout protection based on each restaurant's active kitchen order limit
 - Stripe checkout/webhook flow
@@ -43,12 +43,12 @@ It includes:
 - Menu and restaurant discovery with filtering/sorting/search
 - Menu item availability indicators with disabled ordering for sold-out items
 - Add-to-cart restaurant ordering checks, prefetched for visible menu items, so closed, paused, closing-soon, or busy restaurants are blocked before the cart is changed
-- Cart, checkout, best coupon suggestion, busy/closed restaurant checks, restaurant availability alerts, active order quick access, and order tracking
+- Cart, checkout, best coupon suggestion, busy/closed/radius restaurant checks, restaurant availability alerts, active order quick access, and order tracking
 - Favorites for menu items and restaurants
 - Loyalty tiers and automatic delivery-fee discounts
 - Personal review management and restaurant review pages
 - Per-order courier reviews and ratings (optional, one submission per order)
-- Order details with courier information, order timeline estimates, delay warnings, delivery PIN visibility, customer delivery confirmation, and a public courier review page for customers
+- Order details with courier information, order activity history, order timeline estimates, delay warnings, delivery PIN visibility, customer delivery confirmation, and a public courier review page for customers
 - Reorder previous orders from order history, order details, restaurant details, or favorite restaurants after current menu item availability and prices are revalidated
 - Report-problem action on order details, creating support tickets for restaurant support or app support
 - Social sharing actions for restaurant/menu pages
@@ -62,7 +62,7 @@ It includes:
 - Menu item availability controls for temporarily unavailable or sold-out items, with delete protection while active orders still reference an item
 - Restaurant preparation/delivery estimate settings, working-hours checkout protection, and active order limit controls
 - Courier management and order assignment with optional courier-only assignment notes
-- Order lifecycle management, operations overview, late-order operational alerts, order queue, and dashboards/statistics
+- Order lifecycle management, internal admin order notes, operations overview, late-order operational alerts, order queue, and dashboards/statistics
 - Restaurant operations overview at `/admin-dashboard/operations` with active stage counts, restaurant capacity, open/closing/paused status, courier availability, today revenue, unpaid/canceled counts, and orders that need attention
 - Restaurant reports at `/admin-dashboard/restaurant-reports` with daily, weekly, and monthly summaries plus PDF downloads when there is activity
 - Support ticket dashboard for reported order, delivery, and app issues
@@ -271,12 +271,14 @@ This project uses many dependencies; below are the main packages actively used i
 - Unpaid `placed` orders show the customer a countdown based on the same 30-minute auto-cancel window used by background maintenance.
 - When a stale unpaid `placed` order is system-canceled, the app also attempts to expire the still-open Stripe Checkout session so old payment tabs cannot complete canceled orders.
 - When a customer manually cancels an unpaid `placed` order, the app also attempts to expire that order's Stripe Checkout session.
-- Cart validation shows item-specific unavailable/deleted-item blockers and non-blocking price-change warnings before Stripe Checkout.
+- Cart validation shows item-specific unavailable/deleted-item blockers, server-side restaurant preflight blockers, delivery-radius blockers, and non-blocking price-change warnings before Stripe Checkout.
 - Cart can suggest the best public coupon for the current restaurant subtotal and let the customer apply it directly.
 - Checkout blocks customers from starting another paid active order until the previous order is completed or canceled.
 - Signed-in customers see a header quick-access link to finish payment, track the active order, or spot a delayed active order without hunting through order history.
 - Customers can save up to five validated delivery addresses with confirmed latitude/longitude and apply them during checkout; duplicate saves reuse the existing saved address instead of creating another entry.
 - Order detail pages show a delay warning when active elapsed time passes the saved estimated total plus the grace window.
+- Customer and admin order detail pages show an activity log built from stored order timestamps so the important payment, kitchen, courier, delivery, and cancellation events are easy to scan.
+- Admin order detail pages include an internal order note for support/kitchen/handoff context; customer and courier order payloads must not expose that note.
 - Previous orders can be reordered into the cart only after current menu item existence, availability, restaurant ownership, and prices are rechecked.
 - Favorite restaurants and restaurant detail pages can rebuild the latest previous order from that restaurant into the cart.
 - Customers can request a notification when a closed, paused, closing-soon, or busy restaurant starts accepting orders again.

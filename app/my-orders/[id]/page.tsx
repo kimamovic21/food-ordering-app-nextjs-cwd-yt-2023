@@ -41,6 +41,7 @@ import {
 import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
 import OrderProgressStepper from '@/components/shared/OrderProgressStepper';
 import OrderDelayNotice from '@/components/shared/OrderDelayNotice';
+import OrderActivityLog from '@/components/shared/OrderActivityLog';
 import ReportProblemDialog from '@/components/shared/ReportProblemDialog';
 import { sonnerToast } from '@/components/shared/SonnerToastComponent';
 import { useCart } from '@/contexts/CartContext';
@@ -586,6 +587,10 @@ const MyOrderDetailPage = () => {
 
         <div className='mb-6'>
           <OrderProgressStepper status={order.orderStatus} />
+        </div>
+
+        <div className='mb-6'>
+          <OrderActivityLog order={order} audience='customer' />
         </div>
 
         {order.orderStatus === 'canceled' && order.canceledBy === 'system' && (

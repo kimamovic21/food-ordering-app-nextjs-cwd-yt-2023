@@ -22,6 +22,7 @@ import OrderElapsedTime from '@/components/shared/OrderElapsedTime';
 import OrderPhaseTimeline from '@/components/shared/OrderPhaseTimeline';
 import OrderProgressStepper from '@/components/shared/OrderProgressStepper';
 import OrderDelayNotice from '@/components/shared/OrderDelayNotice';
+import OrderActivityLog from '@/components/shared/OrderActivityLog';
 import HeartRating from '@/components/shared/HeartRating';
 import dynamic from 'next/dynamic';
 import DevOrderTimelineSimulator from './DevOrderTimelineSimulator';
@@ -94,6 +95,9 @@ const OrderDetailPage = () => {
   const [couriers, setCouriers] = useState<CourierListItem[]>([]);
   const [selectedCourier, setSelectedCourier] = useState<string>('');
   const [courierAssignmentNote, setCourierAssignmentNote] = useState('');
+  const [adminInternalNote, setAdminInternalNote] = useState('');
+  const [isAdminInternalNoteDirty, setIsAdminInternalNoteDirty] = useState(false);
+  const [savingAdminInternalNote, setSavingAdminInternalNote] = useState(false);
   const [assigningCourier, setAssigningCourier] = useState(false);
   const [handingToCourier, setHandingToCourier] = useState(false);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
@@ -217,6 +221,9 @@ const OrderDetailPage = () => {
         }
         const json = await res.json();
         setOrder(json.order);
+        if (!isAdminInternalNoteDirty) {
+          setAdminInternalNote(json.order.adminInternalNote || '');
+        }
         try {
           const reviewResponse = await fetch(`/api/reviews?orderId=${orderId}`);
           if (reviewResponse.ok) {
@@ -265,7 +272,7 @@ const OrderDetailPage = () => {
         window.removeEventListener(APP_NOTIFICATION_REALTIME_EVENT, handleRealtimeOrderUpdate);
       };
     }
-  }, [orderId, profileData?.role, profileLoading]);
+  }, [isAdminInternalNoteDirty, orderId, profileData?.role, profileLoading]);
 
   // Fetch available couriers when order status is ready (for courier assignment)
   useEffect(() => {
@@ -434,6 +441,60 @@ const OrderDetailPage = () => {
     }
 
     setShowConfirmModal(true);
+  };
+
+  const handleAdminInternalNoteChange = (value: string) => {
+    setAdminInternalNote(value.slice(0, 1000));
+    setIsAdminInternalNoteDirty(true);
+  };
+
+  const handleSaveAdminInternalNote = async () => {
+    if (!order || savingAdminInternalNote) return;
+
+    try {
+      setSavingAdminInternalNote(true);
+
+      const res = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: order._id,
+          action: 'update-admin-note',
+          adminInternalNote,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        sonnerToast.error(data.error || 'Failed to save internal note');
+        return;
+      }
+
+      setOrder((current) =>
+        current ? { ...current, adminInternalNote: data.order.adminInternalNote || '' } : data.order
+      );
+      setAdminInternalNote(data.order.adminInternalNote || '');
+      setIsAdminInternalNoteDirty(false);
+      sonnerToast.success(
+        data.order.adminInternalNote ? 'Internal note saved' : 'Internal note cleared',
+        {
+          style: {
+            background: '#22c55e',
+            color: 'white',
+          },
+        }
+      );
+    } catch (error) {
+      console.error(error);
+      sonnerToast.error('Failed to save internal note', {
+        style: {
+          background: '#ef4444',
+          color: 'white',
+        },
+      });
+    } finally {
+      setSavingAdminInternalNote(false);
+    }
   };
 
   const handleHandoffToCourier = async () => {
@@ -745,6 +806,8 @@ const OrderDetailPage = () => {
           durationOffsetMinutes={totalTimelineOffsetMinutes}
         />
 
+        <OrderActivityLog order={order} audience='admin' />
+
         {order.specialInstructions?.trim() && (
           <Card>
             <CardHeader>
@@ -758,6 +821,36 @@ const OrderDetailPage = () => {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Internal Order Note</CardTitle>
+            <CardDescription>
+              Visible only to restaurant admins and super admin. Customers and couriers cannot see
+              this note.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className='space-y-3'>
+            <Textarea
+              value={adminInternalNote}
+              onChange={(event) => handleAdminInternalNoteChange(event.target.value)}
+              maxLength={1000}
+              rows={4}
+              placeholder='Add kitchen, support, customer call, or handoff notes for your team.'
+            />
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+              <p className='text-xs text-muted-foreground'>{adminInternalNote.length}/1000</p>
+              <Button
+                type='button'
+                onClick={handleSaveAdminInternalNote}
+                disabled={!isAdminInternalNoteDirty || savingAdminInternalNote}
+                className='w-full sm:w-auto'
+              >
+                {savingAdminInternalNote ? 'Saving...' : 'Save internal note'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Order Information and Order Items - Side by side on large screens */}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>

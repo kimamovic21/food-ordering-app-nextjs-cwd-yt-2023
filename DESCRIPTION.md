@@ -249,6 +249,7 @@ Checkout server rules:
 - Recent identical unpaid `placed` checkout attempts reuse or recover the existing Stripe Checkout session instead of creating duplicate orders.
 - Customers see a payment-expiry countdown for unpaid `placed` orders that matches the 30-minute auto-cancel window.
 - Cart validation surfaces item-specific unavailable/deleted-item blockers and non-blocking price-change warnings before checkout.
+- Cart validation also performs a server-side restaurant preflight for closed/paused/closing-soon/busy/minimum-order/delivery-radius blockers, while the cart UI shows matching visible warnings before Stripe Checkout.
 - Order is created as unpaid before redirecting to Stripe.
 - QStash schedules a delayed unpaid-order maintenance check after a new Stripe Checkout session is created.
 - If that unpaid order expires, the app attempts to expire the original Stripe Checkout session and stores the expiration result in the cancellation audit log.
@@ -279,6 +280,13 @@ Timeline fields are stored on the order so the UI can show exact phase durations
 - `canceledAt`
 - `failedDeliveryRequestedAt`
 - `failedDeliveryVerifiedAt`
+
+Customer and admin order detail pages also render a readable activity log from these stored timestamps. It summarizes payment, kitchen, courier assignment, handoff, transport, delivery, completion, failed-delivery, and cancellation events without creating a separate activity collection.
+
+Admin-only order context:
+
+- Restaurant admins and super admin can save `adminInternalNote` on an order from `/admin-dashboard/orders/[id]`.
+- The internal note is for kitchen/support/handoff context and is hidden from customer and courier order payloads.
 
 Operational order monitoring:
 

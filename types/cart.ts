@@ -41,6 +41,19 @@ export type CartValidationRequestItem = {
 
 export type CartValidationStatus = 'valid' | 'unavailable' | 'deleted' | 'invalid_size' | 'invalid';
 
+export type CartValidationRestaurantStatus =
+  | 'valid'
+  | 'missing'
+  | 'multiple_restaurants'
+  | 'restaurant_mismatch'
+  | 'closed'
+  | 'paused'
+  | 'closing_soon'
+  | 'busy'
+  | 'below_minimum'
+  | 'outside_delivery_radius'
+  | 'missing_delivery_location';
+
 export type CartValidationItem = {
   _id?: EntityId;
   itemKey: string;
@@ -60,6 +73,21 @@ export type CartValidationResponse = {
   items: CartValidationItem[];
   canCheckout: boolean;
   message?: string | null;
+  restaurant?: {
+    restaurantId?: EntityId;
+    restaurantName?: string;
+    status: CartValidationRestaurantStatus;
+    canCheckout: boolean;
+    message?: string | null;
+    subtotal?: number;
+    minimumOrderAmount?: number;
+    deliveryRadiusKm?: number;
+    distanceKm?: number | null;
+    isOpen?: boolean;
+    isPaused?: boolean;
+    isBusy?: boolean;
+    isAcceptingOrders?: boolean;
+  } | null;
 };
 
 export type CheckoutStartResult = {

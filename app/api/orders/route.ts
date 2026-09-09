@@ -132,13 +132,13 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'Admin is not assigned to a restaurant' }, { status: 403 });
   }
 
-  const { id, orderStatus, action } = await request.json();
+  const { id, orderStatus, action, adminInternalNote } = await request.json();
 
   if (!id || !mongoose.Types.ObjectId.isValid(id)) {
     return Response.json({ error: 'Invalid order ID' }, { status: 400 });
   }
 
-  const allowedActions = ['handoff-to-courier', 'verify-failed-delivery'];
+  const allowedActions = ['handoff-to-courier', 'verify-failed-delivery', 'update-admin-note'];
   if (action && !allowedActions.includes(action)) {
     return Response.json({ error: 'Invalid order action' }, { status: 400 });
   }
@@ -176,6 +176,32 @@ export async function PATCH(request: Request) {
 
   if (!order) {
     return Response.json({ error: 'Order not found' }, { status: 404 });
+  }
+
+  if (action === 'update-admin-note') {
+    const note = String(adminInternalNote || '').trim();
+
+    if (note.length > 1000) {
+      return Response.json(
+        { error: 'Internal note must be 1000 characters or less' },
+        { status: 400 }
+      );
+    }
+
+    (order as any).adminInternalNote = note;
+    const savedOrder = await order.save();
+
+    await createAuditLog({
+      actor: user,
+      action: 'order.internal_note_updated',
+      entityType: 'order',
+      entityId: order._id,
+      restaurantId: order.restaurantId,
+      orderId: order._id,
+      metadata: { hasInternalNote: note.length > 0 },
+    });
+
+    return Response.json({ order: normalizeOrder(savedOrder.toObject()) });
   }
 
   const previousStatus = order.orderStatus;

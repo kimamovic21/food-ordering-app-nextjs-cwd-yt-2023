@@ -33,6 +33,7 @@ interface OrderSummaryProps {
   belowMinimumOrderAmount?: boolean;
   minimumOrderAmount?: number;
   missingDeliveryLocation?: boolean;
+  outsideDeliveryRadius?: boolean;
   loadingRestaurants: boolean;
   hasUnavailableItems?: boolean;
   loadingMenuAvailability?: boolean;
@@ -67,6 +68,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   belowMinimumOrderAmount = false,
   minimumOrderAmount = 10,
   missingDeliveryLocation = false,
+  outsideDeliveryRadius = false,
   loadingRestaurants,
   hasUnavailableItems = false,
   loadingMenuAvailability = false,
@@ -199,6 +201,11 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             Add more items to reach the ${minimumOrderAmount.toFixed(2)} minimum.
           </div>
         )}
+        {outsideDeliveryRadius && (
+          <div className='mt-2 text-xs text-center font-medium text-red-600'>
+            This address is outside the restaurant delivery radius.
+          </div>
+        )}
       </div>
       {isLoggedIn ? (
         <Button
@@ -211,6 +218,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             restaurantBusy ||
             belowMinimumOrderAmount ||
             missingDeliveryLocation ||
+            outsideDeliveryRadius ||
             loadingRestaurants ||
             loadingMenuAvailability ||
             hasUnavailableItems
@@ -240,6 +248,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             `Minimum $${minimumOrderAmount.toFixed(2)}`
           ) : missingDeliveryLocation ? (
             'Confirm Location'
+          ) : outsideDeliveryRadius ? (
+            'Outside Delivery Radius'
           ) : hasUnavailableItems ? (
             'Unavailable Items'
           ) : (

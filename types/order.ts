@@ -51,6 +51,7 @@ export type OrderDetails = OrderListItem & {
   courier?: UserSummary | null;
   courierAssignmentStatus?: CourierAssignmentStatus;
   courierAssignmentNote?: string;
+  receiptEmailSentAt?: ISODateString | null;
   courierAssignedAt?: ISODateString | null;
   courierAcceptedAt?: ISODateString | null;
   courierDeclinedAt?: ISODateString | null;
@@ -87,6 +88,7 @@ export type CourierDeliveryOrder = OrderDetails & {
 
 export type AdminOrderDetails = Omit<OrderDetails, 'courierId'> & {
   courierId?: UserSummary | null;
+  adminInternalNote?: string;
 };
 
 export type CustomerOrderDetails = Omit<OrderDetails, 'courierId'> & {

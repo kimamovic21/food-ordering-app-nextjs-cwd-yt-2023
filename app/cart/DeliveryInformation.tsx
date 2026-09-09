@@ -29,6 +29,7 @@ interface DeliveryInformationProps {
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   deliveryRadiusKm?: number | null;
   deliveryDistanceKm?: number | null;
+  outsideDeliveryRadius?: boolean;
   isGettingDeliveryLocation: boolean;
   onUseCurrentLocation: () => void;
   onManualLocationUpdate: (latitude: number, longitude: number) => void;
@@ -52,6 +53,7 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
   handleInputChange,
   deliveryRadiusKm,
   deliveryDistanceKm,
+  outsideDeliveryRadius = false,
   isGettingDeliveryLocation,
   onUseCurrentLocation,
   onManualLocationUpdate,
@@ -259,12 +261,18 @@ const DeliveryInformation: React.FC<DeliveryInformationProps> = ({
                 : 'Confirm your location before checkout.'}
             </p>
             {hasDeliveryLocation && (
-              <p className='mt-1 text-xs text-green-600'>
+              <p
+                className={`mt-1 text-xs ${
+                  outsideDeliveryRadius
+                    ? 'font-medium text-red-600 dark:text-red-400'
+                    : 'text-green-600'
+                }`}
+              >
                 Location confirmed
                 {typeof deliveryDistanceKm === 'number'
                   ? `, about ${deliveryDistanceKm.toFixed(1)} km from restaurant`
                   : ''}
-                .
+                {outsideDeliveryRadius ? ', outside delivery radius.' : '.'}
               </p>
             )}
             <Button

@@ -58,6 +58,12 @@ const OrderSchema = new Schema(
       trim: true,
       maxlength: 500,
     },
+    adminInternalNote: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 1000,
+    },
     cartProducts: { type: [CartProductSchema], required: true },
 
     // Restaurant reference

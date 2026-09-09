@@ -408,7 +408,11 @@ const CartPage = () => {
     const response = await fetch('/api/cart/validate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cartItems }),
+      body: JSON.stringify({
+        cartItems,
+        deliveryLatitude: formData.deliveryLatitude,
+        deliveryLongitude: formData.deliveryLongitude,
+      }),
     });
     const json = (await response.json().catch(() => null)) as CartValidationResponse | null;
 
@@ -417,7 +421,7 @@ const CartPage = () => {
     }
 
     return json;
-  }, [cartItems]);
+  }, [cartItems, formData.deliveryLatitude, formData.deliveryLongitude]);
 
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -1044,6 +1048,21 @@ const CartPage = () => {
         return;
       }
 
+      const deliveryRadiusKm = getDeliveryRadiusKm();
+      const deliveryDistanceKm = getDeliveryDistanceKm();
+      if (
+        typeof deliveryRadiusKm === 'number' &&
+        typeof deliveryDistanceKm === 'number' &&
+        deliveryDistanceKm > deliveryRadiusKm
+      ) {
+        sonnerToast.error(
+          `${getRestaurantName()} delivers within ${deliveryRadiusKm} km. Your selected address is about ${deliveryDistanceKm.toFixed(
+            1
+          )} km away.`
+        );
+        return;
+      }
+
       const missingField = Object.entries(formData).find(
         ([key, value]) =>
           key !== 'deliveryLatitude' &&
@@ -1172,6 +1191,16 @@ const CartPage = () => {
     !restaurantPaused &&
     !restaurantBusy &&
     !hasDeliveryLocation;
+  const outsideDeliveryRadius =
+    !multipleRestaurants &&
+    restaurantOpen &&
+    restaurantAcceptingCheckout &&
+    !restaurantPaused &&
+    !restaurantBusy &&
+    hasDeliveryLocation &&
+    typeof deliveryRadiusKm === 'number' &&
+    typeof deliveryDistanceKm === 'number' &&
+    deliveryDistanceKm > deliveryRadiusKm;
   const displayedCouponMessage = couponValidationError || couponMessage;
   const handleRemoveBlockingCartItems = () => {
     blockingCartItems.forEach((item) => removeFromCart(item._id, item.size));
@@ -1331,6 +1360,19 @@ const CartPage = () => {
         </div>
       )}
 
+      {outsideDeliveryRadius && (
+        <CartAvailabilityBanner
+          tone='danger'
+          icon={<XCircle className='size-5' aria-hidden='true' />}
+          title='Address outside delivery radius'
+          message={`${restaurantName} delivers within ${deliveryRadiusKm?.toFixed(
+            1
+          )} km. Your selected address is about ${deliveryDistanceKm?.toFixed(
+            1
+          )} km from the restaurant.`}
+        />
+      )}
+
       {blockingCartItems.length > 0 && (
         <div className='mb-4 rounded-lg border border-red-300 bg-red-100 p-4 dark:border-red-700 dark:bg-red-900/20'>
           <div className='flex gap-3'>
@@ -1431,6 +1473,7 @@ const CartPage = () => {
             handleInputChange={handleInputChange}
             deliveryRadiusKm={deliveryRadiusKm}
             deliveryDistanceKm={deliveryDistanceKm}
+            outsideDeliveryRadius={outsideDeliveryRadius}
             isGettingDeliveryLocation={isGettingDeliveryLocation}
             onUseCurrentLocation={handleUseCurrentLocation}
             onManualLocationUpdate={handleManualDeliveryLocationUpdate}
@@ -1478,6 +1521,7 @@ const CartPage = () => {
             belowMinimumOrderAmount={belowMinimumOrderAmount}
             minimumOrderAmount={minimumOrderAmount}
             missingDeliveryLocation={missingDeliveryLocation}
+            outsideDeliveryRadius={outsideDeliveryRadius}
             loadingRestaurants={loadingRestaurants}
             hasUnavailableItems={blockingCartItems.length > 0}
             loadingMenuAvailability={loadingMenuAvailability}
