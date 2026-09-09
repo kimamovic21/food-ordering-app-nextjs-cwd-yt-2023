@@ -59,7 +59,6 @@ const useGeocodedLocation = (query: string | null) => {
 
   useEffect(() => {
     if (!query) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setState({ position: DEFAULT_POSITION, label: '', status: 'idle' });
       return;
     }

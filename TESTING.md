@@ -36,6 +36,7 @@ Auth is a high-value and high-risk area. Testing register and login first gives 
   - restaurant operations overview summaries in `libs/restaurantOperations.ts`
   - notification copy/routing helpers in `libs/notifications.ts`
   - order delay warning helper behavior in `libs/orderDelay.ts`
+  - order activity log event ordering/status behavior in `components/shared/OrderActivityLog.tsx`
   - Upstash Redis rate-limit helper behavior in `libs/rateLimit.ts`
   - shared date-fns formatting helpers in `libs/dateFormat.ts`
   - TanStack Query provider, shared query keys, profile hook cache behavior, sound settings cache/mutation behavior, and message center query rendering
@@ -45,7 +46,7 @@ Auth is a high-value and high-risk area. Testing register and login first gives 
   - profile management flow (info update, image upload/remove, account deletion)
   - checkout & payment flow (order creation, coupon application, payment webhook)
 
-Recent high-priority coverage also checks best coupon suggestion rules, restaurant closed/busy availability helpers, pre-cart ordering status checks, saved delivery address duplicate matching, active customer order lookup, restaurant operations overview summaries, ETA-style notification copy, unpaid payment-expiry countdowns, order delay warnings, courier delivery summaries, delete protection for active restaurant/menu orders, Redis rate-limit helper behavior, Stripe Checkout session expiration for stale unpaid/customer-canceled orders, and app date formatting helpers.
+Recent high-priority coverage also checks best coupon suggestion rules, restaurant closed/busy/minimum/radius cart validation helpers, pre-cart ordering status checks, saved delivery address duplicate matching, active customer order lookup, restaurant operations overview summaries, internal admin order notes staying out of customer payloads, ETA-style notification copy, unpaid payment-expiry countdowns, order activity events, order delay warnings, courier delivery summaries, delete protection for active restaurant/menu orders, Redis rate-limit helper behavior, Stripe Checkout session expiration for stale unpaid/customer-canceled orders, and app date formatting helpers.
 
 ## Folder Layout
 

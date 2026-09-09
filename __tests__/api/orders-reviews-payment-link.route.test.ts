@@ -239,6 +239,71 @@ describe('high-priority order, review, and payment-link routes', () => {
     );
   });
 
+  it('lets restaurant admins save an internal order note without changing status', async () => {
+    const noteOrderDoc = {
+      ...paidOrderDoc,
+      orderPaid: false,
+      orderStatus: 'canceled',
+      adminInternalNote: '',
+      save: vi.fn(async function save(this: any) {
+        return this;
+      }),
+      toObject() {
+        return {
+          _id: this._id,
+          userId: this.userId,
+          restaurantId: this.restaurantId,
+          orderPaid: this.orderPaid,
+          orderStatus: this.orderStatus,
+          adminInternalNote: this.adminInternalNote,
+        };
+      },
+    };
+
+    vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: admin.email } } as never);
+    vi.mocked(User.findOne).mockReturnValueOnce({
+      lean: vi.fn().mockResolvedValue(admin),
+    } as never);
+    vi.mocked(Order.findOne).mockResolvedValueOnce(noteOrderDoc as never);
+
+    const { PATCH } = await import('@/app/api/orders/route');
+    const res = await PATCH(
+      jsonRequest({
+        id: 'order-1',
+        action: 'update-admin-note',
+        adminInternalNote: 'Customer called about the delivery address.',
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(noteOrderDoc.adminInternalNote).toBe('Customer called about the delivery address.');
+    expect(noteOrderDoc.orderStatus).toBe('canceled');
+    expect(body.order.adminInternalNote).toBe('Customer called about the delivery address.');
+    expect(noteOrderDoc.save).toHaveBeenCalled();
+    expect(createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'order.internal_note_updated',
+        metadata: { hasInternalNote: true },
+      })
+    );
+    expect(notifyUserAboutOrderStatusChange).not.toHaveBeenCalled();
+  });
+
+  it('removes internal admin notes from customer order payloads', async () => {
+    const { normalizeOrder } = await import('@/app/api/my-orders/route');
+    const normalizedOrder = normalizeOrder({
+      _id: 'order-1',
+      orderPaid: true,
+      paid: true,
+      orderStatus: 'processing',
+      adminInternalNote: 'Do not expose this note to customer.',
+    });
+
+    expect(normalizedOrder.paymentStatus).toBe(true);
+    expect(normalizedOrder).not.toHaveProperty('adminInternalNote');
+  });
+
   it('emits a review prompt notification when an admin completes a delivered order', async () => {
     vi.mocked(getServerSession).mockResolvedValueOnce({ user: { email: admin.email } } as never);
     vi.mocked(User.findOne).mockReturnValueOnce({

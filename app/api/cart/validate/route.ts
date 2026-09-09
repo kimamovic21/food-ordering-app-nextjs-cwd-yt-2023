@@ -1,6 +1,9 @@
 import mongoose from 'mongoose';
+import { getRestaurantOrderingStatus } from '@/libs/restaurantAvailability';
 import { MenuItem } from '@/models/menuItem';
-import type { CartSize, CartValidationRequestItem } from '@/types/cart';
+import { Order } from '@/models/order';
+import { Restaurant } from '@/models/restaurant';
+import type { CartSize, CartValidationRequestItem, CartValidationResponse } from '@/types/cart';
 
 const normalizeCartSize = (value: unknown): CartSize | null => {
   const size = String(value || '')
@@ -39,6 +42,24 @@ const getMenuItemSizePrice = (menuItem: any, requestedSize: CartSize) => {
 };
 
 const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100;
+
+const normalizeCoordinate = (value: unknown) => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const coordinate = Number(value);
+  return Number.isFinite(coordinate) ? coordinate : null;
+};
+
+const toRestaurantStatus = (orderingStatus: ReturnType<typeof getRestaurantOrderingStatus>) => {
+  if (orderingStatus.isPaused) return 'paused' as const;
+  if (!orderingStatus.isOpen) return 'closed' as const;
+  if (orderingStatus.isClosingSoonForCheckout) return 'closing_soon' as const;
+  if (orderingStatus.isWithinDeliveryRadius === false) return 'outside_delivery_radius' as const;
+  if (orderingStatus.requiresDeliveryLocation) return 'missing_delivery_location' as const;
+  return 'valid' as const;
+};
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -159,12 +180,136 @@ export async function POST(req: Request) {
 
   const blockingItems = items.filter((item) => item.status !== 'valid');
   const priceChangedItems = items.filter((item) => item.status === 'valid' && item.priceChanged);
+  const requestedRestaurantIds = new Set(
+    normalizedItems.map((item) => item.restaurantId).filter(Boolean)
+  );
+  const currentRestaurantIds = new Set(
+    items
+      .filter((item) => item.status === 'valid' && item.restaurantId)
+      .map((item) => String(item.restaurantId))
+  );
+
+  let restaurantValidation: CartValidationResponse['restaurant'] = null;
+
+  if (blockingItems.length === 0) {
+    if (requestedRestaurantIds.size > 1 || currentRestaurantIds.size > 1) {
+      restaurantValidation = {
+        status: 'multiple_restaurants',
+        canCheckout: false,
+        message: 'Cart must contain items from one restaurant only.',
+      };
+    } else {
+      const requestedRestaurantId = Array.from(requestedRestaurantIds)[0] || null;
+      const currentRestaurantId = Array.from(currentRestaurantIds)[0] || requestedRestaurantId;
+
+      if (
+        requestedRestaurantId &&
+        currentRestaurantId &&
+        requestedRestaurantId !== currentRestaurantId
+      ) {
+        restaurantValidation = {
+          restaurantId: currentRestaurantId,
+          status: 'restaurant_mismatch',
+          canCheckout: false,
+          message: 'Cart restaurant data changed. Please refresh your cart before checkout.',
+        };
+      } else if (!currentRestaurantId || !mongoose.Types.ObjectId.isValid(currentRestaurantId)) {
+        restaurantValidation = {
+          status: 'missing',
+          canCheckout: false,
+          message: 'Cart restaurant is missing. Please refresh your cart before checkout.',
+        };
+      } else {
+        const restaurant = await Restaurant.findById(currentRestaurantId)
+          .select(
+            'name workingHours blockedDates deliveryRadiusKm isPaused pauseReason activeOrderLimit minimumOrderAmount latitude longitude'
+          )
+          .lean();
+
+        if (!restaurant) {
+          restaurantValidation = {
+            restaurantId: currentRestaurantId,
+            status: 'missing',
+            canCheckout: false,
+            message: 'This restaurant is no longer available.',
+          };
+        } else {
+          const deliveryLatitude = normalizeCoordinate(body?.deliveryLatitude);
+          const deliveryLongitude = normalizeCoordinate(body?.deliveryLongitude);
+          const orderingStatus = getRestaurantOrderingStatus({
+            restaurant,
+            deliveryLatitude,
+            deliveryLongitude,
+          });
+          const activeOrderLimit = Math.min(
+            100,
+            Math.max(1, Number((restaurant as any).activeOrderLimit) || 10)
+          );
+          const activeKitchenOrders = await Order.countDocuments({
+            restaurantId: (restaurant as any)._id,
+            orderStatus: { $in: ['placed', 'processing', 'ready'] },
+            $or: [{ orderPaid: true }, { paid: true }, { paymentStatus: true }],
+          });
+          const isBusy = activeKitchenOrders >= activeOrderLimit;
+          const subtotal = roundToTwoDecimals(
+            items.reduce((sum, item) => {
+              if (item.status !== 'valid' || typeof item.price !== 'number') {
+                return sum;
+              }
+
+              return sum + item.price * Math.max(1, Number(item.quantity) || 1);
+            }, 0)
+          );
+          const minimumOrderAmount = roundToTwoDecimals(
+            Math.min(100, Math.max(1, Number((restaurant as any).minimumOrderAmount) || 10))
+          );
+
+          const baseRestaurantStatus = toRestaurantStatus(orderingStatus);
+          const restaurantStatus = isBusy
+            ? ('busy' as const)
+            : baseRestaurantStatus !== 'valid'
+              ? baseRestaurantStatus
+              : subtotal < minimumOrderAmount
+                ? ('below_minimum' as const)
+                : ('valid' as const);
+          const restaurantMessage =
+            restaurantStatus === 'busy'
+              ? 'This restaurant is very busy at the moment. Please wait a little bit and try again.'
+              : restaurantStatus === 'below_minimum'
+                ? `Minimum order amount for this restaurant is $${minimumOrderAmount.toFixed(2)}.`
+                : orderingStatus.requiresDeliveryLocation
+                  ? `Please use your current location so we can confirm this restaurant delivers within ${orderingStatus.deliveryRadiusKm} km.`
+                  : orderingStatus.reason;
+
+          restaurantValidation = {
+            restaurantId: String((restaurant as any)._id),
+            restaurantName: String((restaurant as any).name || 'The restaurant'),
+            status: restaurantStatus,
+            canCheckout: restaurantStatus === 'valid',
+            message: restaurantMessage,
+            subtotal,
+            minimumOrderAmount,
+            deliveryRadiusKm: orderingStatus.deliveryRadiusKm,
+            distanceKm: orderingStatus.distanceKm,
+            isOpen: orderingStatus.isOpen,
+            isPaused: orderingStatus.isPaused,
+            isBusy,
+            isAcceptingOrders: orderingStatus.isAcceptingOrders && !isBusy,
+          };
+        }
+      }
+    }
+  }
+
+  const restaurantBlocksCheckout = restaurantValidation ? !restaurantValidation.canCheckout : false;
 
   return Response.json({
     items,
-    canCheckout: blockingItems.length === 0,
+    restaurant: restaurantValidation,
+    canCheckout: blockingItems.length === 0 && !restaurantBlocksCheckout,
     message:
       blockingItems[0]?.message ||
+      restaurantValidation?.message ||
       (priceChangedItems.length > 0
         ? 'Some cart prices changed. Checkout will use the current menu prices.'
         : null),
